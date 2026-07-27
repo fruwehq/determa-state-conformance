@@ -1,33 +1,38 @@
-id: order
+format: 1
+namespace: conformance.case_30_submachine_interrupt
 events:
-  pay: { payload: { amount: { type: int, required: true } } }
-  cancel: {}
-top:
-  esvs: { total: { type: int, init: 100 } }
-  initial: { transition_to: checkout }
-  states:
-    checkout:
-      submachine: payment          # inline the reusable payment flow, synchronously
-      with: { due: "total" }        # seed payment's external `due` from the parent
-      on_events:
-        cancel: { transition_to: cancelled }   # parent can interrupt the submachine
-        done:   { transition_to: paid }        # payment reached `final`
-    paid: {}
-    cancelled: {}
----
-id: payment
-events:
-  pay: { payload: { amount: { type: int, required: true } } }
-top:
-  esvs:
-    due:  { type: int, external: true }
-    paid: { type: int, init: 0 }
-  initial: { transition_to: awaiting }
-  states:
-    awaiting:
-      on_events:
-        pay:
-          guard: "event.payload.amount >= due"
-          action: [ { assign: { paid: "event.payload.amount" } } ]
-          transition_to: settled
-    settled: { type: final }
+  pay: {direction: input, payload: {amount: {type: int, required: true}}}
+  cancel:
+    direction: input
+machines:
+  - machine_id: order
+    version: 1
+    root:
+      type: composite
+      variables: {total: {type: int, init: 100}}
+      initial: {transition_to: checkout}
+      states:
+        checkout:
+          submachine: payment      # inline the reusable payment flow, synchronously
+          with: {due: "total"}      # seed payment's external `due` from the parent
+          on_events:
+            cancel: {transition_to: cancelled} # parent can interrupt the submachine
+            done: {transition_to: paid}        # payment reached `final`
+        paid: {}
+        cancelled: {}
+  - machine_id: payment
+    version: 1
+    root:
+      type: composite
+      variables:
+        due: {type: int, external: true}
+        paid: {type: int, init: 0}
+      initial: {transition_to: awaiting}
+      states:
+        awaiting:
+          on_events:
+            pay:
+              guard: "event.payload.amount >= due"
+              action: [assign: {paid: "event.payload.amount"}]
+              transition_to: settled
+        settled: {type: final}

@@ -1,2 +1,2 @@
 title: states reached only via a composite initial or a final transition are valid
-static: { valid: true }
+static: {valid: true}

@@ -4,7 +4,7 @@ title: turnstile via batch/streaming mode — NDJSON in, NDJSON out (SPEC §13.7
 # A failing line (here: send to a missing instance) does NOT abort the stream;
 # the process exit code is the first non-zero line exit (§13.7).
 steps:
-  - run: [run, -]
+  - run: [run, '-']
     stdin:
       - [new, t1, machine.yaml]
       - [send, t1, coin, --payload, "amount=100"]   # covers the fare -> unlocks
@@ -14,8 +14,10 @@ steps:
     expect:
       exit: 4
       stream:
-        - { ok: true,  exit: 0, result: { instance: t1, definition: "turnstile@1", status: active, config: [locked], esvs: { fare: 50 } } }
-        - { ok: true,  exit: 0, result: { instance: t1, status: active, config: [unlocked], published: [] } }
-        - { ok: false, exit: 4, result: null }
-        - { ok: true,  exit: 0, result: { instance: t1, status: active, config: [unlocked] } }
-        - { ok: true,  exit: 0, result: [ { id: t1, definition: "turnstile@1", parent: null, status: active, config: [unlocked] } ] }
+        - {ok: true, exit: 0, result: {instance: t1, definition: "turnstile@1", status: active,
+              config: [locked], variables: {fare: 50}}}
+        - {ok: true, exit: 0, result: {instance: t1, status: active, config: [unlocked], published: []}}
+        - {ok: false, exit: 4, result: null}
+        - {ok: true, exit: 0, result: {instance: t1, status: active, config: [unlocked]}}
+        - {ok: true, exit: 0, result: [{id: t1, definition: "turnstile@1", parent: null, status:
+                  active, config: [unlocked]}]}

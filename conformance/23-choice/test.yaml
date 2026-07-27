@@ -1,14 +1,14 @@
 title: a choice branches on a value the triggering transition just assigned (dynamic)
 steps:
-  - send: { event: withdraw, payload: { amount: 40 } }   # requested:=40; 40<=100 -> dispensing; balance-=40
+  - send: {event: withdraw, payload: {amount: 40}}       # requested:=40; 40<=100 -> dispensing; balance-=40
     expect:
       config: [dispensing]
-      esvs: { balance: 60, requested: 40 }
-  - send: { event: reset }
-    expect: { config: [idle] }
+      variables: {balance: 60, requested: 40}
+  - send: {event: reset}
+    expect: {config: [idle]}
   # requested:=500 BEFORE the choice; 500<=60 is false -> else. (Static eval would wrongly
   # see the old requested=40 <= 60 and dispense — so this pins the dynamic timing.)
-  - send: { event: withdraw, payload: { amount: 500 } }
+  - send: {event: withdraw, payload: {amount: 500}}
     expect:
       config: [insufficient]
-      esvs: { balance: 60 }
+      variables: {balance: 60}

@@ -1,15 +1,21 @@
-id: turnstile
+format: 1
+namespace: conformance.cli.case_02_stream
 events:
-  coin: { payload: { amount: { type: int, required: true } } }
-  push: {}
-top:
-  esvs:
-    fare: { type: int, init: 50 }
-  initial: { transition_to: locked }
-  states:
-    locked:
-      on_events:
-        coin: { transition_to: unlocked, guard: "event.payload.amount >= fare" }
-    unlocked:
-      on_events:
-        push: { transition_to: locked }
+  coin: {direction: input, payload: {amount: {type: int, required: true}}}
+  push:
+    direction: input
+machines:
+  - machine_id: turnstile
+    version: 1
+    root:
+      type: composite
+      variables:
+        fare: {type: int, init: 50}
+      initial: {transition_to: locked}
+      states:
+        locked:
+          on_events:
+            coin: {transition_to: unlocked, guard: "event.payload.amount >= fare"}
+        unlocked:
+          on_events:
+            push: {transition_to: locked}

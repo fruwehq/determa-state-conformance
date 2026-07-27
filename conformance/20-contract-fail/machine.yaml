@@ -1,11 +1,17 @@
-id: badprov
-contracts: [prov_contract]
+format: 1
+namespace: conformance.case_20_contract_fail
 events:
-  configure: {}
-top:
-  initial: { transition_to: unconfigured }
-  states:
-    unconfigured:
-      on_events:
-        configure: { transition_to: ready }
-    ready: {}            # never handles `make`, never spawns `worker`
+  configure:
+    direction: input
+machines:
+  - machine_id: badprov
+    version: 1
+    contracts: [prov_contract]
+    root:
+      type: composite
+      initial: {transition_to: unconfigured}
+      states:
+        unconfigured:
+          on_events:
+            configure: {transition_to: ready}
+        ready: {}        # never handles `make`, never spawns `worker`

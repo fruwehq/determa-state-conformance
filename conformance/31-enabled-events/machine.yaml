@@ -1,35 +1,47 @@
-id: enabled_events
+format: 1
+namespace: conformance.case_31_enabled_events
 events:
   coin:
+    direction: input
     payload:
-      amount: { type: int, required: true }
-  push: {}
-  reset: {}
-  tick: {}
-  tock: {}
-top:
-  initial: { transition_to: active }
-  states:
-    active:
-      type: orthogonal
-      on_events:
-        reset: { transition_to: active }
-      regions:
-        - initial: { transition_to: locked }
-          states:
-            locked:
-              on_events:
-                coin: { transition_to: unlocked, guard: "event.payload.amount >= 100" }
-                env: { transition_to: locked }
-            unlocked:
-              on_events:
-                push: { transition_to: locked }
-        - initial: { transition_to: red }
-          states:
-            red:
-              on_events:
-                tick: { transition_to: green }
-            green:
-              on_events:
-                tock: { transition_to: red }
-                error: { transition_to: green }
+      amount: {type: int, required: true}
+  push:
+    direction: input
+  reset:
+    direction: input
+  tick:
+    direction: input
+  tock:
+    direction: input
+machines:
+  - machine_id: enabled_events
+    version: 1
+    root:
+      type: composite
+      initial: {transition_to: active}
+      states:
+        active:
+          type: orthogonal
+          on_events:
+            reset: {transition_to: active}
+          regions:
+            - type: composite
+              initial: {transition_to: locked}
+              states:
+                locked:
+                  on_events:
+                    coin: {transition_to: unlocked, guard: "event.payload.amount >= 100"}
+                    env: {transition_to: locked}
+                unlocked:
+                  on_events:
+                    push: {transition_to: locked}
+            - type: composite
+              initial: {transition_to: red}
+              states:
+                red:
+                  on_events:
+                    tick: {transition_to: green}
+                green:
+                  on_events:
+                    tock: {transition_to: red}
+                    error: {transition_to: green}

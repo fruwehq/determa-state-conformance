@@ -1,2 +1,2 @@
 title: a machine that violates its declared contract fails validation
-static: { valid: false }
+static: {valid: false}

@@ -1,12 +1,12 @@
 title: resolution passes through chained choices (choice -> choice) to a real state
 steps:
-  - send: { event: go, payload: { n: 7 } }    # c1 else -> c2 else -> positive
-    expect: { config: [positive] }
-  - send: { event: reset }
-    expect: { config: [start] }
-  - send: { event: go, payload: { n: 0 } }    # c1 else -> c2 (n==0) -> zero
-    expect: { config: [zero] }
-  - send: { event: reset }
-    expect: { config: [start] }
-  - send: { event: go, payload: { n: -3 } }   # c1 (n<0) -> negative
-    expect: { config: [negative] }
+  - send: {event: go, payload: {n: 7}}        # c1 else -> c2 else -> positive
+    expect: {config: [positive]}
+  - send: {event: reset}
+    expect: {config: [start]}
+  - send: {event: go, payload: {n: 0}}        # c1 else -> c2 (n==0) -> zero
+    expect: {config: [zero]}
+  - send: {event: reset}
+    expect: {config: [start]}
+  - send: {event: go, payload: {n: -3}}       # c1 (n<0) -> negative
+    expect: {config: [negative]}

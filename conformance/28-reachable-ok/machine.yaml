@@ -1,10 +1,18 @@
-id: reachable
-events: { go: {} }
-top:
-  initial: { transition_to: outer }
-  states:
-    outer:                                   # composite; its child is reached via initial only
-      initial: { transition_to: inner }
+format: 1
+namespace: conformance.case_28_reachable_ok
+events:
+  go:
+    direction: input
+machines:
+  - machine_id: reachable
+    version: 1
+    root:
+      type: composite
+      initial: {transition_to: outer}
       states:
-        inner: { on_events: { go: { transition_to: fin } } }
-        fin: { type: final }                 # final reached via a transition
+        outer:                               # composite; its child is reached via initial only
+          type: composite
+          initial: {transition_to: inner}
+          states:
+            inner: {on_events: {go: {transition_to: fin}}}
+            fin: {type: final}               # final reached via a transition

@@ -1,17 +1,24 @@
-id: bubbling
+format: 1
+namespace: conformance.case_02_hierarchy_bubbling
 events:
-  tick: {}
-  reset: {}
-top:
-  initial: { transition_to: outer }
-  states:
-    outer:
+  tick:
+    direction: input
+  reset:
+    direction: input
+machines:
+  - machine_id: bubbling
+    version: 1
+    root:
       type: composite
-      initial: { transition_to: a }
-      on_events:
-        reset: { transition_to: outer }   # handled at the composite, not the leaf
+      initial: {transition_to: outer}
       states:
-        a:
+        outer:
+          type: composite
+          initial: {transition_to: a}
           on_events:
-            tick: { transition_to: b }
-        b: {}                              # b has no handler for reset
+            reset: {transition_to: outer} # handled at the composite, not the leaf
+          states:
+            a:
+              on_events:
+                tick: {transition_to: b}
+            b: {}                          # b has no handler for reset

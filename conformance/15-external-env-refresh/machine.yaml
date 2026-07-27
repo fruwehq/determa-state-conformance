@@ -1,19 +1,25 @@
-id: extenv
+format: 1
+namespace: conformance.case_15_external_env_refresh
 events:
-  noop: {}
-top:
-  esvs:
-    token:   { type: string, external: true }   # host-seeded, read-only, retained
-    applied: { type: string, init: null }
-  on_events:
-    env:                                          # reserved: host posts on external change
-      - guard: "event.payload.changed.token != token"
-        transition_to: reconfiguring
-  initial: { transition_to: running }
-  states:
-    running:
-      entry: [ { assign: { applied: "token" } } ]
-    reconfiguring:
-      entry:
-        - refresh: { only: [token] }              # adopt the changed external value
-        - assign: { applied: "token" }
+  noop:
+    direction: input
+machines:
+  - machine_id: extenv
+    version: 1
+    root:
+      type: composite
+      variables:
+        token: {type: string, external: true}   # host-seeded, read-only, retained
+        applied: {type: string, init: null}
+      on_events:
+        env:                                      # reserved: host posts on external change
+          - guard: "event.payload.changed.token != token"
+            transition_to: reconfiguring
+      initial: {transition_to: running}
+      states:
+        running:
+          entry: [assign: {applied: "token"}]
+        reconfiguring:
+          entry:
+            - refresh: {only: [token]}            # adopt the changed external value
+            - assign: {applied: "token"}

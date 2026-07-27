@@ -1,2 +1,2 @@
 title: a choice without a default (else) branch is rejected at load
-static: { valid: false }
+static: {valid: false}

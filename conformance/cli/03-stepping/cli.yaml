@@ -3,7 +3,7 @@ title: step-by-step execution + introspection — manual mode, send/inspect/step
 # manual mode makes `send` enqueue without processing; `inspect` shows the pending
 # queue; `step` advances exactly one RTC step. `stream` is compared structurally.
 steps:
-  - run: [run, -]
+  - run: [run, '-']
     stdin:
       - [new, t1, machine.yaml]
       - [mode, manual]
@@ -14,9 +14,11 @@ steps:
     expect:
       exit: 0
       stream:
-        - { ok: true, exit: 0, result: { instance: t1, definition: "turnstile@1", status: active, config: [locked], esvs: { fare: 50 } } }
-        - { ok: true, exit: 0, result: { mode: manual } }
-        - { ok: true, exit: 0, result: { instance: t1, status: active, config: [locked] } }
-        - { ok: true, exit: 0, result: { instance: t1, status: active, config: [locked], queue: [{ type: coin }] } }
-        - { ok: true, exit: 0, result: { instance: t1, status: active, config: [unlocked] } }
-        - { ok: true, exit: 0, result: { mode: auto } }
+        - {ok: true, exit: 0, result: {instance: t1, definition: "turnstile@1", status: active,
+              config: [locked], variables: {fare: 50}}}
+        - {ok: true, exit: 0, result: {mode: manual}}
+        - {ok: true, exit: 0, result: {instance: t1, status: active, config: [locked]}}
+        - {ok: true, exit: 0, result: {instance: t1, status: active, config: [locked], queue: [type:
+                    coin]}}
+        - {ok: true, exit: 0, result: {instance: t1, status: active, config: [unlocked]}}
+        - {ok: true, exit: 0, result: {mode: auto}}

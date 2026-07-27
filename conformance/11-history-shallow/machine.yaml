@@ -1,26 +1,34 @@
-id: shallowhist
+format: 1
+namespace: conformance.case_11_history_shallow
 events:
-  sub: {}
-  pause: {}
-  resume: {}
-top:
-  initial: { transition_to: work }
-  states:
-    work:
+  sub:
+    direction: input
+  pause:
+    direction: input
+  resume:
+    direction: input
+machines:
+  - machine_id: shallowhist
+    version: 1
+    root:
       type: composite
-      history: shallow
-      initial: { transition_to: outer }
-      on_events:
-        pause: { transition_to: paused }
+      initial: {transition_to: work}
       states:
-        outer:
+        work:
           type: composite
-          initial: { transition_to: s1 }
+          history: shallow
+          initial: {transition_to: outer}
+          on_events:
+            pause: {transition_to: paused}
           states:
-            s1:
-              on_events:
-                sub: { transition_to: s2 }
-            s2: {}
-    paused:
-      on_events:
-        resume: { transition_to: work }   # shallow history restores only the direct child
+            outer:
+              type: composite
+              initial: {transition_to: s1}
+              states:
+                s1:
+                  on_events:
+                    sub: {transition_to: s2}
+                s2: {}
+        paused:
+          on_events:
+            resume: {transition_to: work} # shallow history restores only the direct child

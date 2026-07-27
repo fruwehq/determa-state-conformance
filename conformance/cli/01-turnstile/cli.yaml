@@ -2,35 +2,39 @@ title: turnstile via the CLI — validate, new, state, send, list (SPEC §13)
 # Run against a fresh temp store. `json` is compared structurally.
 steps:
   - run: [validate, machine.yaml]
-    expect: { exit: 0 }
+    expect: {exit: 0}
 
   - run: [new, t1, machine.yaml]
-    expect: { exit: 0 }
+    expect: {exit: 0}
 
   - run: [state, t1, --json]
     expect:
       exit: 0
-      json: { instance: t1, definition: "turnstile@1", status: active, config: [locked], esvs: { fare: 50 } }
+      json: {instance: t1, definition: "turnstile@1", status: active, config: [locked], variables: {
+            fare: 50}}
 
   # a coin that covers the fare unlocks; no events are published.
   - run: [send, t1, coin, --payload, "amount=100", --json]
     expect:
       exit: 0
-      json: { instance: t1, definition: "turnstile@1", status: active, config: [unlocked], esvs: { fare: 50 }, published: [] }
+      json: {instance: t1, definition: "turnstile@1", status: active, config: [unlocked], variables: {
+          fare: 50}, published: []}
 
   - run: [list, --json]
     expect:
       exit: 0
       json:
-        - { id: t1, definition: "turnstile@1", parent: null, status: active, config: [unlocked] }
+        - {id: t1, definition: "turnstile@1", parent: null, status: active, config: [unlocked]}
 
   - run: [send, t1, push, --json]
     expect:
       exit: 0
-      json: { instance: t1, definition: "turnstile@1", status: active, config: [locked], esvs: { fare: 50 }, published: [] }
+      json: {instance: t1, definition: "turnstile@1", status: active, config: [locked], variables: {
+            fare: 50}, published: []}
 
   # a coin below the fare is rejected by the guard -> no transition (exit 0, unchanged).
   - run: [send, t1, coin, --payload, "amount=10", --json]
     expect:
       exit: 0
-      json: { instance: t1, definition: "turnstile@1", status: active, config: [locked], esvs: { fare: 50 }, published: [] }
+      json: {instance: t1, definition: "turnstile@1", status: active, config: [locked], variables: {
+            fare: 50}, published: []}

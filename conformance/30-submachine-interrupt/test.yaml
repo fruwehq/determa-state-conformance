@@ -1,5 +1,5 @@
 title: the parent handles an event the submachine does not (interrupt via bubbling)
 steps:
   # `awaiting` does not handle `cancel`; it bubbles to the referencing state.
-  - send: { event: cancel }
-    expect: { config: [cancelled] }
+  - send: {event: cancel}
+    expect: {config: [cancelled]}
