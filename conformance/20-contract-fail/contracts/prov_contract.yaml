@@ -1,6 +1,0 @@
-contract: 1
-id: prov_contract
-requires:
-  events: [configure, make]   # `make` is neither declared nor handled
-  states: [ready]
-  spawns: [worker]            # no spawn action references `worker`

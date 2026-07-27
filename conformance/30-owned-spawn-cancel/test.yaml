@@ -1,0 +1,15 @@
+title: an owner synchronously cancels and disposes its spawned runtime
+steps:
+  - send: { event: start }
+    expect:
+      config: [checkout]
+      owned_instances:
+        payment_reference: { machine_id: payment, status: running, config: [awaiting] }
+
+  - send: { event: cancel_payment }
+    expect:
+      config: [cancelled]
+      owned_instances:
+        payment_reference: { status: disposed }
+      variables:
+        payment_reference: { instance_reference: { machine_id: payment, targetable: false } }

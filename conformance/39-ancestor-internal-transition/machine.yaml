@@ -1,0 +1,39 @@
+format: 1
+namespace: conformance.case_39_ancestor_internal_transition
+events:
+  record:
+    direction: input
+machines:
+  - machine_id: ancestor_internal_transition
+    version: 1
+    root:
+      type: composite
+      variables:
+        trace: { type: list, init: [] }
+      initial: { transition_to: outer }
+      states:
+        outer:
+          type: composite
+          entry:
+            - assign: { trace: "trace + ['enter_outer']" }
+          exit:
+            - assign: { trace: "trace + ['exit_outer']" }
+          initial: { transition_to: inner }
+          on_events:
+            record:
+              action:
+                - assign: { trace: "trace + ['ancestor_action']" }
+          states:
+            inner:
+              type: composite
+              entry:
+                - assign: { trace: "trace + ['enter_inner']" }
+              exit:
+                - assign: { trace: "trace + ['exit_inner']" }
+              initial: { transition_to: leaf }
+              states:
+                leaf:
+                  entry:
+                    - assign: { trace: "trace + ['enter_leaf']" }
+                  exit:
+                    - assign: { trace: "trace + ['exit_leaf']" }

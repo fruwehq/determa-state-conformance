@@ -1,11 +1,15 @@
 format: 1
 namespace: conformance.case_11_history_shallow
 events:
-  sub:
+  switch:
+    direction: input
+  advance:
     direction: input
   pause:
     direction: input
   resume:
+    direction: input
+  restart:
     direction: input
 machines:
   - machine_id: shallowhist
@@ -27,8 +31,16 @@ machines:
               states:
                 s1:
                   on_events:
-                    sub: {transition_to: s2}
-                s2: {}
+                    switch: {transition_to: alternate}
+            alternate:
+              type: composite
+              initial: {transition_to: a1}
+              states:
+                a1:
+                  on_events:
+                    advance: {transition_to: a2}
+                a2: {}
         paused:
           on_events:
-            resume: {transition_to: work} # shallow history restores only the direct child
+            resume: {transition_to: {history: work}}
+            restart: {transition_to: work}

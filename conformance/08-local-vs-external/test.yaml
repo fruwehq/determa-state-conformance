@@ -1,15 +1,15 @@
-title: a local transition does not exit its composite; an external self-transition does
+title: local preserves a composite source while an unmarked descendant target resets it
 # On creation: enter c, then c.initial -> a. trail = [enterC, enterA].
-# (loc/ext are declared on c; from leaf a they bubble up to c.)
+# Both events are declared on c; from leaf a they bubble up to c.
 steps:
   # local c -> c.a: c is NOT exited; only the inner state a is exited and re-entered.
-  - send: {event: loc}
+  - send: { event: local_descendant }
     expect:
       config: [a]
       variables: {trail: [enterC, enterA, exitA, enterA]}
 
-  # external self c -> c.a: c IS exited and re-entered (note exitC/enterC).
-  - send: {event: ext}
+  # Unmarked c -> c.a: c is exited and re-entered (note exitC/enterC).
+  - send: { event: unmarked_descendant }
     expect:
       config: [a]
       variables: {trail: [enterC, enterA, exitA, enterA, exitA, exitC, enterC, enterA]}

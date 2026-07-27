@@ -1,0 +1,8 @@
+title: a declared domain failure is ordinary input rather than an engine fault
+steps:
+  - send: { event: operation_failed, payload: { reason: declined } }
+    expect:
+      status: running
+      disposition: handled
+      config: [recovered]
+      variables: { failure_reason: declined }

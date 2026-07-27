@@ -1,0 +1,17 @@
+title: shallow and deep history restore different depths from equivalent configurations
+steps:
+  - send: { event: advance }
+    expect: { config: [shallow_second] }
+  - send: { event: leave_shallow }
+    expect: { config: [between] }
+  - send: { event: resume_shallow }
+    expect: { config: [shallow_first] }
+
+  - send: { event: enter_deep }
+    expect: { config: [deep_first] }
+  - send: { event: advance }
+    expect: { config: [deep_second] }
+  - send: { event: leave_deep }
+    expect: { config: [after_deep] }
+  - send: { event: resume_deep }
+    expect: { config: [deep_second] }

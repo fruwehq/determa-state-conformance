@@ -1,0 +1,21 @@
+title: local and unmarked strict-descendant transitions have different lifecycle traces
+steps:
+  - send: { event: preserve_source }
+    expect:
+      config: [leaf]
+      variables:
+        trace: [enter_container, enter_leaf, exit_leaf, enter_leaf]
+
+  - send: { event: reset_source }
+    expect:
+      config: [leaf]
+      variables:
+        trace:
+          - enter_container
+          - enter_leaf
+          - exit_leaf
+          - enter_leaf
+          - exit_leaf
+          - exit_container
+          - enter_container
+          - enter_leaf

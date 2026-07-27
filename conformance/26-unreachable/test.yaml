@@ -1,2 +1,2 @@
 title: a state no transition can reach is rejected at load
-static: {valid: false}
+static: { valid: false, error: semantic_validation }

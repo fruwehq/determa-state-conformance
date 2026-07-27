@@ -1,0 +1,20 @@
+title: a proper-ancestor target preserves the ancestor and follows its initial descent
+steps:
+  - send: { event: descend }
+    expect:
+      config: [second]
+      variables:
+        trace: [enter_outer, enter_first, exit_first, enter_second]
+
+  - send: { event: target_ancestor }
+    expect:
+      config: [first]
+      variables:
+        trace:
+          - enter_outer
+          - enter_first
+          - exit_first
+          - enter_second
+          - target_ancestor
+          - exit_second
+          - enter_first

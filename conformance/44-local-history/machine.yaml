@@ -1,0 +1,42 @@
+format: 1
+namespace: conformance.case_44_local_history
+events:
+  replay_panel:
+    direction: input
+machines:
+  - machine_id: local_history
+    version: 1
+    root:
+      type: composite
+      variables:
+        trace: { type: list, init: [] }
+      initial: { transition_to: container }
+      states:
+        container:
+          type: composite
+          entry:
+            - assign: { trace: "trace + ['enter_container']" }
+          exit:
+            - assign: { trace: "trace + ['exit_container']" }
+          initial: { transition_to: panel }
+          on_events:
+            replay_panel:
+              transition_to: { history: container.panel }
+              local: true
+              action:
+                - assign: { trace: "trace + ['replay_panel']" }
+          states:
+            panel:
+              type: composite
+              history: deep
+              entry:
+                - assign: { trace: "trace + ['enter_panel']" }
+              exit:
+                - assign: { trace: "trace + ['exit_panel']" }
+              initial: { transition_to: leaf }
+              states:
+                leaf:
+                  entry:
+                    - assign: { trace: "trace + ['enter_leaf']" }
+                  exit:
+                    - assign: { trace: "trace + ['exit_leaf']" }

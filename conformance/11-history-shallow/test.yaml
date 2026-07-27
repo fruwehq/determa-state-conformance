@@ -1,15 +1,27 @@
-title: shallow history restores only the direct child (which then re-takes its initial)
+title: shallow history restores the direct child while a plain path restarts the composite
 steps:
-  # creation: work -> outer -> s1.
-  - send: {event: sub}            # s1 -> s2
+  - send: {event: switch}         # work.outer.s1 -> work.alternate.a1
     expect:
-      config: [s2]
+      config: [a1]
 
-  - send: {event: pause}          # exit work (records shallow history: direct child = outer)
+  - send: {event: advance}        # alternate.a1 -> alternate.a2
+    expect:
+      config: [a2]
+
+  - send: {event: pause}          # records direct child alternate, not descendant a2
     expect:
       config: [paused]
 
-  # shallow restores `outer`, then outer takes its own initial -> s1 (not the deep s2).
+  # Shallow restores alternate, then alternate.initial enters a1.
   - send: {event: resume}
+    expect:
+      config: [a1]
+
+  - send: {event: pause}
+    expect:
+      config: [paused]
+
+  # A plain target ignores the shallow record and follows work.initial -> outer.s1.
+  - send: {event: restart}
     expect:
       config: [s1]

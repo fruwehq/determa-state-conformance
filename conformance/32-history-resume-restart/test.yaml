@@ -1,0 +1,12 @@
+title: explicit history resumes while a plain composite target restarts
+steps:
+  - send: { event: advance }
+    expect: { config: [second] }
+  - send: { event: pause }
+    expect: { config: [paused] }
+  - send: { event: resume }
+    expect: { config: [second] }
+  - send: { event: pause }
+    expect: { config: [paused] }
+  - send: { event: restart }
+    expect: { config: [first] }

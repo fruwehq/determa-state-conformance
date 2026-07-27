@@ -1,0 +1,11 @@
+title: a value-dependent action fault rolls back the complete step and retains caller ownership
+steps:
+  - send: { event: boom }
+    expect:
+      status: faulted
+      disposition: faulted
+      variables: { value: 7 }
+      emissions: []
+      caller_still_owns_input: true
+      fault:
+        code: action_fault

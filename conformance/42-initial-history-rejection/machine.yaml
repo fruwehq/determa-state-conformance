@@ -1,0 +1,16 @@
+format: 1
+namespace: conformance.case_42_initial_history_rejection
+machines:
+  - machine_id: initial_history_rejection
+    version: 1
+    root:
+      type: composite
+      initial:
+        transition_to: { history: work }
+      states:
+        work:
+          type: composite
+          history: deep
+          initial: { transition_to: leaf }
+          states:
+            leaf: {}

@@ -1,16 +1,18 @@
 title: external variable is seeded once; an env change is reacted to and adopted via refresh
-external: {token: "old"}            # host-seeded external variable on the root
+create:
+  bindings:
+    external: { token: "old" }
 steps:
   # creation: running.entry copied token into applied.
   # an env change to the SAME value -> guard false -> no transition.
-  - send: {event: env, payload: {changed: {token: "old"}}}
+  - send: { event: env, payload: { changed: { token: "old" } } }
     expect:
       config: [running]
-      variables: {token: "old", applied: "old"}
+      variables: { token: "old", applied: "old" }
 
   # an env change to a NEW value -> guard true -> reconfiguring; refresh adopts the
   # new token into the (read-only) external variable, then applied is recomputed.
-  - send: {event: env, payload: {changed: {token: "new"}}}
+  - send: { event: env, payload: { changed: { token: "new" } } }
     expect:
       config: [reconfiguring]
-      variables: {token: "new", applied: "new"}
+      variables: { token: "new", applied: "new" }

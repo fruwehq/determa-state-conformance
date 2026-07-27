@@ -1,0 +1,48 @@
+format: 1
+namespace: conformance.case_30_owned_spawn_cancel
+events:
+  start:
+    direction: input
+  cancel_payment:
+    direction: input
+machines:
+  - machine_id: order
+    version: 1
+    root:
+      type: composite
+      variables:
+        total: { type: int, init: 100 }
+        payment_reference:
+          type: instance_reference
+          machine_id: payment
+          nullable: true
+          init: null
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            start:
+              transition_to: checkout
+              action:
+                - spawn:
+                    machine_id: payment
+                    bindings:
+                      input:
+                        due: "total"
+                    bind_to: payment_reference
+        checkout:
+          on_events:
+            cancel_payment:
+              transition_to: cancelled
+              action:
+                - cancel: { instance: "payment_reference" }
+        cancelled: {}
+  - machine_id: payment
+    version: 1
+    root:
+      type: composite
+      variables:
+        due: { type: int, input: true }
+      initial: { transition_to: awaiting }
+      states:
+        awaiting: {}

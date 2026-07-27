@@ -1,9 +1,9 @@
 format: 1
 namespace: conformance.case_08_local_vs_external
 events:
-  loc:
+  local_descendant:
     direction: input
-  ext:
+  unmarked_descendant:
     direction: input
 machines:
   - machine_id: localext
@@ -20,8 +20,8 @@ machines:
           exit: [assign: {trail: "trail + ['exitC']"}]
           initial: {transition_to: a}
           on_events:
-            loc: {transition_to: c.a, local: true} # local: does not exit/re-enter c
-            ext: {transition_to: c.a}               # external self: exits + re-enters c
+            local_descendant: { transition_to: c.a, local: true }
+            unmarked_descendant: { transition_to: c.a }
           states:
             a:
               entry: [assign: {trail: "trail + ['enterA']"}]

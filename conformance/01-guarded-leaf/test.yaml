@@ -10,7 +10,8 @@ steps:
     expect:
       config: [open]
 
-  # open has no handler for enter -> event discarded, state unchanged.
+  # open has no handler for enter -> core reports unhandled and stores nothing.
   - send: {event: enter, payload: {code: "open-sesame"}}
     expect:
+      disposition: unhandled
       config: [open]

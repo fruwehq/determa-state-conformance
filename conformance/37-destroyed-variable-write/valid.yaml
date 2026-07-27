@@ -1,0 +1,23 @@
+format: 1
+namespace: conformance.case_37_surviving_variable_write
+events:
+  leave:
+    direction: input
+machines:
+  - machine_id: surviving_variable_write
+    version: 1
+    root:
+      type: composite
+      variables:
+        durable_value: { type: int, init: 0 }
+      initial: { transition_to: scoped }
+      states:
+        scoped:
+          variables:
+            transient_value: { type: int, init: 0 }
+          on_events:
+            leave:
+              transition_to: outside
+              action:
+                - assign: { durable_value: "1" }
+        outside: {}

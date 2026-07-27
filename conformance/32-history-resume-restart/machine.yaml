@@ -1,0 +1,33 @@
+format: 1
+namespace: conformance.case_32_history_resume_restart
+events:
+  advance:
+    direction: input
+  pause:
+    direction: input
+  resume:
+    direction: input
+  restart:
+    direction: input
+machines:
+  - machine_id: history_resume_restart
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: flow }
+      states:
+        flow:
+          type: composite
+          history: deep
+          initial: { transition_to: first }
+          on_events:
+            pause: { transition_to: paused }
+          states:
+            first:
+              on_events:
+                advance: { transition_to: second }
+            second: {}
+        paused:
+          on_events:
+            resume: { transition_to: { history: flow } }
+            restart: { transition_to: flow }

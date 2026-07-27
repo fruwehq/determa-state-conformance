@@ -1,0 +1,24 @@
+title: a spawned child completes and notifies its owner through reserved done
+steps:
+  - send: { event: start }
+    expect:
+      config: [idle]
+      variables:
+        child_reference: { instance_reference: { machine_id: child, targetable: true } }
+      owned_instances:
+        child_reference: { machine_id: child, status: running, config: [running] }
+
+  - send: { bound_instance: child_reference, event: go }
+    retain_emissions_as: child_completion
+    expect:
+      owned_instances:
+        child_reference: { status: disposed }
+      emissions:
+        - { event: done, target: owner }
+
+  - deliver: { retained: child_completion, index: 0 }
+    expect:
+      config: [idle]
+      variables:
+        completed_children: 1
+        child_reference: { instance_reference: { machine_id: child, targetable: false } }

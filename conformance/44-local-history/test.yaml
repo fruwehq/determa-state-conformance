@@ -1,0 +1,15 @@
+title: local history targeting preserves the composite source and restores the descendant
+steps:
+  - send: { event: replay_panel }
+    expect:
+      config: [leaf]
+      variables:
+        trace:
+          - enter_container
+          - enter_panel
+          - enter_leaf
+          - replay_panel
+          - exit_leaf
+          - exit_panel
+          - enter_panel
+          - enter_leaf

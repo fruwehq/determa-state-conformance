@@ -1,0 +1,17 @@
+format: 1
+namespace: conformance.case_40_local_false
+events:
+  descend:
+    direction: input
+machines:
+  - machine_id: local_false
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: child }
+      on_events:
+        descend:
+          transition_to: child
+          local: false
+      states:
+        child: {}

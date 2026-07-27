@@ -12,3 +12,11 @@ steps:
   - send: {event: resume}         # deep history restores outer.s2, not the initial s1
     expect:
       config: [s2]
+
+  - send: {event: pause}          # records the same outer.s2 configuration again
+    expect:
+      config: [paused]
+
+  - send: {event: restart}        # a plain path ignores history and follows initial
+    expect:
+      config: [s1]

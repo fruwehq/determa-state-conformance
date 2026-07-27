@@ -1,0 +1,20 @@
+format: 1
+namespace: conformance.case_17_action_fault
+events:
+  boom:
+    direction: input
+machines:
+  - machine_id: action_fault
+    version: 1
+    root:
+      type: composite
+      variables:
+        value: { type: int, init: 7 }
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            boom:
+              action:
+                - assign: { value: "value + 1" }
+                - assign: { value: "value / 0" }

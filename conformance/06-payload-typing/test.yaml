@@ -7,19 +7,19 @@ steps:
       variables: {n: 5}
 
   # wrong type -> rejected at delivery, not enqueued; state unchanged.
-  - send: {event: set, payload: {n: "oops"}}
+  - send: { event: set, payload: { n: "oops" } }
     expect:
-      rejected: true
-      variables: {n: 5}
+      disposition: rejected
+      variables: { n: 5 }
 
   # missing required field -> rejected.
-  - send: {event: set, payload: {}}
+  - send: { event: set, payload: {} }
     expect:
-      rejected: true
-      variables: {n: 5}
+      disposition: rejected
+      variables: { n: 5 }
 
   # undeclared event -> rejected.
-  - send: {event: bogus}
+  - send: { event: bogus }
     expect:
-      rejected: true
-      variables: {n: 5}
+      disposition: rejected
+      variables: { n: 5 }

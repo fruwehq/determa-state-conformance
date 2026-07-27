@@ -1,0 +1,60 @@
+format: 1
+namespace: conformance.case_14_explicit_targets
+events:
+  spawn_two:
+    direction: input
+  ping:
+    direction: input
+  worker_ping:
+    direction: internal
+  pong:
+    direction: internal
+machines:
+  - machine_id: hub
+    version: 1
+    root:
+      type: composite
+      variables:
+        worker_one:
+          type: instance_reference
+          machine_id: worker
+          nullable: true
+          init: null
+        worker_two:
+          type: instance_reference
+          machine_id: worker
+          nullable: true
+          init: null
+        pong_count: { type: int, init: 0 }
+      initial: { transition_to: ready }
+      on_events:
+        pong:
+          action:
+            - assign: { pong_count: "pong_count + 1" }
+      states:
+        ready:
+          on_events:
+            spawn_two:
+              action:
+                - spawn: { machine_id: worker, bind_to: worker_one }
+                - spawn: { machine_id: worker, bind_to: worker_two }
+            ping:
+              action:
+                - send:
+                    event: worker_ping
+                    targets:
+                      - { instance: "worker_one" }
+                      - { instance: "worker_two" }
+  - machine_id: worker
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: ready }
+      states:
+        ready:
+          on_events:
+            worker_ping:
+              action:
+                - send:
+                    event: pong
+                    to: { owner: true }

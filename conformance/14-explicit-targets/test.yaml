@@ -1,0 +1,34 @@
+title: fan-out and replies use explicit nominal targets without subscription broadcast
+steps:
+  - send: { event: spawn_two }
+    expect:
+      owned_instances:
+        worker_one: { machine_id: worker, status: running, config: [ready] }
+        worker_two: { machine_id: worker, status: running, config: [ready] }
+
+  - send: { event: ping }
+    retain_emissions_as: fanout
+    expect:
+      emissions:
+        - { event: worker_ping, target: { bound_instance: worker_one } }
+        - { event: worker_ping, target: { bound_instance: worker_two } }
+
+  - deliver: { retained: fanout, index: 0 }
+    retain_emissions_as: first_reply
+    expect:
+      emissions:
+        - { event: pong, target: owner }
+
+  - deliver: { retained: first_reply, index: 0 }
+    expect:
+      variables: { pong_count: 1 }
+
+  - deliver: { retained: fanout, index: 1 }
+    retain_emissions_as: second_reply
+    expect:
+      emissions:
+        - { event: pong, target: owner }
+
+  - deliver: { retained: second_reply, index: 0 }
+    expect:
+      variables: { pong_count: 2 }

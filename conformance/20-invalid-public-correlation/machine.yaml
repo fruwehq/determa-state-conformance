@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_20_invalid_public_correlation
+events:
+  completion_received:
+    direction: input
+    correlates_to: missing_output
+machines:
+  - machine_id: invalid_public_correlation
+    version: 1
+    root: {}

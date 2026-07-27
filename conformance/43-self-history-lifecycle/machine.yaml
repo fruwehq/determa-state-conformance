@@ -1,0 +1,42 @@
+format: 1
+namespace: conformance.case_43_self_history_lifecycle
+events:
+  set_value:
+    direction: input
+  replay_lifecycle:
+    direction: input
+machines:
+  - machine_id: self_history_lifecycle
+    version: 1
+    root:
+      type: composite
+      variables:
+        trace: { type: list, init: [] }
+      initial: { transition_to: active }
+      states:
+        active:
+          type: composite
+          history: deep
+          variables:
+            ephemeral_value: { type: int, init: 0 }
+          entry:
+            - assign: { trace: "trace + ['enter_active']" }
+          exit:
+            - assign: { trace: "trace + ['exit_active']" }
+          initial: { transition_to: leaf }
+          on_events:
+            replay_lifecycle:
+              transition_to: { history: active }
+              action:
+                - assign: { trace: "trace + ['replay_transition']" }
+          states:
+            leaf:
+              entry:
+                - assign: { trace: "trace + ['enter_leaf']" }
+              exit:
+                - assign: { trace: "trace + ['exit_leaf']" }
+              on_events:
+                set_value:
+                  action:
+                    - assign: { ephemeral_value: "1" }
+                    - assign: { trace: "trace + ['set_value']" }

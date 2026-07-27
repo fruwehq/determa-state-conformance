@@ -1,0 +1,12 @@
+title: removed and noncanonical transition spellings fail structural validation
+static:
+  documents:
+    - file: internal-flag.yaml
+      valid: false
+      error: structural_validation
+    - file: local-false.yaml
+      valid: false
+      error: structural_validation
+    - file: local-without-target.yaml
+      valid: false
+      error: structural_validation

@@ -7,6 +7,8 @@ events:
     direction: input
   resume:
     direction: input
+  restart:
+    direction: input
 machines:
   - machine_id: deephist
     version: 1
@@ -31,4 +33,5 @@ machines:
                 s2: {}
         paused:
           on_events:
-            resume: {transition_to: work} # deep history restores the full nested config
+            resume: {transition_to: {history: work}}
+            restart: {transition_to: work}

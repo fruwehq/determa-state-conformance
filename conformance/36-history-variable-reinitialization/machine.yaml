@@ -1,0 +1,38 @@
+format: 1
+namespace: conformance.case_36_history_variable_reinitialization
+events:
+  advance:
+    direction: input
+  increment:
+    direction: input
+  pause:
+    direction: input
+  resume:
+    direction: input
+machines:
+  - machine_id: history_variable_reinitialization
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: work }
+      states:
+        work:
+          type: composite
+          history: deep
+          variables:
+            attempts: { type: int, init: 10 }
+          initial: { transition_to: first }
+          on_events:
+            pause: { transition_to: paused }
+          states:
+            first:
+              on_events:
+                advance: { transition_to: second }
+            second:
+              on_events:
+                increment:
+                  action:
+                    - assign: { attempts: "attempts + 1" }
+        paused:
+          on_events:
+            resume: { transition_to: { history: work } }

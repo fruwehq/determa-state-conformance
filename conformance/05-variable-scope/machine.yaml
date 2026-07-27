@@ -19,7 +19,7 @@ machines:
         mid:
           type: composite
           variables:
-            x: {type: int, init: 10} # shadows top.x while mid is active
+            x: {type: int, init: 10} # shadows root.x while mid is active
           initial: {transition_to: leaf}
           on_events:
             leave: {transition_to: gone}

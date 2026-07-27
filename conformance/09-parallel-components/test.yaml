@@ -1,0 +1,52 @@
+title: parallel components are isolated and receive only explicitly targeted events
+steps:
+  - send: { event: fanout }
+    retain_emissions_as: fanout
+    expect:
+      config: [processing]
+      emissions:
+        - { event: component_work, target: { component: left } }
+        - { event: component_work, target: { component: right } }
+
+  - deliver: { retained: fanout, index: 0 }
+    expect:
+      components:
+        left: { config: [running], variables: { trace: [left] } }
+        right: { config: [running], variables: { trace: [] } }
+
+  - deliver: { retained: fanout, index: 1 }
+    expect:
+      components:
+        left: { config: [running], variables: { trace: [left] } }
+        right: { config: [running], variables: { trace: [right] } }
+
+  - send: { event: finish_left }
+    retain_emissions_as: finish_left_request
+    expect:
+      emissions:
+        - { event: component_finish, target: { component: left } }
+
+  - deliver: { retained: finish_left_request, index: 0 }
+    expect:
+      components:
+        left: { status: completed }
+        right: { status: running }
+      emissions:
+        - { event: determa.component_completed, target: owner }
+
+  - send: { event: finish_right }
+    retain_emissions_as: finish_right_request
+    expect:
+      emissions:
+        - { event: component_finish, target: { component: right } }
+
+  - deliver: { retained: finish_right_request, index: 0 }
+    retain_emissions_as: completion
+    expect:
+      emissions:
+        - { event: determa.component_completed, target: owner }
+        - { event: done, target: owner }
+
+  - deliver: { retained: completion, index: 1 }
+    expect:
+      config: [finished]
