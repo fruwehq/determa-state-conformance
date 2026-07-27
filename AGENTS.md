@@ -7,10 +7,8 @@ The **language-agnostic conformance suite** — the executable definition of *co
 Determa State behavior. This repo, not any single implementation, is the arbiter (SPEC §2).
 Layout:
 - `conformance/01`–`NN` — **engine** cases: each `<case>/` has `machine.yaml` (the
-  definition(s)) and `test.yaml` (a scenario of `send`/`advance`/… steps + `expect`).
-- `conformance/cli/*` — **CLI** cases: a `cli.yaml` of steps run black-box against the
-  implementation's `determa-state` binary, plus referenced machine files.
-- `conformance/run_cli.py` — the black-box CLI runner.
+  format-1 bundle) and `test.yaml` (a scenario or static validation assertion).
+- Additional bundle files are allowed only when `test.yaml` names them explicitly.
 - `VERSION` — the synchronized spec version this suite targets.
 
 **No CI here.** Correctness is exercised by each implementation's harness, which fetches
@@ -37,16 +35,16 @@ implementation because all are validated against *this* suite. Guards/action val
 - **No AI/assistant attribution** anywhere (commits, PRs, comments, docs).
 - **Conformance-first:** spec text → the case here → implementations. This repo is where a new behavior is pinned executably.
 - **Synchronized SemVer** with spec + impls (currently **0.0.6**).
-- **No abbreviations** in JSON/identifiers (`definition` not `def`); `config`, machine-keywords (`esvs`, `on_events`, …), and `def_id`/`def_version`/`spawn.def` deliberately kept pending a separate migration.
+- **No new abbreviations** in public JSON/identifiers. Format 1 uses `variables`,
+  `machine_id`, `component_id`, and explicit `spawn.machine_id`; established keywords
+  such as `config`, `lang`, `meta`, and `on_events` remain intentional.
 
 ## Running the suite locally
-```sh
-# CLI cases against an installed implementation:
-python conformance/run_cli.py --cmd "determa-state"          # or "python -m determa.state", or a rust binary path
-python conformance/run_cli.py --cmd "determa-state" cli/01-turnstile   # one case
-```
-Engine cases are driven by each implementation's own harness (loads the definitions, runs
-each `test.yaml` to quiescence, checks `expect`).
+
+Engine cases are driven by each implementation's own harness. A `send` performs one
+core dispatch. Returned emissions are delivered only through an explicit later
+`deliver` step, so the suite fixes an input trace without standardizing a queue plugin.
+There is no standalone runner or CI in this repository.
 
 ## Releasing
 Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that tag
@@ -54,4 +52,4 @@ Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that 
 
 ## Pointers
 - Coverage table + case index: `README.md`.
-- The runner: `conformance/run_cli.py`. The spec it targets: `determa-state-spec/SPEC.md`.
+- Fixture conventions: `README.md`. The spec it targets: `determa-state-spec/SPEC.md`.

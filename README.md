@@ -1,62 +1,121 @@
 # Determa State — conformance suite
 
-The **language-agnostic conformance suite** for the
-[**Determa State**](https://github.com/fruwehq/determa-state-spec) statechart engine.
+The language-agnostic executable correctness target for
+[Determa State](https://github.com/fruwehq/determa-state-spec).
 
-This repository — not any single implementation — is the normative definition of
-**correct behavior**. The prose specification lives in
-[`fruwehq/determa-state-spec`](https://github.com/fruwehq/determa-state-spec) (`SPEC.md`, the JSON Schema, and
-examples); this repository holds the **executable correctness target** that every
-implementation (e.g. [`fruwehq/determa-state-python`](https://github.com/fruwehq/determa-state-python))
-must pass. Where prose and the suite disagree, **the suite wins** (SPEC §2) and a bug is
-filed against the spec.
+This suite targets the pre-release integer `format: 1` grammar. The prose, JSON Schema,
+and examples live in `determa-state-spec`; this repository pins portable behavior that
+every implementation must reproduce. Where normative prose and a core behavior case
+disagree, the case wins and the specification must be corrected.
 
-> **Format 1 migration status:** the current fixture corpus targets the pre-format-1
-> grammar and is not authoritative for format 1 until the migration tracked by issue
-> #21 lands. During that interval, format-1 prose/schema conflicts must be resolved
-> against the specification rather than these legacy fixtures.
+Host and plugin behavior deliberately excluded by format 1 is not made normative merely
+by this repository. Queue delivery policy, timers, dead letters, stores, CLI shapes, and
+other host surfaces remain outside core conformance.
 
-Implementations consume this repo as a **pinned git submodule** (single source of truth,
-no copy-paste drift).
+Migration note: repository revisions before issue #21 used the pre-format-1 grammar and
+are not authoritative for format 1. The authority statement above applies to the
+migrated suite.
 
 ## Layout
-- `conformance/01`–`30` — **engine** cases (SPEC §9). Each `<case>/` has:
-  - `machine.yaml` (or versioned `v*.yaml` for migration) — the definition(s),
-  - `test.yaml` — the scenario (`steps:` of `send`/`advance`/`upgrade` + `expect`),
-  - `contracts/*.yaml` — optional, for contract cases.
-- `conformance/cli/<case>` — **CLI** cases (SPEC §13.6): a `cli.yaml` of steps plus the
-  referenced `machine.yaml`, covering the standard CLI surface and batch/streaming mode.
-- `conformance/run_cli.py` — the **black-box CLI runner**: it shells out to any
-  implementation's `determa-state` binary as a subprocess (so it is language-agnostic).
 
-## Running
+- `conformance/<number>-<name>/machine.yaml` — the primary format-1 bundle.
+- `conformance/<number>-<name>/test.yaml` — a scenario or static-validation assertion.
+- Additional bundle files in a case are named explicitly by its `test.yaml`.
+- `VERSION` — the synchronized specification version, currently `0.0.6`.
 
-**Engine cases** are driven through each implementation's own harness (it loads the
-definitions, creates the root, runs each `test.yaml` step to quiescence, then checks
-`expect`). See SPEC §9 for the format.
+There is no repository CI or standalone runner. Each implementation's harness must load
+and execute every retained case; implementation work follows this suite in a separate
+pull request.
 
-**CLI cases** run black-box against the built/installed binary:
-```sh
-python conformance/run_cli.py --cmd "determa-state"            # or "python -m determa.state", "node …"
-python conformance/run_cli.py --cmd "determa-state" 01-turnstile   # one case
+## Harness trace
+
+Unless a case says otherwise, the harness creates the first machine in `machine.yaml`.
+Optional `create.bindings` supplies the exact `input` and `external` maps.
+
+Each `send` is one host call to the root or to `bound_instance`. The harness supplies a
+stable unique `event_id` when the fixture omits it. A send invokes exactly one core
+`dispatch`; it does not recursively deliver returned emissions.
+
+`retain_emissions_as` names the ordered emissions returned by that call. A later
+`deliver: { retained, index }` presents that exact immutable internal envelope to its
+already-resolved target. This records a fixed delivery trace without imposing a queue
+plugin's ordering, retry, acknowledgement, or retention policy.
+
+An `expect` map compares only the fields it names. Common fields are `status`,
+`disposition`, `config`, `variables`, `history`, `emissions`, `components`,
+`owned_instances`, and `fault`. `caller_still_owns_input` verifies that a faulting
+envelope remains caller-owned rather than becoming engine queue or dead-letter state.
+
+Static cases use either:
+
+```yaml
+static: { valid: false, error: destroyed_variable_write }
 ```
-`--cmd` is the command that invokes the implementation's CLI (shell-quoted); optional
-positional case names restrict the run. Exit code is non-zero on any failure.
+
+or a `static.documents` list naming multiple files. `error` is the exact load-time code;
+`structural_validation` means rejection by the JSON Schema before semantic validation.
 
 ## Coverage
-| cases | covers |
+
+| case | portable behavior |
 |---|---|
-| 01–04 | guards, ancestor handling, initial-transition actions, deferred-set |
-| 05–08 | esvs scope/shadow/re-init, typed payloads, transition kinds + ordering |
-| 09–12 | orthogonal regions + `done`, shallow/deep history, first-match-wins |
-| 13–15 | spawn + directed/subscribed publish + scope, `external`/`env`/`refresh` |
-| 16–20 | timers, faults + dead-letter, static contracts (pass/fail) |
-| 21–22 | snapshot round-trip, safe-point migration |
-| 23–25 | choice pseudostates — dynamic branch, chained choices, no-`else` rejected (§5.5.1) |
-| 26–28 | static validation — unreachable state, dead branch, reachable-ok (§2) |
-| 29–30 | submachine states — synchronous reuse + completion, parent interrupt (§5.6.1) |
-| 31 | enabled-events introspection from active configuration (§14) |
-| cli/01–03 | CLI surface + JSON shapes, batch/streaming mode, and manual stepping/inspection (§13.6/§13.7/§14) |
+| 01 | guarded leaf dispatch and unhandled disposition (§6) |
+| 02 | ancestor handling and composite self-reset (§6) |
+| 03 | initial-transition actions (§4, §6) |
+| 04 | intentionally absent: deferral is queue-plugin policy (§11) |
+| 05 | scoped variables, shadowing, destruction, and reinitialization (§4) |
+| 06 | input payload validation (§4, §6) |
+| 07 | internal reaction versus transition exit/entry (§6) |
+| 08 | local preservation versus unmarked descendant reset (§6) |
+| 09 | isolated parallel components and explicit routing (§7) |
+| 10 | deep-history restoration versus plain restart (§6) |
+| 11 | shallow-history restoration versus plain restart (§6) |
+| 12 | ordered guarded transitions (§6) |
+| 13 | owned spawn, natural completion, and reserved `done` (§7) |
+| 14 | explicit multi-target send and owner reply (§4, §7) |
+| 15 | external creation binding plus reserved `env`/`refresh` (§4, §6) |
+| 16 | external scheduling request and correlated elapsed input (§11) |
+| 17 | atomic action-fault rollback and caller-owned input (§10) |
+| 18 | declared domain failure as ordinary input (§10) |
+| 19 | valid public output/correlated-input contract (§4) |
+| 20 | unresolved public correlation rejection (§5) |
+| 21 | intentionally absent: no portable snapshot wire format |
+| 22 | intentionally absent: definition migration is unsupported |
+| 23–25 | dynamic/chained choices and missing-default rejection (§5, §6) |
+| 26–28 | unreachable state, dead branch, and reachable positive validation (§5) |
+| 29 | owned spawn with typed input binding and completion (§7) |
+| 30 | synchronous owned-instance cancellation (§7) |
+| 31 | intentionally absent: no standardized enabled-event inspection shape |
+| 32 | explicit history resume versus plain restart (§6) |
+| 33 | history capture only when the composite exits (§6) |
+| 34 | first-entry history fallback (§6) |
+| 35 | shallow versus deep restoration from equivalent configurations (§6) |
+| 36 | history restores configuration, not destroyed variable values (§6) |
+| 37 | destroyed variable write rejection and surviving-scope positive (§5) |
+| 38 | destroyed reference binding rejection (§5) |
+| 39 | ancestor-selected internal transition with no exit/entry (§6) |
+| 40 | structural rejection of removed/noncanonical transition shapes (§4) |
+| 41 | local and unmarked descendant lifecycle traces (§6) |
+| 42 | initial-transition history-target rejection (§4) |
+| 43 | self-history lifecycle replay (§6) |
+| 44 | local history targeting (§6) |
+| 45 | proper-ancestor target bounds (§6) |
+
+## Deliberate format-1 boundaries
+
+- Parallel behavior uses isolated components; regions and implicit broadcast do not
+  exist.
+- Deferral, discard, retry, acknowledgement, and dead-letter policy belong to a queue
+  plugin. The core stores no unhandled or faulting envelope.
+- Time behavior uses declared external requests and later correlated inputs. The core has
+  no clock or timer.
+- Separate named contracts are replaced by bundle public event declarations.
+- Submachines are replaced by explicit lifecycle-bound components or owned spawning.
+- Portable snapshots, definition migration, package imports, and version resolution are
+  unsupported.
+- Store protocols, CLI JSON, queue inspection, enabled-event lists, and visualization
+  output are implementation/host surfaces rather than portable executable behavior.
 
 ## License
+
 MIT — see [LICENSE](LICENSE).

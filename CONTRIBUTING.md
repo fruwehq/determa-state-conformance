@@ -1,66 +1,48 @@
 # Contributing to Determa State conformance
 
-**determa-state-conformance** is the **language-agnostic conformance suite** — the executable
-correctness target for the Determa State statechart engine. The prose specification lives in
-[`fruwehq/determa-state-spec`](https://github.com/fruwehq/determa-state-spec) (`SPEC.md`, the JSON Schema, and
-examples); this repository is the **normative** definition of correct behavior, and the
-Python reference implementation ([`fruwehq/determa-state-python`](https://github.com/fruwehq/determa-state-python))
-is correct iff it passes. There is **no CI here**; implementations consume this repo as a
-pinned source of truth.
+This repository is the language-agnostic executable correctness target for the
+format-1 Determa State specification.
 
-## What lives here
+## Adding or changing a case
 
-- `conformance/01`–`NN` — **engine** cases (SPEC §9). Each `<case>/` has:
-  - `machine.yaml` (or versioned `v*.yaml` for migration) — the definition(s),
-  - `test.yaml` — the scenario (`steps:` of `send`/`advance`/`upgrade` + `expect`),
-  - `contracts/*.yaml` — optional, for contract-validation cases.
-- `conformance/cli/<case>` — **CLI** cases (SPEC §13.6): a `cli.yaml` of steps plus the
-  referenced `machine.yaml`.
-- `conformance/run_cli.py` — the **black-box CLI runner**.
+Add one narrowly focused directory under `conformance/`:
 
-## Adding a case
+- `machine.yaml` contains the primary format-1 bundle;
+- `test.yaml` contains the execution trace or static-validation assertion; and
+- additional bundle documents are allowed only when `test.yaml` names them explicitly.
 
-**Engine case (SPEC §9):** add `conformance/<case>/machine.yaml` (one or more
-`---`-separated definitions; the first is root) and `conformance/<case>/test.yaml` with
-the scenario and `expect` blocks. Reuse a minimal machine fixture where possible.
+Every host-facing event belongs in bundle `events` with `direction: input` or
+`direction: output`. Machine-local events are private and `internal`. Internal delivery
+must be explicit: retain a returned emission and deliver that exact envelope in a later
+step rather than assuming broadcast or recursive queue processing.
 
-**CLI case (SPEC §13.6):** add `conformance/cli/<case>/` with a `cli.yaml` (and the
-referenced `machine.yaml`). Each step is an argv array plus `expect:` (`exit:`,
-`json:`/`stdout:`, or the batch `stdin:`/`expect.stream:` form of §13.7). Remember argv
-tokens are **strings** — quote numeric flags (e.g. `--steps, "1"`).
+Use the exact error code for static semantic rejection. A structural rejection uses
+`structural_validation`. Ordering-sensitive behavior should make entry, exit, and
+transition actions observable through a trace variable.
 
-## Running the CLI runner
+## Validation
 
-```sh
-python conformance/run_cli.py --cmd "determa-state"                 # or "python -m determa.state", "node …"
-python conformance/run_cli.py --cmd "python -m determa.state" 03-stepping   # one case
-```
+Before opening a pull request:
 
-`--cmd` is the command that invokes the implementation's CLI (shell-quoted); optional
-positional case names restrict the run. The runner shells out as a **subprocess**, so it
-is truly language-agnostic and catches packaging/entry-point regressions. Exit code is
-non-zero on any failure.
+1. parse every YAML file as YAML 1.2;
+2. validate every positive bundle against the current specification schema;
+3. confirm structural-negative documents fail that schema;
+4. check semantic-negative fixtures name the exact expected error;
+5. check all retained public vocabulary is format 1;
+6. keep `VERSION` synchronized and unchanged unless a release is explicitly authorized;
+   and
+7. run `git diff --check`.
+
+There is no CI or standalone runner here. Engine cases are executed by each
+implementation's harness after the specification and conformance changes land.
 
 ## Workflow
 
-1. Branch from `main`, open a Pull Request, and **squash-merge** — `main` stays linear.
-2. Resolve all review threads before merging.
-3. **Never push to `main` directly.**
-4. **No AI/assistant attribution anywhere** — not in commits, PR bodies, comments, or
-   docs (no `Co-Authored-By:`, no "Generated with…"). Commits and PRs read as the
-   author's own work.
-5. A new case should land **after** the spec text it pins (link the `fruwehq/determa-state-spec`
-   issue/PR) and before, or alongside, the implementation that must pass it.
-
-## Versioning
-
-This repository carries the synchronized version in `VERSION` (currently `0.0.1`); this
-repo's version tracks the spec version in lockstep.
-
-> determa-state-spec, determa-state-conformance, and determa-state-python share one synchronized SemVer version
-> (currently pre-1.0 `0.0.x`). A release tags all three `vX.Y.Z` in lockstep; an
-> implementation declares "implements Determa State spec vX.Y.Z" and pins the conformance suite
-> at that tag.
+1. Create one issue and one branch for one pull request.
+2. Branch from `main`; never push directly to protected `main`.
+3. Land specification text first, conformance second, and implementations last.
+4. Squash-merge only after every review thread is resolved.
+5. Do not include assistant attribution in commits, pull requests, comments, or docs.
 
 ## License
 
