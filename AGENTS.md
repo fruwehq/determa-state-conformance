@@ -4,10 +4,14 @@ Guidance for AI/coding agents working in this repository. (Tool-agnostic; not sp
 
 ## What this repo is
 The **language-agnostic conformance suite** — the executable definition of *correct*
-Determa State behavior. This repo, not any single implementation, is the arbiter (SPEC §2).
+Determa State behavior. The core tier in this repo, not any single implementation, is
+the arbiter (SPEC §2).
 Layout:
-- `conformance/01`–`NN` — **engine** cases: each `<case>/` has `machine.yaml` (the
-  format-1 bundle) and `test.yaml` (a scenario or static validation assertion).
+- `conformance/core/01`–`NN` — **core engine** cases: each `<case>/` has
+  `machine.yaml` (the format-1 bundle) and `test.yaml` (a scenario or static
+  validation assertion).
+- `conformance/profiles/<profile>/` — optional non-core compatibility surfaces. They
+  bind only implementations that declare the profile and never override core prose.
 - Additional bundle files are allowed only when `test.yaml` names them explicitly.
 - `VERSION` — the synchronized spec version this suite targets.
 
@@ -41,10 +45,14 @@ implementation because all are validated against *this* suite. Guards/action val
 
 ## Running the suite locally
 
-Engine cases are driven by each implementation's own harness. A `send` performs one
-core dispatch. Returned emissions are delivered only through an explicit later
-`deliver` step, so the suite fixes an input trace without standardizing a queue plugin.
-There is no standalone runner or CI in this repository.
+Core cases are driven by each implementation's own harness. A `send` performs one core
+dispatch. Driver-only `capture_emissions_as` and `deliver` steps fix the input trace
+without standardizing a queue plugin or requiring equivalent public engine APIs.
+Assertions in `expect`, including `caller_still_owns_input`, are normative. There is no
+standalone core runner or CI in this repository.
+
+The non-normative CLI profile runner is retained at
+`conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.
 
 ## Releasing
 Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that tag

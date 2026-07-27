@@ -5,7 +5,7 @@ format-1 Determa State specification.
 
 ## Adding or changing a case
 
-Add one narrowly focused directory under `conformance/`:
+Add one narrowly focused core directory under `conformance/core/`:
 
 - `machine.yaml` contains the primary format-1 bundle;
 - `test.yaml` contains the execution trace or static-validation assertion; and
@@ -13,8 +13,13 @@ Add one narrowly focused directory under `conformance/`:
 
 Every host-facing event belongs in bundle `events` with `direction: input` or
 `direction: output`. Machine-local events are private and `internal`. Internal delivery
-must be explicit: retain a returned emission and deliver that exact envelope in a later
-step rather than assuming broadcast or recursive queue processing.
+must be explicit: capture a returned emission and deliver that exact envelope in a later
+step rather than assuming broadcast or recursive queue processing. The capture/delivery
+vocabulary is test-driver mechanics, not an implementation API. Fields asserted under
+`expect` are normative core behavior.
+
+Optional host surfaces belong under `conformance/profiles/<profile>/`. Profile content
+binds only implementations that declare support for it and cannot override core prose.
 
 Use the exact error code for static semantic rejection. A structural rejection uses
 `structural_validation`. Ordering-sensitive behavior should make entry, exit, and
