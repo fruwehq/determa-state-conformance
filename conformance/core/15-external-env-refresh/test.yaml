@@ -8,11 +8,17 @@ steps:
   - send: { event: env, payload: { changed: { token: "old" } } }
     expect:
       config: [running]
-      variables: { token: "old", applied: "old" }
+      variables:
+        token: "old"
+        applied: "old"
+        trace: [enter_root]
 
   # an env change to a NEW value -> guard true -> reconfiguring; refresh adopts the
   # new token into the (read-only) external variable, then applied is recomputed.
   - send: { event: env, payload: { changed: { token: "new" } } }
     expect:
       config: [reconfiguring]
-      variables: { token: "new", applied: "new" }
+      variables:
+        token: "new"
+        applied: "new"
+        trace: [enter_root]

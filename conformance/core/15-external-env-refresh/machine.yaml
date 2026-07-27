@@ -8,6 +8,11 @@ machines:
       variables:
         token: { type: string, external: true }
         applied: { type: string, init: "" }
+        trace: { type: list, init: [] }
+      entry:
+        - assign: { trace: "trace + ['enter_root']" }
+      exit:
+        - assign: { trace: "trace + ['exit_root']" }
       on_events:
         env:
           - guard: "event.payload.changed.token != token"

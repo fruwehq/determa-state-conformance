@@ -1,0 +1,17 @@
+format: 1
+namespace: conformance.case_46_root_history_target
+events:
+  resume:
+    direction: input
+machines:
+  - machine_id: root_history_target
+    version: 1
+    root:
+      type: composite
+      history: deep
+      initial: { transition_to: active }
+      states:
+        active:
+          on_events:
+            resume:
+              transition_to: { history: root }

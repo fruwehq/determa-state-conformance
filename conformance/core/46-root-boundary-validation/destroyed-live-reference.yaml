@@ -1,0 +1,32 @@
+format: 1
+namespace: conformance.case_46_destroyed_live_reference
+events:
+  spawn_worker:
+    direction: input
+  leave:
+    direction: input
+machines:
+  - machine_id: destroyed_live_reference
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: holding }
+      states:
+        holding:
+          variables:
+            worker_reference:
+              type: instance_reference
+              machine_id: worker
+              nullable: true
+              init: null
+          on_events:
+            spawn_worker:
+              action:
+                - spawn:
+                    machine_id: worker
+                    bind_to: worker_reference
+            leave: { transition_to: outside }
+        outside: {}
+  - machine_id: worker
+    version: 1
+    root: {}

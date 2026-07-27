@@ -1,0 +1,17 @@
+title: root re-entry and destroyed runtime destinations are rejected at load
+static:
+  documents:
+    - file: root-self-transition.yaml
+      valid: false
+      error: root_reentry
+    - file: root-history-target.yaml
+      valid: false
+      error: root_reentry
+    - file: destroyed-refresh.yaml
+      valid: false
+      error: destroyed_variable_write
+    - file: destroyed-live-reference.yaml
+      valid: false
+      error: destroyed_live_instance_reference
+    - file: cancel-before-exit.yaml
+      valid: true

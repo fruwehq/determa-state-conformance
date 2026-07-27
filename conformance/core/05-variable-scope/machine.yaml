@@ -8,7 +8,7 @@ events:
   back:
     direction: input
 machines:
-  - machine_id: esvscope
+  - machine_id: variable_scope
     version: 1
     root:
       type: composite

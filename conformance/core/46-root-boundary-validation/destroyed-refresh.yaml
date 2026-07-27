@@ -1,0 +1,18 @@
+format: 1
+namespace: conformance.case_46_destroyed_refresh
+machines:
+  - machine_id: destroyed_refresh
+    version: 1
+    root:
+      type: composite
+      variables:
+        token: { type: string, external: true }
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            env:
+              transition_to: complete
+              action:
+                - refresh: { only: [token] }
+        complete: { type: final }
