@@ -11,6 +11,11 @@ implementation (e.g. [`fruwehq/determa-state-python`](https://github.com/fruwehq
 must pass. Where prose and the suite disagree, **the suite wins** (SPEC §2) and a bug is
 filed against the spec.
 
+> **Format 1 migration status:** the current fixture corpus targets the pre-format-1
+> grammar and is not authoritative for format 1 until the migration tracked by issue
+> #21 lands. During that interval, format-1 prose/schema conflicts must be resolved
+> against the specification rather than these legacy fixtures.
+
 Implementations consume this repo as a **pinned git submodule** (single source of truth,
 no copy-paste drift).
 
