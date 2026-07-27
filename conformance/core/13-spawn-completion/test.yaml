@@ -9,14 +9,14 @@ steps:
         child_reference: { machine_id: child, status: running, config: [running] }
 
   - send: { bound_instance: child_reference, event: go }
-    retain_emissions_as: child_completion
+    capture_emissions_as: child_completion
     expect:
       owned_instances:
         child_reference: { status: disposed }
       emissions:
         - { event: done, target: owner }
 
-  - deliver: { retained: child_completion, index: 0 }
+  - deliver: { captured: child_completion, index: 0 }
     expect:
       config: [idle]
       variables:
