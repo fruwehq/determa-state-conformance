@@ -1,0 +1,71 @@
+format: 1
+namespace: conformance.case_83_contained_dynamic_instance_send
+events:
+  spawn_router:
+    direction: input
+  build_route:
+    direction: input
+  route:
+    direction: internal
+  routed:
+    direction: internal
+  route_observed:
+    direction: output
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      variables:
+        router_reference:
+          type: instance_reference
+          machine_id: router
+          nullable: true
+          init: null
+      initial: { transition_to: ready }
+      states:
+        ready:
+          on_events:
+            spawn_router:
+              action:
+                - spawn:
+                    machine_id: router
+                    bind_to: router_reference
+  - machine_id: router
+    root:
+      type: composite
+      variables:
+        worker_reference:
+          type: instance_reference
+          machine_id: worker
+          nullable: true
+          init: null
+      initial: { transition_to: ready }
+      states:
+        ready:
+          on_events:
+            build_route:
+              action:
+                - spawn:
+                    machine_id: worker
+                    bind_to: worker_reference
+                - send:
+                    event: route
+                    to: { instance: "worker_reference" }
+            routed:
+              action:
+                - send:
+                    event: route_observed
+                    to: { external: true }
+                    correlation_id: "'contained-route'"
+  - machine_id: worker
+    root:
+      type: composite
+      initial: { transition_to: waiting }
+      states:
+        waiting:
+          on_events:
+            route:
+              action:
+                - send:
+                    event: routed
+                    to: { owner: true }

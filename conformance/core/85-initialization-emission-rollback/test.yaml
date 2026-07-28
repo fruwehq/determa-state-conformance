@@ -1,0 +1,52 @@
+title: failed contained initialization rolls back author intents and output sequence
+steps:
+  - send: { event: start }
+    expect:
+      status: running
+      config: [processing]
+      components:
+        faulty:
+          status: faulted
+          config: []
+          variables: {}
+        healthy:
+          status: running
+          config: [waiting]
+      emissions:
+        - event: determa.component_failed
+          target: owner
+          payload:
+            component_id: faulty
+            fault:
+              code: action_fault
+        - event: audit
+          target: external
+          sequence: 0
+          correlation_id: initialization-rollback
+          payload: { label: healthy_component }
+
+  - send: { event: spawn_faulty }
+    expect:
+      status: running
+      variables:
+        child_reference:
+          instance_reference: { machine_id: faulty_child, targetable: false }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: faulty_child
+          status: faulted
+          config: []
+          variables: {}
+      emissions:
+        - event: determa.spawned_instance_failed
+          target: owner
+          payload:
+            machine_id: faulty_child
+            machine_version: 1
+            fault:
+              code: action_fault
+        - event: audit
+          target: external
+          sequence: 1
+          correlation_id: initialization-rollback
+          payload: { label: owner_after_spawn_fault }

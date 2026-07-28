@@ -1,0 +1,134 @@
+title: malformed fixed lifecycle payloads reject before owner handler selection
+steps:
+  - send: { event: enter_faulting }
+    capture_emissions_as: component_failure
+    expect:
+      variables: { handled_count: 0 }
+      emissions:
+        - { event: determa.component_failed, target: owner }
+
+  - deliver:
+      captured: component_failure
+      index: 0
+      replace: { payload: {} }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      variables: { handled_count: 0 }
+      emissions: []
+
+  - send: { event: leave }
+    expect:
+      config: [idle]
+      variables: { handled_count: 0 }
+
+  - send: { event: enter_completing }
+    expect:
+      config: [completing]
+      variables: { handled_count: 0 }
+
+  - send: { event: finish_first }
+    capture_emissions_as: finish_first_request
+    expect:
+      emissions:
+        - { event: component_finish, target: { component: first } }
+
+  - deliver: { captured: finish_first_request, index: 0 }
+    capture_emissions_as: first_completion
+    expect:
+      emissions:
+        - { event: determa.component_completed, target: owner }
+
+  - deliver:
+      captured: first_completion
+      index: 0
+      replace: { payload: {} }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      variables: { handled_count: 0 }
+      emissions: []
+
+  - send: { event: finish_second }
+    capture_emissions_as: finish_second_request
+    expect:
+      emissions:
+        - { event: component_finish, target: { component: second } }
+
+  - deliver: { captured: finish_second_request, index: 0 }
+    capture_emissions_as: final_component_completion
+    expect:
+      emissions:
+        - { event: determa.component_completed, target: owner }
+        - { event: done, target: owner }
+
+  - deliver:
+      captured: final_component_completion
+      index: 0
+      replace: { payload: {} }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      variables: { handled_count: 0 }
+      emissions: []
+
+  - deliver:
+      captured: final_component_completion
+      index: 1
+      replace:
+        payload: { relationship: parallel }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      variables: { handled_count: 0 }
+      emissions: []
+
+  - send: { event: spawn_faulty }
+    capture_emissions_as: spawned_failure
+    expect:
+      variables: { handled_count: 0 }
+      emissions:
+        - { event: determa.spawned_instance_failed, target: owner }
+
+  - deliver:
+      captured: spawned_failure
+      index: 0
+      replace: { payload: {} }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      variables: { handled_count: 0 }
+      emissions: []
+
+  - send: { event: spawn_healthy }
+    expect:
+      variables: { handled_count: 0 }
+
+  - send: { bound_instance: healthy_reference, event: finish_child }
+    capture_emissions_as: spawned_completion
+    expect:
+      emissions:
+        - { event: done, target: owner }
+
+  - deliver:
+      captured: spawned_completion
+      index: 0
+      replace:
+        payload: { relationship: spawned_instance }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      variables: { handled_count: 0 }
+      emissions: []

@@ -1,0 +1,80 @@
+title: internal env delivery is component-only even when root and child payloads match
+create:
+  bindings:
+    external: { token: old }
+steps:
+  - send: { event: spawn_child }
+    expect:
+      variables: { token: old }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: refreshable
+          status: running
+          variables: { token: old }
+
+  - send:
+      event: forward_environment
+      payload: { token: new }
+    capture_emissions_as: component_environment
+    expect:
+      emissions:
+        - event: env
+          target: { component: refreshed }
+          payload:
+            changed: { token: new }
+
+  - deliver: { captured: component_environment, index: 0 }
+    expect:
+      disposition: handled
+      variables: { token: old }
+      components:
+        refreshed: { status: running, variables: { token: new } }
+        companion: { status: running }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: refreshable
+          status: running
+          variables: { token: old }
+      emissions: []
+
+  - deliver:
+      captured: component_environment
+      index: 0
+      replace:
+        target: root
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_event }
+      caller_still_owns_input: true
+      variables: { token: old }
+      components:
+        refreshed: { status: running, variables: { token: new } }
+        companion: { status: running }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: refreshable
+          status: running
+          variables: { token: old }
+      emissions: []
+
+  - deliver:
+      captured: component_environment
+      index: 0
+      replace:
+        target: { bound_instance: child_reference }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_event }
+      caller_still_owns_input: true
+      variables: { token: old }
+      components:
+        refreshed: { status: running, variables: { token: new } }
+        companion: { status: running }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: refreshable
+          status: running
+          variables: { token: old }
+      emissions: []

@@ -1,0 +1,15 @@
+title: nested non-finite host doubles reject at the creation boundary
+create:
+  bindings:
+    input:
+      nested_map:
+        outer:
+          - inner: { non_finite_double: nan }
+      nested_list:
+        - outer:
+            - 0.0
+  expect:
+    status: rejected
+    state: null
+    rejection: { code: invalid_binding }
+    emissions: []

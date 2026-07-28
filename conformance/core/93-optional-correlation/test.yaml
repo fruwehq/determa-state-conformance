@@ -1,0 +1,19 @@
+title: ordinary input and internal envelopes may carry a non-empty correlation id
+steps:
+  - send:
+      event: begin
+      correlation_id: input-correlation
+    capture_emissions_as: internal_pulse
+    expect:
+      disposition: handled
+      variables: { handled: 1 }
+      emissions:
+        - event: pulse
+          target: root
+          correlation_id: internal-correlation
+
+  - deliver: { captured: internal_pulse, index: 0 }
+    expect:
+      disposition: handled
+      variables: { handled: 2 }
+      emissions: []

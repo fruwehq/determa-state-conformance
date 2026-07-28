@@ -1,0 +1,36 @@
+format: 1
+namespace: conformance.case_90_host_numeric_normalization
+events:
+  ordinary_values:
+    direction: input
+    payload:
+      mapped: { type: map, required: true }
+      listed: { type: list, required: true }
+machines:
+  - machine_id: host_values
+    root:
+      type: composite
+      variables:
+        created_map: { type: map, input: true }
+        created_list: { type: list, input: true }
+        rate: { type: float, external: true }
+        settings: { type: map, external: true }
+        stored_map: { type: map, init: {} }
+        stored_list: { type: list, init: [] }
+        guard_selected: { type: bool, init: false }
+      initial: { transition_to: ready }
+      states:
+        ready:
+          on_events:
+            ordinary_values:
+              action:
+                - assign: { stored_map: "event.payload.mapped" }
+                - assign: { stored_list: "event.payload.listed" }
+            env:
+              - guard: "event.payload.changed.rate == 1.0"
+                action:
+                  - assign: { guard_selected: "true" }
+                  - refresh: {}
+              - action:
+                  - assign: { guard_selected: "false" }
+                  - refresh: {}

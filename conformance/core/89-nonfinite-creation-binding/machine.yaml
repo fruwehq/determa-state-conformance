@@ -1,0 +1,8 @@
+format: 1
+namespace: conformance.case_89_nonfinite_creation_binding
+machines:
+  - machine_id: host_values
+    root:
+      variables:
+        nested_map: { type: map, input: true }
+        nested_list: { type: list, input: true }

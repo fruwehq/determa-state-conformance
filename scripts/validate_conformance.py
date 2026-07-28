@@ -56,6 +56,12 @@ SOURCE_ERROR_CODES = frozenset(
 )
 MINIMUM_INTEGER = -9_223_372_036_854_775_808
 MAXIMUM_INTEGER = 9_223_372_036_854_775_807
+NON_FINITE_DOUBLE_MARKERS = frozenset(
+    {"nan", "positive_infinity", "negative_infinity"}
+)
+INSTANCE_REFERENCE_FIELDS = frozenset(
+    {"root_instance_id", "instance_id", "machine_id", "machine_version"}
+)
 
 
 class ValidationFailure(Exception):
@@ -170,6 +176,107 @@ def load_fixture_document(path: Path) -> dict[str, Any]:
     if not isinstance(analysis.document, dict):
         raise ValidationFailure(f"{path}: expected a document map")
     return analysis.document
+
+
+def validate_driver_markers(value: Any, location: str) -> None:
+    if isinstance(value, dict):
+        if set(value) == {"non_finite_double"}:
+            if value["non_finite_double"] not in NON_FINITE_DOUBLE_MARKERS:
+                raise ValidationFailure(f"{location}: invalid non_finite_double marker")
+            return
+        if set(value) == {"normalized_double"}:
+            if value["normalized_double"] != "positive_zero":
+                raise ValidationFailure(f"{location}: invalid normalized_double assertion")
+            return
+        for key, child in value.items():
+            validate_driver_markers(child, f"{location}.{key}")
+    elif isinstance(value, list):
+        for index, child in enumerate(value):
+            validate_driver_markers(child, f"{location}[{index}]")
+
+
+def validate_driver_target(value: Any, location: str) -> None:
+    if value == "root":
+        return
+    if not isinstance(value, dict) or len(value) != 1:
+        raise ValidationFailure(f"{location}: invalid target selector")
+    kind, identity = next(iter(value.items()))
+    if kind not in {"bound_instance", "component"}:
+        raise ValidationFailure(f"{location}: unsupported target selector {kind!r}")
+    if not isinstance(identity, str) or not identity:
+        raise ValidationFailure(f"{location}: target selector needs a non-empty name")
+
+
+def validate_deliver_replace(value: Any, location: str) -> None:
+    if not isinstance(value, dict) or not value:
+        raise ValidationFailure(f"{location}: replace must be a non-empty map")
+    unknown = set(value) - {"payload", "target", "spawned_instance_reference"}
+    if unknown:
+        raise ValidationFailure(
+            f"{location}: unsupported replacement field {sorted(unknown)[0]}"
+        )
+    if "payload" in value and not isinstance(value["payload"], dict):
+        raise ValidationFailure(f"{location}.payload: replacement must be a map")
+    if "target" in value:
+        validate_driver_target(value["target"], f"{location}.target")
+    if "spawned_instance_reference" in value:
+        replacement = value["spawned_instance_reference"]
+        if not isinstance(replacement, dict) or not replacement:
+            raise ValidationFailure(
+                f"{location}.spawned_instance_reference: expected non-empty map"
+            )
+        unknown_reference = set(replacement) - INSTANCE_REFERENCE_FIELDS
+        if unknown_reference:
+            raise ValidationFailure(
+                f"{location}.spawned_instance_reference: unsupported field "
+                f"{sorted(unknown_reference)[0]}"
+            )
+        for name, field_value in replacement.items():
+            if name == "machine_version":
+                if (
+                    isinstance(field_value, bool)
+                    or not isinstance(field_value, int)
+                    or field_value < 1
+                ):
+                    raise ValidationFailure(
+                        f"{location}.spawned_instance_reference.machine_version: "
+                        "expected positive integer"
+                    )
+            elif not isinstance(field_value, str) or not field_value:
+                raise ValidationFailure(
+                    f"{location}.spawned_instance_reference.{name}: "
+                    "expected non-empty string"
+                )
+
+
+def validate_inspect(value: Any, location: str) -> None:
+    if not isinstance(value, dict) or set(value) != {"corrupt_prior_state"}:
+        raise ValidationFailure(f"{location}: unsupported inspect operation")
+    mutation = value["corrupt_prior_state"]
+    required = {"runtime", "variable", "path", "value"}
+    if not isinstance(mutation, dict) or set(mutation) != required:
+        raise ValidationFailure(f"{location}.corrupt_prior_state: malformed mutation")
+    if mutation["runtime"] != "root":
+        raise ValidationFailure(
+            f"{location}.corrupt_prior_state.runtime: only root is supported"
+        )
+    if not isinstance(mutation["variable"], str) or not mutation["variable"]:
+        raise ValidationFailure(
+            f"{location}.corrupt_prior_state.variable: expected non-empty name"
+        )
+    path = mutation["path"]
+    if not isinstance(path, list) or not path:
+        raise ValidationFailure(
+            f"{location}.corrupt_prior_state.path: expected non-empty list"
+        )
+    for part in path:
+        valid_index = (
+            isinstance(part, int) and not isinstance(part, bool) and part >= 0
+        )
+        if not valid_index and (not isinstance(part, str) or not part):
+            raise ValidationFailure(
+                f"{location}.corrupt_prior_state.path: invalid path member {part!r}"
+            )
 
 
 def exact_case_file(case: Path, filename: Any) -> Path:
@@ -380,6 +487,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
 
     for case in cases:
         test = load_fixture_document(case / "test.yaml")
+        validate_driver_markers(test, case.name)
         if "load" in test and test["load"] != {"valid": True}:
             raise ValidationFailure(f"{case.name}: unsupported load assertion")
 
@@ -437,11 +545,70 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             for index, step in enumerate(test.get("steps", [])):
                 if not isinstance(step, dict):
                     raise ValidationFailure(f"{case.name}: step {index} is not a map")
+                location = f"{case.name}: step {index}"
+                validate_driver_markers(step, location)
+                operations = {"send", "deliver", "inspect"} & set(step)
+                if len(operations) != 1:
+                    raise ValidationFailure(
+                        f"{location} must have exactly one send, deliver, or inspect"
+                    )
+                unknown_step_fields = set(step) - {
+                    "send",
+                    "deliver",
+                    "inspect",
+                    "capture_emissions_as",
+                    "expect",
+                }
+                if unknown_step_fields:
+                    raise ValidationFailure(
+                        f"{location} has unsupported field "
+                        f"{sorted(unknown_step_fields)[0]}"
+                    )
                 send = step.get("send")
                 if send is not None:
                     if not isinstance(send, dict):
                         raise ValidationFailure(
                             f"{case.name}: step {index} send is not a map"
+                        )
+                    unknown_send_fields = set(send) - {
+                        "bound_instance",
+                        "bundle",
+                        "component",
+                        "correlation_id",
+                        "event",
+                        "event_id",
+                        "payload",
+                    }
+                    if unknown_send_fields:
+                        raise ValidationFailure(
+                            f"{location} send has unsupported field "
+                            f"{sorted(unknown_send_fields)[0]}"
+                        )
+                    if not isinstance(send.get("event"), str) or not send["event"]:
+                        raise ValidationFailure(
+                            f"{location} send needs a non-empty event"
+                        )
+                    if {"bound_instance", "component"} <= set(send):
+                        raise ValidationFailure(
+                            f"{location} send target selectors are mutually exclusive"
+                        )
+                    for selector in ("bound_instance", "component"):
+                        if selector in send and (
+                            not isinstance(send[selector], str) or not send[selector]
+                        ):
+                            raise ValidationFailure(
+                                f"{location} send.{selector} needs a non-empty name"
+                            )
+                    if "payload" in send and not isinstance(send["payload"], dict):
+                        raise ValidationFailure(
+                            f"{location} send.payload must be a map"
+                        )
+                    if "correlation_id" in send and (
+                        not isinstance(send["correlation_id"], str)
+                        or not send["correlation_id"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location} send.correlation_id must be non-empty"
                         )
                     event_id = send.get(
                         "event_id",
@@ -467,10 +634,31 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 if deliver is not None:
                     if (
                         not isinstance(deliver, dict)
+                        or set(deliver) - {"captured", "index", "replace"}
                         or deliver.get("captured") not in captures
                     ):
                         raise ValidationFailure(
                             f"{case.name}: step {index} references an unavailable capture"
+                        )
+                    delivery_index = deliver.get("index")
+                    if (
+                        isinstance(delivery_index, bool)
+                        or not isinstance(delivery_index, int)
+                        or delivery_index < 0
+                    ):
+                        raise ValidationFailure(
+                            f"{location} deliver.index must be non-negative"
+                        )
+                    if "replace" in deliver:
+                        validate_deliver_replace(
+                            deliver["replace"], f"{location} deliver.replace"
+                        )
+                inspect = step.get("inspect")
+                if inspect is not None:
+                    validate_inspect(inspect, f"{location} inspect")
+                    if "capture_emissions_as" in step:
+                        raise ValidationFailure(
+                            f"{location} inspect cannot capture emissions"
                         )
                 capture = step.get("capture_emissions_as")
                 if capture is not None:
@@ -483,6 +671,16 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                             f"{case.name}: duplicate capture {capture}"
                         )
                     captures.add(capture)
+                expected = step.get("expect")
+                if not isinstance(expected, dict):
+                    raise ValidationFailure(f"{location} needs an expect map")
+                if expected.get("caller_still_owns_state") is not None and (
+                    operations != {"inspect"}
+                    or expected["caller_still_owns_state"] is not True
+                ):
+                    raise ValidationFailure(
+                        f"{location} caller_still_owns_state is inspect-only true"
+                    )
 
         actual_bundles = {
             path

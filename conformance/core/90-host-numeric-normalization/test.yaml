@@ -1,0 +1,108 @@
+title: nested host numbers are recursively validated and normalized at every boundary
+create:
+  bindings:
+    input:
+      created_map:
+        nested: [-0.0]
+      created_list:
+        - nested: -0.0
+    external:
+      rate: -0.0
+      settings:
+        nested: [-0.0]
+  expect:
+    variables:
+      created_map:
+        nested: [{ normalized_double: positive_zero }]
+      created_list:
+        - nested: { normalized_double: positive_zero }
+      rate: { normalized_double: positive_zero }
+      settings:
+        nested: [{ normalized_double: positive_zero }]
+steps:
+  - send:
+      event: ordinary_values
+      payload:
+        mapped:
+          nested:
+            - { non_finite_double: positive_infinity }
+        listed: [0.0]
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      emissions: []
+
+  - send:
+      event: ordinary_values
+      payload:
+        mapped: { nested: [0.0] }
+        listed:
+          - nested: { non_finite_double: negative_infinity }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      emissions: []
+
+  - send:
+      event: ordinary_values
+      payload:
+        mapped: { nested: [-0.0] }
+        listed:
+          - nested: -0.0
+    expect:
+      disposition: handled
+      variables:
+        stored_map:
+          nested: [{ normalized_double: positive_zero }]
+        stored_list:
+          - nested: { normalized_double: positive_zero }
+
+  - send:
+      event: env
+      payload:
+        changed:
+          rate: 1
+          settings:
+            nested:
+              - { non_finite_double: nan }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
+      variables:
+        guard_selected: false
+        rate: { normalized_double: positive_zero }
+      emissions: []
+
+  - send:
+      event: env
+      payload:
+        changed:
+          rate: 1
+          settings:
+            nested: [-0.0]
+    expect:
+      disposition: handled
+      variables:
+        guard_selected: true
+        rate: 1.0
+        settings:
+          nested: [{ normalized_double: positive_zero }]
+
+  - inspect:
+      corrupt_prior_state:
+        runtime: root
+        variable: stored_map
+        path: [nested, 0]
+        value: { non_finite_double: positive_infinity }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_prior_state }
+      caller_still_owns_state: true
+      emissions: []

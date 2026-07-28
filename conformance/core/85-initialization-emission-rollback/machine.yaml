@@ -1,0 +1,82 @@
+format: 1
+namespace: conformance.case_85_initialization_emission_rollback
+events:
+  start:
+    direction: input
+  spawn_faulty:
+    direction: input
+  audit:
+    direction: output
+    payload:
+      label: { type: string, required: true }
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      variables:
+        child_reference:
+          type: instance_reference
+          machine_id: faulty_child
+          nullable: true
+          init: null
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            start: { transition_to: processing }
+        processing:
+          type: parallel
+          on_events:
+            spawn_faulty:
+              action:
+                - spawn:
+                    machine_id: faulty_child
+                    bind_to: child_reference
+                - send:
+                    event: audit
+                    to: { external: true }
+                    payload: { label: "'owner_after_spawn_fault'" }
+                    correlation_id: "'initialization-rollback'"
+          components:
+            - component_id: faulty
+              root:
+                type: composite
+                variables:
+                  value: { type: int, init: 1 }
+                entry:
+                  - send:
+                      event: audit
+                      to: { external: true }
+                      payload: { label: "'component_author_intent'" }
+                      correlation_id: "'initialization-rollback'"
+                  - assign: { value: "value / 0" }
+                initial: { transition_to: waiting }
+                states:
+                  waiting: {}
+            - component_id: healthy
+              root:
+                type: composite
+                entry:
+                  - send:
+                      event: audit
+                      to: { external: true }
+                      payload: { label: "'healthy_component'" }
+                      correlation_id: "'initialization-rollback'"
+                initial: { transition_to: waiting }
+                states:
+                  waiting: {}
+  - machine_id: faulty_child
+    root:
+      type: composite
+      variables:
+        value: { type: int, init: 1 }
+      entry:
+        - send:
+            event: audit
+            to: { external: true }
+            payload: { label: "'spawned_author_intent'" }
+            correlation_id: "'initialization-rollback'"
+        - assign: { value: "value / 0" }
+      initial: { transition_to: waiting }
+      states:
+        waiting: {}
