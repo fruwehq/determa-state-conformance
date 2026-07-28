@@ -259,7 +259,7 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 59 | payload defaults materialize while optional fields remain absent (§4, §6) |
 | 60 | payload/default numeric source-type, range, and structural validation (§2, §4, §5) |
 | 61 | expression-map snapshot and deterministic fault precedence (§4, §10) |
-| 62 | duplicate keys, invalid Unicode/numeric syntax, and non-JSON YAML values (§2) |
+| 62 | duplicate keys, YAML 1.2 Boolean-like strings, invalid Unicode/numeric syntax, and non-JSON YAML values (§2) |
 | 63 | entry-time stop interrupts pending component initialization (§6, §7) |
 | 64 | correlation expression precedence over a failing dynamic target (§4, §10) |
 | 65 | portable CEL arithmetic, error absorption, conversion, and Unicode semantics (§5) |

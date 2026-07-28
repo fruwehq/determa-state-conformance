@@ -24,3 +24,5 @@ static:
       error: numeric_value_out_of_range
     - file: valid-json-numbers.yaml
       valid: true
+    - file: yaml-1-2-boolean-like-strings.yaml
+      valid: true
