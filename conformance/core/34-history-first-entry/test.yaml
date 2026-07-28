@@ -2,4 +2,4 @@ title: a history target without a record follows the composite initial transitio
 steps:
   - send: { event: resume }
     expect:
-      config: [first]
+      config: [work.first]

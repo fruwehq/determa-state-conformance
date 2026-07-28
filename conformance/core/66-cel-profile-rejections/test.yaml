@@ -1,0 +1,27 @@
+title: host extensions comprehensions and unlisted overloads fail portable CEL checking
+static:
+  documents:
+    - file: host-extension.yaml
+      valid: false
+      error: cel_profile_error
+    - file: comprehension.yaml
+      valid: false
+      error: cel_profile_error
+    - file: string-to-int.yaml
+      valid: false
+      error: cel_profile_error
+    - file: mixed-numeric.yaml
+      valid: false
+      error: cel_profile_error
+    - file: event-field.yaml
+      valid: false
+      error: cel_profile_error
+    - file: owner-field.yaml
+      valid: false
+      error: cel_profile_error
+    - file: activation-name-variable.yaml
+      valid: false
+      error: structural_validation
+    - file: keyword-payload-field.yaml
+      valid: false
+      error: structural_validation

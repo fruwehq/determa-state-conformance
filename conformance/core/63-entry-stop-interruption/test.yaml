@@ -1,0 +1,18 @@
+title: stop in parallel entry skips pending component initialization and completes immediately
+load: { valid: true }
+steps:
+  - send: { event: start }
+    expect:
+      status: completed
+      disposition: handled
+      config: []
+      variables: {}
+      components: {}
+      owned_instances: []
+      emissions:
+        - event: completion_trace
+          target: external
+          correlation_id: entry-stop-1
+          payload:
+            trace: [processing_entry, processing_exit]
+      fault: null

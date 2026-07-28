@@ -1,0 +1,34 @@
+title: delayed delivery cannot resolve an old component target to a later activation
+steps:
+  - send: { event: start }
+    capture_emissions_as: first_activation
+    expect:
+      config: [processing]
+      components:
+        worker: { status: running, variables: { hits: 0 } }
+        companion: { status: running }
+      emissions:
+        - { event: pulse, target: { component: worker } }
+
+  - send: { event: leave }
+    expect:
+      config: [idle]
+      components: {}
+
+  - send: { event: start }
+    expect:
+      config: [processing]
+      components:
+        worker: { status: running, variables: { hits: 0 } }
+        companion: { status: running }
+
+  - deliver: { captured: first_activation, index: 0 }
+    expect:
+      status: running
+      disposition: rejected
+      components:
+        worker: { status: running, variables: { hits: 0 } }
+        companion: { status: running }
+      emissions: []
+      caller_still_owns_input: true
+      rejection: { code: inactive_component_target }

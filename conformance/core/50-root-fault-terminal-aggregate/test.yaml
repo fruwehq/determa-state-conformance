@@ -1,0 +1,46 @@
+title: a root engine fault freezes the whole retained aggregate
+steps:
+  - send: { event: start }
+    expect:
+      status: running
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          status: running
+          config: [waiting]
+          variables: { advances: 0 }
+
+  - send: { event: fault_root }
+    expect:
+      status: faulted
+      disposition: faulted
+      variables:
+        value: 1
+        child_reference:
+          instance_reference: { machine_id: child, targetable: false }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          status: running
+          config: [waiting]
+          variables: { advances: 0 }
+      emissions: []
+      caller_still_owns_input: true
+      fault:
+        code: action_fault
+        source_locator: /machines/0/root/states/running/on_events/fault_root/action/0/assign/value
+
+  - send: { bound_instance: child_reference, event: advance }
+    expect:
+      status: faulted
+      disposition: rejected
+      variables:
+        child_reference:
+          instance_reference: { machine_id: child, targetable: false }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          status: running
+          config: [waiting]
+          variables: { advances: 0 }
+      emissions: []
+      caller_still_owns_input: true
+      fault: { code: action_fault }
+      rejection: { code: invalid_instance_target }

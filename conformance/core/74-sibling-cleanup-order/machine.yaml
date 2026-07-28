@@ -1,0 +1,55 @@
+format: 1
+namespace: conformance.case_74_sibling_cleanup_order
+events:
+  start:
+    direction: input
+  leave:
+    direction: input
+  child_exited:
+    direction: output
+    payload:
+      label: { type: string, required: true }
+machines:
+  - machine_id: parent
+    root:
+      type: composite
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            start: { transition_to: holding }
+        holding:
+          variables:
+            first_reference:
+              type: instance_reference
+              machine_id: child
+              nullable: true
+              init: null
+            second_reference:
+              type: instance_reference
+              machine_id: child
+              nullable: true
+              init: null
+          entry:
+            - spawn:
+                machine_id: child
+                bindings:
+                  input: { label: "'first'" }
+                bind_to: first_reference
+            - spawn:
+                machine_id: child
+                bindings:
+                  input: { label: "'second'" }
+                bind_to: second_reference
+          on_events:
+            leave: { transition_to: idle }
+  - machine_id: child
+    root:
+      variables:
+        label: { type: string, input: true }
+      exit:
+        - send:
+            event: child_exited
+            to: { external: true }
+            payload: { label: "label" }
+            correlation_id: "'cleanup-order'"

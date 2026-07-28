@@ -1,0 +1,16 @@
+title: prior state cannot be dispatched with a changed same-version bundle
+steps:
+  - send: { event: increment }
+    expect:
+      disposition: handled
+      variables: { count: 1 }
+
+  - send: { event: increment, bundle: changed-bundle.yaml }
+    expect:
+      status: running
+      disposition: rejected
+      variables: { count: 1 }
+      emissions: []
+      fault: null
+      rejection: { code: incompatible_bundle }
+      caller_still_owns_input: true

@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_58_missing_creation_binding
+machines:
+  - machine_id: missing_creation_binding
+    root:
+      variables:
+        required_input: { type: string, input: true }

@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_60_int_default_exponent
+events:
+  invalid:
+    direction: input
+    payload:
+      value: { type: int, default: 1e0 }
+machines:
+  - machine_id: invalid_default
+    root: {}

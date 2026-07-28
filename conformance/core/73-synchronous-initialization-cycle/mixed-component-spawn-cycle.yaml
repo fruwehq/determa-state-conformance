@@ -1,0 +1,15 @@
+format: 1
+namespace: conformance.case_73_mixed_component_spawn_cycle
+machines:
+  - machine_id: owner
+    root:
+      type: parallel
+      components:
+        - component_id: recursive_child
+          machine_id: child
+        - component_id: companion
+          root: {}
+  - machine_id: child
+    root:
+      entry:
+        - spawn: { machine_id: owner }

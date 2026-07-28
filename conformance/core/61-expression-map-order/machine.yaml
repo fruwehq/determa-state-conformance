@@ -1,0 +1,27 @@
+format: 1
+namespace: conformance.case_61_expression_map_order
+events:
+  trigger:
+    direction: input
+  result:
+    direction: output
+    payload:
+      alpha: { type: int, required: true }
+      beta: { type: int, required: true }
+machines:
+  - machine_id: expression_map_order
+    root:
+      type: composite
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            trigger:
+              action:
+                - send:
+                    event: result
+                    to: { external: true }
+                    payload:
+                      beta: "2 / 0"
+                      alpha: "1 / 0"
+                    correlation_id: "string(3 / 0)"

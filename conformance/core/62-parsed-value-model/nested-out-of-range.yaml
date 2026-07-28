@@ -1,0 +1,9 @@
+format: 1
+namespace: conformance.case_62_nested_out_of_range
+meta:
+  nested:
+    values:
+      - 9223372036854775808
+machines:
+  - machine_id: parser_probe
+    root: {}

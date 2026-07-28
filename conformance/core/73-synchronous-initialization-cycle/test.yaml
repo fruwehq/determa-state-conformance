@@ -1,0 +1,9 @@
+title: synchronous component and spawn initialization dependencies are acyclic
+static:
+  documents:
+    - file: direct-self-spawn.yaml
+      valid: false
+      error: semantic_validation
+    - file: mixed-component-spawn-cycle.yaml
+      valid: false
+      error: semantic_validation

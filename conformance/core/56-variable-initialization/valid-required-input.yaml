@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_56_valid_required_input
+machines:
+  - machine_id: valid_input
+    root:
+      variables:
+        required_value: { type: string, input: true }

@@ -1,0 +1,14 @@
+format: 1
+namespace: conformance.case_40_inline_root_choice
+machines:
+  - machine_id: invalid_inline_root
+    root:
+      type: parallel
+      components:
+        - component_id: invalid
+          root:
+            choice:
+              - { guard: "true", transition_to: root }
+              - { transition_to: root }
+        - component_id: valid
+          root: {}

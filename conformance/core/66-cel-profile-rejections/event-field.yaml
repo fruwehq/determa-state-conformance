@@ -1,0 +1,11 @@
+format: 1
+namespace: conformance.case_66_event_field
+events:
+  check:
+    direction: input
+machines:
+  - machine_id: event_field
+    root:
+      on_events:
+        check:
+          guard: "event.event_id != ''"

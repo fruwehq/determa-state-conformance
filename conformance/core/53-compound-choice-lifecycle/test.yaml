@@ -1,0 +1,17 @@
+title: a complete choice chain runs before one exit and entry sequence
+steps:
+  - send: { event: go, payload: { decision: 1 } }
+    expect:
+      config: [right.target]
+      variables:
+        decision: 1
+        trace:
+          - enter_left
+          - enter_source
+          - event_action
+          - first_choice_action
+          - second_choice_action
+          - exit_source
+          - exit_left
+          - enter_right
+          - enter_target

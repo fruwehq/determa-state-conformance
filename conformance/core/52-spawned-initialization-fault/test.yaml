@@ -1,0 +1,45 @@
+title: spawned initialization faults commit locally unless the enclosing owner step faults
+steps:
+  - send: { event: spawn_faulty }
+    expect:
+      status: running
+      variables:
+        continued: 1
+        child_reference:
+          instance_reference: { machine_id: faulty_child, targetable: false }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: faulty_child
+          status: faulted
+          config: []
+          variables: {}
+          components: {}
+          owned_instances: []
+      emissions:
+        - event: determa.spawned_instance_failed
+          target: owner
+          payload:
+            machine_id: faulty_child
+            machine_version: 1
+            fault:
+              code: action_fault
+              source_locator: /machines/1/root/entry/0/assign/value
+
+  - send: { event: spawn_then_fault_owner }
+    expect:
+      status: faulted
+      disposition: faulted
+      variables:
+        continued: 1
+        rolled_back_reference: null
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: faulty_child
+          status: faulted
+          config: []
+          variables: {}
+      emissions: []
+      caller_still_owns_input: true
+      fault:
+        code: action_fault
+        source_locator: /machines/0/root/states/running/on_events/spawn_then_fault_owner/action/1/assign/continued

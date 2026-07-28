@@ -1,0 +1,26 @@
+format: 1
+namespace: conformance.case_59_payload_default_materialization
+events:
+  configure:
+    direction: input
+    payload:
+      mode: { type: string, default: "safe" }
+      note: { type: string }
+      ratio: { type: float, default: 1 }
+machines:
+  - machine_id: payload_defaults
+    root:
+      type: composite
+      variables:
+        mode_seen: { type: string, init: "" }
+        note_present: { type: bool, init: false }
+        ratio_seen: { type: float, init: 0 }
+      initial: { transition_to: waiting }
+      states:
+        waiting:
+          on_events:
+            configure:
+              action:
+                - assign: { mode_seen: "event.payload.mode" }
+                - assign: { note_present: "has(event.payload.note)" }
+                - assign: { ratio_seen: "event.payload.ratio" }

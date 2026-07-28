@@ -1,0 +1,47 @@
+title: an owner explicitly forwards a typed env update to one component
+static:
+  documents:
+    - { file: env-self.yaml, valid: false, error: semantic_validation }
+    - { file: env-multiple-targets.yaml, valid: false, error: semantic_validation }
+    - { file: env-nonliteral-changed.yaml, valid: false, error: semantic_validation }
+    - { file: env-empty-changed.yaml, valid: false, error: semantic_validation }
+    - { file: env-unknown-changed.yaml, valid: false, error: semantic_validation }
+    - { file: env-wrong-type-changed.yaml, valid: false, error: semantic_validation }
+    - { file: env-correlation.yaml, valid: false, error: semantic_validation }
+    - { file: reserved-done-send.yaml, valid: false, error: semantic_validation }
+create:
+  bindings:
+    input:
+      initial_token: old
+steps:
+  - send:
+      event: update_component
+      payload:
+        token: new
+    capture_emissions_as: component_environment
+    expect:
+      components:
+        refreshed:
+          status: running
+          config: [ready]
+          variables: { token: old }
+        companion:
+          status: running
+          config: [ready]
+      emissions:
+        - event: env
+          target: { component: refreshed }
+          payload:
+            changed: { token: new }
+
+  - deliver: { captured: component_environment, index: 0 }
+    expect:
+      components:
+        refreshed:
+          status: running
+          config: [ready]
+          variables: { token: new }
+        companion:
+          status: running
+          config: [ready]
+      emissions: []

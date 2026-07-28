@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_60_overflow_float
+events:
+  invalid:
+    direction: input
+    payload:
+      value: { type: float, default: 1e999 }
+machines:
+  - machine_id: invalid_default
+    root: {}

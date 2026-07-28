@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_56_ordinary_missing_init
+machines:
+  - machine_id: missing_init
+    root:
+      variables:
+        value: { type: string }

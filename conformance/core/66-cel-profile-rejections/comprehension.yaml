@@ -1,0 +1,11 @@
+format: 1
+namespace: conformance.case_66_comprehension
+events:
+  check:
+    direction: input
+machines:
+  - machine_id: comprehension
+    root:
+      on_events:
+        check:
+          guard: "[1, 2].all(value, value > 0)"

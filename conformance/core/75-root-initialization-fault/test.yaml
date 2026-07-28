@@ -1,0 +1,18 @@
+title: root initialization fault commits only an empty terminal diagnostic aggregate
+create:
+  root_instance_id: conformance:75-root-initialization-fault:root
+  creation_id: conformance:75-root-initialization-fault:create
+  expect:
+    status: faulted
+    config: []
+    variables: {}
+    components: {}
+    owned_instances: []
+    emissions: []
+    rejection: null
+    fault:
+      cause_id: sha256:1fd5180e9f39fdc5eeb458f13c58acf9b70e6cad17c41cd0e4144cfa8084e110
+      code: action_fault
+      step_sequence: 0
+      source_locator: /machines/0/root/entry/0/assign/value
+steps: []

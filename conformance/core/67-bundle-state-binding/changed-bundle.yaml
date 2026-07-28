@@ -1,0 +1,21 @@
+format: 1
+namespace: conformance.case_67_bundle_state_binding
+meta:
+  revision: changed
+events:
+  increment:
+    direction: input
+machines:
+  - machine_id: counter
+    version: 1
+    root:
+      type: composite
+      variables:
+        count: { type: int, init: 0 }
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            increment:
+              action:
+                - assign: { count: "count + 1" }

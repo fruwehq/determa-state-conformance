@@ -10,3 +10,18 @@ static:
     - file: local-without-target.yaml
       valid: false
       error: structural_validation
+    - file: choice-with-type.yaml
+      valid: false
+      error: structural_validation
+    - file: exit-spawn.yaml
+      valid: false
+      error: structural_validation
+    - file: multi-destination-assign.yaml
+      valid: false
+      error: structural_validation
+    - file: machine-root-choice.yaml
+      valid: false
+      error: structural_validation
+    - file: inline-root-choice.yaml
+      valid: false
+      error: structural_validation

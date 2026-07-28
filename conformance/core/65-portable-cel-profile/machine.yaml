@@ -1,0 +1,57 @@
+format: 1
+namespace: conformance.case_65_portable_cel_profile
+events:
+  evaluate:
+    direction: input
+  overflow:
+    direction: input
+machines:
+  - machine_id: portable_cel
+    root:
+      type: composite
+      variables:
+        division: { type: int, init: 0 }
+        remainder: { type: int, init: 0 }
+        false_and_error: { type: bool, init: true }
+        error_and_false: { type: bool, init: true }
+        true_or_error: { type: bool, init: false }
+        error_or_true: { type: bool, init: false }
+        left_map: { type: map, init: { alpha: 1, beta: [2] } }
+        right_map: { type: map, init: { beta: [2], alpha: 1 } }
+        maps_equal: { type: bool, init: false }
+        numbers: { type: list, init: [4, 5, 6] }
+        selected: { type: int, init: 0 }
+        precomposed: { type: string, init: "\u00e9" }
+        decomposed: { type: string, init: "e\u0301" }
+        unicode_equal: { type: bool, init: true }
+        precomposed_size: { type: int, init: 0 }
+        decomposed_size: { type: int, init: 0 }
+        string_order: { type: bool, init: false }
+        converted_double: { type: float, init: 0.0 }
+        converted_string: { type: string, init: "" }
+        integer_zero: { type: int, init: -0 }
+        double_zero: { type: float, init: -0.0 }
+        maximum: { type: int, init: 9223372036854775807 }
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            evaluate:
+              action:
+                - assign: { division: "-7 / 3" }
+                - assign: { remainder: "-7 % 3" }
+                - assign: { false_and_error: "false && (1 / 0 == 0)" }
+                - assign: { error_and_false: "(1 / 0 == 0) && false" }
+                - assign: { true_or_error: "true || (1 / 0 == 0)" }
+                - assign: { error_or_true: "(1 / 0 == 0) || true" }
+                - assign: { maps_equal: "left_map == right_map" }
+                - assign: { selected: "numbers[1]" }
+                - assign: { unicode_equal: "precomposed == decomposed" }
+                - assign: { precomposed_size: "size(precomposed)" }
+                - assign: { decomposed_size: "size(decomposed)" }
+                - assign: { string_order: "\"a\" < \"\u00e9\"" }
+                - assign: { converted_double: "double(9007199254740993)" }
+                - assign: { converted_string: "string(1.5)" }
+            overflow:
+              action:
+                - assign: { maximum: "maximum + 1" }

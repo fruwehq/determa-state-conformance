@@ -1,0 +1,6 @@
+format: 1
+namespace: conformance.case_62_duplicate_key
+namespace: conformance.case_62_duplicate_key_replacement
+machines:
+  - machine_id: duplicate_key
+    root: {}

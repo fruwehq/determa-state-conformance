@@ -1,0 +1,23 @@
+title: creation uses supplied bindings and typed init fallbacks exactly
+create:
+  bindings:
+    input:
+      required_input: "required"
+      overridden_input: "input-override"
+      float_from_integer_binding: 2
+    external:
+      required_external: "external-required"
+      overridden_external: "external-override"
+  expect:
+    status: running
+    variables:
+      required_input: "required"
+      default_input: "input-default"
+      overridden_input: "input-override"
+      required_external: "external-required"
+      default_external: "external-default"
+      overridden_external: "external-override"
+      float_from_integer_init: 1.0
+      float_from_integer_binding: 2.0
+    emissions: []
+steps: []

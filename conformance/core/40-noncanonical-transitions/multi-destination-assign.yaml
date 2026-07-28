@@ -1,0 +1,21 @@
+format: 1
+namespace: conformance.case_40_multi_destination_assign
+events:
+  update:
+    direction: input
+machines:
+  - machine_id: invalid_assign
+    root:
+      type: composite
+      variables:
+        first: { type: int, init: 0 }
+        second: { type: int, init: 0 }
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            update:
+              action:
+                - assign:
+                    first: "1"
+                    second: "2"

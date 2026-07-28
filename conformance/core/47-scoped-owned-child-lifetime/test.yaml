@@ -4,14 +4,16 @@ steps:
     expect:
       config: [holding]
       owned_instances:
-        worker_reference: { machine_id: worker, status: running }
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
 
   - send: { event: leave }
     expect:
       status: running
       disposition: handled
       config: [outside]
-      owned_instances: {}
+      owned_instances: []
       emissions:
         - event: worker_disposed
           target: external
@@ -28,5 +30,5 @@ steps:
       status: running
       disposition: handled
       config: [outside]
-      owned_instances: {}
+      owned_instances: []
       emissions: []

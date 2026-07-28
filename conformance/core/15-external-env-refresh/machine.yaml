@@ -7,6 +7,7 @@ machines:
       type: composite
       variables:
         token: { type: string, external: true }
+        region: { type: string, external: true }
         applied: { type: string, init: "" }
         trace: { type: list, init: [] }
       entry:
@@ -18,7 +19,7 @@ machines:
           - guard: "event.payload.changed.token != token"
             transition_to: reconfiguring
             action:
-              - refresh: { only: [token] }
+              - refresh: {}
               - assign: { applied: "token" }
       initial: { transition_to: running }
       states:

@@ -2,14 +2,14 @@ title: self-history replays lifecycle actions and reinitializes scoped variables
 steps:
   - send: { event: set_value }
     expect:
-      config: [leaf]
+      config: [active.leaf]
       variables:
         ephemeral_value: 1
         trace: [enter_active, enter_leaf, set_value]
 
   - send: { event: replay_lifecycle }
     expect:
-      config: [leaf]
+      config: [active.leaf]
       variables:
         ephemeral_value: 0
         trace:

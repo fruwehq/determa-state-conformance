@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_62_leading_plus_number
+meta:
+  invalid: +1
+machines:
+  - machine_id: parser_probe
+    root: {}

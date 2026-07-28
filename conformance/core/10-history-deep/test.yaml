@@ -3,7 +3,7 @@ steps:
   # creation: work -> outer -> s1.
   - send: {event: sub}            # s1 -> s2
     expect:
-      config: [s2]
+      config: [work.outer.s2]
 
   - send: {event: pause}          # exit work (records deep history: outer.s2)
     expect:
@@ -11,7 +11,7 @@ steps:
 
   - send: {event: resume}         # deep history restores outer.s2, not the initial s1
     expect:
-      config: [s2]
+      config: [work.outer.s2]
 
   - send: {event: pause}          # records the same outer.s2 configuration again
     expect:
@@ -19,4 +19,4 @@ steps:
 
   - send: {event: restart}        # a plain path ignores history and follows initial
     expect:
-      config: [s1]
+      config: [work.outer.s1]

@@ -1,0 +1,8 @@
+format: 1
+namespace: conformance.case_62_yaml_alias
+meta:
+  original: &shared [one, two]
+  repeated: *shared
+machines:
+  - machine_id: yaml_alias
+    root: {}

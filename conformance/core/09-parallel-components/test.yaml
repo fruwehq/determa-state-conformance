@@ -49,4 +49,11 @@ steps:
 
   - deliver: { captured: completion, index: 1 }
     expect:
-      config: [finished]
+      status: completed
+      disposition: handled
+      config: []
+      variables: {}
+      components: {}
+      owned_instances: []
+      fault: null
+      emissions: []

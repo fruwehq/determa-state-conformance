@@ -2,11 +2,11 @@ title: shallow history restores the direct child while a plain path restarts the
 steps:
   - send: {event: switch}         # work.outer.s1 -> work.alternate.a1
     expect:
-      config: [a1]
+      config: [work.alternate.a1]
 
   - send: {event: advance}        # alternate.a1 -> alternate.a2
     expect:
-      config: [a2]
+      config: [work.alternate.a2]
 
   - send: {event: pause}          # records direct child alternate, not descendant a2
     expect:
@@ -15,7 +15,7 @@ steps:
   # Shallow restores alternate, then alternate.initial enters a1.
   - send: {event: resume}
     expect:
-      config: [a1]
+      config: [work.alternate.a1]
 
   - send: {event: pause}
     expect:
@@ -24,4 +24,4 @@ steps:
   # A plain target ignores the shallow record and follows work.initial -> outer.s1.
   - send: {event: restart}
     expect:
-      config: [s1]
+      config: [work.outer.s1]

@@ -1,0 +1,53 @@
+format: 1
+namespace: conformance.case_51_component_initialization_fault
+events:
+  start:
+    direction: input
+  component_work:
+    direction: internal
+  healthy_ready:
+    direction: internal
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      variables:
+        healthy_label: { type: string, init: "healthy" }
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            start: { transition_to: processing }
+        processing:
+          type: parallel
+          entry:
+            - send:
+                event: component_work
+                to: { component: faulty }
+          components:
+            - component_id: faulty
+              root:
+                type: composite
+                variables:
+                  value: { type: int, init: 1 }
+                  label: { type: string, input: true, init: "faulty-default" }
+                entry:
+                  - assign: { value: "value / 0" }
+                initial: { transition_to: waiting }
+                states:
+                  waiting: {}
+            - component_id: healthy
+              with:
+                input:
+                  label: "owner.variables.healthy_label"
+              root:
+                type: composite
+                variables:
+                  label: { type: string, input: true }
+                entry:
+                  - send:
+                      event: healthy_ready
+                      to: { owner: true }
+                initial: { transition_to: waiting }
+                states:
+                  waiting: {}

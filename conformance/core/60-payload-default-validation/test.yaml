@@ -1,0 +1,29 @@
+title: payload defaults are optional and type-checked at load
+static:
+  documents:
+    - file: required-with-default.yaml
+      valid: false
+      error: structural_validation
+    - file: wrong-default-type.yaml
+      valid: false
+      error: structural_validation
+    - file: out-of-range-integer.yaml
+      valid: false
+      error: numeric_value_out_of_range
+    - file: nonfinite-float.yaml
+      valid: false
+      error: invalid_numeric_syntax
+    - file: overflow-float.yaml
+      valid: false
+      error: numeric_value_out_of_range
+    - file: int-init-double.yaml
+      valid: false
+      error: semantic_validation
+    - file: int-default-exponent.yaml
+      valid: false
+      error: semantic_validation
+    - file: version-double.yaml
+      valid: false
+      error: semantic_validation
+    - file: float-from-integer.yaml
+      valid: true

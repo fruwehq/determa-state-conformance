@@ -1,0 +1,19 @@
+format: 1
+namespace: conformance.case_56_component_missing_binding
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      initial: { transition_to: processing }
+      states:
+        processing:
+          type: parallel
+          components:
+            - component_id: required_child
+              machine_id: child
+            - component_id: companion
+              root: {}
+  - machine_id: child
+    root:
+      variables:
+        required_value: { type: string, input: true }

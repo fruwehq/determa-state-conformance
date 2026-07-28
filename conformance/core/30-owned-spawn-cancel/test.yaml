@@ -4,12 +4,14 @@ steps:
     expect:
       config: [checkout]
       owned_instances:
-        payment_reference: { machine_id: payment, status: running, config: [awaiting] }
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: payment
+          status: running
+          config: [awaiting]
 
   - send: { event: cancel_payment }
     expect:
       config: [cancelled]
-      owned_instances:
-        payment_reference: { status: disposed }
+      owned_instances: []
       variables:
         payment_reference: { instance_reference: { machine_id: payment, targetable: false } }

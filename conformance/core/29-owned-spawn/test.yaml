@@ -4,7 +4,7 @@ steps:
     expect:
       config: [checkout]
       owned_instances:
-        payment_reference:
+        - key: { owner: root, spawn_sequence: 0 }
           machine_id: payment
           status: running
           config: [awaiting]
@@ -13,8 +13,9 @@ steps:
   - send: { bound_instance: payment_reference, event: pay, payload: { amount: 100 } }
     capture_emissions_as: payment_completion
     expect:
-      owned_instances:
-        payment_reference: { status: disposed }
+      owned_instances: []
+      variables:
+        payment_reference: { instance_reference: { machine_id: payment, targetable: false } }
       emissions:
         - { event: done, target: owner }
 

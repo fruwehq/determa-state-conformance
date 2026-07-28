@@ -1,7 +1,7 @@
 title: history restores configuration but reinitializes state-scoped variables
 steps:
   - send: { event: advance }
-    expect: { config: [second] }
+    expect: { config: [work.second] }
   - send: { event: increment }
     expect:
       variables: { attempts: 11 }
@@ -9,5 +9,5 @@ steps:
     expect: { config: [paused] }
   - send: { event: resume }
     expect:
-      config: [second]
+      config: [work.second]
       variables: { attempts: 10 }

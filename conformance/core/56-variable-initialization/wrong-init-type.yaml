@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_56_wrong_init_type
+machines:
+  - machine_id: wrong_init
+    root:
+      variables:
+        count: { type: int, init: "not-an-integer" }

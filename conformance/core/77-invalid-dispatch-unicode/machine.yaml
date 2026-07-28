@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_77_invalid_dispatch_unicode
+events:
+  set:
+    direction: input
+    payload:
+      value: { type: string, required: true }
+machines:
+  - machine_id: invalid_dispatch_unicode
+    root: {}

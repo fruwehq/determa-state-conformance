@@ -1,0 +1,20 @@
+format: 1
+namespace: conformance.case_56_spawn_missing_binding
+events:
+  start:
+    direction: input
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            start:
+              action:
+                - spawn: { machine_id: child }
+  - machine_id: child
+    root:
+      variables:
+        required_value: { type: string, input: true }

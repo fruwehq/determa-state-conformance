@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_60_wrong_default_type
+events:
+  invalid:
+    direction: input
+    payload:
+      value: { type: int, default: "not-an-integer" }
+machines:
+  - machine_id: invalid_default
+    root: {}

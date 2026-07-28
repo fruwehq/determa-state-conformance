@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_60_out_of_range_integer
+events:
+  invalid:
+    direction: input
+    payload:
+      value: { type: int, default: 9223372036854775808 }
+machines:
+  - machine_id: invalid_default
+    root: {}

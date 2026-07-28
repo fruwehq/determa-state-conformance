@@ -1,24 +1,27 @@
 title: external variable is seeded once; an env change is reacted to and adopted via refresh
 create:
   bindings:
-    external: { token: "old" }
+    external: { token: "old", region: "east" }
 steps:
   # creation: running.entry copied token into applied.
-  # an env change to the SAME value -> guard false -> no transition.
-  - send: { event: env, payload: { changed: { token: "old" } } }
+  # Token is unchanged, so the guard is false. The unselected region value is not
+  # retained anywhere by the core.
+  - send: { event: env, payload: { changed: { token: "old", region: "west" } } }
     expect:
       config: [running]
       variables:
         token: "old"
+        region: "east"
         applied: "old"
         trace: [enter_root]
 
-  # an env change to a NEW value -> guard true -> reconfiguring; refresh adopts the
-  # new token into the (read-only) external variable, then applied is recomputed.
-  - send: { event: env, payload: { changed: { token: "new" } } }
+  # Token changes, so the guard is true. refresh with omitted only adopts every changed
+  # field into its read-only external variable.
+  - send: { event: env, payload: { changed: { token: "new", region: "west" } } }
     expect:
       config: [reconfiguring]
       variables:
         token: "new"
+        region: "west"
         applied: "new"
         trace: [enter_root]

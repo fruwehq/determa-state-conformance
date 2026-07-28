@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_66_activation_name_variable
+machines:
+  - machine_id: activation_name_variable
+    root:
+      variables:
+        event: { type: string, init: "collision" }

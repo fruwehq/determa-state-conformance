@@ -1,0 +1,12 @@
+title: owner target syntax is valid but execution in an aggregate root faults
+steps:
+  - send: { event: try_owner }
+    expect:
+      status: faulted
+      disposition: faulted
+      config: [running]
+      emissions: []
+      caller_still_owns_input: true
+      fault:
+        code: invalid_instance_target
+        source_locator: /machines/0/root/states/running/on_events/try_owner/action/0/send/to

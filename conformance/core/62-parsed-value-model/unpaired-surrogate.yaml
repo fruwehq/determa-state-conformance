@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_62_unpaired_surrogate
+meta:
+  invalid: "\uD800"
+machines:
+  - machine_id: parser_probe
+    root: {}

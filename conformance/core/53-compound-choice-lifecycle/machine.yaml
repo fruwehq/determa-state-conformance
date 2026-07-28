@@ -1,0 +1,59 @@
+format: 1
+namespace: conformance.case_53_compound_choice_lifecycle
+events:
+  go:
+    direction: input
+    payload:
+      decision: { type: int, required: true }
+machines:
+  - machine_id: compound_choice
+    root:
+      type: composite
+      variables:
+        decision: { type: int, init: 0 }
+        trace: { type: list, init: [] }
+      initial: { transition_to: left }
+      states:
+        left:
+          type: composite
+          entry:
+            - assign: { trace: "trace + ['enter_left']" }
+          exit:
+            - assign: { trace: "trace + ['exit_left']" }
+          initial: { transition_to: source }
+          states:
+            source:
+              entry:
+                - assign: { trace: "trace + ['enter_source']" }
+              exit:
+                - assign: { trace: "trace + ['exit_source']" }
+              on_events:
+                go:
+                  action:
+                    - assign: { decision: "event.payload.decision" }
+                    - assign: { trace: "trace + ['event_action']" }
+                  transition_to: choose_first
+        choose_first:
+          choice:
+            - guard: "decision == 1"
+              action:
+                - assign: { trace: "trace + ['first_choice_action']" }
+              transition_to: choose_second
+            - transition_to: fallback
+        choose_second:
+          choice:
+            - guard: "decision == 1"
+              action:
+                - assign: { trace: "trace + ['second_choice_action']" }
+              transition_to: right
+            - transition_to: fallback
+        right:
+          type: composite
+          entry:
+            - assign: { trace: "trace + ['enter_right']" }
+          initial: { transition_to: target }
+          states:
+            target:
+              entry:
+                - assign: { trace: "trace + ['enter_target']" }
+        fallback: {}

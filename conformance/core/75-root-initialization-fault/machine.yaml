@@ -1,0 +1,9 @@
+format: 1
+namespace: conformance.case_75_root_initialization_fault
+machines:
+  - machine_id: root_initialization_fault
+    root:
+      variables:
+        value: { type: int, init: 0 }
+      entry:
+        - assign: { value: "1 / 0" }

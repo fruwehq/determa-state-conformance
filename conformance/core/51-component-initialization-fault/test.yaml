@@ -1,0 +1,56 @@
+title: component initialization faults are isolated and pending targets keep their incarnation
+steps:
+  - send: { event: start }
+    capture_emissions_as: component_initialization
+    expect:
+      status: running
+      config: [processing]
+      components:
+        faulty:
+          status: faulted
+          config: []
+          variables: {}
+          components: {}
+          owned_instances: []
+        healthy:
+          status: running
+          config: [waiting]
+          variables: { label: "healthy" }
+      emissions:
+        - { event: component_work, target: { component: faulty } }
+        - event: determa.component_failed
+          target: owner
+          payload:
+            component_id: faulty
+            fault:
+              code: action_fault
+              step_sequence: "1"
+              source_locator: /machines/0/root/states/processing/components/0/root/entry/0/assign/value
+        - { event: healthy_ready, target: owner }
+
+  - deliver: { captured: component_initialization, index: 0 }
+    expect:
+      status: running
+      disposition: rejected
+      components:
+        faulty:
+          status: faulted
+          config: []
+          variables: {}
+        healthy: { status: running, config: [waiting] }
+      emissions: []
+      caller_still_owns_input: true
+      rejection: { code: inactive_component_target }
+
+  - deliver: { captured: component_initialization, index: 1 }
+    expect:
+      status: faulted
+      disposition: faulted
+      components:
+        faulty: { status: faulted }
+        healthy: { status: running, config: [waiting] }
+      emissions: []
+      caller_still_owns_input: true
+      fault:
+        code: contained_runtime_fault
+        source_locator: system:unhandled_contained_failure

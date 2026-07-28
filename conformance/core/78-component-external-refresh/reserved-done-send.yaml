@@ -1,0 +1,12 @@
+format: 1
+namespace: conformance.case_78_reserved_done_send
+events:
+  trigger: { direction: input }
+machines:
+  - machine_id: owner
+    root:
+      on_events:
+        trigger:
+          action:
+            - send:
+                event: done

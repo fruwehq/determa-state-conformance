@@ -10,3 +10,6 @@ static:
     - file: destroyed-refresh.yaml
       valid: false
       error: destroyed_variable_write
+    - file: root-local-transition.yaml
+      valid: false
+      error: root_local_transition

@@ -4,7 +4,9 @@ steps:
     expect:
       config: [holding]
       owned_instances:
-        worker_reference: { machine_id: worker, status: running }
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
 
   # Automatic cleanup disposes the child before holding.exit runs. The exit-action
   # cancel therefore sees a disposed reference and must be a no-op.
@@ -13,7 +15,7 @@ steps:
       status: running
       disposition: handled
       config: [outside]
-      owned_instances: {}
+      owned_instances: []
       fault: null
       emissions:
         - event: worker_disposed
@@ -32,6 +34,6 @@ steps:
       status: running
       disposition: handled
       config: [outside]
-      owned_instances: {}
+      owned_instances: []
       fault: null
       emissions: []

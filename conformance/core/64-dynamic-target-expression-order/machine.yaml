@@ -1,0 +1,30 @@
+format: 1
+namespace: conformance.case_64_dynamic_target_expression_order
+events:
+  trigger:
+    direction: input
+  work:
+    direction: internal
+machines:
+  - machine_id: dynamic_target_order
+    root:
+      type: composite
+      variables:
+        child_reference:
+          type: instance_reference
+          machine_id: child
+          nullable: true
+          init: null
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            trigger:
+              action:
+                - send:
+                    event: work
+                    to:
+                      instance: "(1 / 0 == 0) ? child_reference : child_reference"
+                    correlation_id: "string(2 / 0)"
+  - machine_id: child
+    root: {}

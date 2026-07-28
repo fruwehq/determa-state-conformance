@@ -1,0 +1,26 @@
+title: source parsing rejects interoperability-unsafe YAML values before schema validation
+static:
+  documents:
+    - file: duplicate-key.yaml
+      valid: false
+      error: duplicate_key
+    - file: non-string-map-key.yaml
+      valid: false
+      error: non_string_map_key
+    - file: yaml-alias.yaml
+      valid: false
+      error: unsupported_yaml_feature
+    - file: unpaired-surrogate.yaml
+      valid: false
+      error: invalid_unicode
+    - file: hexadecimal-number.yaml
+      valid: false
+      error: invalid_numeric_syntax
+    - file: leading-plus-number.yaml
+      valid: false
+      error: invalid_numeric_syntax
+    - file: nested-out-of-range.yaml
+      valid: false
+      error: numeric_value_out_of_range
+    - file: valid-json-numbers.yaml
+      valid: true

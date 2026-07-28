@@ -1,0 +1,15 @@
+format: 1
+namespace: conformance.case_40_choice_with_type
+machines:
+  - machine_id: invalid_choice
+    root:
+      type: composite
+      initial: { transition_to: decide }
+      states:
+        decide:
+          type: simple
+          choice:
+            - { guard: "true", transition_to: yes }
+            - { transition_to: no }
+        yes: {}
+        no: {}

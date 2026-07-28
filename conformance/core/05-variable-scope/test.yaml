@@ -3,7 +3,7 @@ steps:
   # inside leaf, x resolves to mid.x (10); bump writes the nearest x -> 11.
   - send: {event: bump}
     expect:
-      config: [leaf]
+      config: [mid.leaf]
       variables: {x: 11}
 
   # leave mid: mid.x is destroyed; x now resolves to the outer top.x, still 1
@@ -16,10 +16,10 @@ steps:
   # re-enter mid: mid.x is re-initialized to 10 (not the prior 11).
   - send: {event: back}
     expect:
-      config: [leaf]
+      config: [mid.leaf]
       variables: {x: 10}
 
   - send: {event: bump}
     expect:
-      config: [leaf]
+      config: [mid.leaf]
       variables: {x: 11}

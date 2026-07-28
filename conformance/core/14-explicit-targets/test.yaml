@@ -3,8 +3,14 @@ steps:
   - send: { event: spawn_two }
     expect:
       owned_instances:
-        worker_one: { machine_id: worker, status: running, config: [ready] }
-        worker_two: { machine_id: worker, status: running, config: [ready] }
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
+          config: [ready]
+        - key: { owner: root, spawn_sequence: 1 }
+          machine_id: worker
+          status: running
+          config: [ready]
 
   - send: { event: ping }
     capture_emissions_as: fanout

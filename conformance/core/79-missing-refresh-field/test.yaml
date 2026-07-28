@@ -1,0 +1,23 @@
+title: refresh faults atomically when a selected external field is absent
+create:
+  bindings:
+    external:
+      token: old
+      region: east
+steps:
+  - send:
+      event: env
+      payload:
+        changed:
+          region: west
+    expect:
+      status: faulted
+      disposition: faulted
+      variables:
+        token: old
+        region: east
+      fault:
+        code: action_fault
+        source_locator: /machines/0/root/on_events/env/action/0/refresh/only/0
+      emissions: []
+      caller_still_owns_input: true

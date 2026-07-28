@@ -8,5 +8,5 @@ steps:
       variables:
         worker_reference: null
         cleanup_count: 1
-      owned_instances: {}
+      owned_instances: []
       emissions: []

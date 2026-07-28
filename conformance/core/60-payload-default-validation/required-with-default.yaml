@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_60_required_with_default
+events:
+  invalid:
+    direction: input
+    payload:
+      value: { type: string, required: true, default: "impossible" }
+machines:
+  - machine_id: invalid_default
+    root: {}

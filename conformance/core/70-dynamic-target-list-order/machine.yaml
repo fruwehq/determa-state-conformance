@@ -1,0 +1,35 @@
+format: 1
+namespace: conformance.case_70_dynamic_target_list_order
+events:
+  trigger:
+    direction: input
+  work:
+    direction: internal
+machines:
+  - machine_id: dynamic_target_list_order
+    root:
+      type: composite
+      variables:
+        first_reference:
+          type: instance_reference
+          machine_id: child
+          nullable: true
+          init: null
+        second_reference:
+          type: instance_reference
+          machine_id: child
+          nullable: true
+          init: null
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            trigger:
+              action:
+                - send:
+                    event: work
+                    targets:
+                      - instance: "(1 / 0 == 0) ? first_reference : first_reference"
+                      - instance: "(2 / 0 == 0) ? second_reference : second_reference"
+  - machine_id: child
+    root: {}

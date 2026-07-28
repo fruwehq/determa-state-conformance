@@ -1,0 +1,45 @@
+format: 1
+namespace: conformance.case_54_stale_component_target
+events:
+  start:
+    direction: input
+  leave:
+    direction: input
+  pulse:
+    direction: internal
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            start: { transition_to: processing }
+        processing:
+          type: parallel
+          entry:
+            - send:
+                event: pulse
+                to: { component: worker }
+          on_events:
+            leave: { transition_to: idle }
+          components:
+            - component_id: worker
+              root:
+                type: composite
+                variables:
+                  hits: { type: int, init: 0 }
+                initial: { transition_to: waiting }
+                states:
+                  waiting:
+                    on_events:
+                      pulse:
+                        action:
+                          - assign: { hits: "hits + 1" }
+            - component_id: companion
+              root:
+                type: composite
+                initial: { transition_to: waiting }
+                states:
+                  waiting: {}
