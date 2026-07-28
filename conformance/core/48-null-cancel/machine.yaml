@@ -1,0 +1,28 @@
+format: 1
+namespace: conformance.case_48_null_cancel
+events:
+  cleanup:
+    direction: input
+machines:
+  - machine_id: null_cancel
+    version: 1
+    root:
+      type: composite
+      variables:
+        worker_reference:
+          type: instance_reference
+          machine_id: worker
+          nullable: true
+          init: null
+        cleanup_count: { type: int, init: 0 }
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            cleanup:
+              action:
+                - cancel: { instance: "worker_reference" }
+                - assign: { cleanup_count: "cleanup_count + 1" }
+  - machine_id: worker
+    version: 1
+    root: {}

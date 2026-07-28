@@ -58,7 +58,9 @@ An `expect` map compares only the fields it names. Common fields are `status`,
 `disposition`, `config`, `variables`, `history`, `emissions`, `components`,
 `owned_instances`, and `fault`. `caller_still_owns_input` verifies that a faulting
 envelope remains caller-owned rather than becoming engine queue or dead-letter state,
-as required by specification §10.2.
+as required by specification §10.2. When named, `components` and `owned_instances`
+compare collection membership exactly, including an asserted empty collection; fields
+inside each listed member may still be partial.
 
 Static cases use either:
 
@@ -125,7 +127,9 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 43 | self-history lifecycle replay (§6) |
 | 44 | local history targeting (§6) |
 | 45 | proper-ancestor target bounds (§6) |
-| 46 | root boundary plus destroyed refresh/reference validation (§5, §6, §7) |
+| 46 | root boundary plus destroyed refresh validation (§5, §6) |
+| 47 | state-scoped reference cleanup with populated and null paths (§7) |
+| 48 | null instance cancellation is a successful no-op (§7) |
 
 ## Deliberate format-1 boundaries
 

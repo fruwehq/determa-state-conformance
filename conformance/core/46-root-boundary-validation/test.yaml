@@ -1,4 +1,4 @@
-title: root re-entry and destroyed runtime destinations are rejected at load
+title: root re-entry and destroyed refresh destinations are rejected at load
 static:
   documents:
     - file: root-self-transition.yaml
@@ -10,8 +10,3 @@ static:
     - file: destroyed-refresh.yaml
       valid: false
       error: destroyed_variable_write
-    - file: destroyed-live-reference.yaml
-      valid: false
-      error: destroyed_live_instance_reference
-    - file: cancel-before-exit.yaml
-      valid: true

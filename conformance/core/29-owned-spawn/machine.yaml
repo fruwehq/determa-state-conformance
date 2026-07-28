@@ -14,6 +14,7 @@ machines:
       type: composite
       variables:
         total: { type: int, init: 100 }
+        # Root scope deliberately lets the child outlive ordinary transitions.
         payment_reference:
           type: instance_reference
           machine_id: payment

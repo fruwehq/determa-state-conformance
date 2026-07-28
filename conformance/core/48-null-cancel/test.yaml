@@ -1,0 +1,12 @@
+title: cancelling a null instance reference is a successful no-op
+steps:
+  - send: { event: cleanup }
+    expect:
+      status: running
+      disposition: handled
+      config: [idle]
+      variables:
+        worker_reference: null
+        cleanup_count: 1
+      owned_instances: {}
+      emissions: []
