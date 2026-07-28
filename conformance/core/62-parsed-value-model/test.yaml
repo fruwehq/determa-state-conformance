@@ -1,4 +1,5 @@
-title: source parsing rejects interoperability-unsafe YAML values before schema validation
+title: source parsing rejects unsafe values and preserves YAML 1.2 Boolean-like strings
+load: { valid: true }
 static:
   documents:
     - file: duplicate-key.yaml
@@ -24,5 +25,41 @@ static:
       error: numeric_value_out_of_range
     - file: valid-json-numbers.yaml
       valid: true
-    - file: yaml-1-2-boolean-like-strings.yaml
-      valid: true
+create:
+  expect:
+    status: running
+    config: ["no"]
+    variables:
+      observed_value: ""
+steps:
+  - send: { event: "no" }
+    expect:
+      status: running
+      disposition: handled
+      config: ["off"]
+      variables:
+        observed_value: "no"
+
+  - send: { event: "off" }
+    expect:
+      status: running
+      disposition: handled
+      config: ["yes"]
+      variables:
+        observed_value: "off"
+
+  - send: { event: "yes" }
+    expect:
+      status: running
+      disposition: handled
+      config: ["on"]
+      variables:
+        observed_value: "yes"
+
+  - send: { event: "on" }
+    expect:
+      status: running
+      disposition: handled
+      config: ["no"]
+      variables:
+        observed_value: "on"

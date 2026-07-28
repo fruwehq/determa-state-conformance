@@ -21,17 +21,31 @@ machines:
   - machine_id: boolean_like_strings
     root:
       type: composite
+      variables:
+        observed_value: { type: string, init: "" }
       initial: { transition_to: no }
       states:
         no:
           on_events:
-            no: { transition_to: off }
+            no:
+              transition_to: off
+              action:
+                - assign: { observed_value: event.payload.value }
         off:
           on_events:
-            off: { transition_to: yes }
+            off:
+              transition_to: yes
+              action:
+                - assign: { observed_value: event.payload.value }
         yes:
           on_events:
-            yes: { transition_to: on }
+            yes:
+              transition_to: on
+              action:
+                - assign: { observed_value: event.payload.value }
         on:
           on_events:
-            on: { transition_to: no }
+            on:
+              transition_to: no
+              action:
+                - assign: { observed_value: event.payload.value }
