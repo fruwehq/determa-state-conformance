@@ -1,0 +1,28 @@
+title: a contained runtime dynamically targets its eligible owned instance using the nominal reference
+steps:
+  - send: { event: spawn_router }
+    expect:
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: router
+          status: running
+
+  - send: { bound_instance: router_reference, event: build_route }
+    capture_emissions_as: routed_work
+    expect:
+      emissions:
+        - { event: route }
+
+  - deliver: { captured: routed_work, index: 0 }
+    capture_emissions_as: routed_reply
+    expect:
+      emissions:
+        - { event: routed, target: owner }
+
+  - deliver: { captured: routed_reply, index: 0 }
+    expect:
+      emissions:
+        - event: route_observed
+          target: external
+          sequence: 0
+          correlation_id: contained-route

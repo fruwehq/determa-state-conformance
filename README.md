@@ -64,12 +64,25 @@ string in the YAML fixture source. It is accepted only in a case explicitly test
 programmatic create/dispatch rejection and is replaced before the core call; it is
 never passed as a map value.
 
+The driver-only values `{ non_finite_double: nan }`,
+`{ non_finite_double: positive_infinity }`, and
+`{ non_finite_double: negative_infinity }` construct the corresponding host binary64
+value without placing non-JSON YAML numeric syntax in a fixture. The driver recursively
+materializes them only in creation bindings, input payloads, envelope replacements, and
+the prior-state corruption probe below. An exact one-member map with this key is always
+a marker in those locations, not an ordinary host map.
+
 `load: { valid: true }` is an explicit semantic-load assertion made before creation.
 Scenario bundles are always required to load successfully; the marker calls out cases
 where load validity itself is a regression boundary in addition to the runtime trace.
 
-Each `send` at zero-based step index `step_index` is one host call to the root or to
-`bound_instance`. Its omitted event id is exactly
+Each `send` at zero-based step index `step_index` is one host input call. Its target is
+the root by default. `bound_instance: variable_name` resolves the complete nominal
+spawned-instance target in the root runtime's currently visible variable.
+`component: component_id` resolves the complete currently retained component target and
+exists only to exercise the host-ingress rejection boundary; it does not make direct
+component ingress valid. The two target selectors are mutually exclusive. The omitted
+event id is exactly
 `"conformance:" + case_name + ":step:" + canonical_decimal(step_index) + ":input"`.
 `send.event_id` may override it with a non-empty string. Root, creation, and input-event
 identities MUST be unique across the suite; the consistency validator rejects duplicate
@@ -82,11 +95,43 @@ with the original bundle; the harness neither recreates nor transforms it. This 
 operation exists to test the specification's prior-state/bundle compatibility check.
 
 `capture_emissions_as` names the ordered emissions returned by that call. A later
-`deliver: { captured, index }` presents that exact immutable internal envelope,
-including its complete tagged target and `event_id`, through
+`deliver: { captured, index }` clones and presents that exact immutable internal
+envelope, including its complete tagged target and `event_id`, through
 `{ internal: envelope }`. It never resolves an author target shorthand again. This
 records a fixed delivery trace without imposing a queue plugin's ordering, retry,
 acknowledgement, or retention policy.
+
+Boundary cases may add one non-empty `deliver.replace` map to the cloned envelope. The
+stored capture remains unchanged. Its closed fields are:
+
+- `payload` — replace the complete payload with the supplied map;
+- `target` — replace the complete target with `root`,
+  `{bound_instance: variable_name}`, or `{component: component_id}`, resolved from the
+  current aggregate; or
+- `spawned_instance_reference` — replace the named non-empty subset of
+  `root_instance_id`, `instance_id`, `machine_id`, and `machine_version` in an existing
+  `spawned_instance` target.
+
+This mutation notation is only a driver mechanism for malformed-envelope and target
+eligibility assertions. It does not define a public API or permit a captured emission
+to change.
+
+An `inspect.corrupt_prior_state` step deep-copies the current abstract state, replaces
+one nested value inside a visible root variable, and performs a null-delivery dispatch
+with that malformed prior state:
+
+```yaml
+inspect:
+  corrupt_prior_state:
+    runtime: root
+    variable: stored_map
+    path: [nested, 0]
+    value: { non_finite_double: nan }
+```
+
+`path` is a non-empty list of string map keys and non-negative list indexes. This is a
+driver-only prior-state validation probe, not a snapshot format. The dispatch result
+becomes the scenario's current result like any other step.
 
 These keys describe the test driver only. Implementations are not required to expose
 capture or delivery as public APIs. Explicit delivery is intentional: automatically
@@ -183,6 +228,12 @@ separately with `targetable: false`. `owned_instances: []` asserts exact emptine
 
 Scalar assertions are type-sensitive. In particular, YAML `1` asserts a CEL `int` and
 YAML `1.0` asserts a normalized CEL `double`; numerical equality alone is insufficient.
+The assertion-only value `{ normalized_double: positive_zero }` requires an actual
+binary64 zero with its sign bit clear. It may appear recursively anywhere a scalar
+value is asserted and is never a literal expected map. `caller_still_owns_state`
+verifies that an invalid-prior-state dispatch did not mutate the malformed state value
+supplied by the driver. It is the state-only counterpart of
+`caller_still_owns_input`.
 `rejection.code` names the exact pre-step rejection code and is distinct from the
 aggregate's retained `fault` record.
 
@@ -286,6 +337,19 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 78 | explicit owner-to-component environment forwarding and refresh (§4, §6, §7) |
 | 79 | missing selected external refresh field faults and rolls back atomically (§6, §10) |
 | 80 | unbound owned child survives state exit and joins aggregate cleanup (§7) |
+| 81 | bound-child lifetime survives holder clearing/reuse and retains canonical cleanup order (§7) |
+| 82 | spawned targets match every nominal `instance_reference` field (§4, §6) |
+| 83 | a contained runtime dynamically targets its eligible owned instance using the nominal reference (§4, §7) |
+| 84 | choice-action `stop` abandons the selected target and remaining choice chain (§6) |
+| 85 | component/spawn initialization faults roll back author intents and output allocations (§9, §10) |
+| 86 | last-component initialization orders `component_completed` immediately before parallel `done` (§7, §9) |
+| 87 | internal `env` delivery is accepted only for a component target (§6) |
+| 88 | malformed fixed lifecycle payloads reject before handler selection (§4, §6) |
+| 89 | recursive non-finite host-value rejection during creation (§5, §8) |
+| 90 | recursive host numeric validation, negative-zero normalization, and prior-state rejection (§5, §8) |
+| 91 | ordinary host input to a live component rejects with `invalid_instance_target` (§6, §8) |
+| 92 | aggregate-root fault terminality overrides retained component target status (§6, §8) |
+| 93 | non-correlating input and internal envelopes may carry optional correlation ids (§6) |
 
 ## Deliberate format-1 boundaries
 

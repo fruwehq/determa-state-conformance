@@ -1,0 +1,26 @@
+format: 1
+namespace: conformance.case_93_optional_correlation
+events:
+  begin:
+    direction: input
+  pulse:
+    direction: internal
+machines:
+  - machine_id: correlation
+    root:
+      type: composite
+      variables:
+        handled: { type: int, init: 0 }
+      initial: { transition_to: ready }
+      states:
+        ready:
+          on_events:
+            begin:
+              action:
+                - assign: { handled: "handled + 1" }
+                - send:
+                    event: pulse
+                    correlation_id: "'internal-correlation'"
+            pulse:
+              action:
+                - assign: { handled: "handled + 1" }

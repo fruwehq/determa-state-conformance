@@ -1,0 +1,34 @@
+title: root fault terminality overrides a retained live-looking component target
+steps:
+  - send: { event: fault_root }
+    expect:
+      status: faulted
+      disposition: faulted
+      caller_still_owns_input: true
+      fault:
+        code: action_fault
+        source_locator: /machines/0/root/on_events/fault_root/action/0/assign/value
+      components:
+        worker:
+          status: running
+          config: [ready]
+          variables: { handled: 0 }
+        companion: { status: running }
+      emissions: []
+
+  - send: { component: worker, event: descendant_input }
+    expect:
+      status: faulted
+      disposition: rejected
+      rejection: { code: invalid_instance_target }
+      caller_still_owns_input: true
+      fault:
+        code: action_fault
+        source_locator: /machines/0/root/on_events/fault_root/action/0/assign/value
+      components:
+        worker:
+          status: running
+          config: [ready]
+          variables: { handled: 0 }
+        companion: { status: running }
+      emissions: []

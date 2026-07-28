@@ -1,0 +1,32 @@
+format: 1
+namespace: conformance.case_92_faulted_root_component_precedence
+events:
+  fault_root:
+    direction: input
+  descendant_input:
+    direction: input
+machines:
+  - machine_id: owner
+    root:
+      type: parallel
+      variables:
+        value: { type: int, init: 1 }
+      on_events:
+        fault_root:
+          action:
+            - assign: { value: "value / 0" }
+      components:
+        - component_id: worker
+          root:
+            type: composite
+            variables:
+              handled: { type: int, init: 0 }
+            initial: { transition_to: ready }
+            states:
+              ready:
+                on_events:
+                  descendant_input:
+                    action:
+                      - assign: { handled: "handled + 1" }
+        - component_id: companion
+          root: {}

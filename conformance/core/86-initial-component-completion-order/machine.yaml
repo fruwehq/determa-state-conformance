@@ -1,0 +1,29 @@
+format: 1
+namespace: conformance.case_86_initial_component_completion_order
+events:
+  start:
+    direction: input
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            start: { transition_to: processing }
+        processing:
+          type: parallel
+          components:
+            - component_id: first
+              root:
+                type: composite
+                initial: { transition_to: complete }
+                states:
+                  complete: { type: final }
+            - component_id: second
+              root:
+                type: composite
+                initial: { transition_to: complete }
+                states:
+                  complete: { type: final }

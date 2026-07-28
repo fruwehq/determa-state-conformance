@@ -1,0 +1,24 @@
+format: 1
+namespace: conformance.case_91_component_host_input_rejection
+events:
+  host_work:
+    direction: input
+machines:
+  - machine_id: owner
+    root:
+      type: parallel
+      components:
+        - component_id: worker
+          root:
+            type: composite
+            variables:
+              handled: { type: int, init: 0 }
+            initial: { transition_to: ready }
+            states:
+              ready:
+                on_events:
+                  host_work:
+                    action:
+                      - assign: { handled: "handled + 1" }
+        - component_id: companion
+          root: {}

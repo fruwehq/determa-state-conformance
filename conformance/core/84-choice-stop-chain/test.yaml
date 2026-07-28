@@ -1,0 +1,17 @@
+title: stop in a choice action abandons its target and the remaining choice chain
+steps:
+  - send: { event: go }
+    expect:
+      status: completed
+      disposition: handled
+      config: []
+      variables: {}
+      components: {}
+      owned_instances: []
+      fault: null
+      emissions:
+        - event: trace
+          target: external
+          sequence: 0
+          correlation_id: choice-stop
+          payload: { stage: before_stop }

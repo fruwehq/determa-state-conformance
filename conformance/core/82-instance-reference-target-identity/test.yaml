@@ -1,0 +1,97 @@
+title: every field of a spawned-instance target must match its nominal reference
+steps:
+  - send: { event: spawn_worker }
+    expect:
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
+          variables: { handled: 0 }
+
+  - send: { event: request_work }
+    capture_emissions_as: work_request
+    expect:
+      emissions:
+        - { event: work, target: { bound_instance: worker_reference } }
+
+  - deliver:
+      captured: work_request
+      index: 0
+      replace:
+        spawned_instance_reference:
+          root_instance_id: wrong-root
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_instance_target }
+      caller_still_owns_input: true
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
+          variables: { handled: 0 }
+      emissions: []
+
+  - deliver:
+      captured: work_request
+      index: 0
+      replace:
+        spawned_instance_reference:
+          instance_id: wrong-instance
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_instance_target }
+      caller_still_owns_input: true
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
+          variables: { handled: 0 }
+      emissions: []
+
+  - deliver:
+      captured: work_request
+      index: 0
+      replace:
+        spawned_instance_reference:
+          machine_id: wrong_machine
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_instance_target }
+      caller_still_owns_input: true
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
+          variables: { handled: 0 }
+      emissions: []
+
+  - deliver:
+      captured: work_request
+      index: 0
+      replace:
+        spawned_instance_reference:
+          machine_version: 2
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_instance_target }
+      caller_still_owns_input: true
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
+          variables: { handled: 0 }
+      emissions: []
+
+  - deliver: { captured: work_request, index: 0 }
+    expect:
+      disposition: handled
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
+          variables: { handled: 1 }
+      emissions: []

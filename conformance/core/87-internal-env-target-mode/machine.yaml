@@ -1,0 +1,61 @@
+format: 1
+namespace: conformance.case_87_internal_env_target_mode
+events:
+  spawn_child:
+    direction: input
+  forward_environment:
+    direction: input
+    payload:
+      token: { type: string, required: true }
+machines:
+  - machine_id: owner
+    root:
+      type: parallel
+      variables:
+        token: { type: string, external: true }
+        child_reference:
+          type: instance_reference
+          machine_id: refreshable
+          nullable: true
+          init: null
+      on_events:
+        env:
+          action:
+            - refresh: {}
+        spawn_child:
+          action:
+            - spawn:
+                machine_id: refreshable
+                bindings:
+                  external: { token: "token" }
+                bind_to: child_reference
+        forward_environment:
+          action:
+            - send:
+                event: env
+                to: { component: refreshed }
+                payload:
+                  changed: "{'token': event.payload.token}"
+      components:
+        - component_id: refreshed
+          machine_id: refreshable
+          with:
+            external: { token: "owner.variables.token" }
+        - component_id: companion
+          root:
+            type: composite
+            initial: { transition_to: ready }
+            states:
+              ready: {}
+  - machine_id: refreshable
+    root:
+      type: composite
+      variables:
+        token: { type: string, external: true }
+      on_events:
+        env:
+          action:
+            - refresh: {}
+      initial: { transition_to: ready }
+      states:
+        ready: {}

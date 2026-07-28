@@ -1,0 +1,43 @@
+format: 1
+namespace: conformance.case_84_choice_stop_chain
+events:
+  go:
+    direction: input
+  trace:
+    direction: output
+    payload:
+      stage: { type: string, required: true }
+machines:
+  - machine_id: choice_stop
+    root:
+      type: composite
+      initial: { transition_to: waiting }
+      states:
+        waiting:
+          on_events:
+            go: { transition_to: choose_stop }
+        choose_stop:
+          choice:
+            - guard: "true"
+              action:
+                - send:
+                    event: trace
+                    to: { external: true }
+                    payload: { stage: "'before_stop'" }
+                    correlation_id: "'choice-stop'"
+                - stop: {}
+              transition_to: choose_after
+            - transition_to: fallback
+        choose_after:
+          choice:
+            - guard: "true"
+              transition_to: reached_after
+            - transition_to: fallback
+        reached_after:
+          entry:
+            - send:
+                event: trace
+                to: { external: true }
+                payload: { stage: "'after_stop'" }
+                correlation_id: "'choice-stop'"
+        fallback: {}

@@ -1,0 +1,15 @@
+title: ordinary host input cannot directly target a live component
+steps:
+  - send: { component: worker, event: host_work }
+    expect:
+      status: running
+      disposition: rejected
+      rejection: { code: invalid_instance_target }
+      caller_still_owns_input: true
+      components:
+        worker:
+          status: running
+          config: [ready]
+          variables: { handled: 0 }
+        companion: { status: running }
+      emissions: []

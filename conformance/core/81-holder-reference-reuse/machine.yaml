@@ -1,0 +1,51 @@
+format: 1
+namespace: conformance.case_81_holder_reference_reuse
+events:
+  prepare:
+    direction: input
+  leave:
+    direction: input
+  child_exited:
+    direction: output
+    payload:
+      label: { type: string, required: true }
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      initial: { transition_to: holding }
+      states:
+        holding:
+          variables:
+            child_reference:
+              type: instance_reference
+              machine_id: child
+              nullable: true
+              init: null
+          on_events:
+            prepare:
+              action:
+                - spawn:
+                    machine_id: child
+                    bindings:
+                      input: { label: "'first'" }
+                    bind_to: child_reference
+                - assign: { child_reference: "null" }
+                - spawn:
+                    machine_id: child
+                    bindings:
+                      input: { label: "'second'" }
+                    bind_to: child_reference
+                - assign: { child_reference: "null" }
+            leave: { transition_to: outside }
+        outside: {}
+  - machine_id: child
+    root:
+      variables:
+        label: { type: string, input: true }
+      exit:
+        - send:
+            event: child_exited
+            to: { external: true }
+            payload: { label: "label" }
+            correlation_id: "'holder-reuse'"

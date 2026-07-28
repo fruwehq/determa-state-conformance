@@ -1,0 +1,31 @@
+title: clearing and reusing one holder reference does not detach either bound child
+steps:
+  - send: { event: prepare }
+    expect:
+      config: [holding]
+      variables: { child_reference: null }
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: child
+          status: running
+        - key: { owner: root, spawn_sequence: 1 }
+          machine_id: child
+          status: running
+
+  - send: { event: leave }
+    expect:
+      status: running
+      disposition: handled
+      config: [outside]
+      owned_instances: []
+      emissions:
+        - event: child_exited
+          target: external
+          sequence: 0
+          correlation_id: holder-reuse
+          payload: { label: first }
+        - event: child_exited
+          target: external
+          sequence: 1
+          correlation_id: holder-reuse
+          payload: { label: second }

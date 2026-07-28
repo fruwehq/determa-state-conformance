@@ -1,0 +1,25 @@
+title: the last component initialization emits completed immediately before parallel done
+steps:
+  - send: { event: start }
+    expect:
+      status: running
+      disposition: handled
+      config: [processing]
+      components:
+        first: { status: completed, config: [], variables: {} }
+        second: { status: completed, config: [], variables: {} }
+      emissions:
+        - event: determa.component_completed
+          event_id: sha256:c605f731291ed327389d465ebc0b9881c061919e5888fcc6327637af0996a152
+          target: owner
+          payload: { component_id: first }
+        - event: determa.component_completed
+          event_id: sha256:cc60531daab5dfac5fdf09b57fb39ff075becf6df9673a1e0b33280d4900c8da
+          target: owner
+          payload: { component_id: second }
+        - event: done
+          event_id: sha256:23b21e232f7d101fdd32cd33a339809f99ce6e2f6a5b825e8b04474293284e91
+          target: owner
+          payload:
+            relationship: parallel
+            state_path: processing

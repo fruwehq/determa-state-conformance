@@ -1,0 +1,45 @@
+format: 1
+namespace: conformance.case_82_instance_reference_target_identity
+events:
+  spawn_worker:
+    direction: input
+  request_work:
+    direction: input
+  work:
+    direction: internal
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      variables:
+        worker_reference:
+          type: instance_reference
+          machine_id: worker
+          nullable: true
+          init: null
+      initial: { transition_to: ready }
+      states:
+        ready:
+          on_events:
+            spawn_worker:
+              action:
+                - spawn:
+                    machine_id: worker
+                    bind_to: worker_reference
+            request_work:
+              action:
+                - send:
+                    event: work
+                    to: { instance: "worker_reference" }
+  - machine_id: worker
+    root:
+      type: composite
+      variables:
+        handled: { type: int, init: 0 }
+      initial: { transition_to: waiting }
+      states:
+        waiting:
+          on_events:
+            work:
+              action:
+                - assign: { handled: "handled + 1" }

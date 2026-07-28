@@ -13,10 +13,12 @@ Add one narrowly focused core directory under `conformance/core/`:
 
 Every host-facing event belongs in bundle `events` with `direction: input` or
 `direction: output`. Machine-local events are private and `internal`. Internal delivery
-must be explicit: capture a returned emission and deliver that exact envelope in a later
-step rather than assuming broadcast or recursive queue processing. The capture/delivery
-vocabulary is test-driver mechanics, not an implementation API. Fields asserted under
-`expect` are normative core behavior.
+must be explicit: capture a returned emission and deliver its immutable clone in a later
+step rather than assuming broadcast or recursive queue processing. A rejection-boundary
+case may use only the closed `deliver.replace` forms documented in the README; the
+stored capture remains unchanged. The capture/delivery vocabulary is test-driver
+mechanics, not an implementation API. Fields asserted under `expect` are normative core
+behavior.
 
 Optional host surfaces belong under `conformance/profiles/<profile>/`. Profile content
 binds only implementations that declare support for it and cannot override core prose.

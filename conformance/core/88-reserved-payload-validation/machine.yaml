@@ -1,0 +1,126 @@
+format: 1
+namespace: conformance.case_88_reserved_payload_validation
+events:
+  enter_faulting:
+    direction: input
+  leave:
+    direction: input
+  enter_completing:
+    direction: input
+  finish_first:
+    direction: input
+  finish_second:
+    direction: input
+  component_finish:
+    direction: internal
+  spawn_faulty:
+    direction: input
+  spawn_healthy:
+    direction: input
+  finish_child:
+    direction: input
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      variables:
+        handled_count: { type: int, init: 0 }
+        faulty_reference:
+          type: instance_reference
+          machine_id: faulty_child
+          nullable: true
+          init: null
+        healthy_reference:
+          type: instance_reference
+          machine_id: healthy_child
+          nullable: true
+          init: null
+      initial: { transition_to: idle }
+      on_events:
+        determa.component_completed:
+          action:
+            - assign: { handled_count: "handled_count + 1" }
+        determa.component_failed:
+          action:
+            - assign: { handled_count: "handled_count + 1" }
+        determa.spawned_instance_failed:
+          action:
+            - assign: { handled_count: "handled_count + 1" }
+        done:
+          action:
+            - assign: { handled_count: "handled_count + 1" }
+        spawn_faulty:
+          action:
+            - spawn:
+                machine_id: faulty_child
+                bind_to: faulty_reference
+        spawn_healthy:
+          action:
+            - spawn:
+                machine_id: healthy_child
+                bind_to: healthy_reference
+      states:
+        idle:
+          on_events:
+            enter_faulting: { transition_to: faulting }
+            enter_completing: { transition_to: completing }
+        faulting:
+          type: parallel
+          on_events:
+            leave: { transition_to: idle }
+          components:
+            - component_id: faulty
+              root:
+                variables:
+                  value: { type: int, init: 1 }
+                entry:
+                  - assign: { value: "value / 0" }
+            - component_id: companion
+              root: {}
+        completing:
+          type: parallel
+          on_events:
+            finish_first:
+              action:
+                - send:
+                    event: component_finish
+                    to: { component: first }
+            finish_second:
+              action:
+                - send:
+                    event: component_finish
+                    to: { component: second }
+          components:
+            - component_id: first
+              root:
+                type: composite
+                initial: { transition_to: waiting }
+                states:
+                  waiting:
+                    on_events:
+                      component_finish: { transition_to: complete }
+                  complete: { type: final }
+            - component_id: second
+              root:
+                type: composite
+                initial: { transition_to: waiting }
+                states:
+                  waiting:
+                    on_events:
+                      component_finish: { transition_to: complete }
+                  complete: { type: final }
+  - machine_id: faulty_child
+    root:
+      variables:
+        value: { type: int, init: 1 }
+      entry:
+        - assign: { value: "value / 0" }
+  - machine_id: healthy_child
+    root:
+      type: composite
+      initial: { transition_to: waiting }
+      states:
+        waiting:
+          on_events:
+            finish_child: { transition_to: complete }
+        complete: { type: final }
