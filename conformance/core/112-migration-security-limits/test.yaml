@@ -5,6 +5,10 @@ static:
       valid: true
     - file: target.yaml
       valid: true
+    - file: occurrence-machine.yaml
+      valid: true
+    - file: occurrence-target.yaml
+      valid: true
 artifacts:
   documents:
     - file: source-aggregate-state.json
@@ -13,17 +17,26 @@ artifacts:
     - file: migration-descriptor.json
       kind: migration_descriptor
       valid: true
+    - file: untrusted-resolver.json
+      kind: artifact_resolver
+      valid: true
     - file: chain-resource-limits.json
-      kind: json_value
+      kind: resource_limits
       valid: true
     - file: aggregate-resource-limits.json
-      kind: json_value
+      kind: resource_limits
       valid: true
     - file: descriptor-resource-limits.json
-      kind: json_value
+      kind: resource_limits
       valid: true
-    - file: untrusted-resolver.json
-      kind: json_value
+    - file: occurrence-source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: understated-output-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: understated-evaluation-descriptor.json
+      kind: migration_descriptor
       valid: true
 persistence_vectors:
   - operation: migrate_aggregate
@@ -90,6 +103,38 @@ persistence_vectors:
     maintenance_mode: false
     name: descriptor_byte_limit_exceeded
     resource_limits: descriptor-resource-limits.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      caller_still_owns_aggregate: true
+  - name: descriptor_understates_actual_transformed_output
+    operation: migrate_aggregate
+    aggregate_state: occurrence-source-aggregate-state.json
+    definitions:
+      - occurrence-machine.yaml
+      - occurrence-target.yaml
+    migration_descriptors:
+      - understated-output-descriptor.json
+    migration_route:
+      - sha256:13a1028a6eb6d714a86fd6f6bc574172898a6b0d7048cd818ac4c2c5520a3249
+    target_validated_bundle_fingerprint: sha256:d1e734157ee4efcd7b010bce960ca3475734fce3056e06ff8885d7883aaeca1d
+    maintenance_mode: false
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      caller_still_owns_aggregate: true
+  - name: descriptor_understates_actual_cel_evaluation
+    operation: migrate_aggregate
+    aggregate_state: occurrence-source-aggregate-state.json
+    definitions:
+      - occurrence-machine.yaml
+      - occurrence-target.yaml
+    migration_descriptors:
+      - understated-evaluation-descriptor.json
+    migration_route:
+      - sha256:54c4de88a48c25e8fe24680fa9d2466088a12caee671609511c8b7cc2f843e5a
+    target_validated_bundle_fingerprint: sha256:d1e734157ee4efcd7b010bce960ca3475734fce3056e06ff8885d7883aaeca1d
+    maintenance_mode: false
     expect:
       result: failure
       code: migration_resource_limit_exceeded

@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/conformance/resource-limits.schema.json",
+  "type": "object",
+  "required": [
+    "maximum_aggregate_bytes",
+    "maximum_definition_bytes",
+    "maximum_descriptor_bytes",
+    "maximum_transformed_output_bytes",
+    "maximum_chain_length",
+    "maximum_cel_expression_length",
+    "maximum_cel_ast_nodes",
+    "maximum_cel_evaluation_steps"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "maximum_aggregate_bytes": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_definition_bytes": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_descriptor_bytes": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_transformed_output_bytes": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_chain_length": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_cel_expression_length": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_cel_ast_nodes": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_cel_evaluation_steps": {
+      "$ref": "#/$defs/canonicalDecimal"
+    }
+  },
+  "$defs": {
+    "canonicalDecimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    }
+  }
+}

@@ -70,6 +70,10 @@ ARTIFACT_KINDS = {
     "migration_descriptor": "migration-descriptor.schema.json",
     "aggregate_state_package": "aggregate-state-package.schema.json",
 }
+DRIVER_ARTIFACT_KINDS = {
+    "artifact_resolver": "artifact-resolver.schema.json",
+    "resource_limits": "resource-limits.schema.json",
+}
 ARTIFACT_FORMAT_FIELDS = {
     "aggregate_state": (
         "aggregate_state_format",
@@ -228,6 +232,10 @@ def artifact_error(
     validator: Draft202012Validator,
 ) -> str | None:
     if kind == "json_value":
+        return None
+    if kind in DRIVER_ARTIFACT_KINDS:
+        if next(validator.iter_errors(document), None) is not None:
+            return f"invalid_{kind}"
         return None
     (
         format_field,
@@ -518,7 +526,7 @@ def artifact_entries(
             raise ValidationFailure(f"{case.name}: duplicate artifact {path.name}")
         referenced.add(path)
         kind = entry.get("kind")
-        if kind not in {*ARTIFACT_KINDS, "json_value"}:
+        if kind not in {*ARTIFACT_KINDS, *DRIVER_ARTIFACT_KINDS, "json_value"}:
             raise ValidationFailure(f"{case.name}: invalid artifact kind {kind!r}")
         if not isinstance(entry.get("valid"), bool):
             raise ValidationFailure(f"{case.name}: artifact needs Boolean valid")
@@ -601,18 +609,67 @@ def validate_vector_references(
 ) -> None:
     artifact_names = {path.name for path in artifact_paths}
     bundle_names = {path.name for path in bundle_paths}
+    artifact_kinds = {
+        entry["file"]: entry["kind"] for entry in test["artifacts"]["documents"]
+    }
+    for entry in test["artifacts"]["documents"]:
+        if entry["kind"] != "artifact_resolver" or not entry["valid"]:
+            continue
+        resolver = analyze_artifact(case / entry["file"]).document
+        definition_keys = [
+            definition["validated_bundle_fingerprint"]
+            for definition in resolver["definitions"]
+        ]
+        descriptor_keys = [
+            descriptor["migration_descriptor_digest"]
+            for descriptor in resolver["migration_descriptors"]
+        ]
+        if len(definition_keys) != len(set(definition_keys)):
+            raise ValidationFailure(
+                f"{case.name}: resolver {entry['file']} repeats a definition key"
+            )
+        if len(descriptor_keys) != len(set(descriptor_keys)):
+            raise ValidationFailure(
+                f"{case.name}: resolver {entry['file']} repeats a descriptor key"
+            )
+        for definition in resolver["definitions"]:
+            bundle_file = definition["bundle_file"]
+            if bundle_file not in bundle_names:
+                raise ValidationFailure(
+                    f"{case.name}: resolver {entry['file']} references undeclared "
+                    f"bundle {bundle_file}"
+                )
+        for descriptor in resolver["migration_descriptors"]:
+            descriptor_file = descriptor["descriptor_file"]
+            if (
+                descriptor_file not in artifact_names
+                or artifact_kinds[descriptor_file] != "migration_descriptor"
+            ):
+                raise ValidationFailure(
+                    f"{case.name}: resolver {entry['file']} references undeclared "
+                    f"migration descriptor {descriptor_file}"
+                )
     for vector in test.get("persistence_vectors", []):
-        for field in (
-            "aggregate_state",
-            "aggregate_state_package",
-            "input_envelope",
-            "resource_limits",
-            "artifact_resolver",
-        ):
+        input_artifact_kinds = {
+            "aggregate_state": "aggregate_state",
+            "aggregate_state_package": "aggregate_state_package",
+            "input_envelope": "json_value",
+            "resource_limits": "resource_limits",
+            "artifact_resolver": "artifact_resolver",
+        }
+        for field, expected_kind in input_artifact_kinds.items():
             if field in vector and vector[field] not in artifact_names:
                 raise ValidationFailure(
                     f"{case.name}: vector {vector['name']} references undeclared "
                     f"artifact {vector[field]}"
+                )
+            if (
+                field in vector
+                and artifact_kinds[vector[field]] != expected_kind
+            ):
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} {field} must name "
+                    f"a {expected_kind} document"
                 )
         for field in ("source_bundle", "target_bundle"):
             if field in vector and vector[field] not in bundle_names:
@@ -633,17 +690,32 @@ def validate_vector_references(
                     f"{case.name}: vector {vector['name']} references undeclared "
                     f"descriptor {filename}"
                 )
-        for field in (
-            "aggregate_state_file",
-            "canonical_bytes_file",
-            "migration_audit_file",
-            "emissions_file",
-        ):
+            if artifact_kinds[filename] != "migration_descriptor":
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} descriptor must name "
+                    "a migration_descriptor document"
+                )
+        expected_artifact_kinds = {
+            "aggregate_state_file": "aggregate_state",
+            "exact_bytes_file": "aggregate_state",
+            "migration_audit_file": "json_value",
+            "emissions_file": "json_value",
+            "artifact_resolver_file": "artifact_resolver",
+        }
+        for field, expected_kind in expected_artifact_kinds.items():
             filename = vector["expect"].get(field)
             if filename is not None and filename not in artifact_names:
                 raise ValidationFailure(
                     f"{case.name}: vector {vector['name']} expectation references "
                     f"undeclared artifact {filename}"
+                )
+            if (
+                filename is not None
+                and artifact_kinds[filename] != expected_kind
+            ):
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} {field} must name "
+                    f"a {expected_kind} document"
                 )
     digest_bypasses = {
         entry["file"]
@@ -839,6 +911,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             kind: spec_root / "schema" / filename
             for kind, filename in ARTIFACT_KINDS.items()
         },
+        **{
+            kind: repository_root / "scripts" / "schemas" / filename
+            for kind, filename in DRIVER_ARTIFACT_KINDS.items()
+        },
         "persistence_vectors": (
             repository_root / "scripts" / "schemas" / "persistence-vectors.schema.json"
         ),
@@ -867,7 +943,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     )
     artifact_validators = {
         kind: Draft202012Validator(schemas[kind], registry=registry)
-        for kind in ARTIFACT_KINDS
+        for kind in (*ARTIFACT_KINDS, *DRIVER_ARTIFACT_KINDS)
     }
     persistence_vector_validator = Draft202012Validator(
         schemas["persistence_vectors"], registry=registry
@@ -1181,7 +1257,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     return (
         f"validated {len(document_paths)} bundle documents across {len(cases)} "
         f"case directories against spec {spec_version}; "
-        f"{artifact_documents} portable JSON artifacts, "
+        f"{artifact_documents} JSON artifacts, "
         f"{source_rejections} expected source rejections, "
         f"{structural_rejections} expected structural rejections, "
         f"{static_schema_passes} schema-valid static documents, and "

@@ -28,9 +28,10 @@ Coverage:
 - `persistence-01-inbox-idempotency` — duplicate replay returns the committed outcome
   without another migration, dispatch, outbox write, or audit record.
 - `persistence-02-atomic-aggregate-inbox-outbox-audit` — all logical writes commit or
-  roll back together.
+  roll back together, including one deterministic emitted output intent in the outbox.
 - `persistence-03-crash-before-and-after-commit` — pre-commit crashes leave no writes;
-  post-commit/pre-acknowledgement crashes replay through inbox idempotency.
+  post-commit/pre-acknowledgement crashes retain an unacknowledged committed inbox
+  outcome, and its replay performs the first acknowledgement without redispatch.
 - `persistence-04-transient-retry` — transaction conflict or temporary storage failure
   does not quarantine and retries from newly read state.
 - `persistence-05-permanent-quarantine-and-release` — permanent deterministic failure

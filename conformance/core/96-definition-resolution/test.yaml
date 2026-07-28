@@ -16,10 +16,10 @@ artifacts:
       valid: true
       canonical_of: source-aggregate-state.json
     - file: collision-resolver.json
-      kind: json_value
+      kind: artifact_resolver
       valid: true
     - file: untrusted-resolver.json
-      kind: json_value
+      kind: artifact_resolver
       valid: true
 persistence_vectors:
   - name: matching_definition
@@ -30,7 +30,7 @@ persistence_vectors:
     expect:
       result: success
       aggregate_state_file: source-aggregate-state.json
-      canonical_bytes_file: source-aggregate-state.canonical.json
+      exact_bytes_file: source-aggregate-state.canonical.json
   - name: missing_definition
     operation: restore_and_serialize
     aggregate_state: source-aggregate-state.json

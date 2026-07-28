@@ -35,8 +35,9 @@ migrated suite.
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
 pre-schema rejections, checks declared structural results against an immutable
 specification commit, verifies artifact digests, and compares canonical JSON files as
-exact bytes. It does not execute scenario traces, and there is no standalone runtime
-runner.
+exact bytes. Persistence vectors separately name the exact operation-result bytes, which
+may intentionally be noncanonical for an empty-route migration no-op. CI does not
+execute scenario traces, and there is no standalone runtime runner.
 Each implementation's harness must later load and execute every core case;
 implementation work follows this suite in a separate pull request.
 
@@ -151,22 +152,58 @@ target bundle, `artifacts.documents` for every JSON file, and one or more closed
 
 The exact driver operations are `serialize_created_aggregate`,
 `restore_and_serialize`, `restore_and_dispatch`, `restore_package`,
-`migrate_aggregate`, and `migrate_and_dispatch`. They adapt the three pure SPEC §16.1
-operations without fixing language API names. A vector explicitly supplies every
-definition, descriptor digest, route member, target fingerprint, maintenance flag,
-input envelope, resolver override, and resource-limit fixture it uses.
+`restore_package_and_migrate`, `migrate_aggregate`, and `migrate_and_dispatch`. They
+adapt the pure SPEC §16 operations without fixing language API names. A vector
+explicitly supplies every definition, descriptor digest, route member, target
+fingerprint, maintenance flag, input envelope, resolver override, and resource-limit
+fixture it uses.
+
+Migration vectors normally use the required top-level `migration_route`,
+`target_validated_bundle_fingerprint`, and `maintenance_mode` driver fields. A vector
+testing request validation may instead use the closed `migration_request` object, whose
+only fields are those same three request members. This keeps malformed-request coverage
+inside a closed harness contract; case 113 deliberately omits `maintenance_mode` so the
+operation, rather than fixture-schema validation, returns
+`invalid_migration_request`.
 
 An artifact manifest classifies `aggregate_state`, `migration_descriptor`,
-`aggregate_state_package`, or nonportable driver-only `json_value`. Recognized portable
-artifacts are checked against the pinned specification schema and have their embedded
-digests recomputed. `verify_digest: false` is permitted only for a schema-valid
-semantic-negative vector whose operation asserts the exact digest/package failure.
-`canonical_of` requires the complete file bytes to equal the RFC 8785 serialization of
-the readable fixture, with no byte-order mark, whitespace, or trailing newline.
+`aggregate_state_package`, driver-only `artifact_resolver` and `resource_limits`, or
+driver-only `json_value`. Recognized portable artifacts are checked against the pinned
+specification schema and have their embedded digests recomputed. The two driver-only
+documents are checked against closed repository schemas. `verify_digest: false` is
+permitted only for a schema-valid semantic-negative vector whose operation asserts the
+exact digest/package failure. `canonical_of` requires the complete file bytes to equal
+the RFC 8785 serialization of the readable fixture, with no byte-order mark, whitespace,
+or trailing newline.
 
-Expected aggregate, canonical-byte, audit, and emission files are normative. A failure
-asserts the exact closed code and `caller_still_owns_aggregate: true`; no intermediate
-candidate or audit record is available to the caller.
+`expect.aggregate_state_file` compares the semantic aggregate value.
+`expect.exact_bytes_file` compares the complete returned aggregate-envelope bytes.
+Successful serialization, ordinary restoration, and non-empty migration use canonical
+RFC 8785 bytes. An empty migration route to the unchanged definition instead returns the
+exact supplied bytes, including insignificant source whitespace; cases exercise both a
+pretty input and a canonical input. These assertions are intentionally separate.
+
+Successful vectors require every result member relevant to their operation: aggregate
+value and exact bytes; migration audit for migration; emissions and disposition for
+dispatch; and resulting resolver state for package-seeded migration. A failure asserts
+only the exact closed code and `caller_still_owns_aggregate: true`; no intermediate
+candidate, bytes, audit, emissions, resolver mutation, or disposition is available to
+the caller.
+
+An `artifact_resolver` fixture has exactly `definitions` and
+`migration_descriptors`. Each definition record has exactly
+`validated_bundle_fingerprint`, `bundle_file`, and Boolean `trusted`; each descriptor
+record has exactly `migration_descriptor_digest`, `descriptor_file`, and Boolean
+`trusted`. Named files must be declared by the same case. Package attachment vectors
+compare the complete resolver result so put-if-absent and non-overriding behavior is
+observable.
+
+A `resource_limits` fixture has exactly these canonical-decimal string members:
+`maximum_aggregate_bytes`, `maximum_definition_bytes`, `maximum_descriptor_bytes`,
+`maximum_transformed_output_bytes`, `maximum_chain_length`,
+`maximum_cel_expression_length`, `maximum_cel_ast_nodes`, and
+`maximum_cel_evaluation_steps`. Vectors cover both configured outer limits and
+descriptors that understate actual transformed-output or repeated CEL-evaluation use.
 
 ## Assertion vocabulary (normative)
 
@@ -404,7 +441,9 @@ assertion notation, not a standardized database schema or public engine API. See
 | 109 | migration plus handled, unhandled, rejected, and faulted dispatch outcomes (§16.11) |
 | 110 | completed terminal maintenance migration and terminal preservation (§16.10) |
 | 111 | faulted diagnostic migration and terminal-policy rejection (§16.10) |
-| 112 | descriptor trust and deterministic resource-limit failure (§16.12, §16.14) |
+| 112 | descriptor trust plus configured and actual-use resource-limit failure (§16.12, §16.14) |
+| 113 | closed migration request, resolution, transform, and descriptor-discriminator failures (§16.8, §16.10, §16.12) |
+| 114 | occurrence-local transform binding across repeated runtimes and activations (§16.9) |
 
 ## Deliberate format-1 boundaries
 

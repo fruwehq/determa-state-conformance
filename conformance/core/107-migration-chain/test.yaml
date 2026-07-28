@@ -48,7 +48,21 @@ persistence_vectors:
     expect:
       result: success
       aggregate_state_file: source-aggregate-state.json
-      canonical_bytes_file: source-aggregate-state.canonical.json
+      exact_bytes_file: source-aggregate-state.json
+      migration_audit_file: empty-migration-audit.json
+  - name: empty_route_canonical_input_preserves_canonical_bytes
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.canonical.json
+    definitions:
+      - machine.yaml
+    migration_descriptors: []
+    migration_route: []
+    target_validated_bundle_fingerprint: sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: source-aggregate-state.json
+      exact_bytes_file: source-aggregate-state.canonical.json
       migration_audit_file: empty-migration-audit.json
   - name: empty_route_changed_definition_is_missing
     operation: migrate_aggregate
@@ -82,7 +96,7 @@ persistence_vectors:
     expect:
       result: success
       aggregate_state_file: expected-aggregate-state.json
-      canonical_bytes_file: expected-aggregate-state.canonical.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
       migration_audit_file: expected-migration-audit.json
   - name: wrong_descriptor_order
     operation: migrate_aggregate

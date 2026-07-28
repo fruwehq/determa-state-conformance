@@ -29,6 +29,32 @@ artifacts:
       kind: aggregate_state
       valid: true
       canonical_of: source-aggregate-state.json
+    - file: unsupported-package-schema-version.json
+      kind: aggregate_state_package
+      valid: false
+      error: unsupported_aggregate_state_package_schema_version
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: expected-aggregate-state.json
+    - file: expected-migration-audit.json
+      kind: json_value
+      valid: true
+    - file: empty-resolver.json
+      kind: artifact_resolver
+      valid: true
+    - file: seeded-resolver.json
+      kind: artifact_resolver
+      valid: true
+    - file: collision-resolver.json
+      kind: artifact_resolver
+      valid: true
 persistence_vectors:
   - name: valid_self_contained_package
     operation: restore_package
@@ -36,7 +62,7 @@ persistence_vectors:
     expect:
       result: success
       aggregate_state_file: source-aggregate-state.json
-      canonical_bytes_file: source-aggregate-state.canonical.json
+      exact_bytes_file: source-aggregate-state.canonical.json
   - name: aggregate_digest_mismatch
     operation: restore_package
     aggregate_state_package: digest-mismatch-package.json
@@ -50,4 +76,58 @@ persistence_vectors:
     expect:
       result: failure
       code: invalid_aggregate_state_package
+      caller_still_owns_aggregate: true
+  - name: unsupported_package_discriminator
+    operation: restore_package
+    aggregate_state_package: unsupported-package-format.json
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_package_format
+      caller_still_owns_aggregate: true
+  - name: unsupported_package_schema_version
+    operation: restore_package
+    aggregate_state_package: unsupported-package-schema-version.json
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_package_schema_version
+      caller_still_owns_aggregate: true
+  - name: attachments_seed_empty_resolver_and_drive_route
+    operation: restore_package_and_migrate
+    aggregate_state_package: valid-package.json
+    artifact_resolver: empty-resolver.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: expected-aggregate-state.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+      artifact_resolver_file: seeded-resolver.json
+  - name: put_if_absent_is_idempotent
+    operation: restore_package_and_migrate
+    aggregate_state_package: valid-package.json
+    artifact_resolver: seeded-resolver.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: expected-aggregate-state.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+      artifact_resolver_file: seeded-resolver.json
+  - name: attachment_never_overrides_existing_key
+    operation: restore_package_and_migrate
+    aggregate_state_package: valid-package.json
+    artifact_resolver: collision-resolver.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    expect:
+      result: failure
+      code: definition_fingerprint_mismatch
       caller_still_owns_aggregate: true

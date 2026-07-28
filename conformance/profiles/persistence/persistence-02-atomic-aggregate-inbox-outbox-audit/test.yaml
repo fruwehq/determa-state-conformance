@@ -48,17 +48,17 @@ persistence_profile:
   steps:
     - operation: inject_failure
       input_envelope: input-envelope.json
-      target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+      target_validated_bundle_fingerprint: sha256:a13184037127c70d70731c81fd3217f0d22f25b7abcbee97d8a5c98d86b530a2
       migration_route:
-        - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+        - sha256:b444c51891102761b367ab8c9ab9a9e74286d259c54ee632a00df4c44b977862
       failure_boundary: before_commit
       failure_class: crash
       expect_store: initial-store.json
       expect_call_log: rolled-back-call-log.json
     - operation: process
       input_envelope: input-envelope.json
-      target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+      target_validated_bundle_fingerprint: sha256:a13184037127c70d70731c81fd3217f0d22f25b7abcbee97d8a5c98d86b530a2
       migration_route:
-        - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+        - sha256:b444c51891102761b367ab8c9ab9a9e74286d259c54ee632a00df4c44b977862
       expect_store: committed-store.json
       expect_call_log: committed-call-log.json

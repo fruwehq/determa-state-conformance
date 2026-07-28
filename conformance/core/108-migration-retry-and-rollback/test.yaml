@@ -43,7 +43,7 @@ persistence_vectors:
     expect:
       result: success
       aggregate_state_file: expected-aggregate-state.json
-      canonical_bytes_file: expected-aggregate-state.canonical.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
       migration_audit_file: expected-migration-audit.json
     repeat_count: 2
   - name: identical_failed_retry

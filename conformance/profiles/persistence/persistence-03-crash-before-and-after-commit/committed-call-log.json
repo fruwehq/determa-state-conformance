@@ -12,6 +12,5 @@
   "stage_inbox",
   "stage_outbox",
   "stage_audit",
-  "commit",
-  "acknowledge_input"
+  "commit"
 ]

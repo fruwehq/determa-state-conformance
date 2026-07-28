@@ -73,7 +73,7 @@ persistence_vectors:
     expect:
       result: success
       aggregate_state_file: expected-aggregate-state.json
-      canonical_bytes_file: expected-aggregate-state.canonical.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
       migration_audit_file: expected-migration-audit.json
   - name: recorded_deep_history_pointer_mapping
     operation: migrate_aggregate
@@ -90,7 +90,7 @@ persistence_vectors:
     expect:
       result: success
       aggregate_state_file: recorded-expected-aggregate-state.json
-      canonical_bytes_file: recorded-expected-aggregate-state.canonical.json
+      exact_bytes_file: recorded-expected-aggregate-state.canonical.json
       migration_audit_file: recorded-expected-migration-audit.json
   - name: recorded_shallow_history_pointer_mapping
     operation: migrate_aggregate
@@ -107,5 +107,5 @@ persistence_vectors:
     expect:
       result: success
       aggregate_state_file: shallow-expected-aggregate-state.json
-      canonical_bytes_file: shallow-expected-aggregate-state.canonical.json
+      exact_bytes_file: shallow-expected-aggregate-state.canonical.json
       migration_audit_file: shallow-expected-migration-audit.json

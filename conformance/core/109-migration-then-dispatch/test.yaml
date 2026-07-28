@@ -71,7 +71,7 @@ persistence_vectors:
       result: success
       disposition: handled
       aggregate_state_file: handled-aggregate-state.json
-      canonical_bytes_file: handled-aggregate-state.canonical.json
+      exact_bytes_file: handled-aggregate-state.canonical.json
       migration_audit_file: expected-migration-audit.json
       emissions_file: expected-emissions.json
   - operation: migrate_and_dispatch
@@ -91,7 +91,7 @@ persistence_vectors:
       result: success
       disposition: unhandled
       aggregate_state_file: expected-aggregate-state.json
-      canonical_bytes_file: expected-aggregate-state.canonical.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
       migration_audit_file: expected-migration-audit.json
       emissions_file: expected-emissions.json
   - operation: migrate_and_dispatch
@@ -111,7 +111,7 @@ persistence_vectors:
       result: success
       disposition: rejected
       aggregate_state_file: expected-aggregate-state.json
-      canonical_bytes_file: expected-aggregate-state.canonical.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
       migration_audit_file: expected-migration-audit.json
       emissions_file: expected-emissions.json
   - operation: migrate_and_dispatch
@@ -131,6 +131,6 @@ persistence_vectors:
       result: success
       disposition: faulted
       aggregate_state_file: faulted-aggregate-state.json
-      canonical_bytes_file: faulted-aggregate-state.canonical.json
+      exact_bytes_file: faulted-aggregate-state.canonical.json
       migration_audit_file: expected-migration-audit.json
       emissions_file: expected-emissions.json

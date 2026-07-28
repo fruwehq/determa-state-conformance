@@ -11,7 +11,9 @@ Layout:
   `machine.yaml` (the format-1 bundle) and `test.yaml` (a scenario or static
   validation assertion).
 - Core persistence cases use a closed `persistence_vectors` driver mode plus strict
-  JSON artifact manifests. Canonical JSON expectations are compared byte-for-byte.
+  JSON artifact manifests. Exact returned-byte expectations are compared byte-for-byte;
+  successful non-no-op operations normally return canonical JSON, while an empty-route
+  migration no-op preserves the supplied aggregate envelope bytes exactly.
 - `conformance/profiles/<profile>/` — optional non-core compatibility surfaces. They
   bind only implementations that declare the profile and never override core prose.
 - Additional bundle files are allowed only when `test.yaml` names them explicitly.
@@ -58,9 +60,10 @@ standalone core runtime runner in this repository.
 
 Persistence vectors exercise the pure aggregate encode, decode, package, migration,
 and migrate-then-dispatch boundaries from SPEC §16. Their operation names are
-driver-only adapters; named result files, canonical bytes, audit records, emissions,
-and failure codes are normative. The optional persistence profile fixes host
-transaction traces without standardizing a database schema or production store API.
+driver-only adapters; named result files, exact returned bytes, audit records,
+emissions, resolver results, dispositions, and failure codes are normative. The
+optional persistence profile fixes host transaction traces without standardizing a
+database schema or production store API.
 
 The durable source/schema validator uses YAML 1.2 and the specification's Draft
 2020-12 schema:

@@ -1,0 +1,73 @@
+title: transform source bindings are isolated by runtime and activation occurrence
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: repeated-runtime-source.json
+      kind: aggregate_state
+      valid: true
+    - file: repeated-runtime-expected.json
+      kind: aggregate_state
+      valid: true
+    - file: repeated-runtime-expected.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: repeated-runtime-expected.json
+    - file: repeated-runtime-audit.json
+      kind: json_value
+      valid: true
+    - file: repeated-activation-source.json
+      kind: aggregate_state
+      valid: true
+    - file: repeated-activation-expected.json
+      kind: aggregate_state
+      valid: true
+    - file: repeated-activation-expected.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: repeated-activation-expected.json
+    - file: repeated-activation-audit.json
+      kind: json_value
+      valid: true
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+persistence_vectors:
+  - name: repeated_runtime_values_are_occurrence_local
+    operation: migrate_aggregate
+    aggregate_state: repeated-runtime-source.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:90ee536a43adccc628a9cdd150a3cc63909d198c2bf2dc581d7c091975c38dbe
+    target_validated_bundle_fingerprint: sha256:d1e734157ee4efcd7b010bce960ca3475734fce3056e06ff8885d7883aaeca1d
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: repeated-runtime-expected.json
+      exact_bytes_file: repeated-runtime-expected.canonical.json
+      migration_audit_file: repeated-runtime-audit.json
+  - name: repeated_activation_values_are_occurrence_local
+    operation: migrate_aggregate
+    aggregate_state: repeated-activation-source.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:90ee536a43adccc628a9cdd150a3cc63909d198c2bf2dc581d7c091975c38dbe
+    target_validated_bundle_fingerprint: sha256:d1e734157ee4efcd7b010bce960ca3475734fce3056e06ff8885d7883aaeca1d
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: repeated-activation-expected.json
+      exact_bytes_file: repeated-activation-expected.canonical.json
+      migration_audit_file: repeated-activation-audit.json

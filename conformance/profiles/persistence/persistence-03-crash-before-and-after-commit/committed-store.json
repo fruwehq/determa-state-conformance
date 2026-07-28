@@ -95,7 +95,5 @@
     }
   ],
   "quarantine": [],
-  "acknowledged_event_ids": [
-    "profile-input-1"
-  ]
+  "acknowledged_event_ids": []
 }

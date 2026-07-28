@@ -43,6 +43,9 @@ artifacts:
     - file: quarantined-call-log.json
       kind: json_value
       valid: true
+    - file: acknowledged-store.json
+      kind: json_value
+      valid: true
 persistence_profile:
   initial_store: initial-store.json
   steps:
@@ -64,3 +67,7 @@ persistence_profile:
       failure_class: crash
       expect_store: committed-store.json
       expect_call_log: committed-call-log.json
+    - operation: replay
+      input_envelope: input-envelope.json
+      expect_store: acknowledged-store.json
+      expect_call_log: replayed-call-log.json

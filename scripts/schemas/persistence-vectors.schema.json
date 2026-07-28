@@ -101,6 +101,8 @@
                   "aggregate_state",
                   "migration_descriptor",
                   "aggregate_state_package",
+                  "artifact_resolver",
+                  "resource_limits",
                   "json_value"
                 ]
               },
@@ -160,13 +162,16 @@
         "aggregate_state_file": {
           "$ref": "#/$defs/jsonFileName"
         },
-        "canonical_bytes_file": {
+        "exact_bytes_file": {
           "$ref": "#/$defs/jsonFileName"
         },
         "migration_audit_file": {
           "$ref": "#/$defs/jsonFileName"
         },
         "emissions_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "artifact_resolver_file": {
           "$ref": "#/$defs/jsonFileName"
         },
         "disposition": {
@@ -187,15 +192,181 @@
             "required": ["result"]
           },
           "then": {
-            "required": ["code", "caller_still_owns_aggregate"]
+            "required": ["code", "caller_still_owns_aggregate"],
+            "not": {
+              "anyOf": [
+                {
+                  "required": ["aggregate_state_file"]
+                },
+                {
+                  "required": ["exact_bytes_file"]
+                },
+                {
+                  "required": ["migration_audit_file"]
+                },
+                {
+                  "required": ["emissions_file"]
+                },
+                {
+                  "required": ["artifact_resolver_file"]
+                },
+                {
+                  "required": ["disposition"]
+                }
+              ]
+            }
           },
           "else": {
             "not": {
-              "required": ["code"]
+              "anyOf": [
+                {
+                  "required": ["code"]
+                },
+                {
+                  "required": ["caller_still_owns_aggregate"]
+                }
+              ]
             }
           }
         }
       ]
+    },
+    "aggregateBytesSuccess": {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "success"
+          }
+        },
+        "required": ["result"]
+      },
+      "then": {
+        "required": ["aggregate_state_file", "exact_bytes_file"],
+        "not": {
+          "anyOf": [
+            {
+              "required": ["migration_audit_file"]
+            },
+            {
+              "required": ["emissions_file"]
+            },
+            {
+              "required": ["artifact_resolver_file"]
+            },
+            {
+              "required": ["disposition"]
+            }
+          ]
+        }
+      }
+    },
+    "migrationSuccess": {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "success"
+          }
+        },
+        "required": ["result"]
+      },
+      "then": {
+        "required": [
+          "aggregate_state_file",
+          "exact_bytes_file",
+          "migration_audit_file"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": ["emissions_file"]
+            },
+            {
+              "required": ["artifact_resolver_file"]
+            },
+            {
+              "required": ["disposition"]
+            }
+          ]
+        }
+      }
+    },
+    "dispatchSuccess": {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "success"
+          }
+        },
+        "required": ["result"]
+      },
+      "then": {
+        "required": [
+          "aggregate_state_file",
+          "exact_bytes_file",
+          "emissions_file",
+          "disposition"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": ["migration_audit_file"]
+            },
+            {
+              "required": ["artifact_resolver_file"]
+            }
+          ]
+        }
+      }
+    },
+    "migrationDispatchSuccess": {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "success"
+          }
+        },
+        "required": ["result"]
+      },
+      "then": {
+        "required": [
+          "aggregate_state_file",
+          "exact_bytes_file",
+          "migration_audit_file",
+          "emissions_file",
+          "disposition"
+        ],
+        "not": {
+          "required": ["artifact_resolver_file"]
+        }
+      }
+    },
+    "packageMigrationSuccess": {
+      "if": {
+        "properties": {
+          "result": {
+            "const": "success"
+          }
+        },
+        "required": ["result"]
+      },
+      "then": {
+        "required": [
+          "aggregate_state_file",
+          "exact_bytes_file",
+          "migration_audit_file",
+          "artifact_resolver_file"
+        ],
+        "not": {
+          "anyOf": [
+            {
+              "required": ["emissions_file"]
+            },
+            {
+              "required": ["disposition"]
+            }
+          ]
+        }
+      }
     },
     "vector": {
       "type": "object",
@@ -212,6 +383,7 @@
             "restore_and_serialize",
             "restore_and_dispatch",
             "restore_package",
+            "restore_package_and_migrate",
             "migrate_aggregate",
             "migrate_and_dispatch"
           ]
@@ -278,6 +450,30 @@
         "maintenance_mode": {
           "type": "boolean"
         },
+        "migration_request": {
+          "type": "object",
+          "required": [
+            "target_validated_bundle_fingerprint",
+            "migration_route"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "target_validated_bundle_fingerprint": {
+              "type": "string",
+              "pattern": "^sha256:[0-9a-f]{64}$"
+            },
+            "migration_route": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "pattern": "^sha256:[0-9a-f]{64}$"
+              }
+            },
+            "maintenance_mode": {
+              "type": "boolean"
+            }
+          }
+        },
         "input_envelope": {
           "$ref": "#/$defs/jsonFileName"
         },
@@ -300,10 +496,7 @@
           "if": {
             "properties": {
               "operation": {
-                "enum": [
-                  "migrate_aggregate",
-                  "migrate_and_dispatch"
-                ]
+                "enum": ["migrate_aggregate", "migrate_and_dispatch"]
               }
             },
             "required": ["operation"]
@@ -312,11 +505,53 @@
             "required": [
               "aggregate_state",
               "definitions",
-              "migration_descriptors",
-              "migration_route",
-              "target_validated_bundle_fingerprint",
-              "maintenance_mode"
+              "migration_descriptors"
+            ],
+            "oneOf": [
+              {
+                "required": [
+                  "migration_route",
+                  "target_validated_bundle_fingerprint",
+                  "maintenance_mode"
+                ],
+                "not": {
+                  "required": ["migration_request"]
+                }
+              },
+              {
+                "required": ["migration_request"],
+                "not": {
+                  "anyOf": [
+                    {
+                      "required": ["migration_route"]
+                    },
+                    {
+                      "required": ["target_validated_bundle_fingerprint"]
+                    },
+                    {
+                      "required": ["maintenance_mode"]
+                    }
+                  ]
+                }
+              }
             ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "migrate_aggregate"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/migrationSuccess"
+              }
+            }
           }
         },
         {
@@ -329,7 +564,12 @@
             "required": ["operation"]
           },
           "then": {
-            "required": ["input_envelope"]
+            "required": ["input_envelope"],
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/migrationDispatchSuccess"
+              }
+            }
           }
         },
         {
@@ -342,7 +582,36 @@
             "required": ["operation"]
           },
           "then": {
-            "required": ["aggregate_state_package"]
+            "required": ["aggregate_state_package"],
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/aggregateBytesSuccess"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "restore_package_and_migrate"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": [
+              "aggregate_state_package",
+              "artifact_resolver",
+              "migration_route",
+              "target_validated_bundle_fingerprint",
+              "maintenance_mode"
+            ],
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/packageMigrationSuccess"
+              }
+            }
           }
         },
         {
@@ -365,13 +634,35 @@
           "if": {
             "properties": {
               "operation": {
+                "const": "restore_and_serialize"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/aggregateBytesSuccess"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
                 "const": "restore_and_dispatch"
               }
             },
             "required": ["operation"]
           },
           "then": {
-            "required": ["input_envelope"]
+            "required": ["input_envelope"],
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/dispatchSuccess"
+              }
+            }
           }
         },
         {
@@ -384,7 +675,12 @@
             "required": ["operation"]
           },
           "then": {
-            "required": ["source_bundle", "creation"]
+            "required": ["source_bundle", "creation"],
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/aggregateBytesSuccess"
+              }
+            }
           }
         }
       ]

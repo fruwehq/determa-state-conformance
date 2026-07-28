@@ -7,5 +7,6 @@
   "lock_aggregate",
   "read_inbox",
   "return_recorded_outcome",
-  "commit"
+  "commit",
+  "acknowledge_input"
 ]

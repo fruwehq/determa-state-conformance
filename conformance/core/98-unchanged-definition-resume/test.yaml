@@ -32,5 +32,5 @@ persistence_vectors:
       result: success
       disposition: handled
       aggregate_state_file: expected-aggregate-state.json
-      canonical_bytes_file: expected-aggregate-state.canonical.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
       emissions_file: expected-emissions.json
