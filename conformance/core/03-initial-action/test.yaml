@@ -1,0 +1,7 @@
+title: entering a composite runs its initial transition's action
+steps:
+  # go -> enter `work` -> its initial transition fires (n += 1) -> step1.
+  - send: {event: go}
+    expect:
+      config: [work.step1]
+      variables: {n: 1}

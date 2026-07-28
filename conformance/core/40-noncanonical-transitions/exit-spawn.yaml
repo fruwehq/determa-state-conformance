@@ -1,0 +1,23 @@
+format: 1
+namespace: conformance.case_40_exit_spawn
+events:
+  leave:
+    direction: input
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      initial: { transition_to: holding }
+      states:
+        holding:
+          exit:
+            - spawn: { machine_id: child }
+          on_events:
+            leave: { transition_to: finished }
+        finished: { type: final }
+  - machine_id: child
+    root:
+      type: composite
+      initial: { transition_to: idle }
+      states:
+        idle: {}

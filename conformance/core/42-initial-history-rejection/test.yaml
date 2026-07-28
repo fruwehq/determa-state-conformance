@@ -1,0 +1,4 @@
+title: an initial transition cannot target history
+static:
+  valid: false
+  error: structural_validation

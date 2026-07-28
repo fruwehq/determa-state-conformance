@@ -1,0 +1,15 @@
+title: local preserves a composite source while an unmarked descendant target resets it
+# On creation: enter c, then c.initial -> a. trail = [enterC, enterA].
+# Both events are declared on c; from leaf a they bubble up to c.
+steps:
+  # local c -> c.a: c is NOT exited; only the inner state a is exited and re-entered.
+  - send: { event: local_descendant }
+    expect:
+      config: [c.a]
+      variables: {trail: [enterC, enterA, exitA, enterA]}
+
+  # Unmarked c -> c.a: c is exited and re-entered (note exitC/enterC).
+  - send: { event: unmarked_descendant }
+    expect:
+      config: [c.a]
+      variables: {trail: [enterC, enterA, exitA, enterA, exitA, exitC, enterC, enterA]}

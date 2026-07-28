@@ -1,0 +1,23 @@
+format: 1
+namespace: conformance.case_18_domain_failure
+events:
+  operation_failed:
+    direction: input
+    payload:
+      reason: { type: string, required: true }
+machines:
+  - machine_id: domain_failure
+    version: 1
+    root:
+      type: composite
+      variables:
+        failure_reason: { type: string, init: "" }
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            operation_failed:
+              transition_to: recovered
+              action:
+                - assign: { failure_reason: "event.payload.reason" }
+        recovered: {}

@@ -1,0 +1,29 @@
+format: 1
+namespace: conformance.case_15_external_env_refresh
+machines:
+  - machine_id: external_refresh
+    version: 1
+    root:
+      type: composite
+      variables:
+        token: { type: string, external: true }
+        region: { type: string, external: true }
+        applied: { type: string, init: "" }
+        trace: { type: list, init: [] }
+      entry:
+        - assign: { trace: "trace + ['enter_root']" }
+      exit:
+        - assign: { trace: "trace + ['exit_root']" }
+      on_events:
+        env:
+          - guard: "event.payload.changed.token != token"
+            transition_to: reconfiguring
+            action:
+              - refresh: {}
+              - assign: { applied: "token" }
+      initial: { transition_to: running }
+      states:
+        running:
+          entry:
+            - assign: { applied: "token" }
+        reconfiguring: {}

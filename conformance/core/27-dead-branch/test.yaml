@@ -1,0 +1,2 @@
+title: an unguarded branch that is not last leaves dead branches — rejected at load
+static: { valid: false, error: semantic_validation }

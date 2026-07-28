@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_62_non_string_map_key
+machines:
+  - machine_id: non_string_map_key
+    root:
+      variables:
+        lookup:
+          type: map
+          init:
+            1: one

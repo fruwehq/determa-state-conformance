@@ -1,0 +1,2 @@
+title: a choice without a default branch is rejected at load
+static: { valid: false, error: semantic_validation }

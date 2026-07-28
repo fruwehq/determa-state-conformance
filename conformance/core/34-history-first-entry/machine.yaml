@@ -1,0 +1,21 @@
+format: 1
+namespace: conformance.case_34_history_first_entry
+events:
+  resume:
+    direction: input
+machines:
+  - machine_id: history_first_entry
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: outside }
+      states:
+        outside:
+          on_events:
+            resume: { transition_to: { history: work } }
+        work:
+          type: composite
+          history: deep
+          initial: { transition_to: first }
+          states:
+            first: {}

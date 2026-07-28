@@ -1,0 +1,9 @@
+title: creation rejects a missing required binding without creating logical state
+create:
+  expect:
+    status: rejected
+    state: null
+    rejection: { code: invalid_binding }
+    fault: null
+    emissions: []
+steps: []

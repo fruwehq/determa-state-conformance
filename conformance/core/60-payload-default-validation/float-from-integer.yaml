@@ -1,0 +1,12 @@
+format: 1
+namespace: conformance.case_60_float_from_integer
+events:
+  valid:
+    direction: input
+    payload:
+      value: { type: float, default: 1 }
+machines:
+  - machine_id: valid_float
+    root:
+      variables:
+        value: { type: float, init: 1 }

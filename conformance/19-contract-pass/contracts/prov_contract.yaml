@@ -1,6 +1,0 @@
-contract: 1
-id: prov_contract
-requires:
-  events: [configure, make]
-  states: [ready]
-  spawns: [worker]

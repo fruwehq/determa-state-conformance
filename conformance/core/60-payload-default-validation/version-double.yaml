@@ -1,0 +1,6 @@
+format: 1
+namespace: conformance.case_60_version_double
+machines:
+  - machine_id: invalid_version
+    version: 1.0
+    root: {}

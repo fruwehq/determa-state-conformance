@@ -1,0 +1,89 @@
+title: source parsing rejects unsafe values and preserves YAML 1.2 Boolean-like strings
+load: { valid: true }
+static:
+  documents:
+    - file: duplicate-key.yaml
+      valid: false
+      error: duplicate_key
+    - file: non-string-map-key.yaml
+      valid: false
+      error: non_string_map_key
+    - file: yaml-alias.yaml
+      valid: false
+      error: unsupported_yaml_feature
+    - file: unpaired-surrogate.yaml
+      valid: false
+      error: invalid_unicode
+    - file: hexadecimal-number.yaml
+      valid: false
+      error: invalid_numeric_syntax
+    - file: leading-plus-number.yaml
+      valid: false
+      error: invalid_numeric_syntax
+    - file: nested-out-of-range.yaml
+      valid: false
+      error: numeric_value_out_of_range
+    - file: invalid-boolean-titlecase.yaml
+      valid: false
+      error: invalid_boolean_syntax
+    - file: invalid-boolean-uppercase.yaml
+      valid: false
+      error: invalid_boolean_syntax
+    - file: invalid-boolean-false-titlecase.yaml
+      valid: false
+      error: invalid_boolean_syntax
+    - file: invalid-boolean-false-uppercase.yaml
+      valid: false
+      error: invalid_boolean_syntax
+    - file: invalid-null-tilde.yaml
+      valid: false
+      error: invalid_null_syntax
+    - file: invalid-null-titlecase.yaml
+      valid: false
+      error: invalid_null_syntax
+    - file: invalid-null-uppercase.yaml
+      valid: false
+      error: invalid_null_syntax
+    - file: invalid-null-empty-scalar.yaml
+      valid: false
+      error: invalid_null_syntax
+    - file: valid-json-numbers.yaml
+      valid: true
+create:
+  expect:
+    status: running
+    config: ["no"]
+    variables:
+      observed_value: ""
+steps:
+  - send: { event: "no" }
+    expect:
+      status: running
+      disposition: handled
+      config: ["off"]
+      variables:
+        observed_value: "no"
+
+  - send: { event: "off" }
+    expect:
+      status: running
+      disposition: handled
+      config: ["yes"]
+      variables:
+        observed_value: "off"
+
+  - send: { event: "yes" }
+    expect:
+      status: running
+      disposition: handled
+      config: ["on"]
+      variables:
+        observed_value: "yes"
+
+  - send: { event: "on" }
+    expect:
+      status: running
+      disposition: handled
+      config: ["no"]
+      variables:
+        observed_value: "on"

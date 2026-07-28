@@ -1,0 +1,29 @@
+title: sibling owned-child cleanup follows the canonical total cascade order
+steps:
+  - send: { event: start }
+    expect:
+      status: running
+      config: [holding]
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: child
+          status: running
+        - key: { owner: root, spawn_sequence: 1 }
+          machine_id: child
+          status: running
+
+  - send: { event: leave }
+    expect:
+      status: running
+      disposition: handled
+      config: [idle]
+      owned_instances: []
+      emissions:
+        - event: child_exited
+          target: external
+          correlation_id: cleanup-order
+          payload: { label: first }
+        - event: child_exited
+          target: external
+          correlation_id: cleanup-order
+          payload: { label: second }

@@ -1,0 +1,37 @@
+format: 1
+namespace: conformance.case_10_history_deep
+events:
+  sub:
+    direction: input
+  pause:
+    direction: input
+  resume:
+    direction: input
+  restart:
+    direction: input
+machines:
+  - machine_id: deephist
+    version: 1
+    root:
+      type: composite
+      initial: {transition_to: work}
+      states:
+        work:
+          type: composite
+          history: deep
+          initial: {transition_to: outer}
+          on_events:
+            pause: {transition_to: paused}
+          states:
+            outer:
+              type: composite
+              initial: {transition_to: s1}
+              states:
+                s1:
+                  on_events:
+                    sub: {transition_to: s2}
+                s2: {}
+        paused:
+          on_events:
+            resume: {transition_to: {history: work}}
+            restart: {transition_to: work}

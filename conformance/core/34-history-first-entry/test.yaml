@@ -1,0 +1,5 @@
+title: a history target without a record follows the composite initial transition
+steps:
+  - send: { event: resume }
+    expect:
+      config: [work.first]

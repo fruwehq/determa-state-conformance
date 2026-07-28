@@ -1,0 +1,34 @@
+title: the portable CEL profile has exact arithmetic equality conversion and Unicode behavior
+steps:
+  - send: { event: evaluate }
+    expect:
+      disposition: handled
+      variables:
+        division: -2
+        remainder: -1
+        false_and_error: false
+        error_and_false: false
+        true_or_error: true
+        error_or_true: true
+        maps_equal: true
+        selected: 5
+        unicode_equal: false
+        precomposed_size: 1
+        decomposed_size: 2
+        string_order: true
+        converted_double: 9007199254740992.0
+        converted_string: "1.5"
+        integer_zero: 0
+        double_zero: 0.0
+
+  - send: { event: overflow }
+    expect:
+      status: faulted
+      disposition: faulted
+      variables:
+        maximum: 9223372036854775807
+      emissions: []
+      caller_still_owns_input: true
+      fault:
+        code: action_fault
+        source_locator: /machines/0/root/states/running/on_events/overflow/action/0/assign/maximum

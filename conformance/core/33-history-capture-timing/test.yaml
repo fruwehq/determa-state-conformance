@@ -1,0 +1,15 @@
+title: history changes only when its owning composite exits
+steps:
+  - send: { event: change_descendant }
+    expect:
+      config: [work.second]
+      history: { work: null }
+
+  - send: { event: leave }
+    expect:
+      config: [outside]
+      history: { work: [work.second] }
+
+  - send: { event: resume }
+    expect:
+      config: [work.second]

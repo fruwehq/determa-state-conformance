@@ -1,0 +1,9 @@
+format: 1
+namespace: conformance.case_62_valid_json_numbers
+meta:
+  integer_zero: -0
+  exponent_double: 1e0
+  negative_double_zero: -0.0
+machines:
+  - machine_id: parser_probe
+    root: {}

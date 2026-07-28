@@ -1,0 +1,12 @@
+format: 1
+namespace: conformance.case_40_local_without_target
+events:
+  react:
+    direction: input
+machines:
+  - machine_id: local_without_target
+    version: 1
+    root:
+      on_events:
+        react:
+          local: true

@@ -1,0 +1,33 @@
+format: 1
+namespace: conformance.case_05_variable_scope
+events:
+  bump:
+    direction: input
+  leave:
+    direction: input
+  back:
+    direction: input
+machines:
+  - machine_id: variable_scope
+    version: 1
+    root:
+      type: composite
+      variables:
+        x: {type: int, init: 1}      # outer x
+      initial: {transition_to: mid}
+      states:
+        mid:
+          type: composite
+          variables:
+            x: {type: int, init: 10} # shadows root.x while mid is active
+          initial: {transition_to: leaf}
+          on_events:
+            leave: {transition_to: gone}
+          states:
+            leaf:
+              on_events:
+                bump:
+                  action: [assign: {x: "x + 1"}]       # writes the nearest x (mid.x)
+        gone:
+          on_events:
+            back: {transition_to: mid}

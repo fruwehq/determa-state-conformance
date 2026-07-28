@@ -1,0 +1,4 @@
+title: spawn cannot bind into a reference destroyed by its transition
+static:
+  valid: false
+  error: destroyed_reference_binding

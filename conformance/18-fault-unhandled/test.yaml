@@ -1,8 +1,0 @@
-title: an unhandled fault leaves the instance __faulted__ and stops dispatching
-steps:
-  # no `error` handler -> the instance faults; boom is dead-lettered.
-  - send: { event: boom }
-    expect:
-      status: faulted
-      esvs: { x: 7 }
-      dead_letter: true

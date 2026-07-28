@@ -1,0 +1,11 @@
+format: 1
+namespace: conformance.case_66_mixed_numeric
+events:
+  check:
+    direction: input
+machines:
+  - machine_id: mixed_numeric
+    root:
+      on_events:
+        check:
+          guard: "1 == 1.0"

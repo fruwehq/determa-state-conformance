@@ -1,0 +1,30 @@
+format: 1
+namespace: conformance.case_33_history_capture_timing
+events:
+  change_descendant:
+    direction: input
+  leave:
+    direction: input
+  resume:
+    direction: input
+machines:
+  - machine_id: history_capture_timing
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: work }
+      states:
+        work:
+          type: composite
+          history: deep
+          initial: { transition_to: first }
+          on_events:
+            leave: { transition_to: outside }
+          states:
+            first:
+              on_events:
+                change_descendant: { transition_to: second }
+            second: {}
+        outside:
+          on_events:
+            resume: { transition_to: { history: work } }

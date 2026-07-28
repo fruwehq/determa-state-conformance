@@ -1,0 +1,24 @@
+title: an unbound child outlives the spawning state and joins root cleanup
+steps:
+  - send: { event: spawn_unbound }
+    expect:
+      status: running
+      config: [outside]
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: child
+          status: running
+          config: [running]
+
+  - send: { event: finish }
+    expect:
+      status: completed
+      disposition: handled
+      config: []
+      variables: {}
+      owned_instances: []
+      emissions:
+        - event: child_disposed
+          target: external
+          correlation_id: unbound-cleanup
+          payload: { label: unbound }

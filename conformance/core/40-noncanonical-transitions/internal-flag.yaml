@@ -1,0 +1,12 @@
+format: 1
+namespace: conformance.case_40_internal_flag
+events:
+  react:
+    direction: input
+machines:
+  - machine_id: internal_flag
+    version: 1
+    root:
+      on_events:
+        react:
+          internal: true

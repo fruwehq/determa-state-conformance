@@ -4,17 +4,21 @@ Guidance for AI/coding agents working in this repository. (Tool-agnostic; not sp
 
 ## What this repo is
 The **language-agnostic conformance suite** — the executable definition of *correct*
-Determa State behavior. This repo, not any single implementation, is the arbiter (SPEC §2).
+Determa State behavior. The core tier in this repo, not any single implementation, is
+the arbiter (SPEC §2).
 Layout:
-- `conformance/01`–`NN` — **engine** cases: each `<case>/` has `machine.yaml` (the
-  definition(s)) and `test.yaml` (a scenario of `send`/`advance`/… steps + `expect`).
-- `conformance/cli/*` — **CLI** cases: a `cli.yaml` of steps run black-box against the
-  implementation's `determa-state` binary, plus referenced machine files.
-- `conformance/run_cli.py` — the black-box CLI runner.
+- `conformance/core/01`–`NN` — **core engine** cases: each `<case>/` has
+  `machine.yaml` (the format-1 bundle) and `test.yaml` (a scenario or static
+  validation assertion).
+- `conformance/profiles/<profile>/` — optional non-core compatibility surfaces. They
+  bind only implementations that declare the profile and never override core prose.
+- Additional bundle files are allowed only when `test.yaml` names them explicitly.
 - `VERSION` — the synchronized spec version this suite targets.
 
-**No CI here.** Correctness is exercised by each implementation's harness, which fetches
-this suite at the release tag matching its version.
+Repository CI parses every fixture with YAML 1.2 and checks its declared structural
+result against an immutable specification-schema pin. Runtime behavior is still
+exercised by each implementation's harness, which fetches this suite at the release
+tag matching its version.
 
 ## Determa in one paragraph
 **Determa** is a family of tools for defining/running well-specified, verifiable behavior.
@@ -27,7 +31,7 @@ implementation because all are validated against *this* suite. Guards/action val
 | Repo | Role |
 |---|---|
 | determa-state-spec | normative prose spec + schema. No CI. |
-| **determa-state-conformance** (this) | the conformance suite. No CI. |
+| **determa-state-conformance** (this) | conformance suite + source/schema consistency CI. |
 | determa-state-python | Python impl (dist `determa-state`, import `determa.state`). |
 | determa-state-rust | Rust impl (crate `determa-state`). |
 | determa | umbrella launcher (`python/`, `rust/`, `node/`). |
@@ -37,16 +41,32 @@ implementation because all are validated against *this* suite. Guards/action val
 - **No AI/assistant attribution** anywhere (commits, PRs, comments, docs).
 - **Conformance-first:** spec text → the case here → implementations. This repo is where a new behavior is pinned executably.
 - **Synchronized SemVer** with spec + impls (currently **0.0.6**).
-- **No abbreviations** in JSON/identifiers (`definition` not `def`); `config`, machine-keywords (`esvs`, `on_events`, …), and `def_id`/`def_version`/`spawn.def` deliberately kept pending a separate migration.
+- **No new abbreviations** in public JSON/identifiers. Format 1 uses `variables`,
+  `machine_id`, `component_id`, and explicit `spawn.machine_id`; established keywords
+  such as `config`, `lang`, `meta`, and `on_events` remain intentional.
 
 ## Running the suite locally
+
+Core cases are driven by each implementation's own harness. A `send` performs one core
+dispatch. Driver-only `capture_emissions_as` and `deliver` steps fix the input trace
+without standardizing a queue plugin or requiring equivalent public engine APIs.
+Assertions in `expect`, including `caller_still_owns_input`, are normative. There is no
+standalone core runtime runner in this repository.
+
+The durable source/schema validator uses YAML 1.2 and the specification's Draft
+2020-12 schema:
+
 ```sh
-# CLI cases against an installed implementation:
-python conformance/run_cli.py --cmd "determa-state"          # or "python -m determa.state", or a rust binary path
-python conformance/run_cli.py --cmd "determa-state" cli/01-turnstile   # one case
+python -m pip install --requirement scripts/validation-requirements.txt
+python scripts/validate_conformance.py --spec-root ../determa-state-spec
 ```
-Engine cases are driven by each implementation's own harness (loads the definitions, runs
-each `test.yaml` to quiescence, checks `expect`).
+
+The workflow uses the same command against an explicitly pinned specification commit.
+Passing it proves fixture construction and declared schema dispositions, not scenario
+execution.
+
+The non-normative CLI profile runner is retained at
+`conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.
 
 ## Releasing
 Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that tag
@@ -54,4 +74,4 @@ Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that 
 
 ## Pointers
 - Coverage table + case index: `README.md`.
-- The runner: `conformance/run_cli.py`. The spec it targets: `determa-state-spec/SPEC.md`.
+- Fixture conventions: `README.md`. The spec it targets: `determa-state-spec/SPEC.md`.

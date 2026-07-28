@@ -1,0 +1,18 @@
+format: 1
+namespace: conformance.case_27_dead_branch
+events:
+  check: {direction: input, payload: {n: {type: int, required: true}}}
+machines:
+  - machine_id: deadbranch
+    version: 1
+    root:
+      type: composite
+      initial: {transition_to: s}
+      states:
+        s:
+          on_events:
+            check:
+              - {transition_to: a}                               # unguarded default, NOT last
+              - {guard: "event.payload.n > 0", transition_to: b} # can never be selected
+        a: {}
+        b: {}

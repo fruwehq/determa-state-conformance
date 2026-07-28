@@ -1,0 +1,16 @@
+format: 1
+namespace: conformance.case_46_root_local_transition
+events:
+  reset:
+    direction: input
+machines:
+  - machine_id: root_local
+    root:
+      type: composite
+      initial: { transition_to: active }
+      on_events:
+        reset:
+          transition_to: active
+          local: true
+      states:
+        active: {}

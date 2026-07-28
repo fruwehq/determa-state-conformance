@@ -1,0 +1,24 @@
+title: an owned spawned runtime receives bound input and notifies its owner on completion
+steps:
+  - send: { event: start }
+    expect:
+      config: [checkout]
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: payment
+          status: running
+          config: [awaiting]
+          variables: { due: 100, paid: 0 }
+
+  - send: { bound_instance: payment_reference, event: pay, payload: { amount: 100 } }
+    capture_emissions_as: payment_completion
+    expect:
+      owned_instances: []
+      variables:
+        payment_reference: { instance_reference: { machine_id: payment, targetable: false } }
+      emissions:
+        - { event: done, target: owner }
+
+  - deliver: { captured: payment_completion, index: 0 }
+    expect:
+      config: [paid]

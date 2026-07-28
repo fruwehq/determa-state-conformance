@@ -1,0 +1,44 @@
+format: 1
+namespace: conformance.case_16_timer_extension
+events:
+  go:
+    direction: input
+    payload:
+      request_id: { type: string, required: true }
+  cancel:
+    direction: input
+  schedule_requested:
+    direction: output
+    payload:
+      delay_seconds: { type: int, required: true }
+  schedule_elapsed:
+    direction: input
+    correlates_to: schedule_requested
+machines:
+  - machine_id: timer_extension_client
+    version: 1
+    root:
+      type: composite
+      variables:
+        fired: { type: int, init: 0 }
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            go:
+              transition_to: waiting
+              action:
+                - send:
+                    event: schedule_requested
+                    to: { external: true }
+                    correlation_id: "event.payload.request_id"
+                    payload:
+                      delay_seconds: "30"
+        waiting:
+          on_events:
+            cancel: { transition_to: idle }
+            schedule_elapsed:
+              transition_to: done
+              action:
+                - assign: { fired: "fired + 1" }
+        done: {}

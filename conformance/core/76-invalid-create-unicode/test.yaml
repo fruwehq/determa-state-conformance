@@ -1,0 +1,10 @@
+title: creation rejects a root identity containing an unpaired surrogate
+create:
+  root_instance_id: { invalid_unicode_scalar: "D800" }
+  expect:
+    status: rejected
+    state: null
+    emissions: []
+    fault: null
+    rejection: { code: invalid_creation_request }
+steps: []

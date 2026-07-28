@@ -1,0 +1,17 @@
+format: 1
+namespace: conformance.case_01_guarded_leaf
+events:
+  enter: {direction: input, payload: {code: {type: string}}}
+machines:
+  - machine_id: gate
+    version: 1
+    root:
+      type: composite
+      variables:
+        secret: {type: string, init: "open-sesame"}
+      initial: {transition_to: locked}
+      states:
+        locked:
+          on_events:
+            enter: {transition_to: open, guard: "event.payload.code == secret"}
+        open: {}

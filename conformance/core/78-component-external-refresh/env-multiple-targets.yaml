@@ -1,0 +1,26 @@
+format: 1
+namespace: conformance.case_78_env_multiple_targets
+events:
+  trigger: { direction: input }
+machines:
+  - machine_id: owner
+    root:
+      type: parallel
+      on_events:
+        trigger:
+          action:
+            - send:
+                event: env
+                targets:
+                  - { component: target }
+                  - { component: companion }
+                payload: { changed: "{'token': 'new'}" }
+      components:
+        - component_id: target
+          root:
+            variables:
+              token: { type: string, external: true }
+          with:
+            external: { token: "'old'" }
+        - component_id: companion
+          root: {}

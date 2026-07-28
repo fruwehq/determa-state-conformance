@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_60_int_init_double
+machines:
+  - machine_id: invalid_init
+    root:
+      variables:
+        count: { type: int, init: 1.0 }

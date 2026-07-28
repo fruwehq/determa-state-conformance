@@ -1,0 +1,17 @@
+title: payload defaults are visible while optional fields without defaults remain absent
+steps:
+  - send: { event: configure, payload: {} }
+    expect:
+      disposition: handled
+      variables:
+        mode_seen: "safe"
+        note_present: false
+        ratio_seen: 1.0
+
+  - send: { event: configure, payload: { note: "present", ratio: 2 } }
+    expect:
+      disposition: handled
+      variables:
+        mode_seen: "safe"
+        note_present: true
+        ratio_seen: 2.0

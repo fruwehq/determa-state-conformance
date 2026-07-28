@@ -1,0 +1,12 @@
+format: 1
+namespace: conformance.case_79_missing_refresh_field
+machines:
+  - machine_id: missing_refresh_field
+    root:
+      variables:
+        token: { type: string, external: true }
+        region: { type: string, external: true }
+      on_events:
+        env:
+          action:
+            - refresh: { only: [token] }

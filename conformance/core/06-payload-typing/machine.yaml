@@ -1,0 +1,17 @@
+format: 1
+namespace: conformance.case_06_payload_typing
+events:
+  set: {direction: input, payload: {n: {type: int, required: true}}}
+machines:
+  - machine_id: payloads
+    version: 1
+    root:
+      type: composite
+      variables:
+        n: {type: int, init: 0}
+      initial: {transition_to: s}
+      states:
+        s:
+          on_events:
+            set:
+              action: [assign: {n: "event.payload.n"}]       # internal

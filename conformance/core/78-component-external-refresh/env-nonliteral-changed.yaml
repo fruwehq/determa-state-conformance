@@ -1,0 +1,27 @@
+format: 1
+namespace: conformance.case_78_env_nonliteral_changed
+events:
+  trigger:
+    direction: input
+    payload:
+      forwarded: { type: map, required: true }
+machines:
+  - machine_id: owner
+    root:
+      type: parallel
+      on_events:
+        trigger:
+          action:
+            - send:
+                event: env
+                to: { component: target }
+                payload: { changed: event.payload.forwarded }
+      components:
+        - component_id: target
+          root:
+            variables:
+              token: { type: string, external: true }
+          with:
+            external: { token: "'old'" }
+        - component_id: companion
+          root: {}

@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_66_keyword_payload_field
+events:
+  check:
+    direction: input
+    payload:
+      in: { type: string, required: true }
+machines:
+  - machine_id: keyword_payload_field
+    root: {}

@@ -1,0 +1,60 @@
+format: 1
+namespace: conformance.case_35_shallow_deep_history
+events:
+  advance:
+    direction: input
+  leave_shallow:
+    direction: input
+  resume_shallow:
+    direction: input
+  enter_deep:
+    direction: input
+  leave_deep:
+    direction: input
+  resume_deep:
+    direction: input
+machines:
+  - machine_id: shallow_deep_history
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: shallow_zone }
+      states:
+        shallow_zone:
+          type: composite
+          history: shallow
+          initial: { transition_to: shallow_outer }
+          on_events:
+            leave_shallow: { transition_to: between }
+            enter_deep: { transition_to: deep_zone }
+          states:
+            shallow_outer:
+              type: composite
+              initial: { transition_to: shallow_first }
+              states:
+                shallow_first:
+                  on_events:
+                    advance: { transition_to: shallow_second }
+                shallow_second: {}
+        between:
+          on_events:
+            resume_shallow: { transition_to: { history: shallow_zone } }
+            enter_deep: { transition_to: deep_zone }
+        deep_zone:
+          type: composite
+          history: deep
+          initial: { transition_to: deep_outer }
+          on_events:
+            leave_deep: { transition_to: after_deep }
+          states:
+            deep_outer:
+              type: composite
+              initial: { transition_to: deep_first }
+              states:
+                deep_first:
+                  on_events:
+                    advance: { transition_to: deep_second }
+                deep_second: {}
+        after_deep:
+          on_events:
+            resume_deep: { transition_to: { history: deep_zone } }

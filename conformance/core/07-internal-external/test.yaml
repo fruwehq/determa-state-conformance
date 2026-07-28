@@ -1,0 +1,14 @@
+title: internal transitions skip entry/exit; external transitions run them
+# On creation, top.initial enters `a` -> trail = [enterA].
+steps:
+  # internal: action only, no exit/entry of a.
+  - send: {event: tick}
+    expect:
+      config: [a]
+      variables: {trail: [enterA, tick]}
+
+  # external a -> b: exit a then enter b.
+  - send: {event: swap}
+    expect:
+      config: [b]
+      variables: {trail: [enterA, tick, exitA, enterB]}

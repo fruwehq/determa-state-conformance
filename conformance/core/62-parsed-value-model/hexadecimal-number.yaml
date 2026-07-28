@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_62_hexadecimal_number
+meta:
+  invalid: 0x10
+machines:
+  - machine_id: parser_probe
+    root: {}

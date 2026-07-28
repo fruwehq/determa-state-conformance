@@ -1,0 +1,32 @@
+format: 1
+namespace: conformance.case_19_public_event_contract
+events:
+  begin:
+    direction: input
+    payload:
+      request_id: { type: string, required: true }
+  work_requested:
+    direction: output
+  work_completed:
+    direction: input
+    correlates_to: work_requested
+machines:
+  - machine_id: public_event_contract
+    version: 1
+    root:
+      type: composite
+      variables:
+        completed: { type: bool, init: false }
+      initial: { transition_to: ready }
+      states:
+        ready:
+          on_events:
+            begin:
+              action:
+                - send:
+                    event: work_requested
+                    to: { external: true }
+                    correlation_id: "event.payload.request_id"
+            work_completed:
+              action:
+                - assign: { completed: "true" }

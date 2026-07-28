@@ -1,0 +1,41 @@
+format: 1
+namespace: conformance.case_45_proper_ancestor_target
+events:
+  descend:
+    direction: input
+  target_ancestor:
+    direction: input
+machines:
+  - machine_id: proper_ancestor_target
+    version: 1
+    root:
+      type: composite
+      variables:
+        trace: { type: list, init: [] }
+      initial: { transition_to: outer }
+      states:
+        outer:
+          type: composite
+          entry:
+            - assign: { trace: "trace + ['enter_outer']" }
+          exit:
+            - assign: { trace: "trace + ['exit_outer']" }
+          initial: { transition_to: first }
+          states:
+            first:
+              entry:
+                - assign: { trace: "trace + ['enter_first']" }
+              exit:
+                - assign: { trace: "trace + ['exit_first']" }
+              on_events:
+                descend: { transition_to: second }
+            second:
+              entry:
+                - assign: { trace: "trace + ['enter_second']" }
+              exit:
+                - assign: { trace: "trace + ['exit_second']" }
+              on_events:
+                target_ancestor:
+                  transition_to: outer
+                  action:
+                    - assign: { trace: "trace + ['target_ancestor']" }

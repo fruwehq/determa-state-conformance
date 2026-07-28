@@ -1,0 +1,15 @@
+format: 1
+namespace: conformance.case_46_root_self_transition
+events:
+  reset:
+    direction: input
+machines:
+  - machine_id: root_self_transition
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: active }
+      on_events:
+        reset: { transition_to: root }
+      states:
+        active: {}

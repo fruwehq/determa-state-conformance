@@ -1,0 +1,46 @@
+format: 1
+namespace: conformance.case_80_unbound_owned_child
+events:
+  spawn_unbound:
+    direction: input
+  finish:
+    direction: input
+  child_disposed:
+    direction: output
+    payload:
+      label: { type: string, required: true }
+machines:
+  - machine_id: unbound_owner
+    root:
+      type: composite
+      initial: { transition_to: spawning }
+      states:
+        spawning:
+          on_events:
+            spawn_unbound:
+              transition_to: outside
+              action:
+                - spawn:
+                    machine_id: child
+                    bindings:
+                      input:
+                        label: "'unbound'"
+        outside:
+          on_events:
+            finish: { transition_to: complete }
+        complete: { type: final }
+  - machine_id: child
+    root:
+      type: composite
+      variables:
+        label: { type: string, input: true }
+      exit:
+        - send:
+            event: child_disposed
+            to: { external: true }
+            correlation_id: "'unbound-cleanup'"
+            payload:
+              label: label
+      initial: { transition_to: running }
+      states:
+        running: {}

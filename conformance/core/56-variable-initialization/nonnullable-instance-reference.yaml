@@ -1,0 +1,10 @@
+format: 1
+namespace: conformance.case_56_nonnullable_instance_reference
+machines:
+  - machine_id: invalid_reference
+    root:
+      variables:
+        child_reference:
+          type: instance_reference
+          machine_id: child
+          init: null

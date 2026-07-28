@@ -1,0 +1,11 @@
+title: bundle declarations define a public output and its correlated input
+static: { valid: true }
+steps:
+  - send: { event: begin, payload: { request_id: work-1 } }
+    expect:
+      emissions:
+        - { event: work_requested, target: external, correlation_id: work-1 }
+
+  - send: { event: work_completed, correlation_id: work-1 }
+    expect:
+      variables: { completed: true }

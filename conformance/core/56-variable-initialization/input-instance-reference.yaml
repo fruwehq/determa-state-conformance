@@ -1,0 +1,12 @@
+format: 1
+namespace: conformance.case_56_input_instance_reference
+machines:
+  - machine_id: invalid_reference
+    root:
+      variables:
+        child_reference:
+          type: instance_reference
+          machine_id: child
+          nullable: true
+          input: true
+          init: null

@@ -1,0 +1,34 @@
+title: a state-scoped reference bounds its child lifetime whether null or populated
+steps:
+  - send: { event: spawn_worker }
+    expect:
+      config: [holding]
+      owned_instances:
+        - key: { owner: root, spawn_sequence: 0 }
+          machine_id: worker
+          status: running
+
+  - send: { event: leave }
+    expect:
+      status: running
+      disposition: handled
+      config: [outside]
+      owned_instances: []
+      emissions:
+        - event: worker_disposed
+          target: external
+          correlation_id: worker-cleanup
+
+  - send: { event: return_to_holding }
+    expect:
+      config: [holding]
+      variables:
+        worker_reference: null
+
+  - send: { event: leave }
+    expect:
+      status: running
+      disposition: handled
+      config: [outside]
+      owned_instances: []
+      emissions: []

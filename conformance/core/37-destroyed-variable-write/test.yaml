@@ -1,0 +1,8 @@
+title: transition actions cannot write a variable destroyed by their transition
+static:
+  documents:
+    - file: machine.yaml
+      valid: false
+      error: destroyed_variable_write
+    - file: valid.yaml
+      valid: true

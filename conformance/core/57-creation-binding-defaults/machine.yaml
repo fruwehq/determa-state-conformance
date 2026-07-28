@@ -1,0 +1,17 @@
+format: 1
+namespace: conformance.case_57_creation_binding_defaults
+machines:
+  - machine_id: creation_bindings
+    root:
+      variables:
+        required_input: { type: string, input: true }
+        default_input: { type: string, input: true, init: "input-default" }
+        overridden_input: { type: string, input: true, init: "unused-input-default" }
+        required_external: { type: string, external: true }
+        default_external: { type: string, external: true, init: "external-default" }
+        overridden_external:
+          type: string
+          external: true
+          init: "unused-external-default"
+        float_from_integer_init: { type: float, input: true, init: 1 }
+        float_from_integer_binding: { type: float, input: true, init: 0.0 }

@@ -1,0 +1,23 @@
+title: variable declarations have one exact initialization source
+static:
+  documents:
+    - file: ordinary-missing-init.yaml
+      valid: false
+      error: structural_validation
+    - file: nonnullable-instance-reference.yaml
+      valid: false
+      error: structural_validation
+    - file: input-instance-reference.yaml
+      valid: false
+      error: structural_validation
+    - file: wrong-init-type.yaml
+      valid: false
+      error: structural_validation
+    - file: valid-required-input.yaml
+      valid: true
+    - file: component-missing-binding.yaml
+      valid: false
+      error: invalid_binding
+    - file: spawn-missing-binding.yaml
+      valid: false
+      error: invalid_binding

@@ -1,0 +1,22 @@
+title: deep history restores the full nested configuration
+steps:
+  # creation: work -> outer -> s1.
+  - send: {event: sub}            # s1 -> s2
+    expect:
+      config: [work.outer.s2]
+
+  - send: {event: pause}          # exit work (records deep history: outer.s2)
+    expect:
+      config: [paused]
+
+  - send: {event: resume}         # deep history restores outer.s2, not the initial s1
+    expect:
+      config: [work.outer.s2]
+
+  - send: {event: pause}          # records the same outer.s2 configuration again
+    expect:
+      config: [paused]
+
+  - send: {event: restart}        # a plain path ignores history and follows initial
+    expect:
+      config: [work.outer.s1]

@@ -1,0 +1,30 @@
+format: 1
+namespace: conformance.case_38_destroyed_reference_binding
+events:
+  start:
+    direction: input
+machines:
+  - machine_id: destroyed_reference_binding
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: scoped }
+      states:
+        scoped:
+          variables:
+            worker_reference:
+              type: instance_reference
+              machine_id: worker
+              nullable: true
+              init: null
+          on_events:
+            start:
+              transition_to: outside
+              action:
+                - spawn:
+                    machine_id: worker
+                    bind_to: worker_reference
+        outside: {}
+  - machine_id: worker
+    version: 1
+    root: {}

@@ -1,0 +1,21 @@
+format: 1
+namespace: conformance.case_66_owner_field
+machines:
+  - machine_id: owner_field
+    root:
+      type: parallel
+      components:
+        - component_id: left
+          machine_id: child
+          with:
+            input:
+              value: "owner.status"
+        - component_id: right
+          machine_id: child
+          with:
+            input:
+              value: "'valid'"
+  - machine_id: child
+    root:
+      variables:
+        value: { type: string, input: true }

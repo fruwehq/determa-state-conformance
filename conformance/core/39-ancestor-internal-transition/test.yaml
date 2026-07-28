@@ -1,0 +1,7 @@
+title: an internal transition selected on an ancestor does not exit active descendants
+steps:
+  - send: { event: record }
+    expect:
+      config: [outer.inner.leaf]
+      variables:
+        trace: [enter_outer, enter_inner, enter_leaf, ancestor_action]

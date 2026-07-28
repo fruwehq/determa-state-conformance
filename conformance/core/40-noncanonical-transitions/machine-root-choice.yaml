@@ -1,0 +1,8 @@
+format: 1
+namespace: conformance.case_40_machine_root_choice
+machines:
+  - machine_id: invalid_root
+    root:
+      choice:
+        - { guard: "true", transition_to: root }
+        - { transition_to: root }

@@ -1,0 +1,5 @@
+format: 1
+namespace: conformance.case_76_invalid_create_unicode
+machines:
+  - machine_id: invalid_create_unicode
+    root: {}

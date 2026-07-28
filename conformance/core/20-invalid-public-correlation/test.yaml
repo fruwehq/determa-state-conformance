@@ -1,0 +1,4 @@
+title: a correlated public input must name a declared public output
+static:
+  valid: false
+  error: semantic_validation

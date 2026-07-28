@@ -1,0 +1,45 @@
+format: 1
+namespace: conformance.case_78_component_external_refresh
+events:
+  update_component:
+    direction: input
+    payload:
+      token: { type: string, required: true }
+machines:
+  - machine_id: component_external_refresh
+    root:
+      type: parallel
+      variables:
+        initial_token: { type: string, input: true }
+      on_events:
+        update_component:
+          action:
+            - send:
+                event: env
+                to: { component: refreshed }
+                payload:
+                  changed: "{'token': event.payload.token}"
+      components:
+        - component_id: refreshed
+          machine_id: refreshable
+          with:
+            external:
+              token: owner.variables.initial_token
+        - component_id: companion
+          root:
+            type: composite
+            initial: { transition_to: ready }
+            states:
+              ready: {}
+  - machine_id: refreshable
+    root:
+      type: composite
+      variables:
+        token: { type: string, external: true }
+      on_events:
+        env:
+          action:
+            - refresh: { only: [token] }
+      initial: { transition_to: ready }
+      states:
+        ready: {}

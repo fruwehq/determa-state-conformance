@@ -1,0 +1,18 @@
+format: 1
+namespace: conformance.case_69_cel_or_nonabsorbed_error
+events:
+  trigger:
+    direction: input
+machines:
+  - machine_id: or_nonabsorbed_error
+    root:
+      type: composite
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            trigger:
+              action:
+                - assign: { reached: "(1 / 0 == 0) || false" }
+          variables:
+            reached: { type: bool, init: false }

@@ -1,0 +1,35 @@
+title: time-based behavior uses an external scheduling request and correlated input
+steps:
+  - send: { event: go, payload: { request_id: first } }
+    expect:
+      config: [waiting]
+      emissions:
+        - event: schedule_requested
+          target: external
+          correlation_id: first
+          payload: { delay_seconds: 30 }
+
+  - send: { event: cancel }
+    expect:
+      config: [idle]
+
+  # A best-effort extension may still deliver a late event; core treats it as ordinary input.
+  - send: { event: schedule_elapsed, correlation_id: first }
+    expect:
+      disposition: unhandled
+      config: [idle]
+      variables: { fired: 0 }
+
+  - send: { event: go, payload: { request_id: second } }
+    expect:
+      config: [waiting]
+      emissions:
+        - event: schedule_requested
+          target: external
+          correlation_id: second
+          payload: { delay_seconds: 30 }
+
+  - send: { event: schedule_elapsed, correlation_id: second }
+    expect:
+      config: [done]
+      variables: { fired: 1 }

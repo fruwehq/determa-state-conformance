@@ -1,0 +1,56 @@
+format: 1
+namespace: conformance.case_52_spawned_initialization_fault
+events:
+  spawn_faulty:
+    direction: input
+  spawn_then_fault_owner:
+    direction: input
+machines:
+  - machine_id: owner
+    root:
+      type: composite
+      variables:
+        child_reference:
+          type: instance_reference
+          machine_id: faulty_child
+          nullable: true
+          init: null
+        rolled_back_reference:
+          type: instance_reference
+          machine_id: faulty_child
+          nullable: true
+          init: null
+        continued: { type: int, init: 0 }
+      initial: { transition_to: running }
+      states:
+        running:
+          on_events:
+            spawn_faulty:
+              action:
+                - spawn:
+                    machine_id: faulty_child
+                    bindings:
+                      input:
+                        label: "'first'"
+                    bind_to: child_reference
+                - assign: { continued: "continued + 1" }
+            spawn_then_fault_owner:
+              action:
+                - spawn:
+                    machine_id: faulty_child
+                    bindings:
+                      input:
+                        label: "'rolled-back'"
+                    bind_to: rolled_back_reference
+                - assign: { continued: "continued / 0" }
+  - machine_id: faulty_child
+    root:
+      type: composite
+      variables:
+        label: { type: string, input: true }
+        value: { type: int, init: 1 }
+      entry:
+        - assign: { value: "value / 0" }
+      initial: { transition_to: waiting }
+      states:
+        waiting: {}

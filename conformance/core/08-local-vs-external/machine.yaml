@@ -1,0 +1,28 @@
+format: 1
+namespace: conformance.case_08_local_vs_external
+events:
+  local_descendant:
+    direction: input
+  unmarked_descendant:
+    direction: input
+machines:
+  - machine_id: localext
+    version: 1
+    root:
+      type: composite
+      variables:
+        trail: {type: list, init: []}
+      initial: {transition_to: c}
+      states:
+        c:
+          type: composite
+          entry: [assign: {trail: "trail + ['enterC']"}]
+          exit: [assign: {trail: "trail + ['exitC']"}]
+          initial: {transition_to: a}
+          on_events:
+            local_descendant: { transition_to: c.a, local: true }
+            unmarked_descendant: { transition_to: c.a }
+          states:
+            a:
+              entry: [assign: {trail: "trail + ['enterA']"}]
+              exit: [assign: {trail: "trail + ['exitA']"}]

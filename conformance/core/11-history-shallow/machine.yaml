@@ -1,0 +1,46 @@
+format: 1
+namespace: conformance.case_11_history_shallow
+events:
+  switch:
+    direction: input
+  advance:
+    direction: input
+  pause:
+    direction: input
+  resume:
+    direction: input
+  restart:
+    direction: input
+machines:
+  - machine_id: shallowhist
+    version: 1
+    root:
+      type: composite
+      initial: {transition_to: work}
+      states:
+        work:
+          type: composite
+          history: shallow
+          initial: {transition_to: outer}
+          on_events:
+            pause: {transition_to: paused}
+          states:
+            outer:
+              type: composite
+              initial: {transition_to: s1}
+              states:
+                s1:
+                  on_events:
+                    switch: {transition_to: alternate}
+            alternate:
+              type: composite
+              initial: {transition_to: a1}
+              states:
+                a1:
+                  on_events:
+                    advance: {transition_to: a2}
+                a2: {}
+        paused:
+          on_events:
+            resume: {transition_to: {history: work}}
+            restart: {transition_to: work}

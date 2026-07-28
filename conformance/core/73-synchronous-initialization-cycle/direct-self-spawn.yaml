@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_73_direct_self_spawn
+machines:
+  - machine_id: recursive
+    root:
+      entry:
+        - spawn: { machine_id: recursive }

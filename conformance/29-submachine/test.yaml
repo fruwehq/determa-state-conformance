@@ -1,6 +1,0 @@
-title: a submachine runs synchronously (with-seeded) and completes to the parent via done
-steps:
-  # inside the submachine at `awaiting`; pay >= due(=total=100) -> settled(final) ->
-  # `done` bubbles to checkout -> parent moves to `paid`, all in one quiescence run.
-  - send: { event: pay, payload: { amount: 100 } }
-    expect: { config: [paid] }

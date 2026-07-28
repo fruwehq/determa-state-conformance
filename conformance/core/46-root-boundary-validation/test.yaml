@@ -1,0 +1,15 @@
+title: root re-entry and destroyed refresh destinations are rejected at load
+static:
+  documents:
+    - file: root-self-transition.yaml
+      valid: false
+      error: root_reentry
+    - file: root-history-target.yaml
+      valid: false
+      error: root_reentry
+    - file: destroyed-refresh.yaml
+      valid: false
+      error: destroyed_variable_write
+    - file: root-local-transition.yaml
+      valid: false
+      error: root_local_transition

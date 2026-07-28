@@ -1,0 +1,49 @@
+format: 1
+namespace: conformance.case_63_entry_stop_interruption
+events:
+  start:
+    direction: input
+  initialized:
+    direction: internal
+  completion_trace:
+    direction: output
+    payload:
+      trace: { type: list, required: true }
+machines:
+  - machine_id: entry_stop
+    root:
+      type: composite
+      variables:
+        trace: { type: list, init: [] }
+      exit:
+        - send:
+            event: completion_trace
+            to: { external: true }
+            payload:
+              trace: "trace"
+            correlation_id: "'entry-stop-1'"
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            start: { transition_to: processing }
+        processing:
+          type: parallel
+          entry:
+            - assign: { trace: "trace + ['processing_entry']" }
+            - stop: {}
+          exit:
+            - assign: { trace: "trace + ['processing_exit']" }
+          components:
+            - component_id: first
+              root:
+                entry:
+                  - send:
+                      event: initialized
+                      to: { owner: true }
+            - component_id: second
+              root:
+                entry:
+                  - send:
+                      event: initialized
+                      to: { owner: true }

@@ -1,0 +1,51 @@
+format: 1
+namespace: conformance.case_62_yaml_1_2_boolean_like_strings
+events:
+  no:
+    direction: input
+    payload:
+      value: { type: string, default: no }
+  off:
+    direction: input
+    payload:
+      value: { type: string, default: off }
+  yes:
+    direction: input
+    payload:
+      value: { type: string, default: yes }
+  on:
+    direction: input
+    payload:
+      value: { type: string, default: on }
+machines:
+  - machine_id: boolean_like_strings
+    root:
+      type: composite
+      variables:
+        observed_value: { type: string, init: "" }
+      initial: { transition_to: no }
+      states:
+        no:
+          on_events:
+            no:
+              transition_to: off
+              action:
+                - assign: { observed_value: event.payload.value }
+        off:
+          on_events:
+            off:
+              transition_to: yes
+              action:
+                - assign: { observed_value: event.payload.value }
+        yes:
+          on_events:
+            yes:
+              transition_to: on
+              action:
+                - assign: { observed_value: event.payload.value }
+        on:
+          on_events:
+            on:
+              transition_to: no
+              action:
+                - assign: { observed_value: event.payload.value }

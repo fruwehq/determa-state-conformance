@@ -1,0 +1,13 @@
+title: dispatch rejects a payload string containing an unpaired surrogate
+steps:
+  - send:
+      event: set
+      payload:
+        value: { invalid_unicode_scalar: "D800" }
+    expect:
+      status: running
+      disposition: rejected
+      emissions: []
+      fault: null
+      rejection: { code: invalid_payload }
+      caller_still_owns_input: true
