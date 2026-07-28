@@ -470,7 +470,14 @@
               }
             },
             "maintenance_mode": {
-              "type": "boolean"
+              "oneOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "const": "not-a-boolean"
+                }
+              ]
             }
           }
         },

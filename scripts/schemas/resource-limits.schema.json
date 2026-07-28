@@ -7,7 +7,15 @@
     "maximum_definition_bytes",
     "maximum_descriptor_bytes",
     "maximum_transformed_output_bytes",
+    "maximum_json_nesting_depth",
+    "maximum_runtimes",
+    "maximum_active_states_per_runtime",
+    "maximum_variables_per_runtime",
+    "maximum_map_members",
+    "maximum_list_members",
+    "maximum_string_utf8_bytes",
     "maximum_chain_length",
+    "maximum_descriptor_rules",
     "maximum_cel_expression_length",
     "maximum_cel_ast_nodes",
     "maximum_cel_evaluation_steps"
@@ -26,7 +34,31 @@
     "maximum_transformed_output_bytes": {
       "$ref": "#/$defs/canonicalDecimal"
     },
+    "maximum_json_nesting_depth": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_runtimes": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_active_states_per_runtime": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_variables_per_runtime": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_map_members": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_list_members": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_string_utf8_bytes": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
     "maximum_chain_length": {
+      "$ref": "#/$defs/canonicalDecimal"
+    },
+    "maximum_descriptor_rules": {
       "$ref": "#/$defs/canonicalDecimal"
     },
     "maximum_cel_expression_length": {

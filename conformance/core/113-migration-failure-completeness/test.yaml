@@ -63,6 +63,23 @@ persistence_vectors:
       result: failure
       code: target_definition_unavailable
       caller_still_owns_aggregate: true
+  - name: non_boolean_maintenance_mode_is_invalid_request
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_request:
+      target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+      migration_route:
+        - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+      maintenance_mode: not-a-boolean
+    expect:
+      result: failure
+      code: invalid_migration_request
+      caller_still_owns_aggregate: true
   - name: runtime_transform_fault
     operation: migrate_aggregate
     aggregate_state: transform-source-aggregate-state.json

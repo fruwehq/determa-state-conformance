@@ -28,7 +28,9 @@ Coverage:
 - `persistence-01-inbox-idempotency` — duplicate replay returns the committed outcome
   without another migration, dispatch, outbox write, or audit record.
 - `persistence-02-atomic-aggregate-inbox-outbox-audit` — all logical writes commit or
-  roll back together, including one deterministic emitted output intent in the outbox.
+  roll back together, including one deterministic emitted output intent in the outbox;
+  migration preserves the complete root runtime and target identity used by dispatch,
+  effect identity, state digests, and audit.
 - `persistence-03-crash-before-and-after-commit` — pre-commit crashes leave no writes;
   post-commit/pre-acknowledgement crashes retain an unacknowledged committed inbox
   outcome, and its replay performs the first acknowledgement without redispatch.

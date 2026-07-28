@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import math
@@ -73,6 +74,24 @@ ARTIFACT_KINDS = {
 DRIVER_ARTIFACT_KINDS = {
     "artifact_resolver": "artifact-resolver.schema.json",
     "resource_limits": "resource-limits.schema.json",
+}
+MINIMUM_RESOURCE_LIMIT_FLOORS = {
+    "maximum_aggregate_bytes": "1048576",
+    "maximum_definition_bytes": "1048576",
+    "maximum_descriptor_bytes": "65536",
+    "maximum_transformed_output_bytes": "65536",
+    "maximum_json_nesting_depth": "64",
+    "maximum_runtimes": "256",
+    "maximum_active_states_per_runtime": "1024",
+    "maximum_variables_per_runtime": "4096",
+    "maximum_map_members": "4096",
+    "maximum_list_members": "4096",
+    "maximum_string_utf8_bytes": "65536",
+    "maximum_chain_length": "8",
+    "maximum_descriptor_rules": "1024",
+    "maximum_cel_expression_length": "65536",
+    "maximum_cel_ast_nodes": "65536",
+    "maximum_cel_evaluation_steps": "1000000",
 }
 ARTIFACT_FORMAT_FIELDS = {
     "aggregate_state": (
@@ -904,6 +923,249 @@ def validate_case_62(case: Path, test: dict[str, Any]) -> None:
             )
 
 
+def resource_shape_metrics(
+    value: Any,
+    depth: int = 0,
+) -> tuple[int, int, int, int]:
+    maximum_depth = depth
+    maximum_map_members = 0
+    maximum_list_members = 0
+    maximum_string_bytes = 0
+    if isinstance(value, dict):
+        maximum_depth = depth + 1
+        maximum_map_members = len(value)
+        for key, child in value.items():
+            maximum_string_bytes = max(
+                maximum_string_bytes,
+                len(key.encode("utf-8")),
+            )
+            child_metrics = resource_shape_metrics(child, depth + 1)
+            maximum_depth = max(maximum_depth, child_metrics[0])
+            maximum_map_members = max(maximum_map_members, child_metrics[1])
+            maximum_list_members = max(maximum_list_members, child_metrics[2])
+            maximum_string_bytes = max(maximum_string_bytes, child_metrics[3])
+    elif isinstance(value, list):
+        maximum_depth = depth + 1
+        maximum_list_members = len(value)
+        for child in value:
+            child_metrics = resource_shape_metrics(child, depth + 1)
+            maximum_depth = max(maximum_depth, child_metrics[0])
+            maximum_map_members = max(maximum_map_members, child_metrics[1])
+            maximum_list_members = max(maximum_list_members, child_metrics[2])
+            maximum_string_bytes = max(maximum_string_bytes, child_metrics[3])
+    elif isinstance(value, str):
+        maximum_string_bytes = len(value.encode("utf-8"))
+    return (
+        maximum_depth,
+        maximum_map_members,
+        maximum_list_members,
+        maximum_string_bytes,
+    )
+
+
+def validate_case_112(case: Path, test: dict[str, Any]) -> None:
+    floor = analyze_artifact(
+        case / "minimum-supported-floor-resource-limits.json"
+    ).document
+    if floor != MINIMUM_RESOURCE_LIMIT_FLOORS:
+        raise ValidationFailure(
+            f"{case.name}: minimum supported resource floors changed"
+        )
+
+    source = analyze_artifact(
+        case / "occurrence-source-aggregate-state.json"
+    ).document
+    descriptor = analyze_artifact(
+        case / "occurrence-migration-descriptor.json"
+    ).document
+    definitions = [
+        analyze_source(case / filename).document
+        for filename in ("occurrence-machine.yaml", "occurrence-target.yaml")
+    ]
+    values = [source, descriptor, *definitions]
+    shape_metrics = [
+        resource_shape_metrics(value)
+        for value in values
+    ]
+    expressions = {
+        rule["expression"]
+        for rule in descriptor["mappings"]["variables"]
+        if "expression" in rule
+    }
+    actual_use = {
+        "definition_bytes": max(
+            len(canonical_json_bytes(definition))
+            for definition in definitions
+        ),
+        "json_nesting_depth": max(item[0] for item in shape_metrics),
+        "runtimes": len(source["runtimes"]),
+        "active_states": max(
+            len(runtime["active_state_activations"])
+            for runtime in source["runtimes"]
+        ),
+        "variables": max(
+            len(runtime["variables"])
+            for runtime in source["runtimes"]
+        ),
+        "map_members": max(item[1] for item in shape_metrics),
+        "list_members": max(item[2] for item in shape_metrics),
+        "string_utf8_bytes": max(item[3] for item in shape_metrics),
+        "descriptor_rules": sum(
+            len(rules) for rules in descriptor["mappings"].values()
+        ),
+        "cel_expression_length": sum(
+            len(expression.encode("utf-8"))
+            for expression in expressions
+        ),
+        # Any non-empty checked expression has at least one AST node.
+        "cel_ast_nodes": int(bool(expressions)),
+    }
+    fields = {
+        "definition_bytes": "maximum_definition_bytes",
+        "json_nesting_depth": "maximum_json_nesting_depth",
+        "runtimes": "maximum_runtimes",
+        "active_states": "maximum_active_states_per_runtime",
+        "variables": "maximum_variables_per_runtime",
+        "map_members": "maximum_map_members",
+        "list_members": "maximum_list_members",
+        "string_utf8_bytes": "maximum_string_utf8_bytes",
+        "descriptor_rules": "maximum_descriptor_rules",
+        "cel_expression_length": "maximum_cel_expression_length",
+        "cel_ast_nodes": "maximum_cel_ast_nodes",
+    }
+    for label, field in fields.items():
+        if actual_use[label] > int(MINIMUM_RESOURCE_LIMIT_FLOORS[field]):
+            raise ValidationFailure(
+                f"{case.name}: {label} exceeds its documented minimum floor"
+            )
+    vectors = {
+        vector["name"]: vector for vector in test["persistence_vectors"]
+    }
+    success_name = "minimum_supported_floors_accept_all_listed_dimensions"
+    success = vectors.get(success_name)
+    if (
+        success is None
+        or success.get("resource_limits")
+        != "minimum-supported-floor-resource-limits.json"
+        or success["expect"]["result"] != "success"
+    ):
+        raise ValidationFailure(
+            f"{case.name}: minimum-floor success vector changed"
+        )
+    for label, field in fields.items():
+        filename = f"configured-{label}-below-use.json"
+        limits = analyze_artifact(case / filename).document
+        expected = dict(MINIMUM_RESOURCE_LIMIT_FLOORS)
+        expected[field] = str(actual_use[label] - 1)
+        if limits != expected:
+            raise ValidationFailure(
+                f"{case.name}: {filename} is not the exact below-use limit"
+            )
+        vector_name = f"configured_{label}_limit_exceeded"
+        vector = vectors.get(vector_name)
+        if (
+            vector is None
+            or vector.get("resource_limits") != filename
+            or vector["expect"]
+            != {
+                "result": "failure",
+                "code": "migration_resource_limit_exceeded",
+                "caller_still_owns_aggregate": True,
+            }
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {vector_name} changed"
+            )
+
+
+def validate_persistence_profile_02(case: Path) -> None:
+    source = analyze_artifact(case / "source-aggregate-state.json").document
+    expected = analyze_artifact(case / "expected-aggregate-state.json").document
+    envelope = analyze_artifact(case / "input-envelope.json").document
+    initial_store = analyze_artifact(case / "initial-store.json").document
+    committed_store = analyze_artifact(case / "committed-store.json").document
+    descriptor = analyze_artifact(case / "migration-descriptor.json").document
+
+    source_runtime = source["runtimes"][0]
+    expected_runtime = expected["runtimes"][0]
+    source_target = source_runtime["target_identity"]
+    runtime_id = source["root_runtime_id"]
+    if not (
+        expected["root_runtime_id"] == runtime_id
+        and source_runtime["runtime_id"] == runtime_id
+        and expected_runtime["runtime_id"] == runtime_id
+        and expected_runtime["target_identity"] == source_target
+        and envelope["target"] == source_target
+        and initial_store["aggregate_state"] == source
+        and committed_store["aggregate_state"] == expected
+    ):
+        raise ValidationFailure(
+            f"{case.name}: migration rekeyed the root runtime or target"
+        )
+
+    migrated = copy.deepcopy(source)
+    target_fingerprint = descriptor["target_validated_bundle_fingerprint"]
+    migrated["validated_bundle_fingerprint"] = target_fingerprint
+    migrated["migration_sequence"] = str(int(migrated["migration_sequence"]) + 1)
+    for runtime in migrated["runtimes"]:
+        runtime["current_definition"]["validated_bundle_fingerprint"] = (
+            target_fingerprint
+        )
+    migrated["aggregate_state_digest"] = hash_value(
+        [
+            "determa-aggregate-state-digest-1",
+            {
+                key: value
+                for key, value in migrated.items()
+                if key != "aggregate_state_digest"
+            },
+        ]
+    )
+    audits = committed_store["migration_audit"]
+    if (
+        len(audits) != 1
+        or audits[0]["root_runtime_id"] != runtime_id
+        or audits[0]["target_aggregate_state_digest"]
+        != migrated["aggregate_state_digest"]
+    ):
+        raise ValidationFailure(
+            f"{case.name}: migration audit identity or target digest changed"
+        )
+
+    outbox = committed_store["outbox"]
+    if (
+        initial_store["outbox"] != []
+        or len(outbox) != 1
+        or outbox[0]["sequence"] != 0
+        or expected["next_output_sequence"] != "1"
+    ):
+        raise ValidationFailure(
+            f"{case.name}: deterministic output is not atomically asserted"
+        )
+    machine = expected_runtime["current_definition"]["machine"]
+    effect_id = hash_value(
+        [
+            "determa-effect-identity-1",
+            "1",
+            [
+                machine["namespace"],
+                machine["machine_id"],
+                machine["machine_version"],
+            ],
+            expected["root_instance_id"],
+            runtime_id,
+            envelope["event_id"],
+            str(int(expected["next_logical_step_sequence"]) - 1),
+            "/machines/0/root/on_events/work/action/0/send",
+            "0",
+        ]
+    )
+    if outbox[0]["effect_id"] != effect_id:
+        raise ValidationFailure(
+            f"{case.name}: output effect identity does not use the preserved runtime"
+        )
+
+
 def validate_repository(repository_root: Path, spec_root: Path) -> str:
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
@@ -1247,6 +1509,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
 
         if case.name == "62-parsed-value-model":
             validate_case_62(case, test)
+        if case.name == "112-migration-security-limits":
+            validate_case_112(case, test)
+        if case.name == "persistence-02-atomic-aggregate-inbox-outbox-audit":
+            validate_persistence_profile_02(case)
 
     all_test_files = {
         path for root in case_roots if root.is_dir() for path in root.rglob("test.yaml")

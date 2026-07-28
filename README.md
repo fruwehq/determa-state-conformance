@@ -161,10 +161,11 @@ fixture it uses.
 Migration vectors normally use the required top-level `migration_route`,
 `target_validated_bundle_fingerprint`, and `maintenance_mode` driver fields. A vector
 testing request validation may instead use the closed `migration_request` object, whose
-only fields are those same three request members. This keeps malformed-request coverage
-inside a closed harness contract; case 113 deliberately omits `maintenance_mode` so the
-operation, rather than fixture-schema validation, returns
-`invalid_migration_request`.
+only fields are those same three request members. Within that object only, the exact
+string `not-a-boolean` is admitted as a malformed `maintenance_mode` value. This keeps
+malformed-request coverage inside a closed harness contract; case 113 separately omits
+the member and supplies this string so the operation, rather than fixture-schema
+validation, returns `invalid_migration_request` for both required branches.
 
 An artifact manifest classifies `aggregate_state`, `migration_descriptor`,
 `aggregate_state_package`, driver-only `artifact_resolver` and `resource_limits`, or
@@ -198,12 +199,43 @@ record has exactly `migration_descriptor_digest`, `descriptor_file`, and Boolean
 compare the complete resolver result so put-if-absent and non-overriding behavior is
 observable.
 
-A `resource_limits` fixture has exactly these canonical-decimal string members:
-`maximum_aggregate_bytes`, `maximum_definition_bytes`, `maximum_descriptor_bytes`,
-`maximum_transformed_output_bytes`, `maximum_chain_length`,
-`maximum_cel_expression_length`, `maximum_cel_ast_nodes`, and
-`maximum_cel_evaluation_steps`. Vectors cover both configured outer limits and
-descriptors that understate actual transformed-output or repeated CEL-evaluation use.
+A `resource_limits` fixture contains exactly the canonical-decimal string members in
+`scripts/schemas/resource-limits.schema.json`. Byte limits use RFC 8785 UTF-8 bytes for
+portable JSON values; definition bytes use each normalized bundle's RFC 8785 bytes.
+JSON nesting counts the outer map/list as depth 1. Runtime count is aggregate-wide.
+Active-state and live-variable limits apply to each runtime independently. Map/list
+limits are the maximum immediate member count of any recursively visited JSON
+container. String bytes include both member names and string values. Descriptor rules
+are the sum of entries in its eight closed `mappings` arrays. CEL expression, AST,
+evaluation, and transformed-output accounting follows SPEC §16.14 exactly.
+
+Core implementations must support at least these configured floors:
+
+| resource | floor |
+|---|---:|
+| aggregate bytes | 1,048,576 |
+| bytes per normalized definition | 1,048,576 |
+| bytes per migration descriptor | 65,536 |
+| transformed-output bytes | 65,536 |
+| JSON nesting depth | 64 |
+| runtimes per aggregate | 256 |
+| active states per runtime | 1,024 |
+| live variables per runtime | 4,096 |
+| immediate map members | 4,096 |
+| immediate list members | 4,096 |
+| UTF-8 bytes per string | 65,536 |
+| migration-chain descriptors | 8 |
+| mapping rules per descriptor | 1,024 |
+| CEL expression bytes | 65,536 |
+| CEL AST nodes | 65,536 |
+| CEL evaluation steps | 1,000,000 |
+
+Case 112 proves that one migration within every floor succeeds, then lowers each newly
+covered configured dimension below the same fixture's actual use and requires
+`migration_resource_limit_exceeded`. It retains the aggregate-byte, descriptor-byte,
+chain-length, transformed-output, and evaluation vectors. The phrase `cumulative chain
+work` has no portable counter or unit in SPEC §16.14, so this driver deliberately has no
+field for it pending a specification decision.
 
 ## Assertion vocabulary (normative)
 

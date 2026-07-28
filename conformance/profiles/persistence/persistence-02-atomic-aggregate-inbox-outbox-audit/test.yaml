@@ -25,22 +25,10 @@ artifacts:
     - file: committed-store.json
       kind: json_value
       valid: true
-    - file: quarantined-store.json
-      kind: json_value
-      valid: true
-    - file: resolved-call-log.json
-      kind: json_value
-      valid: true
     - file: committed-call-log.json
       kind: json_value
       valid: true
-    - file: replayed-call-log.json
-      kind: json_value
-      valid: true
     - file: rolled-back-call-log.json
-      kind: json_value
-      valid: true
-    - file: quarantined-call-log.json
       kind: json_value
       valid: true
 persistence_profile:
