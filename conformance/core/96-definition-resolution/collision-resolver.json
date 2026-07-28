@@ -1,0 +1,9 @@
+{
+  "definitions": [
+    {
+      "key": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+      "bundle": "target.yaml",
+      "trusted": true
+    }
+  ]
+}

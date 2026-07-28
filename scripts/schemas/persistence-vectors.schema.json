@@ -1,0 +1,393 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/conformance/persistence-vectors.schema.json",
+  "type": "object",
+  "required": ["title", "static", "artifacts", "persistence_vectors"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "static": {
+      "$ref": "#/$defs/staticAssertions"
+    },
+    "artifacts": {
+      "$ref": "#/$defs/artifactManifest"
+    },
+    "persistence_vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/vector"
+      }
+    }
+  },
+  "$defs": {
+    "fileName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:json|yaml)$"
+    },
+    "jsonFileName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.json$"
+    },
+    "staticAssertions": {
+      "type": "object",
+      "required": ["documents"],
+      "additionalProperties": false,
+      "properties": {
+        "documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["file", "valid"],
+            "additionalProperties": false,
+            "properties": {
+              "file": {
+                "$ref": "#/$defs/fileName"
+              },
+              "valid": {
+                "type": "boolean"
+              },
+              "error": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "valid": {
+                      "const": false
+                    }
+                  },
+                  "required": ["valid"]
+                },
+                "then": {
+                  "required": ["error"]
+                },
+                "else": {
+                  "not": {
+                    "required": ["error"]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "artifactManifest": {
+      "type": "object",
+      "required": ["documents"],
+      "additionalProperties": false,
+      "properties": {
+        "documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["file", "kind", "valid"],
+            "additionalProperties": false,
+            "properties": {
+              "file": {
+                "$ref": "#/$defs/jsonFileName"
+              },
+              "kind": {
+                "enum": [
+                  "aggregate_state",
+                  "migration_descriptor",
+                  "aggregate_state_package",
+                  "json_value"
+                ]
+              },
+              "valid": {
+                "type": "boolean"
+              },
+              "error": {
+                "type": "string",
+                "minLength": 1
+              },
+              "canonical_of": {
+                "$ref": "#/$defs/jsonFileName"
+              },
+              "verify_digest": {
+                "type": "boolean"
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "valid": {
+                      "const": false
+                    }
+                  },
+                  "required": ["valid"]
+                },
+                "then": {
+                  "required": ["error"],
+                  "not": {
+                    "required": ["canonical_of"]
+                  }
+                },
+                "else": {
+                  "not": {
+                    "required": ["error"]
+                  }
+                }
+              }
+            ]
+          }
+        }
+      }
+    },
+    "expectation": {
+      "type": "object",
+      "required": ["result"],
+      "additionalProperties": false,
+      "properties": {
+        "result": {
+          "enum": ["success", "failure"]
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "aggregate_state_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "canonical_bytes_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "migration_audit_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "emissions_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "disposition": {
+          "enum": ["handled", "unhandled", "rejected", "faulted"]
+        },
+        "caller_still_owns_aggregate": {
+          "const": true
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "failure"
+              }
+            },
+            "required": ["result"]
+          },
+          "then": {
+            "required": ["code", "caller_still_owns_aggregate"]
+          },
+          "else": {
+            "not": {
+              "required": ["code"]
+            }
+          }
+        }
+      ]
+    },
+    "vector": {
+      "type": "object",
+      "required": ["name", "operation", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "operation": {
+          "enum": [
+            "serialize_created_aggregate",
+            "restore_and_serialize",
+            "restore_and_dispatch",
+            "restore_package",
+            "migrate_aggregate",
+            "migrate_and_dispatch"
+          ]
+        },
+        "source_bundle": {
+          "$ref": "#/$defs/fileName"
+        },
+        "creation": {
+          "type": "object",
+          "required": ["machine_id", "root_instance_id", "creation_id", "bindings"],
+          "additionalProperties": false,
+          "properties": {
+            "machine_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "root_instance_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "creation_id": {
+              "type": "string",
+              "minLength": 1
+            },
+            "bindings": {
+              "type": "object"
+            }
+          }
+        },
+        "target_bundle": {
+          "$ref": "#/$defs/fileName"
+        },
+        "aggregate_state": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "aggregate_state_package": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "definitions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/fileName"
+          }
+        },
+        "migration_descriptors": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/jsonFileName"
+          }
+        },
+        "migration_route": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          }
+        },
+        "target_validated_bundle_fingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "maintenance_mode": {
+          "type": "boolean"
+        },
+        "input_envelope": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "resource_limits": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "artifact_resolver": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "repeat_count": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "expect": {
+          "$ref": "#/$defs/expectation"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": [
+                  "migrate_aggregate",
+                  "migrate_and_dispatch"
+                ]
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": [
+              "aggregate_state",
+              "definitions",
+              "migration_descriptors",
+              "migration_route",
+              "target_validated_bundle_fingerprint",
+              "maintenance_mode"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "migrate_and_dispatch"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": ["input_envelope"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "restore_package"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": ["aggregate_state_package"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": [
+                  "restore_and_serialize",
+                  "restore_and_dispatch"
+                ]
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": ["aggregate_state", "definitions"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "restore_and_dispatch"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": ["input_envelope"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "serialize_created_aggregate"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": ["source_bundle", "creation"]
+          }
+        }
+      ]
+    }
+  }
+}

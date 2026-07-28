@@ -1,0 +1,11 @@
+{
+  "event": "increment",
+  "event_id": "resume-input-1",
+  "target": {
+    "root": {
+      "root_instance_id": "resume-root",
+      "root_runtime_id": "sha256:575430518857addd973bacff03e78786c0da60d4a012a2045def89af6164cb8f"
+    }
+  },
+  "payload": {}
+}

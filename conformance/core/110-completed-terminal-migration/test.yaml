@@ -1,0 +1,59 @@
+title: completed aggregates migrate only in maintenance mode and remain terminal
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: expected-aggregate-state.json
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: expected-migration-audit.json
+      kind: json_value
+      valid: true
+persistence_vectors:
+  - operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:f92d8efab782f5d2166eea045dd6096f3fac51c4aef3f04bb4ed1d675a9b0580
+    target_validated_bundle_fingerprint: sha256:cd1f5ccfbba33705ad2ca0a4825153eb5a2defbec1074d6a1d76a30fcfc8d76f
+    name: maintenance_required
+    maintenance_mode: false
+    expect:
+      result: failure
+      code: terminal_migration_requires_maintenance
+      caller_still_owns_aggregate: true
+  - operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:f92d8efab782f5d2166eea045dd6096f3fac51c4aef3f04bb4ed1d675a9b0580
+    target_validated_bundle_fingerprint: sha256:cd1f5ccfbba33705ad2ca0a4825153eb5a2defbec1074d6a1d76a30fcfc8d76f
+    name: completed_preserved
+    maintenance_mode: true
+    expect:
+      result: success
+      aggregate_state_file: expected-aggregate-state.json
+      canonical_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json

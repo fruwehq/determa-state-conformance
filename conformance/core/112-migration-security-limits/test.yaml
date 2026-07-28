@@ -1,0 +1,96 @@
+title: migration trust and deterministic resource limits fail closed
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: chain-resource-limits.json
+      kind: json_value
+      valid: true
+    - file: aggregate-resource-limits.json
+      kind: json_value
+      valid: true
+    - file: descriptor-resource-limits.json
+      kind: json_value
+      valid: true
+    - file: untrusted-resolver.json
+      kind: json_value
+      valid: true
+persistence_vectors:
+  - operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    name: untrusted_descriptor
+    artifact_resolver: untrusted-resolver.json
+    expect:
+      result: failure
+      code: migration_descriptor_untrusted
+      caller_still_owns_aggregate: true
+  - operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    name: chain_limit_exceeded
+    resource_limits: chain-resource-limits.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      caller_still_owns_aggregate: true
+  - operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    name: aggregate_byte_limit_exceeded
+    resource_limits: aggregate-resource-limits.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      caller_still_owns_aggregate: true
+  - operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    name: descriptor_byte_limit_exceeded
+    resource_limits: descriptor-resource-limits.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      caller_still_owns_aggregate: true

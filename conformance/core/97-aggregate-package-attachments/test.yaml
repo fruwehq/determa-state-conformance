@@ -1,0 +1,53 @@
+title: packages seed verified attachments without overriding registry content
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: valid-package.json
+      kind: aggregate_state_package
+      valid: true
+    - file: unsupported-package-format.json
+      kind: aggregate_state_package
+      valid: false
+      error: unsupported_aggregate_state_package_format
+    - file: digest-mismatch-package.json
+      kind: aggregate_state_package
+      valid: true
+      verify_digest: false
+    - file: collision-package.json
+      kind: aggregate_state_package
+      valid: true
+      verify_digest: false
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: source-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: source-aggregate-state.json
+persistence_vectors:
+  - name: valid_self_contained_package
+    operation: restore_package
+    aggregate_state_package: valid-package.json
+    expect:
+      result: success
+      aggregate_state_file: source-aggregate-state.json
+      canonical_bytes_file: source-aggregate-state.canonical.json
+  - name: aggregate_digest_mismatch
+    operation: restore_package
+    aggregate_state_package: digest-mismatch-package.json
+    expect:
+      result: failure
+      code: aggregate_state_digest_mismatch
+      caller_still_owns_aggregate: true
+  - name: duplicate_attachment
+    operation: restore_package
+    aggregate_state_package: collision-package.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state_package
+      caller_still_owns_aggregate: true

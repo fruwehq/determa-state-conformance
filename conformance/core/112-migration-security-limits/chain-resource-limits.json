@@ -1,0 +1,10 @@
+{
+  "maximum_aggregate_bytes": "1048576",
+  "maximum_definition_bytes": "1048576",
+  "maximum_descriptor_bytes": "65536",
+  "maximum_transformed_output_bytes": "0",
+  "maximum_chain_length": "0",
+  "maximum_cel_expression_length": "0",
+  "maximum_cel_ast_nodes": "0",
+  "maximum_cel_evaluation_steps": "0"
+}

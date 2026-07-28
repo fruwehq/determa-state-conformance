@@ -1,0 +1,136 @@
+title: migration and handled, unhandled, rejected, or faulted dispatch commit as one
+  result
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: expected-aggregate-state.json
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: expected-migration-audit.json
+      kind: json_value
+      valid: true
+    - file: handled-input-envelope.json
+      kind: json_value
+      valid: true
+    - file: unhandled-input-envelope.json
+      kind: json_value
+      valid: true
+    - file: rejected-input-envelope.json
+      kind: json_value
+      valid: true
+    - file: faulted-input-envelope.json
+      kind: json_value
+      valid: true
+    - file: handled-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: handled-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: handled-aggregate-state.json
+    - file: faulted-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: faulted-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: faulted-aggregate-state.json
+    - file: expected-emissions.json
+      kind: json_value
+      valid: true
+persistence_vectors:
+  - operation: migrate_and_dispatch
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:3603b7728993290dc9db52dc3577498b70c241ab9458ef444af27148ba160085
+    target_validated_bundle_fingerprint: sha256:230f530b5f5d751df82aa7368863dc6ce6083bcb3a0f2ab7a48b695ad2a424ab
+    maintenance_mode: false
+    name: handled
+    input_envelope: handled-input-envelope.json
+    expect:
+      result: success
+      disposition: handled
+      aggregate_state_file: handled-aggregate-state.json
+      canonical_bytes_file: handled-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+      emissions_file: expected-emissions.json
+  - operation: migrate_and_dispatch
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:3603b7728993290dc9db52dc3577498b70c241ab9458ef444af27148ba160085
+    target_validated_bundle_fingerprint: sha256:230f530b5f5d751df82aa7368863dc6ce6083bcb3a0f2ab7a48b695ad2a424ab
+    maintenance_mode: false
+    name: unhandled
+    input_envelope: unhandled-input-envelope.json
+    expect:
+      result: success
+      disposition: unhandled
+      aggregate_state_file: expected-aggregate-state.json
+      canonical_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+      emissions_file: expected-emissions.json
+  - operation: migrate_and_dispatch
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:3603b7728993290dc9db52dc3577498b70c241ab9458ef444af27148ba160085
+    target_validated_bundle_fingerprint: sha256:230f530b5f5d751df82aa7368863dc6ce6083bcb3a0f2ab7a48b695ad2a424ab
+    maintenance_mode: false
+    name: rejected
+    input_envelope: rejected-input-envelope.json
+    expect:
+      result: success
+      disposition: rejected
+      aggregate_state_file: expected-aggregate-state.json
+      canonical_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+      emissions_file: expected-emissions.json
+  - operation: migrate_and_dispatch
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:3603b7728993290dc9db52dc3577498b70c241ab9458ef444af27148ba160085
+    target_validated_bundle_fingerprint: sha256:230f530b5f5d751df82aa7368863dc6ce6083bcb3a0f2ab7a48b695ad2a424ab
+    maintenance_mode: false
+    name: faulted
+    input_envelope: faulted-input-envelope.json
+    expect:
+      result: success
+      disposition: faulted
+      aggregate_state_file: faulted-aggregate-state.json
+      canonical_bytes_file: faulted-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+      emissions_file: expected-emissions.json

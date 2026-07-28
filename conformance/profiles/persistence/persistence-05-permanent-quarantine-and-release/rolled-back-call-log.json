@@ -1,0 +1,11 @@
+[
+  "resolve_target_definition",
+  "resolve_route",
+  "resolve_descriptors",
+  "verify_trust",
+  "begin_transaction",
+  "lock_aggregate",
+  "read_inbox",
+  "migrate_aggregate",
+  "rollback"
+]

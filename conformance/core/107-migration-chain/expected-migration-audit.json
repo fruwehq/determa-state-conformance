@@ -1,0 +1,26 @@
+[
+  {
+    "migration_audit_record_schema_version": 1,
+    "root_instance_id": "job-42",
+    "root_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+    "migration_sequence": "1",
+    "source_validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+    "target_validated_bundle_fingerprint": "sha256:6823764db53643414f40988a2f404ad2d09ff9963bf34fb8084f6cd91a5e6587",
+    "migration_descriptor_digest": "sha256:cfc5a6988ee488b6dc955315322e4368ef9d7fac7e00f2b0cd592406e2c780f4",
+    "source_aggregate_state_digest": "sha256:abfa6ba834d72e1e0e3c559071aab5e735584a0b7c22c68bc0de18ff505d4beb",
+    "target_aggregate_state_digest": "sha256:04587f08ee9a77d2106447984a17d88cbd57fad44e0a074b811efe293af17922",
+    "result_code": "migration_applied"
+  },
+  {
+    "migration_audit_record_schema_version": 1,
+    "root_instance_id": "job-42",
+    "root_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+    "migration_sequence": "2",
+    "source_validated_bundle_fingerprint": "sha256:6823764db53643414f40988a2f404ad2d09ff9963bf34fb8084f6cd91a5e6587",
+    "target_validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+    "migration_descriptor_digest": "sha256:6451c1b5a7c9d43569a8e01662619fca789131223ea97613cd5f5d8c142d5850",
+    "source_aggregate_state_digest": "sha256:04587f08ee9a77d2106447984a17d88cbd57fad44e0a074b811efe293af17922",
+    "target_aggregate_state_digest": "sha256:654b16d7529c4917c5ebb17ccc2ad151fc72e73f56dee82c6e4fd1eb51bef0d1",
+    "result_code": "migration_applied"
+  }
+]

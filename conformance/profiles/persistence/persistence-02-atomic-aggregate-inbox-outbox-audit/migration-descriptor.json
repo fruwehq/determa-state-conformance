@@ -1,0 +1,32 @@
+{
+  "migration_descriptor_format": "determa.aggregate_migration",
+  "migration_descriptor_schema_version": 1,
+  "source_machine_format": 1,
+  "target_machine_format": 1,
+  "source_validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+  "target_validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+  "source_aggregate_shape_fingerprint": "sha256:2e66cdbbdcfe44dad5a2edd52e5c1693e28c6c60ae590682f4862ee56fe058cc",
+  "target_aggregate_shape_fingerprint": "sha256:2e66cdbbdcfe44dad5a2edd52e5c1693e28c6c60ae590682f4862ee56fe058cc",
+  "mode": "compatible",
+  "mappings": {
+    "machines": [],
+    "active_states": [],
+    "variables": [],
+    "history": [],
+    "components": [],
+    "owned_runtimes": [],
+    "lifetime_holders": [],
+    "counters": []
+  },
+  "terminal_policy": {
+    "completed": "preserve",
+    "faulted": "preserve"
+  },
+  "resource_requirements": {
+    "maximum_transformed_output_bytes": "0",
+    "maximum_cel_expression_length": "0",
+    "maximum_cel_ast_nodes": "0",
+    "maximum_cel_evaluation_steps": "0"
+  },
+  "migration_descriptor_digest": "sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125"
+}

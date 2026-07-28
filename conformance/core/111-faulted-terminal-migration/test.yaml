@@ -1,0 +1,62 @@
+title: faulted migration preserves frozen diagnostics and honors terminal policy
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: expected-aggregate-state.json
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: reject-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: expected-migration-audit.json
+      kind: json_value
+      valid: true
+persistence_vectors:
+  - operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: true
+    name: faulted_diagnostic_tree_preserved
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    expect:
+      result: success
+      aggregate_state_file: expected-aggregate-state.json
+      canonical_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+  - operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: true
+    name: terminal_policy_rejects
+    migration_descriptors:
+      - reject-descriptor.json
+    migration_route:
+      - sha256:d414dc768f956b7ac0b724769e56a7d91f238445e0e1d682b91010fc6bff0def
+    expect:
+      result: failure
+      code: terminal_migration_rejected
+      caller_still_owns_aggregate: true

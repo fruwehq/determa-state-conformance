@@ -1,0 +1,14 @@
+[
+  {
+    "migration_audit_record_schema_version": 1,
+    "root_instance_id": "job-42",
+    "root_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+    "migration_sequence": "1",
+    "source_validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+    "target_validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+    "migration_descriptor_digest": "sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125",
+    "source_aggregate_state_digest": "sha256:1e4f5fcfdf2107082855656fc88af8ed4f3bb6769cbfe3032825524e20ebfc36",
+    "target_aggregate_state_digest": "sha256:3832f2ddb66c5e323c24d8900a8d4d5beb42f92531331fa299ef1a61b1f3e16b",
+    "result_code": "migration_applied"
+  }
+]

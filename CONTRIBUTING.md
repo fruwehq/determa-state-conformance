@@ -11,6 +11,13 @@ Add one narrowly focused core directory under `conformance/core/`:
 - `test.yaml` contains the execution trace or static-validation assertion; and
 - additional bundle documents are allowed only when `test.yaml` names them explicitly.
 
+Portable persistence cases add JSON artifacts through the closed `artifacts.documents`
+manifest and use `persistence_vectors` instead of ordinary runtime `steps`. Every JSON
+file must be named exactly once, and canonical files are raw byte expectations rather
+than reformatted examples. Semantically invalid digest/package fixtures must opt out of
+validator-side digest verification explicitly so the engine vector can assert the
+normative failure.
+
 Every host-facing event belongs in bundle `events` with `direction: input` or
 `direction: output`. Machine-local events are private and `internal`. Internal delivery
 must be explicit: capture a returned emission and deliver its immutable clone in a later
@@ -40,8 +47,9 @@ Before opening a pull request:
    and
 7. run `git diff --check`.
 
-There is no CI or standalone runner here. Engine cases are executed by each
-implementation's harness after the specification and conformance changes land.
+Repository CI runs the same source/schema/digest/canonical-byte validator. There is no
+standalone core runtime runner here; engine cases are executed by each implementation's
+harness after the specification and conformance changes land.
 
 ## Workflow
 

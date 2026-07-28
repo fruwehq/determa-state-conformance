@@ -11,8 +11,9 @@ a core case disagree, the core case wins and the specification must be corrected
 Host and plugin behavior deliberately excluded by format 1 is not made normative merely
 by this repository. Cases under `conformance/profiles/<profile>/` bind only
 implementations that declare support for that profile, and never override core prose.
-Queue delivery policy, timers, dead letters, stores, CLI shapes, and other host surfaces
-remain outside core conformance.
+Queue delivery policy, timers, dead letters, production stores, CLI shapes, and other
+host surfaces remain outside core conformance. SPEC §16 separately defines a portable
+aggregate wire and pure migration operations; core cases 94 onward cover that boundary.
 
 Migration note: repository revisions before issue #21 used the pre-format-1 grammar and
 are not authoritative for format 1. The authority statement above applies to the
@@ -24,14 +25,18 @@ migrated suite.
   normative core case.
 - `conformance/core/<number>-<name>/test.yaml` — its scenario or static-validation
   assertion.
+- `conformance/core/94-*` onward may use `persistence_vectors` plus a strict
+  `artifacts.documents` manifest for portable JSON operations.
 - `conformance/profiles/<profile>/` — optional, explicitly non-core compatibility
   surfaces.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
 - `VERSION` — the synchronized specification version, currently `0.0.7`.
 
-Repository CI parses every fixture with YAML 1.2, classifies deliberate pre-schema
-rejections, and checks declared structural results against an immutable specification
-commit. It does not execute scenario traces, and there is no standalone runtime runner.
+Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
+pre-schema rejections, checks declared structural results against an immutable
+specification commit, verifies artifact digests, and compares canonical JSON files as
+exact bytes. It does not execute scenario traces, and there is no standalone runtime
+runner.
 Each implementation's harness must later load and execute every core case;
 implementation work follows this suite in a separate pull request.
 
@@ -137,6 +142,31 @@ These keys describe the test driver only. Implementations are not required to ex
 capture or delivery as public APIs. Explicit delivery is intentional: automatically
 draining returned emissions would silently standardize FIFO or run-to-quiescence
 behavior that format 1 assigns to queue plugins.
+
+### Persistence vector mechanics
+
+A persistence case is self-contained and uses `static.documents` for every source or
+target bundle, `artifacts.documents` for every JSON file, and one or more closed
+`persistence_vectors`. Existing runtime-step mechanics remain unchanged.
+
+The exact driver operations are `serialize_created_aggregate`,
+`restore_and_serialize`, `restore_and_dispatch`, `restore_package`,
+`migrate_aggregate`, and `migrate_and_dispatch`. They adapt the three pure SPEC §16.1
+operations without fixing language API names. A vector explicitly supplies every
+definition, descriptor digest, route member, target fingerprint, maintenance flag,
+input envelope, resolver override, and resource-limit fixture it uses.
+
+An artifact manifest classifies `aggregate_state`, `migration_descriptor`,
+`aggregate_state_package`, or nonportable driver-only `json_value`. Recognized portable
+artifacts are checked against the pinned specification schema and have their embedded
+digests recomputed. `verify_digest: false` is permitted only for a schema-valid
+semantic-negative vector whose operation asserts the exact digest/package failure.
+`canonical_of` requires the complete file bytes to equal the RFC 8785 serialization of
+the readable fixture, with no byte-order mark, whitespace, or trailing newline.
+
+Expected aggregate, canonical-byte, audit, and emission files are normative. A failure
+asserts the exact closed code and `caller_still_owns_aggregate: true`; no intermediate
+candidate or audit record is available to the caller.
 
 ## Assertion vocabulary (normative)
 
@@ -249,7 +279,7 @@ A `static.documents` list may coexist with scenario `steps`; in that form the na
 documents are load-time checks and the case's primary `machine.yaml` is still created
 and driven by the scenario.
 
-## Optional CLI profile
+## Optional profiles
 
 The black-box runner is preserved at `conformance/profiles/cli/run_cli.py` as
 non-normative profile infrastructure. No CLI profile cases currently ship. The previous
@@ -259,6 +289,12 @@ which contradict format 1's plugin boundary.
 A later, separate issue may define commands, exit codes, and JSON shapes for
 implementations that declare a CLI profile, without queue introspection. Until then,
 the absence of CLI cases is intentional and no CLI surface is portable conformance.
+
+The `persistence` profile fixes inbox idempotency, aggregate/inbox/outbox/audit atomic
+commit, crash recovery, transient retry, permanent quarantine, and pre-transaction
+artifact resolution for hosts that declare it. Its store snapshots and call logs are
+assertion notation, not a standardized database schema or public engine API. See
+`conformance/profiles/persistence/README.md`.
 
 ## Coverage
 
@@ -284,8 +320,8 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 18 | declared domain failure as ordinary input (§10) |
 | 19 | valid public output/correlated-input contract (§4) |
 | 20 | unresolved public correlation rejection (§5) |
-| 21 | intentionally absent: no portable snapshot wire format |
-| 22 | intentionally absent: definition migration is unsupported |
+| 21 | historically absent; portable aggregate encoding now begins at case 94 |
+| 22 | historically absent; definition migration now begins at case 99 |
 | 23–25 | dynamic/chained choices and missing-default rejection (§5, §6) |
 | 26–28 | unreachable state, dead branch, and reachable positive validation (§5) |
 | 29 | owned spawn with typed input binding and completion (§7) |
@@ -350,6 +386,25 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 91 | ordinary host input to a live component rejects with `invalid_instance_target` (§6, §8) |
 | 92 | aggregate-root fault terminality overrides retained component target status (§6, §8) |
 | 93 | non-correlating input and internal envelopes may carry optional correlation ids (§6) |
+| 94 | portable aggregate encoding, decoding, canonical bytes, typed values, targets, and fault round trip (§16.1–§16.4) |
+| 95 | strict JSON source, format/version, structural, numeric, and relationship rejection (§16.1–§16.3) |
+| 96 | content-addressed definition resolution, absence, trust, and collision behavior (§16.5) |
+| 97 | self-contained package attachment verification and collision rejection (§16.13) |
+| 98 | unchanged-definition restore and dispatch equivalence (§16.1–§16.3) |
+| 99 | aggregate-shape-compatible migration and exact audit output (§16.6–§16.8) |
+| 100 | explicit active-state remapping without author behavior (§16.8–§16.9) |
+| 101 | deleted-state totality, ambiguity, partial mapping, and no guessed reset (§16.9) |
+| 102 | copy, transform, initialize, and destructive-drop variable rules (§16.7, §16.9) |
+| 103 | explicit history-slot and recorded-state migration (§16.9) |
+| 104 | component placement migration with immutable target identity (§16.4, §16.9) |
+| 105 | owned-runtime and holder migration with immutable nominal reference (§16.4, §16.9) |
+| 106 | counter-domain mapping plus identity and allocation preservation (§16.4, §16.9) |
+| 107 | exact multi-hop route, adjacency, ordering, and cycle rejection (§16.8) |
+| 108 | deterministic retry and complete intermediate-candidate rollback (§16.8, §16.12) |
+| 109 | migration plus handled, unhandled, rejected, and faulted dispatch outcomes (§16.11) |
+| 110 | completed terminal maintenance migration and terminal preservation (§16.10) |
+| 111 | faulted diagnostic migration and terminal-policy rejection (§16.10) |
+| 112 | descriptor trust and deterministic resource-limit failure (§16.12, §16.14) |
 
 ## Deliberate format-1 boundaries
 
@@ -361,10 +416,12 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
   no clock or timer.
 - Separate named contracts are replaced by bundle public event declarations.
 - Submachines are replaced by explicit lifecycle-bound components or owned spawning.
-- Portable snapshots, definition migration, package imports, and version resolution are
-  unsupported.
-- Store protocols, CLI JSON, queue inspection, enabled-event lists, and visualization
-  output are implementation/host surfaces rather than portable executable behavior.
+- Portable aggregate encoding and declarative definition migration use the separate
+  closed JSON artifacts in SPEC §16; they do not change machine `format: 1`.
+- Package imports and dependency/version resolution remain unsupported.
+- Production store protocols, CLI JSON, queue inspection, enabled-event lists, and
+  visualization output are implementation/host surfaces rather than portable core
+  behavior. The optional persistence profile binds only hosts that declare it.
 
 ## License
 

@@ -1,0 +1,67 @@
+title: aggregate wire round trips with exact canonical bytes and target identities
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: typed-values.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: source-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: source-aggregate-state.json
+    - file: faulted-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: faulted-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: faulted-aggregate-state.json
+    - file: target-identity-cases.json
+      kind: json_value
+      valid: true
+    - file: typed-values-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: typed-values-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: typed-values-aggregate-state.json
+persistence_vectors:
+  - name: created_aggregate_matches_wire
+    operation: serialize_created_aggregate
+    source_bundle: machine.yaml
+    creation:
+      machine_id: job
+      root_instance_id: job-42
+      creation_id: create-1
+      bindings: {}
+    expect:
+      result: success
+      aggregate_state_file: source-aggregate-state.json
+      canonical_bytes_file: source-aggregate-state.canonical.json
+  - name: faulted_aggregate_round_trip
+    operation: restore_and_serialize
+    aggregate_state: faulted-aggregate-state.json
+    definitions:
+      - machine.yaml
+    expect:
+      result: success
+      aggregate_state_file: faulted-aggregate-state.json
+      canonical_bytes_file: faulted-aggregate-state.canonical.json
+  - name: all_typed_values_round_trip
+    operation: serialize_created_aggregate
+    source_bundle: typed-values.yaml
+    creation:
+      machine_id: values
+      root_instance_id: typed-values-root
+      creation_id: typed-values-create
+      bindings: {}
+    expect:
+      result: success
+      aggregate_state_file: typed-values-aggregate-state.json
+      canonical_bytes_file: typed-values-aggregate-state.canonical.json

@@ -1,0 +1,44 @@
+title: component placement mapping changes current relation while target identity
+  stays immutable
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: expected-aggregate-state.json
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: expected-migration-audit.json
+      kind: json_value
+      valid: true
+persistence_vectors:
+  - name: component_placement_mapping
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:bf2d5fd0c91b8653533e2b6777851a51a10081ee72c623c1149e2d2a8f6dea9e
+    target_validated_bundle_fingerprint: sha256:773c621cd31e535c4d0dc6b25bd1b4c8165b586a96af50b4e12f2749f63c40b4
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: expected-aggregate-state.json
+      canonical_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json

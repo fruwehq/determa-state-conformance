@@ -1,0 +1,89 @@
+{
+  "valid": [
+    {
+      "root": {
+        "root_instance_id": "job-42",
+        "root_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d"
+      }
+    },
+    {
+      "spawned_instance": {
+        "root_instance_id": "job-42",
+        "instance_id": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "machine_id": "job",
+        "machine_version": 1
+      }
+    },
+    {
+      "component": {
+        "root_instance_id": "job-42",
+        "owner_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+        "component_id": "worker",
+        "component_runtime_id": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "activation_sequence": 0
+      }
+    }
+  ],
+  "invalid": [
+    {
+      "case": "spawned_owner_metadata",
+      "target_identity": {
+        "spawned_instance": {
+          "root_instance_id": "job-42",
+          "owner_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+          "instance_id": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "machine_id": "job",
+          "machine_version": 1
+        }
+      }
+    },
+    {
+      "case": "spawned_namespace_metadata",
+      "target_identity": {
+        "spawned_instance": {
+          "root_instance_id": "job-42",
+          "instance_id": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "namespace": "example.persistence",
+          "machine_id": "job",
+          "machine_version": 1
+        }
+      }
+    },
+    {
+      "case": "spawned_sequence_metadata",
+      "target_identity": {
+        "spawned_instance": {
+          "root_instance_id": "job-42",
+          "instance_id": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "machine_id": "job",
+          "machine_version": 1,
+          "spawn_sequence": "0"
+        }
+      }
+    },
+    {
+      "case": "component_definition_pointer",
+      "target_identity": {
+        "component": {
+          "root_instance_id": "job-42",
+          "owner_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+          "component_id": "worker",
+          "component_runtime_id": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "component_definition_pointer": "/machines/0/root/components/0",
+          "activation_sequence": 0
+        }
+      }
+    },
+    {
+      "case": "component_missing_root_instance",
+      "target_identity": {
+        "component": {
+          "owner_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+          "component_id": "worker",
+          "component_runtime_id": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "activation_sequence": 0
+        }
+      }
+    }
+  ]
+}

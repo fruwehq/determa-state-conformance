@@ -1,0 +1,61 @@
+title: definition resolution is content addressed, trusted, and state preserving on
+  failure
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: source-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: source-aggregate-state.json
+    - file: collision-resolver.json
+      kind: json_value
+      valid: true
+    - file: untrusted-resolver.json
+      kind: json_value
+      valid: true
+persistence_vectors:
+  - name: matching_definition
+    operation: restore_and_serialize
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+    expect:
+      result: success
+      aggregate_state_file: source-aggregate-state.json
+      canonical_bytes_file: source-aggregate-state.canonical.json
+  - name: missing_definition
+    operation: restore_and_serialize
+    aggregate_state: source-aggregate-state.json
+    definitions: []
+    expect:
+      result: failure
+      code: source_definition_unavailable
+      caller_still_owns_aggregate: true
+  - name: definition_key_collision
+    operation: restore_and_serialize
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - target.yaml
+    artifact_resolver: collision-resolver.json
+    expect:
+      result: failure
+      code: definition_fingerprint_mismatch
+      caller_still_owns_aggregate: true
+  - name: definition_is_present_but_untrusted
+    operation: restore_and_serialize
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+    artifact_resolver: untrusted-resolver.json
+    expect:
+      result: failure
+      code: definition_untrusted
+      caller_still_owns_aggregate: true
