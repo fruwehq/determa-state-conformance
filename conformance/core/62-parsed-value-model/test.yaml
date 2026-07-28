@@ -29,10 +29,19 @@ static:
     - file: invalid-boolean-uppercase.yaml
       valid: false
       error: invalid_boolean_syntax
+    - file: invalid-boolean-false-titlecase.yaml
+      valid: false
+      error: invalid_boolean_syntax
+    - file: invalid-boolean-false-uppercase.yaml
+      valid: false
+      error: invalid_boolean_syntax
     - file: invalid-null-tilde.yaml
       valid: false
       error: invalid_null_syntax
     - file: invalid-null-titlecase.yaml
+      valid: false
+      error: invalid_null_syntax
+    - file: invalid-null-uppercase.yaml
       valid: false
       error: invalid_null_syntax
     - file: invalid-null-empty-scalar.yaml

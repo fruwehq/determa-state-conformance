@@ -15,8 +15,10 @@ Layout:
 - Additional bundle files are allowed only when `test.yaml` names them explicitly.
 - `VERSION` — the synchronized spec version this suite targets.
 
-**No CI here.** Correctness is exercised by each implementation's harness, which fetches
-this suite at the release tag matching its version.
+Repository CI parses every fixture with YAML 1.2 and checks its declared structural
+result against an immutable specification-schema pin. Runtime behavior is still
+exercised by each implementation's harness, which fetches this suite at the release
+tag matching its version.
 
 ## Determa in one paragraph
 **Determa** is a family of tools for defining/running well-specified, verifiable behavior.
@@ -29,7 +31,7 @@ implementation because all are validated against *this* suite. Guards/action val
 | Repo | Role |
 |---|---|
 | determa-state-spec | normative prose spec + schema. No CI. |
-| **determa-state-conformance** (this) | the conformance suite. No CI. |
+| **determa-state-conformance** (this) | conformance suite + source/schema consistency CI. |
 | determa-state-python | Python impl (dist `determa-state`, import `determa.state`). |
 | determa-state-rust | Rust impl (crate `determa-state`). |
 | determa | umbrella launcher (`python/`, `rust/`, `node/`). |
@@ -49,7 +51,19 @@ Core cases are driven by each implementation's own harness. A `send` performs on
 dispatch. Driver-only `capture_emissions_as` and `deliver` steps fix the input trace
 without standardizing a queue plugin or requiring equivalent public engine APIs.
 Assertions in `expect`, including `caller_still_owns_input`, are normative. There is no
-standalone core runner or CI in this repository.
+standalone core runtime runner in this repository.
+
+The durable source/schema validator uses YAML 1.2 and the specification's Draft
+2020-12 schema:
+
+```sh
+python -m pip install --requirement scripts/validation-requirements.txt
+python scripts/validate_conformance.py --spec-root ../determa-state-spec
+```
+
+The workflow uses the same command against an explicitly pinned specification commit.
+Passing it proves fixture construction and declared schema dispositions, not scenario
+execution.
 
 The non-normative CLI profile runner is retained at
 `conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.

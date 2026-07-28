@@ -29,10 +29,21 @@ migrated suite.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
 - `VERSION` — the synchronized specification version, currently `0.0.6`.
 
-There is no repository CI or standalone runtime runner. Repository validation can parse
-and schema-check fixtures and verify their internal references, but it does not prove the
-scenario traces. Each implementation's harness must later load and execute every core
-case; implementation work follows this suite in a separate pull request.
+Repository CI parses every fixture with YAML 1.2, classifies deliberate pre-schema
+rejections, and checks declared structural results against an immutable specification
+commit. It does not execute scenario traces, and there is no standalone runtime runner.
+Each implementation's harness must later load and execute every core case;
+implementation work follows this suite in a separate pull request.
+
+Run the same durable validation locally:
+
+```sh
+python -m pip install --requirement scripts/validation-requirements.txt
+python scripts/validate_conformance.py --spec-root ../determa-state-spec
+```
+
+The supplied specification checkout must be the dependency revision under review; the
+workflow pins that revision by commit rather than following a mutable branch.
 
 ## Driver mechanics (non-normative)
 
@@ -259,7 +270,7 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 59 | payload defaults materialize while optional fields remain absent (§4, §6) |
 | 60 | payload/default numeric source-type, range, and structural validation (§2, §4, §5) |
 | 61 | expression-map snapshot and deterministic fault precedence (§4, §10) |
-| 62 | runnable YAML 1.2 Boolean-like string identity plus exact numeric/Boolean/null scalar rejection (§2, §4, §6) |
+| 62 | runnable YAML 1.2 `no`/`off`/`yes`/`on` string identity plus exhaustive noncanonical Boolean/null and numeric scalar rejection (§2, §4, §6) |
 | 63 | entry-time stop interrupts pending component initialization (§6, §7) |
 | 64 | correlation expression precedence over a failing dynamic target (§4, §10) |
 | 65 | portable CEL arithmetic, error absorption, conversion, and Unicode semantics (§5) |
