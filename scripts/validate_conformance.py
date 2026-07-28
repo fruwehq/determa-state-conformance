@@ -19,6 +19,7 @@ from ruamel.yaml.error import YAMLError
 from ruamel.yaml.tokens import (
     AliasToken,
     AnchorToken,
+    BlockEntryToken,
     BlockMappingStartToken,
     BlockSequenceStartToken,
     FlowMappingStartToken,
@@ -32,8 +33,11 @@ from ruamel.yaml.tokens import (
 JSON_NUMBER = re.compile(
     r"^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"
 )
-NUMERIC_LIKE = re.compile(
-    r"^[+-]?(?:[0-9][0-9A-Za-z_.+-]*|\.[0-9A-Za-z_+-]+)$"
+NUMERIC_CANDIDATE = re.compile(
+    r"^[+-]?(?:[0-9][0-9A-Za-z_.+-]*|\.[0-9][0-9A-Za-z_+-]*)$"
+)
+SPECIAL_NUMERIC_SCALARS = frozenset(
+    {".inf", "+.inf", "-.inf", ".nan", "+.nan", "-.nan"}
 )
 INVALID_BOOLEAN_SCALARS = frozenset({"True", "TRUE", "False", "FALSE"})
 INVALID_NULL_SCALARS = frozenset({"Null", "NULL", "~"})
@@ -129,9 +133,10 @@ def analyze_source(path: Path) -> SourceAnalysis:
             return SourceAnalysis("invalid_boolean_syntax", None)
         if token.value in INVALID_NULL_SCALARS:
             return SourceAnalysis("invalid_null_syntax", None)
-        if NUMERIC_LIKE.fullmatch(token.value) and not JSON_NUMBER.fullmatch(
-            token.value
-        ):
+        if (
+            NUMERIC_CANDIDATE.fullmatch(token.value)
+            or token.value.lower() in SPECIAL_NUMERIC_SCALARS
+        ) and not JSON_NUMBER.fullmatch(token.value):
             return SourceAnalysis("invalid_numeric_syntax", None)
 
     value_start_tokens = (
@@ -142,7 +147,7 @@ def analyze_source(path: Path) -> SourceAnalysis:
         FlowSequenceStartToken,
     )
     for index, token in enumerate(tokens):
-        if isinstance(token, ValueToken) and (
+        if isinstance(token, (ValueToken, BlockEntryToken)) and (
             index + 1 == len(tokens)
             or not isinstance(tokens[index + 1], value_start_tokens)
         ):
