@@ -23,6 +23,21 @@ static:
     - file: nested-out-of-range.yaml
       valid: false
       error: numeric_value_out_of_range
+    - file: invalid-boolean-titlecase.yaml
+      valid: false
+      error: invalid_boolean_syntax
+    - file: invalid-boolean-uppercase.yaml
+      valid: false
+      error: invalid_boolean_syntax
+    - file: invalid-null-tilde.yaml
+      valid: false
+      error: invalid_null_syntax
+    - file: invalid-null-titlecase.yaml
+      valid: false
+      error: invalid_null_syntax
+    - file: invalid-null-empty-scalar.yaml
+      valid: false
+      error: invalid_null_syntax
     - file: valid-json-numbers.yaml
       valid: true
 create:

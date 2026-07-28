@@ -1,0 +1,7 @@
+format: 1
+namespace: conformance.case_62_invalid_boolean_uppercase
+meta:
+  invalid: TRUE
+machines:
+  - machine_id: parser_probe
+    root: {}
