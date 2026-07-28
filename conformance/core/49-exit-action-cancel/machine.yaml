@@ -1,0 +1,45 @@
+format: 1
+namespace: conformance.case_49_exit_action_cancel
+events:
+  spawn_worker:
+    direction: input
+  leave:
+    direction: input
+  return_to_holding:
+    direction: input
+  worker_disposed:
+    direction: output
+machines:
+  - machine_id: owner
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: holding }
+      states:
+        holding:
+          variables:
+            worker_reference:
+              type: instance_reference
+              machine_id: worker
+              nullable: true
+              init: null
+          exit:
+            - cancel: { instance: "worker_reference" }
+          on_events:
+            spawn_worker:
+              action:
+                - spawn:
+                    machine_id: worker
+                    bind_to: worker_reference
+            leave: { transition_to: outside }
+        outside:
+          on_events:
+            return_to_holding: { transition_to: holding }
+  - machine_id: worker
+    version: 1
+    root:
+      exit:
+        - send:
+            event: worker_disposed
+            to: { external: true }
+            correlation_id: "'worker-cleanup'"

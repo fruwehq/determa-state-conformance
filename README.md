@@ -130,6 +130,7 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 46 | root boundary plus destroyed refresh validation (§5, §6) |
 | 47 | state-scoped reference cleanup with populated and null paths (§7) |
 | 48 | null instance cancellation is a successful no-op (§7) |
+| 49 | exit-action cancellation after automatic child cleanup (§6, §7) |
 
 ## Deliberate format-1 boundaries
 
