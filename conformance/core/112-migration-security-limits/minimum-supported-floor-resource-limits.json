@@ -1,0 +1,18 @@
+{
+  "maximum_aggregate_bytes": "1048576",
+  "maximum_definition_bytes": "1048576",
+  "maximum_descriptor_bytes": "65536",
+  "maximum_transformed_output_bytes": "65536",
+  "maximum_json_nesting_depth": "64",
+  "maximum_runtimes": "256",
+  "maximum_active_states_per_runtime": "1024",
+  "maximum_variables_per_runtime": "4096",
+  "maximum_map_members": "4096",
+  "maximum_list_members": "4096",
+  "maximum_string_utf8_bytes": "65536",
+  "maximum_chain_length": "8",
+  "maximum_descriptor_rules": "1024",
+  "maximum_cel_expression_length": "65536",
+  "maximum_cel_ast_nodes": "65536",
+  "maximum_cel_evaluation_steps": "1000000"
+}

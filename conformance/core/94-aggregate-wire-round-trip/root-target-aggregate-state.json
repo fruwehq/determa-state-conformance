@@ -1,0 +1,73 @@
+{
+  "aggregate_state_format": "determa.aggregate_state",
+  "aggregate_state_schema_version": 1,
+  "machine_format": 1,
+  "validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+  "namespace": "example.persistence",
+  "root_machine_id": "job",
+  "root_machine_version": "1",
+  "root_instance_id": "job-42",
+  "creation_id": "create-1",
+  "root_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+  "migration_sequence": "0",
+  "next_logical_step_sequence": "1",
+  "next_output_sequence": "0",
+  "runtimes": [
+    {
+      "runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+      "identity_origin": {
+        "kind": "root",
+        "definition": {
+          "validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+          "machine": {
+            "namespace": "example.persistence",
+            "machine_id": "job",
+            "machine_version": "1",
+            "root_definition_pointer": "/machines/0/root"
+          }
+        },
+        "root_instance_id": "job-42"
+      },
+      "target_identity": {
+        "root": {
+          "root_instance_id": "job-42",
+          "root_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d"
+        }
+      },
+      "current_definition": {
+        "validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+        "machine": {
+          "namespace": "example.persistence",
+          "machine_id": "job",
+          "machine_version": "1",
+          "root_definition_pointer": "/machines/0/root"
+        }
+      },
+      "relation": {
+        "kind": "root"
+      },
+      "status": "running",
+      "active_leaf_state_definition_pointers": [
+        "/machines/0/root"
+      ],
+      "active_state_activations": [
+        {
+          "state_definition_pointer": "/machines/0/root",
+          "activation_sequence": "0"
+        }
+      ],
+      "variables": [],
+      "history": [],
+      "next_spawn_sequence": "0",
+      "next_state_activation_sequences": [
+        {
+          "definition_pointer": "/machines/0/root",
+          "next_sequence": "1"
+        }
+      ],
+      "next_component_activation_sequences": [],
+      "fault": null
+    }
+  ],
+  "aggregate_state_digest": "sha256:abfa6ba834d72e1e0e3c559071aab5e735584a0b7c22c68bc0de18ff505d4beb"
+}

@@ -1,0 +1,32 @@
+format: 1
+namespace: conformance.persistence_transform
+meta: { release: next }
+events:
+  increment: { direction: input }
+  noop: { direction: input }
+  needs_value:
+    direction: input
+    payload:
+      value: { type: int, required: true }
+  fail: { direction: input }
+machines:
+  - machine_id: workflow
+    version: 1
+    root:
+      type: composite
+      history: deep
+      variables:
+        new_count: { type: int, init: 0 }
+        added: { type: bool, init: false }
+      initial: { transition_to: new_state }
+      states:
+        new_state:
+          variables:
+            renamed_shadow: { type: int, init: 0 }
+          on_events:
+            increment:
+              action:
+                - assign: { new_count: "new_count + 1" }
+            fail:
+              action:
+                - assign: { new_count: "1 / 0" }

@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import copy
+import hashlib
 import json
 import math
 import re
@@ -12,7 +14,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+import rfc8785
 from jsonschema import Draft202012Validator
+from referencing import Registry, Resource
 from ruamel.yaml import YAML
 from ruamel.yaml.constructor import DuplicateKeyError
 from ruamel.yaml.error import YAMLError
@@ -62,6 +66,65 @@ NON_FINITE_DOUBLE_MARKERS = frozenset(
 INSTANCE_REFERENCE_FIELDS = frozenset(
     {"root_instance_id", "instance_id", "machine_id", "machine_version"}
 )
+ARTIFACT_KINDS = {
+    "aggregate_state": "aggregate-state.schema.json",
+    "migration_descriptor": "migration-descriptor.schema.json",
+    "aggregate_state_package": "aggregate-state-package.schema.json",
+}
+DRIVER_ARTIFACT_KINDS = {
+    "artifact_resolver": "artifact-resolver.schema.json",
+    "resource_limits": "resource-limits.schema.json",
+}
+MINIMUM_RESOURCE_LIMIT_FLOORS = {
+    "maximum_aggregate_bytes": "1048576",
+    "maximum_definition_bytes": "1048576",
+    "maximum_descriptor_bytes": "65536",
+    "maximum_transformed_output_bytes": "65536",
+    "maximum_json_nesting_depth": "64",
+    "maximum_runtimes": "256",
+    "maximum_active_states_per_runtime": "1024",
+    "maximum_variables_per_runtime": "4096",
+    "maximum_map_members": "4096",
+    "maximum_list_members": "4096",
+    "maximum_string_utf8_bytes": "65536",
+    "maximum_chain_length": "8",
+    "maximum_descriptor_rules": "1024",
+    "maximum_cel_expression_length": "65536",
+    "maximum_cel_ast_nodes": "65536",
+    "maximum_cel_evaluation_steps": "1000000",
+}
+ARTIFACT_FORMAT_FIELDS = {
+    "aggregate_state": (
+        "aggregate_state_format",
+        "determa.aggregate_state",
+        "aggregate_state_schema_version",
+        1,
+        "unsupported_aggregate_state_format",
+        "unsupported_aggregate_state_schema_version",
+        "invalid_aggregate_state",
+    ),
+    "migration_descriptor": (
+        "migration_descriptor_format",
+        "determa.aggregate_migration",
+        "migration_descriptor_schema_version",
+        1,
+        "unsupported_migration_descriptor_format",
+        "unsupported_migration_descriptor_schema_version",
+        "invalid_migration_descriptor",
+    ),
+    "aggregate_state_package": (
+        "aggregate_state_package_format",
+        "determa.aggregate_state_package",
+        "aggregate_state_package_schema_version",
+        1,
+        "unsupported_aggregate_state_package_format",
+        "unsupported_aggregate_state_package_schema_version",
+        "invalid_aggregate_state_package",
+    ),
+}
+ARTIFACT_SOURCE_ERROR_CODES = frozenset(
+    {"duplicate_key", "invalid_json", "invalid_unicode", "non_json_value"}
+)
 
 
 class ValidationFailure(Exception):
@@ -72,6 +135,145 @@ class ValidationFailure(Exception):
 class SourceAnalysis:
     error: str | None
     document: Any | None
+
+
+@dataclass(frozen=True)
+class ArtifactAnalysis:
+    error: str | None
+    document: Any | None
+    source: bytes
+
+
+def _reject_json_constant(value: str) -> None:
+    raise ValueError(f"unsupported JSON constant {value}")
+
+
+def _json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
+    result: dict[str, Any] = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValidationFailure("duplicate_key")
+        result[key] = value
+    return result
+
+
+def analyze_artifact(path: Path) -> ArtifactAnalysis:
+    try:
+        source = path.read_bytes()
+        text = source.decode("utf-8")
+    except UnicodeDecodeError:
+        return ArtifactAnalysis("invalid_unicode", None, source)
+    try:
+        document = json.loads(
+            text,
+            object_pairs_hook=_json_object,
+            parse_constant=_reject_json_constant,
+        )
+    except ValidationFailure as error:
+        return ArtifactAnalysis(str(error), None, source)
+    except (json.JSONDecodeError, ValueError):
+        return ArtifactAnalysis("invalid_json", None, source)
+    value_error = parsed_value_error(document)
+    if value_error:
+        return ArtifactAnalysis(
+            "invalid_unicode" if value_error == "invalid_unicode" else "non_json_value",
+            None,
+            source,
+        )
+    return ArtifactAnalysis(None, document, source)
+
+
+def canonical_json_bytes(value: Any) -> bytes:
+    try:
+        return rfc8785.dumps(value)
+    except (rfc8785.CanonicalizationError, rfc8785.IntegerDomainError) as error:
+        raise ValidationFailure(f"value cannot be canonicalized: {error}") from error
+
+
+def hash_value(value: Any) -> str:
+    digest = hashlib.sha256(canonical_json_bytes(value)).hexdigest()
+    return f"sha256:{digest}"
+
+
+def verify_artifact_digest(kind: str, document: Any, path: Path) -> None:
+    if kind == "aggregate_state":
+        digest = document.get("aggregate_state_digest")
+        without_digest = dict(document)
+        without_digest.pop("aggregate_state_digest", None)
+        expected = hash_value(
+            ["determa-aggregate-state-digest-1", without_digest]
+        )
+        if digest != expected:
+            raise ValidationFailure(
+                f"{path}: aggregate_state_digest {digest!r} != {expected!r}"
+            )
+    elif kind == "migration_descriptor":
+        digest = document.get("migration_descriptor_digest")
+        without_digest = dict(document)
+        without_digest.pop("migration_descriptor_digest", None)
+        expected = hash_value(
+            ["determa-migration-descriptor-1", without_digest]
+        )
+        if digest != expected:
+            raise ValidationFailure(
+                f"{path}: migration_descriptor_digest {digest!r} != {expected!r}"
+            )
+    elif kind == "aggregate_state_package":
+        verify_artifact_digest("aggregate_state", document["aggregate_state"], path)
+        definition_digests: set[str] = set()
+        for attachment in document["normalized_definitions"]:
+            digest = attachment["validated_bundle_fingerprint"]
+            expected = hash_value(
+                [
+                    "determa-validated-bundle-fingerprint-1",
+                    attachment["normalized_bundle"],
+                ]
+            )
+            if digest != expected or digest in definition_digests:
+                raise ValidationFailure(
+                    f"{path}: invalid or duplicate definition attachment {digest}"
+                )
+            definition_digests.add(digest)
+        descriptor_digests: set[str] = set()
+        for descriptor in document["migration_descriptors"]:
+            verify_artifact_digest("migration_descriptor", descriptor, path)
+            digest = descriptor["migration_descriptor_digest"]
+            if digest in descriptor_digests:
+                raise ValidationFailure(
+                    f"{path}: duplicate descriptor attachment {digest}"
+                )
+            descriptor_digests.add(digest)
+
+
+def artifact_error(
+    kind: str,
+    document: Any,
+    validator: Draft202012Validator,
+) -> str | None:
+    if kind == "json_value":
+        return None
+    if kind in DRIVER_ARTIFACT_KINDS:
+        if next(validator.iter_errors(document), None) is not None:
+            return f"invalid_{kind}"
+        return None
+    (
+        format_field,
+        expected_format,
+        version_field,
+        expected_version,
+        format_error,
+        version_error,
+        structural_error,
+    ) = ARTIFACT_FORMAT_FIELDS[kind]
+    if not isinstance(document, dict):
+        return structural_error
+    if document.get(format_field) != expected_format:
+        return format_error
+    if document.get(version_field) != expected_version:
+        return version_error
+    if next(validator.iter_errors(document), None) is not None:
+        return structural_error
+    return None
 
 
 def yaml_loader() -> YAML:
@@ -294,6 +496,292 @@ def exact_case_file(case: Path, filename: Any) -> Path:
     return path
 
 
+def exact_artifact_file(case: Path, filename: Any) -> Path:
+    if (
+        not isinstance(filename, str)
+        or not filename
+        or Path(filename).name != filename
+        or not filename.endswith(".json")
+    ):
+        raise ValidationFailure(f"{case.name}: invalid artifact filename {filename!r}")
+    path = case / filename
+    if not path.is_file():
+        raise ValidationFailure(f"{case.name}: missing referenced artifact {filename}")
+    return path
+
+
+def artifact_entries(
+    case: Path,
+    test: dict[str, Any],
+    artifact_validators: dict[str, Draft202012Validator],
+) -> set[Path]:
+    manifest = test.get("artifacts")
+    if not isinstance(manifest, dict) or set(manifest) != {"documents"}:
+        raise ValidationFailure(f"{case.name}: malformed artifacts manifest")
+    documents = manifest["documents"]
+    if not isinstance(documents, list) or not documents:
+        raise ValidationFailure(f"{case.name}: empty artifacts manifest")
+
+    referenced: set[Path] = set()
+    by_name: dict[str, tuple[str, Any, bytes]] = {}
+    canonical_pairs: list[tuple[Path, str]] = []
+    for entry in documents:
+        if not isinstance(entry, dict):
+            raise ValidationFailure(f"{case.name}: artifact entry must be a map")
+        unknown = set(entry) - {
+            "file",
+            "kind",
+            "valid",
+            "error",
+            "canonical_of",
+            "verify_digest",
+        }
+        if unknown:
+            raise ValidationFailure(
+                f"{case.name}: unsupported artifact field {sorted(unknown)[0]}"
+            )
+        path = exact_artifact_file(case, entry.get("file"))
+        if path in referenced:
+            raise ValidationFailure(f"{case.name}: duplicate artifact {path.name}")
+        referenced.add(path)
+        kind = entry.get("kind")
+        if kind not in {*ARTIFACT_KINDS, *DRIVER_ARTIFACT_KINDS, "json_value"}:
+            raise ValidationFailure(f"{case.name}: invalid artifact kind {kind!r}")
+        if not isinstance(entry.get("valid"), bool):
+            raise ValidationFailure(f"{case.name}: artifact needs Boolean valid")
+        expected_error = entry.get("error")
+        if entry["valid"] and expected_error is not None:
+            raise ValidationFailure(f"{case.name}: valid artifact cannot declare error")
+        if not entry["valid"] and (
+            not isinstance(expected_error, str) or not expected_error
+        ):
+            raise ValidationFailure(f"{case.name}: invalid artifact needs exact error")
+
+        analysis = analyze_artifact(path)
+        actual_error = analysis.error
+        if actual_error is None:
+            validator = artifact_validators.get(kind)
+            actual_error = artifact_error(kind, analysis.document, validator) if validator else None
+        if entry["valid"]:
+            if actual_error is not None:
+                raise ValidationFailure(
+                    f"{path}: expected valid artifact, got {actual_error}"
+                )
+            if kind in ARTIFACT_KINDS and entry.get("verify_digest", True):
+                verify_artifact_digest(kind, analysis.document, path)
+        elif actual_error != expected_error:
+            raise ValidationFailure(
+                f"{path}: expected {expected_error}, got {actual_error or 'valid'}"
+            )
+
+        if actual_error is None:
+            by_name[path.name] = (kind, analysis.document, analysis.source)
+        canonical_of = entry.get("canonical_of")
+        if canonical_of is not None:
+            if not entry["valid"]:
+                raise ValidationFailure(
+                    f"{case.name}: invalid artifact cannot be canonical"
+                )
+            canonical_pairs.append((path, canonical_of))
+
+    for canonical_path, source_name in canonical_pairs:
+        source = by_name.get(source_name)
+        if source is None:
+            raise ValidationFailure(
+                f"{case.name}: canonical source {source_name!r} is not a valid artifact"
+            )
+        canonical = by_name[canonical_path.name]
+        if canonical[0] != source[0] or canonical[1] != source[1]:
+            raise ValidationFailure(
+                f"{canonical_path}: canonical and readable artifacts differ"
+            )
+        expected_bytes = canonical_json_bytes(source[1])
+        if canonical[2] != expected_bytes:
+            raise ValidationFailure(
+                f"{canonical_path}: bytes are not exact RFC 8785 output"
+            )
+    return referenced
+
+
+def validate_fixture_schema(
+    test: dict[str, Any],
+    validator: Draft202012Validator,
+    case: Path,
+) -> None:
+    errors = sorted(
+        validator.iter_errors(test),
+        key=lambda error: tuple(str(part) for part in error.path),
+    )
+    if errors:
+        first = errors[0]
+        raise ValidationFailure(
+            f"{case.name}/test.yaml: invalid persistence fixture at "
+            f"{list(first.path)}: {first.message}"
+        )
+
+
+def validate_vector_references(
+    case: Path,
+    test: dict[str, Any],
+    bundle_paths: set[Path],
+    artifact_paths: set[Path],
+) -> None:
+    artifact_names = {path.name for path in artifact_paths}
+    bundle_names = {path.name for path in bundle_paths}
+    artifact_kinds = {
+        entry["file"]: entry["kind"] for entry in test["artifacts"]["documents"]
+    }
+    for entry in test["artifacts"]["documents"]:
+        if entry["kind"] != "artifact_resolver" or not entry["valid"]:
+            continue
+        resolver = analyze_artifact(case / entry["file"]).document
+        definition_keys = [
+            definition["validated_bundle_fingerprint"]
+            for definition in resolver["definitions"]
+        ]
+        descriptor_keys = [
+            descriptor["migration_descriptor_digest"]
+            for descriptor in resolver["migration_descriptors"]
+        ]
+        if len(definition_keys) != len(set(definition_keys)):
+            raise ValidationFailure(
+                f"{case.name}: resolver {entry['file']} repeats a definition key"
+            )
+        if len(descriptor_keys) != len(set(descriptor_keys)):
+            raise ValidationFailure(
+                f"{case.name}: resolver {entry['file']} repeats a descriptor key"
+            )
+        for definition in resolver["definitions"]:
+            bundle_file = definition["bundle_file"]
+            if bundle_file not in bundle_names:
+                raise ValidationFailure(
+                    f"{case.name}: resolver {entry['file']} references undeclared "
+                    f"bundle {bundle_file}"
+                )
+        for descriptor in resolver["migration_descriptors"]:
+            descriptor_file = descriptor["descriptor_file"]
+            if (
+                descriptor_file not in artifact_names
+                or artifact_kinds[descriptor_file] != "migration_descriptor"
+            ):
+                raise ValidationFailure(
+                    f"{case.name}: resolver {entry['file']} references undeclared "
+                    f"migration descriptor {descriptor_file}"
+                )
+    for vector in test.get("persistence_vectors", []):
+        input_artifact_kinds = {
+            "aggregate_state": "aggregate_state",
+            "aggregate_state_package": "aggregate_state_package",
+            "input_envelope": "json_value",
+            "resource_limits": "resource_limits",
+            "artifact_resolver": "artifact_resolver",
+        }
+        for field, expected_kind in input_artifact_kinds.items():
+            if field in vector and vector[field] not in artifact_names:
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} references undeclared "
+                    f"artifact {vector[field]}"
+                )
+            if (
+                field in vector
+                and artifact_kinds[vector[field]] != expected_kind
+            ):
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} {field} must name "
+                    f"a {expected_kind} document"
+                )
+        for field in ("source_bundle", "target_bundle"):
+            if field in vector and vector[field] not in bundle_names:
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} references undeclared "
+                    f"bundle {vector[field]}"
+                )
+        for field in ("definitions",):
+            for filename in vector.get(field, []):
+                if filename not in bundle_names:
+                    raise ValidationFailure(
+                        f"{case.name}: vector {vector['name']} references undeclared "
+                        f"bundle {filename}"
+                    )
+        for filename in vector.get("migration_descriptors", []):
+            if filename not in artifact_names:
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} references undeclared "
+                    f"descriptor {filename}"
+                )
+            if artifact_kinds[filename] != "migration_descriptor":
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} descriptor must name "
+                    "a migration_descriptor document"
+                )
+        expected_artifact_kinds = {
+            "aggregate_state_file": "aggregate_state",
+            "exact_bytes_file": "aggregate_state",
+            "migration_audit_file": "json_value",
+            "emissions_file": "json_value",
+            "artifact_resolver_file": "artifact_resolver",
+        }
+        for field, expected_kind in expected_artifact_kinds.items():
+            filename = vector["expect"].get(field)
+            if filename is not None and filename not in artifact_names:
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} expectation references "
+                    f"undeclared artifact {filename}"
+                )
+            if (
+                filename is not None
+                and artifact_kinds[filename] != expected_kind
+            ):
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} {field} must name "
+                    f"a {expected_kind} document"
+                )
+    digest_bypasses = {
+        entry["file"]
+        for entry in test["artifacts"]["documents"]
+        if entry.get("verify_digest") is False
+    }
+    for filename in digest_bypasses:
+        users = [
+            vector
+            for vector in test["persistence_vectors"]
+            if filename
+            in {
+                vector.get("aggregate_state"),
+                vector.get("aggregate_state_package"),
+                *vector.get("migration_descriptors", []),
+            }
+        ]
+        if not users or any(
+            vector["expect"]["result"] != "failure" for vector in users
+        ):
+            raise ValidationFailure(
+                f"{case.name}: verify_digest false artifact {filename} must be used "
+                "only by failure vectors"
+            )
+
+
+def validate_profile_references(
+    case: Path,
+    test: dict[str, Any],
+    artifact_paths: set[Path],
+) -> None:
+    artifact_names = {path.name for path in artifact_paths}
+    profile = test["persistence_profile"]
+    references = [profile["initial_store"]]
+    for step in profile["steps"]:
+        references.extend(
+            step[field]
+            for field in ("input_envelope", "expect_store", "expect_call_log")
+            if field in step
+        )
+    missing = sorted(set(references) - artifact_names)
+    if missing:
+        raise ValidationFailure(
+            f"{case.name}: persistence profile references undeclared artifacts {missing}"
+        )
+
+
 def validate_static_entry(entry: Any, case: Path) -> tuple[Path, bool, str | None]:
     if not isinstance(entry, dict):
         raise ValidationFailure(f"{case.name}: static entry must be a map")
@@ -435,16 +923,505 @@ def validate_case_62(case: Path, test: dict[str, Any]) -> None:
             )
 
 
+def resource_shape_metrics(
+    value: Any,
+    depth: int = 0,
+) -> tuple[int, int, int, int]:
+    maximum_depth = depth
+    maximum_map_members = 0
+    maximum_list_members = 0
+    maximum_string_bytes = 0
+    if isinstance(value, dict):
+        maximum_depth = depth + 1
+        maximum_map_members = len(value)
+        for key, child in value.items():
+            maximum_string_bytes = max(
+                maximum_string_bytes,
+                len(key.encode("utf-8")),
+            )
+            child_metrics = resource_shape_metrics(child, depth + 1)
+            maximum_depth = max(maximum_depth, child_metrics[0])
+            maximum_map_members = max(maximum_map_members, child_metrics[1])
+            maximum_list_members = max(maximum_list_members, child_metrics[2])
+            maximum_string_bytes = max(maximum_string_bytes, child_metrics[3])
+    elif isinstance(value, list):
+        maximum_depth = depth + 1
+        maximum_list_members = len(value)
+        for child in value:
+            child_metrics = resource_shape_metrics(child, depth + 1)
+            maximum_depth = max(maximum_depth, child_metrics[0])
+            maximum_map_members = max(maximum_map_members, child_metrics[1])
+            maximum_list_members = max(maximum_list_members, child_metrics[2])
+            maximum_string_bytes = max(maximum_string_bytes, child_metrics[3])
+    elif isinstance(value, str):
+        maximum_string_bytes = len(value.encode("utf-8"))
+    return (
+        maximum_depth,
+        maximum_map_members,
+        maximum_list_members,
+        maximum_string_bytes,
+    )
+
+
+def validate_case_112(case: Path, test: dict[str, Any]) -> None:
+    floor = analyze_artifact(
+        case / "minimum-supported-floor-resource-limits.json"
+    ).document
+    if floor != MINIMUM_RESOURCE_LIMIT_FLOORS:
+        raise ValidationFailure(
+            f"{case.name}: minimum supported resource floors changed"
+        )
+
+    source = analyze_artifact(
+        case / "occurrence-source-aggregate-state.json"
+    ).document
+    descriptor = analyze_artifact(
+        case / "occurrence-migration-descriptor.json"
+    ).document
+    definitions = [
+        analyze_source(case / filename).document
+        for filename in ("occurrence-machine.yaml", "occurrence-target.yaml")
+    ]
+    values = [source, descriptor, *definitions]
+    shape_metrics = [
+        resource_shape_metrics(value)
+        for value in values
+    ]
+    expressions = {
+        rule["expression"]
+        for rule in descriptor["mappings"]["variables"]
+        if "expression" in rule
+    }
+    actual_use = {
+        "definition_bytes": max(
+            len(canonical_json_bytes(definition))
+            for definition in definitions
+        ),
+        "json_nesting_depth": max(item[0] for item in shape_metrics),
+        "runtimes": len(source["runtimes"]),
+        "active_states": max(
+            len(runtime["active_state_activations"])
+            for runtime in source["runtimes"]
+        ),
+        "variables": max(
+            len(runtime["variables"])
+            for runtime in source["runtimes"]
+        ),
+        "map_members": max(item[1] for item in shape_metrics),
+        "list_members": max(item[2] for item in shape_metrics),
+        "string_utf8_bytes": max(item[3] for item in shape_metrics),
+        "descriptor_rules": sum(
+            len(rules) for rules in descriptor["mappings"].values()
+        ),
+        "cel_expression_length": sum(
+            len(expression.encode("utf-8"))
+            for expression in expressions
+        ),
+        # Any non-empty checked expression has at least one AST node.
+        "cel_ast_nodes": int(bool(expressions)),
+    }
+    fields = {
+        "definition_bytes": "maximum_definition_bytes",
+        "json_nesting_depth": "maximum_json_nesting_depth",
+        "runtimes": "maximum_runtimes",
+        "active_states": "maximum_active_states_per_runtime",
+        "variables": "maximum_variables_per_runtime",
+        "map_members": "maximum_map_members",
+        "list_members": "maximum_list_members",
+        "string_utf8_bytes": "maximum_string_utf8_bytes",
+        "descriptor_rules": "maximum_descriptor_rules",
+        "cel_expression_length": "maximum_cel_expression_length",
+        "cel_ast_nodes": "maximum_cel_ast_nodes",
+    }
+    for label, field in fields.items():
+        if actual_use[label] > int(MINIMUM_RESOURCE_LIMIT_FLOORS[field]):
+            raise ValidationFailure(
+                f"{case.name}: {label} exceeds its documented minimum floor"
+            )
+    vectors = {
+        vector["name"]: vector for vector in test["persistence_vectors"]
+    }
+    success_name = "minimum_supported_floors_accept_all_listed_dimensions"
+    success = vectors.get(success_name)
+    if (
+        success is None
+        or success.get("resource_limits")
+        != "minimum-supported-floor-resource-limits.json"
+        or success["expect"]["result"] != "success"
+    ):
+        raise ValidationFailure(
+            f"{case.name}: minimum-floor success vector changed"
+        )
+    for label, field in fields.items():
+        filename = f"configured-{label}-below-use.json"
+        limits = analyze_artifact(case / filename).document
+        expected = dict(MINIMUM_RESOURCE_LIMIT_FLOORS)
+        expected[field] = str(actual_use[label] - 1)
+        if limits != expected:
+            raise ValidationFailure(
+                f"{case.name}: {filename} is not the exact below-use limit"
+            )
+        vector_name = f"configured_{label}_limit_exceeded"
+        vector = vectors.get(vector_name)
+        if (
+            vector is None
+            or vector.get("resource_limits") != filename
+            or vector["expect"]
+            != {
+                "result": "failure",
+                "code": "migration_resource_limit_exceeded",
+                "caller_still_owns_aggregate": True,
+            }
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {vector_name} changed"
+            )
+    chain = vectors.get("chain_limit_exceeded")
+    chain_limits = analyze_artifact(case / "chain-resource-limits.json").document
+    if (
+        chain is None
+        or len(chain["migration_route"]) != 1
+        or chain_limits["maximum_chain_length"] != "0"
+        or chain["expect"]
+        != {
+            "result": "failure",
+            "code": "migration_resource_limit_exceeded",
+            "caller_still_owns_aggregate": True,
+        }
+    ):
+        raise ValidationFailure(
+            f"{case.name}: chain length is not exact descriptor count"
+        )
+    if any("cumulative" in name for name in chain_limits):
+        raise ValidationFailure(
+            f"{case.name}: cumulative chain resource field is unsupported"
+        )
+
+
+def validate_case_115(case: Path, test: dict[str, Any]) -> None:
+    vectors = {
+        vector["name"]: vector for vector in test["persistence_vectors"]
+    }
+    spawned_values = {
+        "spawned_machine_version_javascript_safe_maximum":
+            "9007199254740991",
+        "spawned_machine_version_first_javascript_unsafe":
+            "9007199254740992",
+        "spawned_machine_version_javascript_rounding_gap":
+            "9007199254740993",
+        "spawned_machine_version_signed64_maximum":
+            "9223372036854775807",
+    }
+    for name, expected_version in spawned_values.items():
+        vector = vectors.get(name)
+        if vector is None or vector["expect"]["result"] != "success":
+            raise ValidationFailure(f"{case.name}: missing {name}")
+        aggregate = analyze_artifact(case / vector["aggregate_state"]).document
+        runtime = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["identity_origin"]["kind"] == "owned_spawned_instance"
+        )
+        if (
+            runtime["target_identity"]["spawned_instance"]["machine_version"]
+            != expected_version
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {name} does not preserve its decimal string"
+            )
+        origin = runtime["identity_origin"]
+        definition = origin["definition"]["machine"]
+        expected_runtime_id = hash_value(
+            [
+                "determa-spawned-runtime-identity-1",
+                "1",
+                aggregate["root_instance_id"],
+                origin["owner_runtime_id"],
+                origin["spawn_action_pointer"],
+                origin["spawn_sequence"],
+                definition["namespace"],
+                definition["machine_id"],
+                definition["machine_version"],
+            ]
+        )
+        if (
+            runtime["runtime_id"] != expected_runtime_id
+            or runtime["target_identity"]["spawned_instance"]["instance_id"]
+            != expected_runtime_id
+            or runtime["current_definition"]["machine"]["machine_version"]
+            != expected_version
+            or definition["machine_version"] != expected_version
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {name} is not identity-consistent"
+            )
+
+    component_values = {
+        "component_activation_javascript_safe_maximum":
+            "9007199254740991",
+        "component_activation_first_javascript_unsafe":
+            "9007199254740992",
+        "component_activation_unbounded": (
+            "123456789012345678901234567890123456789012345678901234567890"
+        ),
+    }
+    for name, expected_activation in component_values.items():
+        vector = vectors.get(name)
+        if vector is None or vector["expect"]["result"] != "success":
+            raise ValidationFailure(f"{case.name}: missing {name}")
+        aggregate = analyze_artifact(case / vector["aggregate_state"]).document
+        runtime = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["identity_origin"]["kind"] == "component"
+            and item["relation"]["component_id"] == "left"
+        )
+        target = runtime["target_identity"]["component"]
+        if (
+            target["activation_sequence"] != expected_activation
+            or runtime["identity_origin"]["activation_sequence"]
+            != expected_activation
+            or runtime["relation"]["activation_sequence"]
+            != expected_activation
+            or target["component_runtime_id"] != runtime["runtime_id"]
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {name} is not occurrence-consistent"
+            )
+        origin = runtime["identity_origin"]
+        definition = origin["definition"]["machine"]
+        expected_runtime_id = hash_value(
+            [
+                "determa-component-runtime-identity-1",
+                "1",
+                aggregate["root_instance_id"],
+                origin["owner_runtime_id"],
+                origin["component_definition_pointer"],
+                expected_activation,
+                definition["namespace"],
+                definition["machine_id"],
+                definition["machine_version"],
+            ]
+        )
+        owner = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["runtime_id"] == origin["owner_runtime_id"]
+        )
+        counter = next(
+            item
+            for item in owner["next_component_activation_sequences"]
+            if item["definition_pointer"]
+            == origin["component_definition_pointer"]
+        )
+        if (
+            runtime["runtime_id"] != expected_runtime_id
+            or counter["next_sequence"] != str(int(expected_activation) + 1)
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {name} identity or counter changed"
+            )
+
+    failure_codes = {
+        "spawned_numeric_machine_version_rejected": (
+            "spawned-numeric-machine-version.json",
+            int,
+        ),
+        "spawned_machine_version_above_signed64_rejected": (
+            "spawned-machine-version-above-signed64.json",
+            str,
+        ),
+        "component_numeric_activation_rejected": (
+            "component-numeric-activation.json",
+            int,
+        ),
+    }
+    for name, (filename, expected_type) in failure_codes.items():
+        vector = vectors.get(name)
+        if (
+            vector is None
+            or vector["aggregate_state"] != filename
+            or vector["expect"]
+            != {
+                "result": "failure",
+                "code": "invalid_aggregate_state",
+                "caller_still_owns_aggregate": True,
+            }
+        ):
+            raise ValidationFailure(f"{case.name}: {name} changed")
+        aggregate = analyze_artifact(case / filename).document
+        runtime = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["identity_origin"]["kind"]
+            in {"component", "owned_spawned_instance"}
+        )
+        if runtime["identity_origin"]["kind"] == "component":
+            value = runtime["target_identity"]["component"][
+                "activation_sequence"
+            ]
+        else:
+            value = runtime["target_identity"]["spawned_instance"][
+                "machine_version"
+            ]
+        if type(value) is not expected_type:
+            raise ValidationFailure(
+                f"{case.name}: {name} has the wrong wire representation"
+            )
+    overflow = analyze_artifact(
+        case / "spawned-machine-version-above-signed64.json"
+    ).document
+    overflow_runtime = next(
+        item
+        for item in overflow["runtimes"]
+        if item["identity_origin"]["kind"] == "owned_spawned_instance"
+    )
+    if (
+        overflow_runtime["target_identity"]["spawned_instance"][
+            "machine_version"
+        ]
+        != "9223372036854775808"
+    ):
+        raise ValidationFailure(
+            f"{case.name}: signed-64 overflow boundary changed"
+        )
+
+
+def validate_persistence_profile_02(case: Path) -> None:
+    source = analyze_artifact(case / "source-aggregate-state.json").document
+    expected = analyze_artifact(case / "expected-aggregate-state.json").document
+    envelope = analyze_artifact(case / "input-envelope.json").document
+    initial_store = analyze_artifact(case / "initial-store.json").document
+    committed_store = analyze_artifact(case / "committed-store.json").document
+    descriptor = analyze_artifact(case / "migration-descriptor.json").document
+
+    source_runtime = source["runtimes"][0]
+    expected_runtime = expected["runtimes"][0]
+    source_target = source_runtime["target_identity"]
+    runtime_id = source["root_runtime_id"]
+    if not (
+        expected["root_runtime_id"] == runtime_id
+        and source_runtime["runtime_id"] == runtime_id
+        and expected_runtime["runtime_id"] == runtime_id
+        and expected_runtime["target_identity"] == source_target
+        and envelope["target"] == source_target
+        and initial_store["aggregate_state"] == source
+        and committed_store["aggregate_state"] == expected
+    ):
+        raise ValidationFailure(
+            f"{case.name}: migration rekeyed the root runtime or target"
+        )
+
+    migrated = copy.deepcopy(source)
+    target_fingerprint = descriptor["target_validated_bundle_fingerprint"]
+    migrated["validated_bundle_fingerprint"] = target_fingerprint
+    migrated["migration_sequence"] = str(int(migrated["migration_sequence"]) + 1)
+    for runtime in migrated["runtimes"]:
+        runtime["current_definition"]["validated_bundle_fingerprint"] = (
+            target_fingerprint
+        )
+    migrated["aggregate_state_digest"] = hash_value(
+        [
+            "determa-aggregate-state-digest-1",
+            {
+                key: value
+                for key, value in migrated.items()
+                if key != "aggregate_state_digest"
+            },
+        ]
+    )
+    audits = committed_store["migration_audit"]
+    if (
+        len(audits) != 1
+        or audits[0]["root_runtime_id"] != runtime_id
+        or audits[0]["target_aggregate_state_digest"]
+        != migrated["aggregate_state_digest"]
+    ):
+        raise ValidationFailure(
+            f"{case.name}: migration audit identity or target digest changed"
+        )
+
+    outbox = committed_store["outbox"]
+    if (
+        initial_store["outbox"] != []
+        or len(outbox) != 1
+        or outbox[0]["sequence"] != 0
+        or expected["next_output_sequence"] != "1"
+    ):
+        raise ValidationFailure(
+            f"{case.name}: deterministic output is not atomically asserted"
+        )
+    machine = expected_runtime["current_definition"]["machine"]
+    effect_id = hash_value(
+        [
+            "determa-effect-identity-1",
+            "1",
+            [
+                machine["namespace"],
+                machine["machine_id"],
+                machine["machine_version"],
+            ],
+            expected["root_instance_id"],
+            runtime_id,
+            envelope["event_id"],
+            str(int(expected["next_logical_step_sequence"]) - 1),
+            "/machines/0/root/on_events/work/action/0/send",
+            "0",
+        ]
+    )
+    if outbox[0]["effect_id"] != effect_id:
+        raise ValidationFailure(
+            f"{case.name}: output effect identity does not use the preserved runtime"
+        )
+
+
 def validate_repository(repository_root: Path, spec_root: Path) -> str:
-    schema_path = spec_root / "schema" / "machine.schema.json"
-    if not schema_path.is_file():
-        raise ValidationFailure(f"missing specification schema: {schema_path}")
-    try:
-        schema = json.loads(schema_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, UnicodeDecodeError) as error:
-        raise ValidationFailure(f"{schema_path}: invalid JSON: {error}") from error
-    Draft202012Validator.check_schema(schema)
-    schema_validator = Draft202012Validator(schema)
+    schema_paths = {
+        "machine": spec_root / "schema" / "machine.schema.json",
+        **{
+            kind: spec_root / "schema" / filename
+            for kind, filename in ARTIFACT_KINDS.items()
+        },
+        **{
+            kind: repository_root / "scripts" / "schemas" / filename
+            for kind, filename in DRIVER_ARTIFACT_KINDS.items()
+        },
+        "persistence_vectors": (
+            repository_root / "scripts" / "schemas" / "persistence-vectors.schema.json"
+        ),
+        "persistence_profile": (
+            repository_root / "scripts" / "schemas" / "persistence-profile.schema.json"
+        ),
+    }
+    schemas: dict[str, dict[str, Any]] = {}
+    resources: list[tuple[str, Resource[Any]]] = []
+    for name, schema_path in schema_paths.items():
+        if not schema_path.is_file():
+            raise ValidationFailure(f"missing schema: {schema_path}")
+        try:
+            schema = json.loads(schema_path.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeDecodeError) as error:
+            raise ValidationFailure(f"{schema_path}: invalid JSON: {error}") from error
+        Draft202012Validator.check_schema(schema)
+        schemas[name] = schema
+        schema_id = schema.get("$id")
+        if isinstance(schema_id, str):
+            resources.append((schema_id, Resource.from_contents(schema)))
+        resources.append((schema_path.name, Resource.from_contents(schema)))
+    registry = Registry().with_resources(resources)
+    schema_validator = Draft202012Validator(
+        schemas["machine"], registry=registry
+    )
+    artifact_validators = {
+        kind: Draft202012Validator(schemas[kind], registry=registry)
+        for kind in (*ARTIFACT_KINDS, *DRIVER_ARTIFACT_KINDS)
+    }
+    persistence_vector_validator = Draft202012Validator(
+        schemas["persistence_vectors"], registry=registry
+    )
+    persistence_profile_validator = Draft202012Validator(
+        schemas["persistence_profile"], registry=registry
+    )
 
     conformance_version = (repository_root / "VERSION").read_text().strip()
     spec_version = (spec_root / "VERSION").read_text().strip()
@@ -484,14 +1461,26 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     source_rejections = 0
     static_schema_passes = 0
     scenarios = 0
+    artifact_documents = 0
+    persistence_vectors = 0
+    persistence_profile_steps = 0
 
     for case in cases:
         test = load_fixture_document(case / "test.yaml")
         validate_driver_markers(test, case.name)
+        if "persistence_vectors" in test and "persistence_profile" in test:
+            raise ValidationFailure(
+                f"{case.name}: core vectors and persistence profile are mutually exclusive"
+            )
+        if "persistence_vectors" in test:
+            validate_fixture_schema(test, persistence_vector_validator, case)
+        if "persistence_profile" in test:
+            validate_fixture_schema(test, persistence_profile_validator, case)
         if "load" in test and test["load"] != {"valid": True}:
             raise ValidationFailure(f"{case.name}: unsupported load assertion")
 
         referenced: set[Path] = set()
+        referenced_artifacts: set[Path] = set()
         static = test.get("static")
         if static is not None:
             for path, expected_valid, expected_error in static_entries(static, case):
@@ -508,8 +1497,19 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 static_schema_passes += int(
                     source_error is None and not structural_error
                 )
+        if "artifacts" in test:
+            referenced_artifacts = artifact_entries(
+                case, test, artifact_validators
+            )
+            artifact_documents += len(referenced_artifacts)
 
-        has_scenario = bool(test.get("steps")) or "create" in test or static is None
+        has_persistence_mode = (
+            "persistence_vectors" in test or "persistence_profile" in test
+        )
+        has_scenario = (
+            not has_persistence_mode
+            and (bool(test.get("steps")) or "create" in test or static is None)
+        )
         if has_scenario:
             primary = exact_case_file(case, "machine.yaml")
             if primary not in referenced:
@@ -681,6 +1681,16 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                     raise ValidationFailure(
                         f"{location} caller_still_owns_state is inspect-only true"
                     )
+        elif "persistence_vectors" in test:
+            validate_vector_references(
+                case, test, referenced, referenced_artifacts
+            )
+            persistence_vectors += len(test["persistence_vectors"])
+        elif "persistence_profile" in test:
+            validate_profile_references(case, test, referenced_artifacts)
+            persistence_profile_steps += len(
+                test["persistence_profile"]["steps"]
+            )
 
         actual_bundles = {
             path
@@ -693,10 +1703,27 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             raise ValidationFailure(
                 f"{case.name}: missing={missing}, unreferenced={unreferenced}"
             )
+        actual_artifacts = set(case.glob("*.json"))
+        if referenced_artifacts != actual_artifacts:
+            missing = sorted(
+                path.name for path in referenced_artifacts - actual_artifacts
+            )
+            unreferenced = sorted(
+                path.name for path in actual_artifacts - referenced_artifacts
+            )
+            raise ValidationFailure(
+                f"{case.name}: artifact missing={missing}, unreferenced={unreferenced}"
+            )
         document_paths.update(referenced)
 
         if case.name == "62-parsed-value-model":
             validate_case_62(case, test)
+        if case.name == "112-migration-security-limits":
+            validate_case_112(case, test)
+        if case.name == "115-target-identity-decimal-projections":
+            validate_case_115(case, test)
+        if case.name == "persistence-02-atomic-aggregate-inbox-outbox-audit":
+            validate_persistence_profile_02(case)
 
     all_test_files = {
         path for root in case_roots if root.is_dir() for path in root.rglob("test.yaml")
@@ -707,10 +1734,12 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     return (
         f"validated {len(document_paths)} bundle documents across {len(cases)} "
         f"case directories against spec {spec_version}; "
+        f"{artifact_documents} JSON artifacts, "
         f"{source_rejections} expected source rejections, "
         f"{structural_rejections} expected structural rejections, "
         f"{static_schema_passes} schema-valid static documents, and "
-        f"{scenarios} structurally consistent scenario fixtures"
+        f"{scenarios} runtime scenarios, {persistence_vectors} persistence vectors, "
+        f"and {persistence_profile_steps} persistence-profile steps"
     )
 
 

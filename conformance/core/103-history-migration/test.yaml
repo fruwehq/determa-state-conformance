@@ -1,0 +1,111 @@
+title: null, shallow, and deep history pointers migrate explicitly without selection
+  behavior
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+    - file: shallow-machine.yaml
+      valid: true
+    - file: shallow-target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: expected-aggregate-state.json
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: expected-migration-audit.json
+      kind: json_value
+      valid: true
+    - file: recorded-source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: recorded-expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: recorded-expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: recorded-expected-aggregate-state.json
+    - file: recorded-expected-migration-audit.json
+      kind: json_value
+      valid: true
+    - file: shallow-source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: shallow-expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: shallow-expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: shallow-expected-aggregate-state.json
+    - file: shallow-migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: shallow-expected-migration-audit.json
+      kind: json_value
+      valid: true
+persistence_vectors:
+  - name: null_history_pointer_mapping
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:3603b7728993290dc9db52dc3577498b70c241ab9458ef444af27148ba160085
+    target_validated_bundle_fingerprint: sha256:230f530b5f5d751df82aa7368863dc6ce6083bcb3a0f2ab7a48b695ad2a424ab
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: expected-aggregate-state.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+  - name: recorded_deep_history_pointer_mapping
+    operation: migrate_aggregate
+    aggregate_state: recorded-source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor.json
+    migration_route:
+      - sha256:3603b7728993290dc9db52dc3577498b70c241ab9458ef444af27148ba160085
+    target_validated_bundle_fingerprint: sha256:230f530b5f5d751df82aa7368863dc6ce6083bcb3a0f2ab7a48b695ad2a424ab
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: recorded-expected-aggregate-state.json
+      exact_bytes_file: recorded-expected-aggregate-state.canonical.json
+      migration_audit_file: recorded-expected-migration-audit.json
+  - name: recorded_shallow_history_pointer_mapping
+    operation: migrate_aggregate
+    aggregate_state: shallow-source-aggregate-state.json
+    definitions:
+      - shallow-machine.yaml
+      - shallow-target.yaml
+    migration_descriptors:
+      - shallow-migration-descriptor.json
+    migration_route:
+      - sha256:467fdfdd4ab0a2e483e76947c5d373ec475efb0715c3fdd12039215f731d9705
+    target_validated_bundle_fingerprint: sha256:8aa8ea8bf62566367bbb1b87981b3af5a9c979e7804883c240b3c73fee5b6f47
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: shallow-expected-aggregate-state.json
+      exact_bytes_file: shallow-expected-aggregate-state.canonical.json
+      migration_audit_file: shallow-expected-migration-audit.json

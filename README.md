@@ -11,8 +11,9 @@ a core case disagree, the core case wins and the specification must be corrected
 Host and plugin behavior deliberately excluded by format 1 is not made normative merely
 by this repository. Cases under `conformance/profiles/<profile>/` bind only
 implementations that declare support for that profile, and never override core prose.
-Queue delivery policy, timers, dead letters, stores, CLI shapes, and other host surfaces
-remain outside core conformance.
+Queue delivery policy, timers, dead letters, production stores, CLI shapes, and other
+host surfaces remain outside core conformance. SPEC §16 separately defines a portable
+aggregate wire and pure migration operations; core cases 94 onward cover that boundary.
 
 Migration note: repository revisions before issue #21 used the pre-format-1 grammar and
 are not authoritative for format 1. The authority statement above applies to the
@@ -24,14 +25,19 @@ migrated suite.
   normative core case.
 - `conformance/core/<number>-<name>/test.yaml` — its scenario or static-validation
   assertion.
+- `conformance/core/94-*` onward may use `persistence_vectors` plus a strict
+  `artifacts.documents` manifest for portable JSON operations.
 - `conformance/profiles/<profile>/` — optional, explicitly non-core compatibility
   surfaces.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
 - `VERSION` — the synchronized specification version, currently `0.0.7`.
 
-Repository CI parses every fixture with YAML 1.2, classifies deliberate pre-schema
-rejections, and checks declared structural results against an immutable specification
-commit. It does not execute scenario traces, and there is no standalone runtime runner.
+Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
+pre-schema rejections, checks declared structural results against an immutable
+specification commit, verifies artifact digests, and compares canonical JSON files as
+exact bytes. Persistence vectors separately name the exact operation-result bytes, which
+may intentionally be noncanonical for an empty-route migration no-op. CI does not
+execute scenario traces, and there is no standalone runtime runner.
 Each implementation's harness must later load and execute every core case;
 implementation work follows this suite in a separate pull request.
 
@@ -137,6 +143,101 @@ These keys describe the test driver only. Implementations are not required to ex
 capture or delivery as public APIs. Explicit delivery is intentional: automatically
 draining returned emissions would silently standardize FIFO or run-to-quiescence
 behavior that format 1 assigns to queue plugins.
+
+### Persistence vector mechanics
+
+A persistence case is self-contained and uses `static.documents` for every source or
+target bundle, `artifacts.documents` for every JSON file, and one or more closed
+`persistence_vectors`. Existing runtime-step mechanics remain unchanged.
+
+The exact driver operations are `serialize_created_aggregate`,
+`restore_and_serialize`, `restore_and_dispatch`, `restore_package`,
+`restore_package_and_migrate`, `migrate_aggregate`, and `migrate_and_dispatch`. They
+adapt the pure SPEC §16 operations without fixing language API names. A vector
+explicitly supplies every definition, descriptor digest, route member, target
+fingerprint, maintenance flag, input envelope, resolver override, and resource-limit
+fixture it uses.
+
+Migration vectors normally use the required top-level `migration_route`,
+`target_validated_bundle_fingerprint`, and `maintenance_mode` driver fields. A vector
+testing request validation may instead use the closed `migration_request` object, whose
+only fields are those same three request members. Within that object only, the exact
+string `not-a-boolean` is admitted as a malformed `maintenance_mode` value. This keeps
+malformed-request coverage inside a closed harness contract; case 113 separately omits
+the member and supplies this string so the operation, rather than fixture-schema
+validation, returns `invalid_migration_request` for both required branches.
+
+An artifact manifest classifies `aggregate_state`, `migration_descriptor`,
+`aggregate_state_package`, driver-only `artifact_resolver` and `resource_limits`, or
+driver-only `json_value`. Recognized portable artifacts are checked against the pinned
+specification schema and have their embedded digests recomputed. The two driver-only
+documents are checked against closed repository schemas. `verify_digest: false` is
+permitted only for a schema-valid semantic-negative vector whose operation asserts the
+exact digest/package failure. `canonical_of` requires the complete file bytes to equal
+the RFC 8785 serialization of the readable fixture, with no byte-order mark, whitespace,
+or trailing newline.
+
+`expect.aggregate_state_file` compares the semantic aggregate value.
+`expect.exact_bytes_file` compares the complete returned aggregate-envelope bytes.
+Successful serialization, ordinary restoration, and non-empty migration use canonical
+RFC 8785 bytes. An empty migration route to the unchanged definition instead returns the
+exact supplied bytes, including insignificant source whitespace; cases exercise both a
+pretty input and a canonical input. These assertions are intentionally separate.
+
+Successful vectors require every result member relevant to their operation: aggregate
+value and exact bytes; migration audit for migration; emissions and disposition for
+dispatch; and resulting resolver state for package-seeded migration. A failure asserts
+only the exact closed code and `caller_still_owns_aggregate: true`; no intermediate
+candidate, bytes, audit, emissions, resolver mutation, or disposition is available to
+the caller.
+
+An `artifact_resolver` fixture has exactly `definitions` and
+`migration_descriptors`. Each definition record has exactly
+`validated_bundle_fingerprint`, `bundle_file`, and Boolean `trusted`; each descriptor
+record has exactly `migration_descriptor_digest`, `descriptor_file`, and Boolean
+`trusted`. Named files must be declared by the same case. Package attachment vectors
+compare the complete resolver result so put-if-absent and non-overriding behavior is
+observable.
+
+A `resource_limits` fixture contains exactly the canonical-decimal string members in
+`scripts/schemas/resource-limits.schema.json`. Byte limits use RFC 8785 UTF-8 bytes for
+portable JSON values; definition bytes use each normalized bundle's RFC 8785 bytes.
+JSON nesting counts the outer map/list as depth 1. Runtime count is aggregate-wide.
+Active-state and live-variable limits apply to each runtime independently. Map/list
+limits are the maximum immediate member count of any recursively visited JSON
+container. String bytes include both member names and string values. Descriptor rules
+are the sum of entries in its eight closed `mappings` arrays. CEL expression, AST,
+evaluation, and transformed-output accounting follows SPEC §16.14 exactly.
+
+Core implementations must support at least these configured floors:
+
+| resource | floor |
+|---|---:|
+| aggregate bytes | 1,048,576 |
+| bytes per normalized definition | 1,048,576 |
+| bytes per migration descriptor | 65,536 |
+| transformed-output bytes | 65,536 |
+| JSON nesting depth | 64 |
+| runtimes per aggregate | 256 |
+| active states per runtime | 1,024 |
+| live variables per runtime | 4,096 |
+| immediate map members | 4,096 |
+| immediate list members | 4,096 |
+| UTF-8 bytes per string | 65,536 |
+| migration-chain descriptors | 8 |
+| mapping rules per descriptor | 1,024 |
+| CEL expression bytes | 65,536 |
+| CEL AST nodes | 65,536 |
+| CEL evaluation steps | 1,000,000 |
+
+Case 112 proves that one migration within every floor succeeds, then lowers each newly
+covered configured dimension below the same fixture's actual use and requires
+`migration_resource_limit_exceeded`. It retains the aggregate-byte, descriptor-byte,
+chain-length, transformed-output, and evaluation vectors. Migration-chain length is
+exactly the number of descriptor digests in the requested route, including zero for an
+empty route. Every descriptor is checked independently against its declared
+requirements and the matching configured per-descriptor limits; no resource dimension
+is summed across the route.
 
 ## Assertion vocabulary (normative)
 
@@ -249,7 +350,7 @@ A `static.documents` list may coexist with scenario `steps`; in that form the na
 documents are load-time checks and the case's primary `machine.yaml` is still created
 and driven by the scenario.
 
-## Optional CLI profile
+## Optional profiles
 
 The black-box runner is preserved at `conformance/profiles/cli/run_cli.py` as
 non-normative profile infrastructure. No CLI profile cases currently ship. The previous
@@ -259,6 +360,12 @@ which contradict format 1's plugin boundary.
 A later, separate issue may define commands, exit codes, and JSON shapes for
 implementations that declare a CLI profile, without queue introspection. Until then,
 the absence of CLI cases is intentional and no CLI surface is portable conformance.
+
+The `persistence` profile fixes inbox idempotency, aggregate/inbox/outbox/audit atomic
+commit, crash recovery, transient retry, permanent quarantine, and pre-transaction
+artifact resolution for hosts that declare it. Its store snapshots and call logs are
+assertion notation, not a standardized database schema or public engine API. See
+`conformance/profiles/persistence/README.md`.
 
 ## Coverage
 
@@ -284,8 +391,8 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 18 | declared domain failure as ordinary input (§10) |
 | 19 | valid public output/correlated-input contract (§4) |
 | 20 | unresolved public correlation rejection (§5) |
-| 21 | intentionally absent: no portable snapshot wire format |
-| 22 | intentionally absent: definition migration is unsupported |
+| 21 | historically absent; portable aggregate encoding now begins at case 94 |
+| 22 | historically absent; definition migration now begins at case 99 |
 | 23–25 | dynamic/chained choices and missing-default rejection (§5, §6) |
 | 26–28 | unreachable state, dead branch, and reachable positive validation (§5) |
 | 29 | owned spawn with typed input binding and completion (§7) |
@@ -350,6 +457,28 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 | 91 | ordinary host input to a live component rejects with `invalid_instance_target` (§6, §8) |
 | 92 | aggregate-root fault terminality overrides retained component target status (§6, §8) |
 | 93 | non-correlating input and internal envelopes may carry optional correlation ids (§6) |
+| 94 | portable aggregate encoding, decoding, canonical bytes, typed values, targets, and fault round trip (§16.1–§16.4) |
+| 95 | strict JSON source, format/version, structural, numeric, and relationship rejection (§16.1–§16.3) |
+| 96 | content-addressed definition resolution, absence, trust, and collision behavior (§16.5) |
+| 97 | self-contained package attachment verification and collision rejection (§16.13) |
+| 98 | unchanged-definition restore and dispatch equivalence (§16.1–§16.3) |
+| 99 | aggregate-shape-compatible migration and exact audit output (§16.6–§16.8) |
+| 100 | explicit active-state remapping without author behavior (§16.8–§16.9) |
+| 101 | deleted-state totality, ambiguity, partial mapping, and no guessed reset (§16.9) |
+| 102 | copy, transform, initialize, and destructive-drop variable rules (§16.7, §16.9) |
+| 103 | explicit history-slot and recorded-state migration (§16.9) |
+| 104 | component placement migration with immutable target identity (§16.4, §16.9) |
+| 105 | owned-runtime and holder migration with immutable nominal reference (§16.4, §16.9) |
+| 106 | counter-domain mapping plus identity and allocation preservation (§16.4, §16.9) |
+| 107 | exact multi-hop route, adjacency, ordering, and cycle rejection (§16.8) |
+| 108 | deterministic retry and complete intermediate-candidate rollback (§16.8, §16.12) |
+| 109 | migration plus handled, unhandled, rejected, and faulted dispatch outcomes (§16.11) |
+| 110 | completed terminal maintenance migration and terminal preservation (§16.10) |
+| 111 | faulted diagnostic migration and terminal-policy rejection (§16.10) |
+| 112 | descriptor trust plus configured and actual-use resource-limit failure (§16.12, §16.14) |
+| 113 | closed migration request, resolution, transform, and descriptor-discriminator failures (§16.8, §16.10, §16.12) |
+| 114 | occurrence-local transform binding across repeated runtimes and activations (§16.9) |
+| 115 | target-identity decimal projections, JavaScript boundaries, signed-64 spawned versions, unbounded component activations, and numeric-form rejection (§16.2, §16.4) |
 
 ## Deliberate format-1 boundaries
 
@@ -361,10 +490,12 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
   no clock or timer.
 - Separate named contracts are replaced by bundle public event declarations.
 - Submachines are replaced by explicit lifecycle-bound components or owned spawning.
-- Portable snapshots, definition migration, package imports, and version resolution are
-  unsupported.
-- Store protocols, CLI JSON, queue inspection, enabled-event lists, and visualization
-  output are implementation/host surfaces rather than portable executable behavior.
+- Portable aggregate encoding and declarative definition migration use the separate
+  closed JSON artifacts in SPEC §16; they do not change machine `format: 1`.
+- Package imports and dependency/version resolution remain unsupported.
+- Production store protocols, CLI JSON, queue inspection, enabled-event lists, and
+  visualization output are implementation/host surfaces rather than portable core
+  behavior. The optional persistence profile binds only hosts that declare it.
 
 ## License
 

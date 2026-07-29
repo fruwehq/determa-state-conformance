@@ -10,13 +10,18 @@ Layout:
 - `conformance/core/01`–`NN` — **core engine** cases: each `<case>/` has
   `machine.yaml` (the format-1 bundle) and `test.yaml` (a scenario or static
   validation assertion).
+- Core persistence cases use a closed `persistence_vectors` driver mode plus strict
+  JSON artifact manifests. Exact returned-byte expectations are compared byte-for-byte;
+  successful non-no-op operations normally return canonical JSON, while an empty-route
+  migration no-op preserves the supplied aggregate envelope bytes exactly.
 - `conformance/profiles/<profile>/` — optional non-core compatibility surfaces. They
   bind only implementations that declare the profile and never override core prose.
 - Additional bundle files are allowed only when `test.yaml` names them explicitly.
 - `VERSION` — the synchronized spec version this suite targets.
 
-Repository CI parses every fixture with YAML 1.2 and checks its declared structural
-result against an immutable specification-schema pin. Runtime behavior is still
+Repository CI parses every fixture with YAML 1.2 or strict JSON, checks its declared
+structural result against immutable specification-schema pins, verifies portable
+artifact digests, and compares canonical-byte goldens. Runtime behavior is still
 exercised by each implementation's harness, which fetches this suite at the release
 tag matching its version.
 
@@ -53,6 +58,13 @@ without standardizing a queue plugin or requiring equivalent public engine APIs.
 Assertions in `expect`, including `caller_still_owns_input`, are normative. There is no
 standalone core runtime runner in this repository.
 
+Persistence vectors exercise the pure aggregate encode, decode, package, migration,
+and migrate-then-dispatch boundaries from SPEC §16. Their operation names are
+driver-only adapters; named result files, exact returned bytes, audit records,
+emissions, resolver results, dispositions, and failure codes are normative. The
+optional persistence profile fixes host transaction traces without standardizing a
+database schema or production store API.
+
 The durable source/schema validator uses YAML 1.2 and the specification's Draft
 2020-12 schema:
 
@@ -74,4 +86,5 @@ Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that 
 
 ## Pointers
 - Coverage table + case index: `README.md`.
+- Persistence host profile: `conformance/profiles/persistence/README.md`.
 - Fixture conventions: `README.md`. The spec it targets: `determa-state-spec/SPEC.md`.

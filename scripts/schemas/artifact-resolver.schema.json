@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/conformance/artifact-resolver.schema.json",
+  "type": "object",
+  "required": ["definitions", "migration_descriptors"],
+  "additionalProperties": false,
+  "properties": {
+    "definitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "validated_bundle_fingerprint",
+          "bundle_file",
+          "trusted"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "validated_bundle_fingerprint": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "bundle_file": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.yaml$"
+          },
+          "trusted": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "migration_descriptors": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "migration_descriptor_digest",
+          "descriptor_file",
+          "trusted"
+        ],
+        "additionalProperties": false,
+        "properties": {
+          "migration_descriptor_digest": {
+            "type": "string",
+            "pattern": "^sha256:[0-9a-f]{64}$"
+          },
+          "descriptor_file": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.json$"
+          },
+          "trusted": {
+            "type": "boolean"
+          }
+        }
+      }
+    }
+  }
+}

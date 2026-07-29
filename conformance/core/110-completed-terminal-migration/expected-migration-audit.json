@@ -1,0 +1,14 @@
+[
+  {
+    "migration_audit_record_schema_version": 1,
+    "root_instance_id": "completed-root",
+    "root_runtime_id": "sha256:8f302839b21dd30141d2d00ea0cb8e477ef6bd864329e3df1a80c741f5322674",
+    "migration_sequence": "1",
+    "source_validated_bundle_fingerprint": "sha256:f5f28537cc42644e6faf656825c12e8ce141460966bd0e425025f9f1c9f4b668",
+    "target_validated_bundle_fingerprint": "sha256:cd1f5ccfbba33705ad2ca0a4825153eb5a2defbec1074d6a1d76a30fcfc8d76f",
+    "migration_descriptor_digest": "sha256:f92d8efab782f5d2166eea045dd6096f3fac51c4aef3f04bb4ed1d675a9b0580",
+    "source_aggregate_state_digest": "sha256:8cd0dda5edeb1e2a7a95804c144b1573179a74e2fbe234eb030bf692b120c828",
+    "target_aggregate_state_digest": "sha256:f19178a02afd3f2a8b236232d51c469478c0a3a68ffcc6ad869d0104ca00de0c",
+    "result_code": "migration_applied"
+  }
+]

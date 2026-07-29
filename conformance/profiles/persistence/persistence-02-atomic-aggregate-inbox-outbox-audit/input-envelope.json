@@ -1,0 +1,11 @@
+{
+  "event": "work",
+  "event_id": "profile-input-1",
+  "target": {
+    "root": {
+      "root_instance_id": "profile-output-root",
+      "root_runtime_id": "sha256:3321529102ac6c7aa9ef6bfc81a32fa2263c7b5298cdf5a6b1c5025cb7a13db7"
+    }
+  },
+  "payload": {}
+}

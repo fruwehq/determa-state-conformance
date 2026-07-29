@@ -1,0 +1,138 @@
+title: migration follows only the exact trusted ordered route
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: intermediate.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: source-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: source-aggregate-state.json
+    - file: expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.canonical.json
+      kind: aggregate_state
+      valid: true
+      canonical_of: expected-aggregate-state.json
+    - file: migration-descriptor-first.json
+      kind: migration_descriptor
+      valid: true
+    - file: migration-descriptor-second.json
+      kind: migration_descriptor
+      valid: true
+    - file: expected-migration-audit.json
+      kind: json_value
+      valid: true
+    - file: empty-migration-audit.json
+      kind: json_value
+      valid: true
+persistence_vectors:
+  - name: empty_route_same_definition_is_exact_noop
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+    migration_descriptors: []
+    migration_route: []
+    target_validated_bundle_fingerprint: sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: source-aggregate-state.json
+      exact_bytes_file: source-aggregate-state.json
+      migration_audit_file: empty-migration-audit.json
+  - name: empty_route_canonical_input_preserves_canonical_bytes
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.canonical.json
+    definitions:
+      - machine.yaml
+    migration_descriptors: []
+    migration_route: []
+    target_validated_bundle_fingerprint: sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: source-aggregate-state.json
+      exact_bytes_file: source-aggregate-state.canonical.json
+      migration_audit_file: empty-migration-audit.json
+  - name: empty_route_changed_definition_is_missing
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors: []
+    migration_route: []
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    expect:
+      result: failure
+      code: migration_route_missing
+      caller_still_owns_aggregate: true
+  - name: exact_two_hop_route
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - intermediate.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor-first.json
+      - migration-descriptor-second.json
+    migration_route:
+      - sha256:cfc5a6988ee488b6dc955315322e4368ef9d7fac7e00f2b0cd592406e2c780f4
+      - sha256:6451c1b5a7c9d43569a8e01662619fca789131223ea97613cd5f5d8c142d5850
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    expect:
+      result: success
+      aggregate_state_file: expected-aggregate-state.json
+      exact_bytes_file: expected-aggregate-state.canonical.json
+      migration_audit_file: expected-migration-audit.json
+  - name: wrong_descriptor_order
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - intermediate.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor-first.json
+      - migration-descriptor-second.json
+    migration_route:
+      - sha256:6451c1b5a7c9d43569a8e01662619fca789131223ea97613cd5f5d8c142d5850
+      - sha256:cfc5a6988ee488b6dc955315322e4368ef9d7fac7e00f2b0cd592406e2c780f4
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    expect:
+      result: failure
+      code: migration_route_mismatch
+      caller_still_owns_aggregate: true
+  - name: repeated_descriptor_cycle
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - intermediate.yaml
+      - target.yaml
+    migration_descriptors:
+      - migration-descriptor-first.json
+      - migration-descriptor-second.json
+    migration_route:
+      - sha256:cfc5a6988ee488b6dc955315322e4368ef9d7fac7e00f2b0cd592406e2c780f4
+      - sha256:cfc5a6988ee488b6dc955315322e4368ef9d7fac7e00f2b0cd592406e2c780f4
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    expect:
+      result: failure
+      code: migration_route_mismatch
+      caller_still_owns_aggregate: true

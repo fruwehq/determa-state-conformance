@@ -1,0 +1,22 @@
+format: 1
+namespace: conformance.persistence_profile_output
+events:
+  work:
+    direction: input
+  work_recorded:
+    direction: output
+    payload:
+      request_id: { type: string, required: true }
+machines:
+  - machine_id: job
+    version: 1
+    root:
+      on_events:
+        work:
+          action:
+            - send:
+                event: work_recorded
+                to: { external: true }
+                correlation_id: "'profile-output-correlation'"
+                payload:
+                  request_id: "'profile-input-1'"

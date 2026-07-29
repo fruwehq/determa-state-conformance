@@ -1,0 +1,73 @@
+{
+  "aggregate_state_format": "determa.aggregate_state",
+  "aggregate_state_schema_version": 1,
+  "machine_format": 1,
+  "validated_bundle_fingerprint": "sha256:92078bf2af8dc70dc49229377cf844d6440a21b835e112b02717a831db194c27",
+  "namespace": "conformance.persistence_profile_output",
+  "root_machine_id": "job",
+  "root_machine_version": "1",
+  "root_instance_id": "profile-output-root",
+  "creation_id": "profile-output-create",
+  "root_runtime_id": "sha256:3321529102ac6c7aa9ef6bfc81a32fa2263c7b5298cdf5a6b1c5025cb7a13db7",
+  "migration_sequence": "0",
+  "next_logical_step_sequence": "1",
+  "next_output_sequence": "0",
+  "runtimes": [
+    {
+      "runtime_id": "sha256:3321529102ac6c7aa9ef6bfc81a32fa2263c7b5298cdf5a6b1c5025cb7a13db7",
+      "identity_origin": {
+        "kind": "root",
+        "definition": {
+          "validated_bundle_fingerprint": "sha256:92078bf2af8dc70dc49229377cf844d6440a21b835e112b02717a831db194c27",
+          "machine": {
+            "namespace": "conformance.persistence_profile_output",
+            "machine_id": "job",
+            "machine_version": "1",
+            "root_definition_pointer": "/machines/0/root"
+          }
+        },
+        "root_instance_id": "profile-output-root"
+      },
+      "target_identity": {
+        "root": {
+          "root_instance_id": "profile-output-root",
+          "root_runtime_id": "sha256:3321529102ac6c7aa9ef6bfc81a32fa2263c7b5298cdf5a6b1c5025cb7a13db7"
+        }
+      },
+      "current_definition": {
+        "validated_bundle_fingerprint": "sha256:92078bf2af8dc70dc49229377cf844d6440a21b835e112b02717a831db194c27",
+        "machine": {
+          "namespace": "conformance.persistence_profile_output",
+          "machine_id": "job",
+          "machine_version": "1",
+          "root_definition_pointer": "/machines/0/root"
+        }
+      },
+      "relation": {
+        "kind": "root"
+      },
+      "status": "running",
+      "active_leaf_state_definition_pointers": [
+        "/machines/0/root"
+      ],
+      "active_state_activations": [
+        {
+          "state_definition_pointer": "/machines/0/root",
+          "activation_sequence": "0"
+        }
+      ],
+      "variables": [],
+      "history": [],
+      "next_spawn_sequence": "0",
+      "next_state_activation_sequences": [
+        {
+          "definition_pointer": "/machines/0/root",
+          "next_sequence": "1"
+        }
+      ],
+      "next_component_activation_sequences": [],
+      "fault": null
+    }
+  ],
+  "aggregate_state_digest": "sha256:c94004c1128369267d70906744f1a55a2a0f3d63b1cc7479a644a1caa910bc6e"
+}

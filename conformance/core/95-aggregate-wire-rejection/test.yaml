@@ -1,0 +1,67 @@
+title: aggregate parsers reject unsafe, unsupported, malformed, and inconsistent wire
+  values
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: duplicate-key.json
+      kind: aggregate_state
+      valid: false
+      error: duplicate_key
+    - file: invalid-unicode.json
+      kind: aggregate_state
+      valid: false
+      error: invalid_unicode
+    - file: unknown-field.json
+      kind: aggregate_state
+      valid: false
+      error: invalid_aggregate_state
+    - file: unsupported-format.json
+      kind: aggregate_state
+      valid: false
+      error: unsupported_aggregate_state_format
+    - file: unsupported-schema-version.json
+      kind: aggregate_state
+      valid: false
+      error: unsupported_aggregate_state_schema_version
+    - file: malformed-decimal.json
+      kind: aggregate_state
+      valid: false
+      error: invalid_aggregate_state
+    - file: malformed-float.json
+      kind: aggregate_state
+      valid: false
+      error: invalid_aggregate_state
+    - file: inconsistent-relation.json
+      kind: aggregate_state
+      valid: true
+persistence_vectors:
+  - name: semantic_relation_mismatch
+    operation: restore_and_serialize
+    aggregate_state: inconsistent-relation.json
+    definitions:
+      - machine.yaml
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      caller_still_owns_aggregate: true
+  - name: unsupported_aggregate_discriminator
+    operation: restore_and_serialize
+    aggregate_state: unsupported-format.json
+    definitions:
+      - machine.yaml
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_format
+      caller_still_owns_aggregate: true
+  - name: unsupported_aggregate_schema_version
+    operation: restore_and_serialize
+    aggregate_state: unsupported-schema-version.json
+    definitions:
+      - machine.yaml
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_schema_version
+      caller_still_owns_aggregate: true

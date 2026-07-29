@@ -1,0 +1,64 @@
+title: persistence 05 permanent quarantine and release
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: source-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: expected-aggregate-state.json
+      kind: aggregate_state
+      valid: true
+    - file: migration-descriptor.json
+      kind: migration_descriptor
+      valid: true
+    - file: input-envelope.json
+      kind: json_value
+      valid: true
+    - file: initial-store.json
+      kind: json_value
+      valid: true
+    - file: committed-store.json
+      kind: json_value
+      valid: true
+    - file: quarantined-store.json
+      kind: json_value
+      valid: true
+    - file: resolved-call-log.json
+      kind: json_value
+      valid: true
+    - file: committed-call-log.json
+      kind: json_value
+      valid: true
+    - file: replayed-call-log.json
+      kind: json_value
+      valid: true
+    - file: rolled-back-call-log.json
+      kind: json_value
+      valid: true
+    - file: quarantined-call-log.json
+      kind: json_value
+      valid: true
+persistence_profile:
+  initial_store: initial-store.json
+  steps:
+    - operation: inject_failure
+      input_envelope: input-envelope.json
+      target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+      migration_route:
+        - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+      failure_boundary: after_artifact_resolution
+      failure_class: permanent
+      expect_store: quarantined-store.json
+      expect_call_log: quarantined-call-log.json
+    - operation: release_quarantine
+      input_envelope: input-envelope.json
+      target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+      migration_route:
+        - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+      expect_store: committed-store.json
+      expect_call_log: committed-call-log.json

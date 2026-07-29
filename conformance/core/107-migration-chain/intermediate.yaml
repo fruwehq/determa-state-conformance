@@ -1,0 +1,6 @@
+format: 1
+namespace: example.persistence
+meta: { release: intermediate }
+machines:
+  - machine_id: job
+    root: {}
