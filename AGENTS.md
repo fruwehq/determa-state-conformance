@@ -45,7 +45,7 @@ implementation because all are validated against *this* suite. Guards/action val
 - **One issue → one PR**, branch → PR → **squash-merge**, linear history, resolve threads; `main` protected.
 - **No AI/assistant attribution** anywhere (commits, PRs, comments, docs).
 - **Conformance-first:** spec text → the case here → implementations. This repo is where a new behavior is pinned executably.
-- **Synchronized SemVer** with spec + impls (currently **0.0.7**).
+- **Synchronized SemVer** with spec + impls (currently **0.1.0**).
 - **No new abbreviations** in public JSON/identifiers. Format 1 uses `variables`,
   `machine_id`, `component_id`, and explicit `spawn.machine_id`; established keywords
   such as `config`, `lang`, `meta`, and `on_events` remain intentional.
