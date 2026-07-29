@@ -30,7 +30,7 @@ migrated suite.
 - `conformance/profiles/<profile>/` — optional, explicitly non-core compatibility
   surfaces.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
-- `VERSION` — the synchronized specification version, currently `0.0.7`.
+- `VERSION` — the synchronized specification version, currently `0.1.0`.
 
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
 pre-schema rejections, checks declared structural results against an immutable
