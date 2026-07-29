@@ -37,7 +37,7 @@
           "owner_runtime_id": "sha256:804e882656be84ed12e94868542f94c82bc2f4091a9b6bb6353a490757b50814",
           "component_id": "left",
           "component_runtime_id": "sha256:070fdadfd5bdb21af13e7e0a50b9266be0c94f15215b4f92f5d07884c4216d5c",
-          "activation_sequence": 0
+          "activation_sequence": "0"
         }
       },
       "current_definition": {
@@ -120,7 +120,7 @@
           "owner_runtime_id": "sha256:804e882656be84ed12e94868542f94c82bc2f4091a9b6bb6353a490757b50814",
           "component_id": "right",
           "component_runtime_id": "sha256:3ea736656f9311cebd39791a09ab32b1c326bc2f3940869322965a6141c6882e",
-          "activation_sequence": 0
+          "activation_sequence": "0"
         }
       },
       "current_definition": {
@@ -252,5 +252,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:ee6b25abd5b055589c9809af1c4ea021436f5daaa4a5cb7000e075abd262c4e7"
+  "aggregate_state_digest": "sha256:739284098a1e9385c90bac88a4073dab50924cc9d88cf5369a7799a9cef093af"
 }

@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           repository: fruwehq/determa-state-spec
-          ref: e3d56c07ac618ade9c647af64e0ed61122f992bd
+          ref: 1502a58a780d837e05bfacb37680dfc92e3488b5
           path: .determa-state-spec
           persist-credentials: false
 

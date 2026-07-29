@@ -34,7 +34,7 @@
         "spawned_instance": {
           "root_instance_id": "owned-migration-root",
           "instance_id": "sha256:49505d9f32be464a974ec0a1231a10a350ea755fce6bd2f045f4487567c9c279",
-          "machine_version": 1
+          "machine_version": "1"
         }
       },
       "current_definition": {
@@ -218,5 +218,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:f10f056d7068ad43b25ee6cee9cbc633e84768d5cacc0bcfe251727df9e68195"
+  "aggregate_state_digest": "sha256:10e0b163eaba437ffa8fa080c43a94bc360428838a1b9a0230619fd59f9b7393"
 }

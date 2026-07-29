@@ -119,7 +119,7 @@
           "owner_runtime_id": "sha256:804e882656be84ed12e94868542f94c82bc2f4091a9b6bb6353a490757b50814",
           "component_id": "right",
           "component_runtime_id": "sha256:3ea736656f9311cebd39791a09ab32b1c326bc2f3940869322965a6141c6882e",
-          "activation_sequence": 0
+          "activation_sequence": "0"
         }
       },
       "current_definition": {
@@ -251,5 +251,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:ba2d4f49f6c0940e41916054e79f5e82107a1d45f5e6d156c9261b8069c671a6"
+  "aggregate_state_digest": "sha256:b917ba9b1617d2e52e6b0d76c8b5587d1c8b788381dcf7735655711a88f01852"
 }

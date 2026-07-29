@@ -33,7 +33,7 @@
           "root_instance_id": "job-42",
           "instance_id": "other",
           "machine_id": "job",
-          "machine_version": 1
+          "machine_version": "1"
         }
       },
       "current_definition": {
@@ -71,5 +71,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:2ad8708b0e203eb0fb891efc889b542ca02d49e55e1dfd19861b83d899ca39fa"
+  "aggregate_state_digest": "sha256:263796169cd710dc214b19b6f8f77cf4687e0f19b3b71c7262925b24edffc125"
 }

@@ -37,7 +37,7 @@
           "owner_runtime_id": "sha256:804e882656be84ed12e94868542f94c82bc2f4091a9b6bb6353a490757b50814",
           "component_id": "left",
           "component_runtime_id": "sha256:070fdadfd5bdb21af13e7e0a50b9266be0c94f15215b4f92f5d07884c4216d5c",
-          "activation_sequence": 0,
+          "activation_sequence": "0",
           "component_definition_pointer": "/machines/0/root/components/0"
         }
       },
@@ -121,7 +121,7 @@
           "owner_runtime_id": "sha256:804e882656be84ed12e94868542f94c82bc2f4091a9b6bb6353a490757b50814",
           "component_id": "right",
           "component_runtime_id": "sha256:3ea736656f9311cebd39791a09ab32b1c326bc2f3940869322965a6141c6882e",
-          "activation_sequence": 0
+          "activation_sequence": "0"
         }
       },
       "current_definition": {
@@ -253,5 +253,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:7bea224caafc957fb48c8550d8d310f600a220e63d7c30b4e75c59bb2d115e1f"
+  "aggregate_state_digest": "sha256:d9a1eb51ec52b4771bb57a77cca69f0f0faff3f876809c68b7f5522855f86b43"
 }

@@ -36,7 +36,7 @@
           "root_instance_id": "component-migration-root",
           "owner_runtime_id": "sha256:804e882656be84ed12e94868542f94c82bc2f4091a9b6bb6353a490757b50814",
           "component_id": "left",
-          "activation_sequence": 0
+          "activation_sequence": "0"
         }
       },
       "current_definition": {
@@ -119,7 +119,7 @@
           "owner_runtime_id": "sha256:804e882656be84ed12e94868542f94c82bc2f4091a9b6bb6353a490757b50814",
           "component_id": "right",
           "component_runtime_id": "sha256:3ea736656f9311cebd39791a09ab32b1c326bc2f3940869322965a6141c6882e",
-          "activation_sequence": 0
+          "activation_sequence": "0"
         }
       },
       "current_definition": {
@@ -251,5 +251,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:a3dab873f975b29f754a4d352ae91d9f7a26784c588c8bb37bfcd8827e4a9c84"
+  "aggregate_state_digest": "sha256:dc98c95dcd4fd8dd9a8dc1c1fa135ba1d93d60947c9f9f0fff4391510ee3a879"
 }

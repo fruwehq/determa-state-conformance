@@ -233,9 +233,11 @@ Core implementations must support at least these configured floors:
 Case 112 proves that one migration within every floor succeeds, then lowers each newly
 covered configured dimension below the same fixture's actual use and requires
 `migration_resource_limit_exceeded`. It retains the aggregate-byte, descriptor-byte,
-chain-length, transformed-output, and evaluation vectors. The phrase `cumulative chain
-work` has no portable counter or unit in SPEC §16.14, so this driver deliberately has no
-field for it pending a specification decision.
+chain-length, transformed-output, and evaluation vectors. Migration-chain length is
+exactly the number of descriptor digests in the requested route, including zero for an
+empty route. Every descriptor is checked independently against its declared
+requirements and the matching configured per-descriptor limits; no resource dimension
+is summed across the route.
 
 ## Assertion vocabulary (normative)
 
@@ -476,6 +478,7 @@ assertion notation, not a standardized database schema or public engine API. See
 | 112 | descriptor trust plus configured and actual-use resource-limit failure (§16.12, §16.14) |
 | 113 | closed migration request, resolution, transform, and descriptor-discriminator failures (§16.8, §16.10, §16.12) |
 | 114 | occurrence-local transform binding across repeated runtimes and activations (§16.9) |
+| 115 | target-identity decimal projections, JavaScript boundaries, signed-64 spawned versions, unbounded component activations, and numeric-form rejection (§16.2, §16.4) |
 
 ## Deliberate format-1 boundaries
 

@@ -1076,6 +1076,215 @@ def validate_case_112(case: Path, test: dict[str, Any]) -> None:
             raise ValidationFailure(
                 f"{case.name}: {vector_name} changed"
             )
+    chain = vectors.get("chain_limit_exceeded")
+    chain_limits = analyze_artifact(case / "chain-resource-limits.json").document
+    if (
+        chain is None
+        or len(chain["migration_route"]) != 1
+        or chain_limits["maximum_chain_length"] != "0"
+        or chain["expect"]
+        != {
+            "result": "failure",
+            "code": "migration_resource_limit_exceeded",
+            "caller_still_owns_aggregate": True,
+        }
+    ):
+        raise ValidationFailure(
+            f"{case.name}: chain length is not exact descriptor count"
+        )
+    if any("cumulative" in name for name in chain_limits):
+        raise ValidationFailure(
+            f"{case.name}: cumulative chain resource field is unsupported"
+        )
+
+
+def validate_case_115(case: Path, test: dict[str, Any]) -> None:
+    vectors = {
+        vector["name"]: vector for vector in test["persistence_vectors"]
+    }
+    spawned_values = {
+        "spawned_machine_version_javascript_safe_maximum":
+            "9007199254740991",
+        "spawned_machine_version_first_javascript_unsafe":
+            "9007199254740992",
+        "spawned_machine_version_javascript_rounding_gap":
+            "9007199254740993",
+        "spawned_machine_version_signed64_maximum":
+            "9223372036854775807",
+    }
+    for name, expected_version in spawned_values.items():
+        vector = vectors.get(name)
+        if vector is None or vector["expect"]["result"] != "success":
+            raise ValidationFailure(f"{case.name}: missing {name}")
+        aggregate = analyze_artifact(case / vector["aggregate_state"]).document
+        runtime = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["identity_origin"]["kind"] == "owned_spawned_instance"
+        )
+        if (
+            runtime["target_identity"]["spawned_instance"]["machine_version"]
+            != expected_version
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {name} does not preserve its decimal string"
+            )
+        origin = runtime["identity_origin"]
+        definition = origin["definition"]["machine"]
+        expected_runtime_id = hash_value(
+            [
+                "determa-spawned-runtime-identity-1",
+                "1",
+                aggregate["root_instance_id"],
+                origin["owner_runtime_id"],
+                origin["spawn_action_pointer"],
+                origin["spawn_sequence"],
+                definition["namespace"],
+                definition["machine_id"],
+                definition["machine_version"],
+            ]
+        )
+        if (
+            runtime["runtime_id"] != expected_runtime_id
+            or runtime["target_identity"]["spawned_instance"]["instance_id"]
+            != expected_runtime_id
+            or runtime["current_definition"]["machine"]["machine_version"]
+            != expected_version
+            or definition["machine_version"] != expected_version
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {name} is not identity-consistent"
+            )
+
+    component_values = {
+        "component_activation_javascript_safe_maximum":
+            "9007199254740991",
+        "component_activation_first_javascript_unsafe":
+            "9007199254740992",
+        "component_activation_unbounded": (
+            "123456789012345678901234567890123456789012345678901234567890"
+        ),
+    }
+    for name, expected_activation in component_values.items():
+        vector = vectors.get(name)
+        if vector is None or vector["expect"]["result"] != "success":
+            raise ValidationFailure(f"{case.name}: missing {name}")
+        aggregate = analyze_artifact(case / vector["aggregate_state"]).document
+        runtime = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["identity_origin"]["kind"] == "component"
+            and item["relation"]["component_id"] == "left"
+        )
+        target = runtime["target_identity"]["component"]
+        if (
+            target["activation_sequence"] != expected_activation
+            or runtime["identity_origin"]["activation_sequence"]
+            != expected_activation
+            or runtime["relation"]["activation_sequence"]
+            != expected_activation
+            or target["component_runtime_id"] != runtime["runtime_id"]
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {name} is not occurrence-consistent"
+            )
+        origin = runtime["identity_origin"]
+        definition = origin["definition"]["machine"]
+        expected_runtime_id = hash_value(
+            [
+                "determa-component-runtime-identity-1",
+                "1",
+                aggregate["root_instance_id"],
+                origin["owner_runtime_id"],
+                origin["component_definition_pointer"],
+                expected_activation,
+                definition["namespace"],
+                definition["machine_id"],
+                definition["machine_version"],
+            ]
+        )
+        owner = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["runtime_id"] == origin["owner_runtime_id"]
+        )
+        counter = next(
+            item
+            for item in owner["next_component_activation_sequences"]
+            if item["definition_pointer"]
+            == origin["component_definition_pointer"]
+        )
+        if (
+            runtime["runtime_id"] != expected_runtime_id
+            or counter["next_sequence"] != str(int(expected_activation) + 1)
+        ):
+            raise ValidationFailure(
+                f"{case.name}: {name} identity or counter changed"
+            )
+
+    failure_codes = {
+        "spawned_numeric_machine_version_rejected": (
+            "spawned-numeric-machine-version.json",
+            int,
+        ),
+        "spawned_machine_version_above_signed64_rejected": (
+            "spawned-machine-version-above-signed64.json",
+            str,
+        ),
+        "component_numeric_activation_rejected": (
+            "component-numeric-activation.json",
+            int,
+        ),
+    }
+    for name, (filename, expected_type) in failure_codes.items():
+        vector = vectors.get(name)
+        if (
+            vector is None
+            or vector["aggregate_state"] != filename
+            or vector["expect"]
+            != {
+                "result": "failure",
+                "code": "invalid_aggregate_state",
+                "caller_still_owns_aggregate": True,
+            }
+        ):
+            raise ValidationFailure(f"{case.name}: {name} changed")
+        aggregate = analyze_artifact(case / filename).document
+        runtime = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["identity_origin"]["kind"]
+            in {"component", "owned_spawned_instance"}
+        )
+        if runtime["identity_origin"]["kind"] == "component":
+            value = runtime["target_identity"]["component"][
+                "activation_sequence"
+            ]
+        else:
+            value = runtime["target_identity"]["spawned_instance"][
+                "machine_version"
+            ]
+        if type(value) is not expected_type:
+            raise ValidationFailure(
+                f"{case.name}: {name} has the wrong wire representation"
+            )
+    overflow = analyze_artifact(
+        case / "spawned-machine-version-above-signed64.json"
+    ).document
+    overflow_runtime = next(
+        item
+        for item in overflow["runtimes"]
+        if item["identity_origin"]["kind"] == "owned_spawned_instance"
+    )
+    if (
+        overflow_runtime["target_identity"]["spawned_instance"][
+            "machine_version"
+        ]
+        != "9223372036854775808"
+    ):
+        raise ValidationFailure(
+            f"{case.name}: signed-64 overflow boundary changed"
+        )
 
 
 def validate_persistence_profile_02(case: Path) -> None:
@@ -1511,6 +1720,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             validate_case_62(case, test)
         if case.name == "112-migration-security-limits":
             validate_case_112(case, test)
+        if case.name == "115-target-identity-decimal-projections":
+            validate_case_115(case, test)
         if case.name == "persistence-02-atomic-aggregate-inbox-outbox-audit":
             validate_persistence_profile_02(case)
 

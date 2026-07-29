@@ -35,7 +35,7 @@
           "root_instance_id": "owned-migration-root",
           "instance_id": "sha256:49505d9f32be464a974ec0a1231a10a350ea755fce6bd2f045f4487567c9c279",
           "machine_id": "payment",
-          "machine_version": 1,
+          "machine_version": "1",
           "owner_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d"
         }
       },
@@ -220,5 +220,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:235937fa3ad70a309d8fa587173caa07fb6e80bcad52aee6c0a28b911e8c858f"
+  "aggregate_state_digest": "sha256:b3a9f0f26a315480753af0d5bd32531cdaaf4b309de344bc954e1bb53d73a4e5"
 }

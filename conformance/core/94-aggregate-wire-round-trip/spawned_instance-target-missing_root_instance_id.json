@@ -34,7 +34,7 @@
         "spawned_instance": {
           "instance_id": "sha256:49505d9f32be464a974ec0a1231a10a350ea755fce6bd2f045f4487567c9c279",
           "machine_id": "payment",
-          "machine_version": 1
+          "machine_version": "1"
         }
       },
       "current_definition": {
@@ -218,5 +218,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:60da42a8fb73c1160fa13528e95b30a058b9d9fb1a971ad7cecab57efb56f0cc"
+  "aggregate_state_digest": "sha256:2bc2e9b68d54c8c4d3db7c0a45ab45a8aeead563b36000d9004a7bda736eb998"
 }

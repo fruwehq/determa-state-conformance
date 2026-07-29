@@ -35,7 +35,7 @@
           "root_instance_id": "occurrence-root",
           "instance_id": "sha256:5fe2568e63d354376757877e2c277fe0124ea6b16d1cc0500746cda067805dd1",
           "machine_id": "worker",
-          "machine_version": 1
+          "machine_version": "1"
         }
       },
       "current_definition": {
@@ -127,7 +127,7 @@
           "root_instance_id": "occurrence-root",
           "instance_id": "sha256:6cc57d5bf030825969d5666414f82ea06d918f61ad11a8d3bafd26b186137104",
           "machine_id": "worker",
-          "machine_version": 1
+          "machine_version": "1"
         }
       },
       "current_definition": {
@@ -299,5 +299,5 @@
       "fault": null
     }
   ],
-  "aggregate_state_digest": "sha256:706ec9e54183425c16df48aa6c3b106a853d641da276be84234e99772ca323e4"
+  "aggregate_state_digest": "sha256:8c865742000f3029ff6ccc413578898218fafcc88585c05723ba0199f458e053"
 }
