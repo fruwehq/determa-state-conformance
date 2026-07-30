@@ -1,0 +1,725 @@
+{
+  "execution_checkpoint_core_evidence_format": "determa.execution_checkpoint_profile.core_evidence",
+  "execution_checkpoint_core_evidence_schema_version": 1,
+  "provenance": {
+    "spec_commit": "318ef1f16ae024770090bd338c8b70056df2855b",
+    "python_core_commit": "7b17d788b48049648e7e463aa3d35ba13dc1aa6e",
+    "python_core_version": "0.1.0",
+    "rust_cross_check_commit": "d17480c8b281dcd17953f59afcf6b5d23ff44efd"
+  },
+  "calls": {
+    "create": {
+      "prior_aggregate_state_digest": null,
+      "status": "running",
+      "disposition": null,
+      "aggregate_state": {
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "machine_format": 1,
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "namespace": "conformance.execution_checkpoint_delivery",
+        "root_machine_id": "counter",
+        "root_machine_version": "1",
+        "root_instance_id": "checkpoint-root",
+        "creation_id": "checkpoint-create",
+        "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+        "migration_sequence": "0",
+        "next_logical_step_sequence": "1",
+        "next_output_sequence": "0",
+        "runtimes": [
+          {
+            "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+                "machine": {
+                  "namespace": "conformance.execution_checkpoint_delivery",
+                  "machine_id": "counter",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "checkpoint-root"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_delivery",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "running",
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              }
+            ],
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "0"
+                ]
+              }
+            ],
+            "history": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              }
+            ],
+            "next_component_activation_sequences": [],
+            "fault": null
+          }
+        ],
+        "aggregate_state_digest": "sha256:b593ea2e9217cea9f14b226882438f6d3f4fdcd04fc9c9bbde46dabacca7b31c"
+      },
+      "emissions": [],
+      "fault": null,
+      "rejection": null,
+      "core_operation": "create",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/create",
+      "operation_input_digest": "sha256:ed343cef2b5003d9013e16c27f2f43d5514a798aee7a41375aa25d66455df531"
+    },
+    "create_rejected": {
+      "prior_aggregate_state_digest": null,
+      "status": "rejected",
+      "disposition": null,
+      "aggregate_state": null,
+      "emissions": [],
+      "fault": null,
+      "rejection": {
+        "code": "invalid_machine_target"
+      },
+      "core_operation": "create",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/create_rejected",
+      "operation_input_digest": "sha256:c6b969443ad50a08eb08f93168d07d087368454b96cc6994fa548fbcb3893639"
+    },
+    "increment": {
+      "prior_aggregate_state_digest": "sha256:b593ea2e9217cea9f14b226882438f6d3f4fdcd04fc9c9bbde46dabacca7b31c",
+      "status": "running",
+      "disposition": "handled",
+      "aggregate_state": {
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "machine_format": 1,
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "namespace": "conformance.execution_checkpoint_delivery",
+        "root_machine_id": "counter",
+        "root_machine_version": "1",
+        "root_instance_id": "checkpoint-root",
+        "creation_id": "checkpoint-create",
+        "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+        "migration_sequence": "0",
+        "next_logical_step_sequence": "2",
+        "next_output_sequence": "0",
+        "runtimes": [
+          {
+            "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+                "machine": {
+                  "namespace": "conformance.execution_checkpoint_delivery",
+                  "machine_id": "counter",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "checkpoint-root"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_delivery",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "running",
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              }
+            ],
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "1"
+                ]
+              }
+            ],
+            "history": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              }
+            ],
+            "next_component_activation_sequences": [],
+            "fault": null
+          }
+        ],
+        "aggregate_state_digest": "sha256:7fba734f1db3f8dac245e262f12b305d6b63211dd1b0975b343bb872fe8a0455"
+      },
+      "emissions": [],
+      "fault": null,
+      "rejection": null,
+      "core_operation": "dispatch",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/process_increment",
+      "operation_input_digest": "sha256:275da0bf57d95b8b9f50da4844570fb1a3d0fb7ef607ea447e309bdf1afac0a7"
+    },
+    "emit_internal": {
+      "prior_aggregate_state_digest": "sha256:7fba734f1db3f8dac245e262f12b305d6b63211dd1b0975b343bb872fe8a0455",
+      "status": "running",
+      "disposition": "handled",
+      "aggregate_state": {
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "machine_format": 1,
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "namespace": "conformance.execution_checkpoint_delivery",
+        "root_machine_id": "counter",
+        "root_machine_version": "1",
+        "root_instance_id": "checkpoint-root",
+        "creation_id": "checkpoint-create",
+        "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+        "migration_sequence": "0",
+        "next_logical_step_sequence": "3",
+        "next_output_sequence": "0",
+        "runtimes": [
+          {
+            "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+                "machine": {
+                  "namespace": "conformance.execution_checkpoint_delivery",
+                  "machine_id": "counter",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "checkpoint-root"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_delivery",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "running",
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              }
+            ],
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "1"
+                ]
+              }
+            ],
+            "history": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              }
+            ],
+            "next_component_activation_sequences": [],
+            "fault": null
+          }
+        ],
+        "aggregate_state_digest": "sha256:c308305ed98b03f198c9c4862839ad4035b2a6e5ca1d07450394993f6674ec09"
+      },
+      "emissions": [
+        {
+          "kind": "internal",
+          "event": "internal_increment",
+          "event_id": "sha256:0a425be6d80acad3056dfb9f959176ad6d5cf0e3817188726480a7af4dce95fc",
+          "target": {
+            "root": {
+              "root_instance_id": "checkpoint-root",
+              "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+            }
+          },
+          "payload": [
+            "map",
+            [
+              [
+                "amount",
+                [
+                  "integer",
+                  "5"
+                ]
+              ]
+            ]
+          ]
+        }
+      ],
+      "fault": null,
+      "rejection": null,
+      "core_operation": "dispatch",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/emit_internal",
+      "operation_input_digest": "sha256:e0f3238417a77011d167464aa6cb6eed58893776ca2b99cb06e7175b06fc41cc"
+    },
+    "internal_increment": {
+      "prior_aggregate_state_digest": "sha256:c308305ed98b03f198c9c4862839ad4035b2a6e5ca1d07450394993f6674ec09",
+      "status": "running",
+      "disposition": "handled",
+      "aggregate_state": {
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "machine_format": 1,
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "namespace": "conformance.execution_checkpoint_delivery",
+        "root_machine_id": "counter",
+        "root_machine_version": "1",
+        "root_instance_id": "checkpoint-root",
+        "creation_id": "checkpoint-create",
+        "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+        "migration_sequence": "0",
+        "next_logical_step_sequence": "4",
+        "next_output_sequence": "0",
+        "runtimes": [
+          {
+            "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+                "machine": {
+                  "namespace": "conformance.execution_checkpoint_delivery",
+                  "machine_id": "counter",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "checkpoint-root"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_delivery",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "running",
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              }
+            ],
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "6"
+                ]
+              }
+            ],
+            "history": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              }
+            ],
+            "next_component_activation_sequences": [],
+            "fault": null
+          }
+        ],
+        "aggregate_state_digest": "sha256:a1347184ffa5b2ef7ccd8eba79b0668b6bbe75bd4080a576d8396232856192b7"
+      },
+      "emissions": [],
+      "fault": null,
+      "rejection": null,
+      "core_operation": "dispatch",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/internal_increment",
+      "operation_input_digest": "sha256:36f5a87ba53f79db09383231dc480cccfaee037decbfca693b61764f325c3703"
+    },
+    "unhandled": {
+      "prior_aggregate_state_digest": "sha256:a1347184ffa5b2ef7ccd8eba79b0668b6bbe75bd4080a576d8396232856192b7",
+      "status": "running",
+      "disposition": "unhandled",
+      "aggregate_state": {
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "machine_format": 1,
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "namespace": "conformance.execution_checkpoint_delivery",
+        "root_machine_id": "counter",
+        "root_machine_version": "1",
+        "root_instance_id": "checkpoint-root",
+        "creation_id": "checkpoint-create",
+        "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+        "migration_sequence": "0",
+        "next_logical_step_sequence": "4",
+        "next_output_sequence": "0",
+        "runtimes": [
+          {
+            "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+                "machine": {
+                  "namespace": "conformance.execution_checkpoint_delivery",
+                  "machine_id": "counter",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "checkpoint-root"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_delivery",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "running",
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              }
+            ],
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "6"
+                ]
+              }
+            ],
+            "history": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              }
+            ],
+            "next_component_activation_sequences": [],
+            "fault": null
+          }
+        ],
+        "aggregate_state_digest": "sha256:a1347184ffa5b2ef7ccd8eba79b0668b6bbe75bd4080a576d8396232856192b7"
+      },
+      "emissions": [],
+      "fault": null,
+      "rejection": null,
+      "core_operation": "dispatch",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/unhandled",
+      "operation_input_digest": "sha256:7a24417e06981d272fce9adbf3c7e51c477c96385b18a5b897f79e0f1b94353d"
+    },
+    "rejected": {
+      "prior_aggregate_state_digest": "sha256:a1347184ffa5b2ef7ccd8eba79b0668b6bbe75bd4080a576d8396232856192b7",
+      "status": "running",
+      "disposition": "rejected",
+      "aggregate_state": {
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "machine_format": 1,
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "namespace": "conformance.execution_checkpoint_delivery",
+        "root_machine_id": "counter",
+        "root_machine_version": "1",
+        "root_instance_id": "checkpoint-root",
+        "creation_id": "checkpoint-create",
+        "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+        "migration_sequence": "0",
+        "next_logical_step_sequence": "4",
+        "next_output_sequence": "0",
+        "runtimes": [
+          {
+            "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+                "machine": {
+                  "namespace": "conformance.execution_checkpoint_delivery",
+                  "machine_id": "counter",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "checkpoint-root"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_delivery",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "running",
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              }
+            ],
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "6"
+                ]
+              }
+            ],
+            "history": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              }
+            ],
+            "next_component_activation_sequences": [],
+            "fault": null
+          }
+        ],
+        "aggregate_state_digest": "sha256:a1347184ffa5b2ef7ccd8eba79b0668b6bbe75bd4080a576d8396232856192b7"
+      },
+      "emissions": [],
+      "fault": null,
+      "rejection": {
+        "code": "invalid_event"
+      },
+      "core_operation": "dispatch",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/rejected",
+      "operation_input_digest": "sha256:f677bc1b68073bbd98bcf9f9d134b831db4498ec09c9d7ab231ad3d333954597"
+    },
+    "fault": {
+      "prior_aggregate_state_digest": "sha256:a1347184ffa5b2ef7ccd8eba79b0668b6bbe75bd4080a576d8396232856192b7",
+      "status": "faulted",
+      "disposition": "faulted",
+      "aggregate_state": {
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "machine_format": 1,
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "namespace": "conformance.execution_checkpoint_delivery",
+        "root_machine_id": "counter",
+        "root_machine_version": "1",
+        "root_instance_id": "checkpoint-root",
+        "creation_id": "checkpoint-create",
+        "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+        "migration_sequence": "0",
+        "next_logical_step_sequence": "5",
+        "next_output_sequence": "0",
+        "runtimes": [
+          {
+            "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+                "machine": {
+                  "namespace": "conformance.execution_checkpoint_delivery",
+                  "machine_id": "counter",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "checkpoint-root"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_delivery",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "faulted",
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              }
+            ],
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "6"
+                ]
+              }
+            ],
+            "history": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              }
+            ],
+            "next_component_activation_sequences": [],
+            "fault": {
+              "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+              "cause_id": "delivery-fault",
+              "code": "action_fault",
+              "step_sequence": "4",
+              "source_locator": "/machines/0/root/on_events/deliberate_fault/action/0/assign/count",
+              "definition_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb"
+            }
+          }
+        ],
+        "aggregate_state_digest": "sha256:a7973504f94d70743341aca078b556b6823255e15683a29f9ff6e0171a3e8088"
+      },
+      "emissions": [],
+      "fault": {
+        "runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885",
+        "cause_id": "delivery-fault",
+        "code": "action_fault",
+        "step_sequence": "4",
+        "source_locator": "/machines/0/root/on_events/deliberate_fault/action/0/assign/count",
+        "definition_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb"
+      },
+      "rejection": null,
+      "core_operation": "dispatch",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/fault",
+      "operation_input_digest": "sha256:0d18872cc0676f2f9bc644ef004a9ba666dc16a3e6f3cf1ec44451e77b1811fc"
+    }
+  }
+}

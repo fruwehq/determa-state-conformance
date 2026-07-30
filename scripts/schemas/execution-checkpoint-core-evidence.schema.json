@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/conformance/execution-checkpoint-core-evidence.schema.json",
+  "type": "object",
+  "required": [
+    "execution_checkpoint_core_evidence_format",
+    "execution_checkpoint_core_evidence_schema_version",
+    "provenance",
+    "calls"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "execution_checkpoint_core_evidence_format": {
+      "const": "determa.execution_checkpoint_profile.core_evidence"
+    },
+    "execution_checkpoint_core_evidence_schema_version": {
+      "const": 1
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "spec_commit",
+        "python_core_commit",
+        "python_core_version",
+        "rust_cross_check_commit"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "spec_commit": {
+          "const": "318ef1f16ae024770090bd338c8b70056df2855b"
+        },
+        "python_core_commit": {
+          "const": "7b17d788b48049648e7e463aa3d35ba13dc1aa6e"
+        },
+        "python_core_version": {
+          "const": "0.1.0"
+        },
+        "rust_cross_check_commit": {
+          "const": "d17480c8b281dcd17953f59afcf6b5d23ff44efd"
+        }
+      }
+    },
+    "calls": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/coreResult"
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "nullableSha256": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/sha256"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "internalEmission": {
+      "type": "object",
+      "required": ["kind", "event", "event_id", "target", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "internal"
+        },
+        "event": {
+          "type": "string",
+          "minLength": 1
+        },
+        "event_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target": {
+          "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json#/$defs/targetIdentity"
+        },
+        "payload": {
+          "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json#/$defs/typedValue"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "externalEmission": {
+      "type": "object",
+      "required": [
+        "kind",
+        "event",
+        "effect_id",
+        "sequence",
+        "payload",
+        "correlation_id"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "external"
+        },
+        "event": {
+          "type": "string",
+          "minLength": 1
+        },
+        "effect_id": {
+          "$ref": "#/$defs/sha256"
+        },
+        "sequence": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$"
+        },
+        "payload": {
+          "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json#/$defs/typedValue"
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "coreRejection": {
+      "type": "object",
+      "required": ["code"],
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "enum": ["invalid_event", "invalid_machine_target"]
+        }
+      }
+    },
+    "stateCoreResult": {
+      "type": "object",
+      "required": [
+        "core_operation",
+        "operation_input_file",
+        "operation_input_pointer",
+        "operation_input_digest",
+        "prior_aggregate_state_digest",
+        "status",
+        "disposition",
+        "aggregate_state",
+        "emissions",
+        "fault",
+        "rejection"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "core_operation": {
+          "enum": ["create", "dispatch"]
+        },
+        "operation_input_file": {
+          "const": "inputs.json"
+        },
+        "operation_input_pointer": {
+          "type": "string",
+          "pattern": "^/requests/[a-z][a-z0-9_]*$"
+        },
+        "operation_input_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "prior_aggregate_state_digest": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "status": {
+          "enum": ["running", "completed", "faulted", "rejected"]
+        },
+        "disposition": {
+          "oneOf": [
+            {
+              "enum": ["handled", "unhandled", "rejected", "faulted"]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "aggregate_state": {
+          "oneOf": [
+            {
+              "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json#/$defs/aggregateState"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "emissions": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "$ref": "#/$defs/internalEmission"
+              },
+              {
+                "$ref": "#/$defs/externalEmission"
+              }
+            ]
+          }
+        },
+        "fault": {
+          "oneOf": [
+            {
+              "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json#/$defs/fault"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "rejection": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/coreRejection"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "migrationCoreResult": {
+      "type": "object",
+      "required": [
+        "core_operation",
+        "operation_input_file",
+        "operation_input_pointer",
+        "operation_input_digest",
+        "prior_aggregate_state_digest",
+        "aggregate_state",
+        "audit_records",
+        "failure"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "core_operation": {
+          "const": "migrate"
+        },
+        "operation_input_file": {
+          "const": "inputs.json"
+        },
+        "operation_input_pointer": {
+          "type": "string",
+          "pattern": "^/requests/[a-z][a-z0-9_]*$"
+        },
+        "operation_input_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "prior_aggregate_state_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "aggregate_state": {
+          "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json#/$defs/aggregateState"
+        },
+        "audit_records": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/migrationAuditRecord"
+          }
+        },
+        "failure": {
+          "type": "null"
+        }
+      }
+    },
+    "coreResult": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/stateCoreResult"
+        },
+        {
+          "$ref": "#/$defs/migrationCoreResult"
+        }
+      ]
+    }
+  }
+}

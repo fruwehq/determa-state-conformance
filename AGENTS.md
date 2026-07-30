@@ -16,6 +16,10 @@ Layout:
   migration no-op preserves the supplied aggregate envelope bytes exactly.
 - `conformance/profiles/<profile>/` — optional non-core compatibility surfaces. They
   bind only implementations that declare the profile and never override core prose.
+- The execution-checkpoint profile uses a closed `execution_checkpoint_profile`
+  vector driver plus strict checkpoint artifacts. It fixes portable host transaction
+  results and before/after bytes without defining a language API, store schema, worker,
+  daemon, or socket protocol.
 - Additional bundle files are allowed only when `test.yaml` names them explicitly.
 - `VERSION` — the synchronized spec version this suite targets.
 
@@ -65,6 +69,20 @@ emissions, resolver results, dispositions, and failure codes are normative. The
 optional persistence profile fixes host transaction traces without standardizing a
 database schema or production store API.
 
+Execution-checkpoint vectors exercise SPEC §17 creation, acceptance, processing,
+receipt replay, writer compare-and-swap guards, retention, root lifecycle, and durable outbox
+transitions, plus only the portable adapter-registry and composed-capability results.
+Replay repeats the original operation with its exact input; never add a synthetic
+replay or compare-and-swap operation. Existing-checkpoint writers must name their exact
+expected revision and digest. Named before/after checkpoint artifacts, operation-input
+and core-result references, exact response fields, mutation classification, core-call
+classification, canonical bytes, digests, and failure codes are normative.
+Operation inputs and core evidence use their dedicated closed schemas; do not regress
+them to generic `json_value` artifacts. Bind bundle bytes/fingerprints and every core
+projection to the exact cited input. Coverage names are validated behavior claims, not
+free-form annotations. Configuration validation must precede adapter capability
+evaluation.
+
 The durable source/schema validator uses YAML 1.2 and the specification's Draft
 2020-12 schema:
 
@@ -74,8 +92,10 @@ python scripts/validate_conformance.py --spec-root ../determa-state-spec
 ```
 
 The workflow uses the same command against an explicitly pinned specification commit.
-Passing it proves fixture construction and declared schema dispositions, not scenario
-execution.
+The execution-checkpoint generator and independent Python/Rust verification method are
+documented in its profile README. Durable validation proves fixture construction,
+schema dispositions, cross-artifact semantics, and generated core-result linkage; it
+does not replace each implementation's runtime harness.
 
 The non-normative CLI profile runner is retained at
 `conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.
@@ -87,4 +107,6 @@ Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that 
 ## Pointers
 - Coverage table + case index: `README.md`.
 - Persistence host profile: `conformance/profiles/persistence/README.md`.
+- Execution-checkpoint profile:
+  `conformance/profiles/execution-checkpoint/README.md`.
 - Fixture conventions: `README.md`. The spec it targets: `determa-state-spec/SPEC.md`.

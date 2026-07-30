@@ -1,0 +1,91 @@
+{
+  "migration_descriptor_format": "determa.aggregate_migration",
+  "migration_descriptor_schema_version": 1,
+  "source_machine_format": 1,
+  "target_machine_format": 1,
+  "source_validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9",
+  "target_validated_bundle_fingerprint": "sha256:67e01dc52ceedc38b15cd248001532d0b44ed62b5a8b622aae20b0e533cb0b10",
+  "source_aggregate_shape_fingerprint": "sha256:84553141508a8398e66398f8d4e4169d0852ee737182fa87150cdb9e24789e16",
+  "target_aggregate_shape_fingerprint": "sha256:8eaf86e9636e106990bc7eee3bde7fb4097ec9e44ac0ef5e73c6a4e898524e9c",
+  "mode": "transform",
+  "mappings": {
+    "machines": [
+      {
+        "source_definition_pointer": "/machines/0/root",
+        "target_definition_pointer": "/machines/0/root"
+      }
+    ],
+    "active_states": [
+      {
+        "source_leaf_state_definition_pointer": "/machines/0/root/states/old_state",
+        "target_leaf_state_definition_pointers": [
+          "/machines/0/root/states/new_state"
+        ]
+      }
+    ],
+    "variables": [
+      {
+        "operation": "copy",
+        "source_declaration_pointer": "/machines/0/root/variables/old_count",
+        "target_declaration_pointer": "/machines/0/root/variables/new_count"
+      },
+      {
+        "operation": "drop",
+        "source_declaration_pointer": "/machines/0/root/variables/remove_me",
+        "reason": "field removed by the next definition"
+      },
+      {
+        "operation": "transform",
+        "source_declaration_pointers": [
+          "/machines/0/root/states/old_state/variables/shadow"
+        ],
+        "target_declaration_pointer": "/machines/0/root/states/new_state/variables/renamed_shadow",
+        "expression": "source_0 + 1"
+      },
+      {
+        "operation": "initialize",
+        "target_declaration_pointer": "/machines/0/root/variables/added",
+        "expression": "true"
+      }
+    ],
+    "history": [
+      {
+        "operation": "map",
+        "source_history_declaration_pointer": "/machines/0/root/history",
+        "target_history_declaration_pointer": "/machines/0/root/history",
+        "recorded_state_mappings": [
+          {
+            "source_definition_pointer": "/machines/0/root/states/old_state",
+            "target_definition_pointer": "/machines/0/root/states/new_state"
+          }
+        ]
+      }
+    ],
+    "components": [],
+    "owned_runtimes": [],
+    "lifetime_holders": [],
+    "counters": [
+      {
+        "operation": "map",
+        "source_definition_pointer": "/machines/0/root",
+        "target_definition_pointer": "/machines/0/root"
+      },
+      {
+        "operation": "map",
+        "source_definition_pointer": "/machines/0/root/states/old_state",
+        "target_definition_pointer": "/machines/0/root/states/new_state"
+      }
+    ]
+  },
+  "terminal_policy": {
+    "completed": "preserve",
+    "faulted": "preserve"
+  },
+  "resource_requirements": {
+    "maximum_transformed_output_bytes": "64",
+    "maximum_cel_expression_length": "32",
+    "maximum_cel_ast_nodes": "32",
+    "maximum_cel_evaluation_steps": "65"
+  },
+  "migration_descriptor_digest": "sha256:cb725694e51d4c4399a9b366f92968224528abf8823cb225cdcb6d1acfdb8214"
+}

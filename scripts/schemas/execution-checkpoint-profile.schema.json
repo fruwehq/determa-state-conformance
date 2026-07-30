@@ -1,0 +1,925 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/conformance/execution-checkpoint-profile.schema.json",
+  "type": "object",
+  "required": ["title", "static", "artifacts", "execution_checkpoint_profile"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "static": {
+      "$ref": "persistence-vectors.schema.json#/$defs/staticAssertions"
+    },
+    "artifacts": {
+      "$ref": "persistence-vectors.schema.json#/$defs/artifactManifest"
+    },
+    "execution_checkpoint_profile": {
+      "type": "object",
+      "required": ["vectors"],
+      "additionalProperties": false,
+      "properties": {
+        "vectors": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/vector"
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "jsonFileNameOrNull": {
+      "oneOf": [
+        {
+          "$ref": "persistence-vectors.schema.json#/$defs/jsonFileName"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "canonicalDecimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "artifactRef": {
+      "type": "object",
+      "required": ["file", "pointer"],
+      "additionalProperties": false,
+      "properties": {
+        "file": {
+          "$ref": "persistence-vectors.schema.json#/$defs/jsonFileName"
+        },
+        "pointer": {
+          "type": "string",
+          "pattern": "^(?:/(?:[^~/]|~0|~1)*)+$"
+        }
+      }
+    },
+    "coverage": {
+      "enum": [
+        "creation_commit",
+        "creation_replay",
+        "creation_conflict",
+        "creation_rejection_without_checkpoint",
+        "durable_pending_acceptance",
+        "pending_acceptance_replay",
+        "delayed_processing",
+        "foreground_processing",
+        "committed_receipt_replay",
+        "revision_progression",
+        "pre_commit_rollback",
+        "post_commit_response_loss_replay",
+        "rejected_delivery",
+        "faulted_delivery",
+        "unhandled_delivery",
+        "internal_delivery_processing",
+        "stale_processing_cas_conflict",
+        "stale_outbox_cas_conflict",
+        "stale_pruning_cas_conflict",
+        "stale_tombstone_cas_conflict",
+        "internal_pending_delivery",
+        "maintenance_migration_commit",
+        "maintenance_migration_replay",
+        "maintenance_migration_conflict",
+        "migration_audit_non_empty",
+        "pre_acceptance_malformed_delivery",
+        "pre_acceptance_wrong_root",
+        "pre_acceptance_invalid_delivery_mode",
+        "pre_acceptance_invalid_delivery_origin",
+        "pre_acceptance_delivery_digest_mismatch",
+        "pre_acceptance_event_id_conflict",
+        "pre_acceptance_tombstoned_root",
+        "root_tombstoning",
+        "root_tombstone_replay",
+        "root_identity_no_reuse",
+        "physical_deletion_unsupported",
+        "permanent_receipt_retention",
+        "bounded_receipt_retention",
+        "dependency_safe_pruning",
+        "permanent_to_bounded_irreversible",
+        "bounded_to_permanent_rejected",
+        "outbox_not_attempted",
+        "outbox_retryable_failure",
+        "outbox_ambiguous",
+        "outbox_confirmed",
+        "outbox_permanently_rejected",
+        "outbox_operator_cancelled",
+        "outbox_discarded",
+        "outbox_dead_lettered",
+        "outbox_compact_tombstone",
+        "outbox_idempotent_pending_update",
+        "outbox_idempotent_terminal_update",
+        "outbox_effect_conflict",
+        "outbox_forbidden_deletion",
+        "outbox_receipt_linkage",
+        "direct_store_injection",
+        "public_adapter_registry",
+        "duplicate_adapter_registration",
+        "unknown_adapter",
+        "invalid_adapter_configuration",
+        "adapter_capability_mismatch",
+        "memory_durable_profile_rejected",
+        "bounded_exactly_once_rejected",
+        "root_identity_profile_requirement",
+        "strict_outbox_profile_requirements",
+        "compact_outbox_profile_requirements",
+        "durable_embedded_profile_requirements",
+        "exactly_once_profile_requirements",
+        "broker_profile_requirements",
+        "shared_transaction_profile_requirements",
+        "memory_capability_boundary",
+        "file_capability_boundary",
+        "sqlite_capability_boundary",
+        "postgresql_capability_boundary",
+        "bundled_public_registration",
+        "third_party_public_registration",
+        "durable_embedded_missing_durable",
+        "durable_profile_missing_root_identity",
+        "durable_profile_missing_atomic_processing",
+        "exactly_once_missing_receipt_retention",
+        "broker_profile_missing_redelivery",
+        "broker_profile_missing_ack_after_commit",
+        "broker_profile_missing_outbox_worker",
+        "strict_outbox_missing_terminal_retention",
+        "strict_outbox_missing_worker",
+        "strict_outbox_missing_total_lifecycle",
+        "strict_outbox_missing_unresolved_retention",
+        "compact_outbox_missing_tombstone_retention",
+        "compact_outbox_missing_worker",
+        "compact_outbox_missing_total_lifecycle",
+        "compact_outbox_missing_reference_retention",
+        "shared_transaction_missing_native_use",
+        "shared_transaction_missing_store_capability"
+      ]
+    },
+    "operation": {
+      "enum": [
+        "create",
+        "accept_delivery",
+        "process_pending_delivery",
+        "foreground_process_delivery",
+        "maintenance_migration",
+        "update_pending_outbox",
+        "terminalize_outbox",
+        "compact_outbox",
+        "delete_outbox_record",
+        "update_replay_retention",
+        "tombstone_root",
+        "delete_checkpoint",
+        "inject_execution_store",
+        "register_adapter",
+        "resolve_adapter",
+        "validate_host_profile"
+      ]
+    },
+    "capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "ephemeral",
+          "restart_persistent",
+          "durable_single_writer",
+          "durable_concurrent",
+          "shared_application_transaction",
+          "permanent_receipt_retention",
+          "root_identity_retention",
+          "permanent_outbox_terminal_retention",
+          "compact_effect_identity_retention"
+        ]
+      }
+    },
+    "expectation": {
+      "type": "object",
+      "required": ["result", "checkpoint_after", "checkpoint_mutation", "core_call"],
+      "additionalProperties": false,
+      "properties": {
+        "result": {
+          "enum": [
+            "committed",
+            "accepted",
+            "pending",
+            "not_accepted",
+            "tombstoned",
+            "failure",
+            "response_lost",
+            "unsupported"
+          ]
+        },
+        "code": {
+          "enum": [
+            "creation_rejected",
+            "creation_id_conflict",
+            "event_id_conflict",
+            "operation_id_conflict",
+            "effect_id_conflict",
+            "checkpoint_revision_conflict",
+            "invalid_execution_checkpoint",
+            "duplicate_adapter_registration",
+            "unknown_adapter",
+            "invalid_adapter_configuration",
+            "adapter_capability_mismatch",
+            "malformed_delivery",
+            "wrong_root",
+            "invalid_delivery_mode",
+            "invalid_delivery_origin",
+            "delivery_digest_mismatch",
+            "tombstoned_root",
+            "injected_pre_commit_failure",
+            "response_lost_after_commit",
+            "physical_deletion_unsupported"
+          ]
+        },
+        "checkpoint_after": {
+          "$ref": "#/$defs/jsonFileNameOrNull"
+        },
+        "checkpoint_mutation": {
+          "enum": ["absent", "created", "changed", "unchanged"]
+        },
+        "core_call": {
+          "enum": ["none", "create", "dispatch", "migrate"]
+        },
+        "receipt_sequence": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "delivery_sequence": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "accepted_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "enum": ["not_accepted", "failure", "response_lost", "unsupported"]
+              }
+            },
+            "required": ["result"]
+          },
+          "then": {
+            "required": ["code"]
+          },
+          "else": {
+            "not": {
+              "required": ["code"]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "result": {
+                "const": "pending"
+              }
+            },
+            "required": ["result"]
+          },
+          "then": {
+            "required": ["delivery_sequence", "accepted_revision"]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "checkpoint_mutation": {
+                "const": "absent"
+              }
+            },
+            "required": ["checkpoint_mutation"]
+          },
+          "then": {
+            "properties": {
+              "checkpoint_after": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "checkpoint_after": {
+                "$ref": "persistence-vectors.schema.json#/$defs/jsonFileName"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "outcomeByOperation": {
+      "oneOf": [
+        {
+          "properties": {
+            "operation": { "const": "create" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "committed" } } },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "creation_rejected",
+                        "creation_id_conflict",
+                        "checkpoint_revision_conflict",
+                        "invalid_execution_checkpoint"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "accept_delivery" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "pending" } } },
+                { "properties": { "result": { "const": "committed" } } },
+                {
+                  "properties": {
+                    "result": { "const": "not_accepted" },
+                    "code": {
+                      "enum": [
+                        "malformed_delivery",
+                        "wrong_root",
+                        "invalid_delivery_mode",
+                        "invalid_delivery_origin",
+                        "delivery_digest_mismatch",
+                        "event_id_conflict",
+                        "tombstoned_root"
+                      ]
+                    }
+                  }
+                },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "checkpoint_revision_conflict",
+                        "invalid_execution_checkpoint"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": {
+              "enum": ["process_pending_delivery", "foreground_process_delivery"]
+            },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "committed" } } },
+                {
+                  "properties": {
+                    "result": { "const": "response_lost" },
+                    "code": { "const": "response_lost_after_commit" }
+                  }
+                },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "event_id_conflict",
+                        "checkpoint_revision_conflict",
+                        "invalid_execution_checkpoint",
+                        "injected_pre_commit_failure"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "maintenance_migration" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "committed" } } },
+                {
+                  "properties": {
+                    "result": { "const": "response_lost" },
+                    "code": { "const": "response_lost_after_commit" }
+                  }
+                },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "operation_id_conflict",
+                        "checkpoint_revision_conflict",
+                        "invalid_execution_checkpoint",
+                        "injected_pre_commit_failure"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": {
+              "enum": [
+                "update_pending_outbox",
+                "terminalize_outbox",
+                "compact_outbox"
+              ]
+            },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "committed" } } },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "effect_id_conflict",
+                        "checkpoint_revision_conflict",
+                        "invalid_execution_checkpoint"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "delete_outbox_record" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "committed" } } },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "checkpoint_revision_conflict",
+                        "invalid_execution_checkpoint"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "update_replay_retention" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "committed" } } },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "checkpoint_revision_conflict",
+                        "invalid_execution_checkpoint"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "tombstone_root" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "tombstoned" } } },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "operation_id_conflict",
+                        "checkpoint_revision_conflict",
+                        "invalid_execution_checkpoint"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "delete_checkpoint" },
+            "expect": {
+              "properties": {
+                "result": { "const": "unsupported" },
+                "code": { "const": "physical_deletion_unsupported" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "inject_execution_store" },
+            "expect": {
+              "properties": {
+                "result": { "const": "accepted" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "register_adapter" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "accepted" } } },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "duplicate_adapter_registration",
+                        "invalid_adapter_configuration",
+                        "adapter_capability_mismatch"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "resolve_adapter" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "accepted" } } },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": {
+                      "enum": [
+                        "unknown_adapter",
+                        "invalid_adapter_configuration",
+                        "adapter_capability_mismatch"
+                      ]
+                    }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "validate_host_profile" },
+            "expect": {
+              "oneOf": [
+                { "properties": { "result": { "const": "accepted" } } },
+                {
+                  "properties": {
+                    "result": { "const": "failure" },
+                    "code": { "const": "adapter_capability_mismatch" }
+                  }
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "vector": {
+      "type": "object",
+      "required": ["name", "covers", "operation", "checkpoint_before", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "covers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/coverage"
+          }
+        },
+        "operation": {
+          "$ref": "#/$defs/operation"
+        },
+        "checkpoint_before": {
+          "$ref": "#/$defs/jsonFileNameOrNull"
+        },
+        "input": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "core_result": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "failure_boundary": {
+          "enum": ["before_commit", "after_commit_before_response"]
+        },
+        "adapter_identifier": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9+.-]*$"
+        },
+        "configuration_valid": {
+          "type": "boolean"
+        },
+        "registration_source": {
+          "enum": ["bundled", "third_party"]
+        },
+        "registration_route": {
+          "const": "public"
+        },
+        "advertised_capabilities": {
+          "$ref": "#/$defs/capabilities"
+        },
+        "requested_capabilities": {
+          "$ref": "#/$defs/capabilities"
+        },
+        "host_profile": {
+          "enum": [
+            "durable_embedded_processing",
+            "exactly_once_committed_processing",
+            "broker_integrated",
+            "strict_durable_outbox",
+            "compact_durable_outbox",
+            "shared_application_transaction"
+          ]
+        },
+        "checkpoint_retention_mode": {
+          "enum": ["permanent", "bounded", "not_applicable"]
+        },
+        "host_features": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "acknowledge_after_checkpoint_commit",
+              "durable_redelivery",
+              "outbox_worker",
+              "destination_effect_id_idempotency",
+              "native_shared_application_transaction",
+              "atomic_checkpoint_processing",
+              "total_outbox_lifecycle",
+              "retain_unresolved_outbox",
+              "retain_referenced_effect_tombstones"
+            ]
+          }
+        },
+        "expect": {
+          "$ref": "#/$defs/expectation"
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/$defs/outcomeByOperation"
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": [
+                  "create",
+                  "accept_delivery",
+                  "process_pending_delivery",
+                  "foreground_process_delivery",
+                  "maintenance_migration",
+                  "update_pending_outbox",
+                  "terminalize_outbox",
+                  "compact_outbox",
+                  "delete_outbox_record",
+                  "update_replay_retention",
+                  "tombstone_root",
+                  "delete_checkpoint"
+                ]
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": ["input"]
+          },
+          "else": {
+            "not": {
+              "required": ["input"]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "expect": {
+                "properties": {
+                  "core_call": {
+                    "enum": ["create", "dispatch", "migrate"]
+                  }
+                },
+                "required": ["core_call"]
+              }
+            },
+            "required": ["expect"]
+          },
+          "then": {
+            "required": ["core_result"]
+          },
+          "else": {
+            "not": {
+              "required": ["core_result"]
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": ["register_adapter", "resolve_adapter"]
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": [
+              "adapter_identifier",
+              "configuration_valid",
+              "registration_source",
+              "registration_route",
+              "advertised_capabilities",
+              "requested_capabilities"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "validate_host_profile"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": [
+              "advertised_capabilities",
+              "requested_capabilities",
+              "host_profile",
+              "checkpoint_retention_mode",
+              "host_features"
+            ]
+          }
+        }
+      ],
+      "oneOf": [
+        {
+          "properties": {
+            "operation": { "const": "create" },
+            "expect": {
+              "properties": {
+                "result": { "enum": ["committed", "failure"] },
+                "core_call": { "enum": ["none", "create"] }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "accept_delivery" },
+            "expect": {
+              "properties": {
+                "result": {
+                  "enum": ["pending", "committed", "not_accepted", "failure"]
+                },
+                "core_call": { "const": "none" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": {
+              "enum": ["process_pending_delivery", "foreground_process_delivery"]
+            },
+            "expect": {
+              "properties": {
+                "result": {
+                  "enum": ["committed", "response_lost", "failure"]
+                },
+                "core_call": { "enum": ["none", "dispatch"] }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "maintenance_migration" },
+            "expect": {
+              "properties": {
+                "result": {
+                  "enum": ["committed", "response_lost", "failure"]
+                },
+                "core_call": { "enum": ["none", "migrate"] }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": {
+              "enum": [
+                "update_pending_outbox",
+                "terminalize_outbox",
+                "compact_outbox",
+                "delete_outbox_record",
+                "update_replay_retention"
+              ]
+            },
+            "expect": {
+              "properties": {
+                "result": { "enum": ["committed", "failure"] },
+                "core_call": { "const": "none" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "tombstone_root" },
+            "expect": {
+              "properties": {
+                "result": { "enum": ["tombstoned", "failure"] },
+                "core_call": { "const": "none" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "delete_checkpoint" },
+            "expect": {
+              "properties": {
+                "result": { "const": "unsupported" },
+                "core_call": { "const": "none" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "inject_execution_store" },
+            "expect": {
+              "properties": {
+                "result": { "const": "accepted" },
+                "core_call": { "const": "none" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "enum": ["register_adapter", "resolve_adapter"] },
+            "expect": {
+              "properties": {
+                "result": { "enum": ["accepted", "failure"] },
+                "core_call": { "const": "none" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "operation": { "const": "validate_host_profile" },
+            "expect": {
+              "properties": {
+                "result": { "enum": ["accepted", "failure"] },
+                "core_call": { "const": "none" }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}

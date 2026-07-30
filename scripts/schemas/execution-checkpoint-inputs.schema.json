@@ -1,0 +1,547 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/conformance/execution-checkpoint-inputs.schema.json",
+  "type": "object",
+  "required": [
+    "execution_checkpoint_inputs_format",
+    "execution_checkpoint_inputs_schema_version",
+    "requests"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "execution_checkpoint_inputs_format": {
+      "const": "determa.execution_checkpoint_profile.inputs"
+    },
+    "execution_checkpoint_inputs_schema_version": {
+      "const": 1
+    },
+    "requests": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": {
+        "pattern": "^[a-z][a-z0-9_]*$"
+      },
+      "additionalProperties": {
+        "$ref": "#/$defs/operationInput"
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "canonicalDecimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "jsonFileName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:json|yaml)$"
+    },
+    "casProperties": {
+      "type": "object",
+      "required": ["expected_revision", "expected_checkpoint_digest"],
+      "properties": {
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "bundleProperties": {
+      "type": "object",
+      "required": [
+        "bundle_file",
+        "bundle_source_digest",
+        "validated_bundle_fingerprint"
+      ],
+      "properties": {
+        "bundle_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "bundle_source_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "validated_bundle_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "createInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "bundle_file",
+        "bundle_source_digest",
+        "validated_bundle_fingerprint",
+        "namespace",
+        "machine_id",
+        "machine_version",
+        "root_instance_id",
+        "creation_id",
+        "bindings",
+        "request_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "create"
+        },
+        "bundle_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "bundle_source_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "validated_bundle_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "machine_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "namespace": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "machine_version": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "root_instance_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "creation_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "bindings": {
+          "type": "object",
+          "required": ["input", "external"],
+          "additionalProperties": false,
+          "properties": {
+            "input": {
+              "type": "object"
+            },
+            "external": {
+              "type": "object"
+            }
+          }
+        },
+        "request_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      },
+      "dependentRequired": {
+        "expected_revision": ["expected_checkpoint_digest"],
+        "expected_checkpoint_digest": ["expected_revision"]
+      }
+    },
+    "invalidOrigin": {
+      "type": "object",
+      "required": ["kind"],
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "const": "invalid"
+        }
+      }
+    },
+    "dispatchDelivery": {
+      "type": "object",
+      "required": ["event", "event_id", "target", "payload"],
+      "additionalProperties": false,
+      "properties": {
+        "event": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "event_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "target": {
+          "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json#/$defs/targetIdentity"
+        },
+        "payload": {
+          "type": "object"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        }
+      }
+    },
+    "dispatchInput": {
+      "type": "object",
+      "required": [
+        "bundle_file",
+        "bundle_source_digest",
+        "validated_bundle_fingerprint",
+        "delivery"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "bundle_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "bundle_source_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "validated_bundle_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "delivery": {
+          "oneOf": [
+            {
+              "type": "object",
+              "required": ["input"],
+              "additionalProperties": false,
+              "properties": {
+                "input": {
+                  "$ref": "#/$defs/dispatchDelivery"
+                }
+              }
+            },
+            {
+              "type": "object",
+              "required": ["internal"],
+              "additionalProperties": false,
+              "properties": {
+                "internal": {
+                  "$ref": "#/$defs/dispatchDelivery"
+                }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "presentedDeliveryInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "root_instance_id",
+        "delivery_mode",
+        "origin",
+        "envelope",
+        "envelope_digest",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "delivery"
+        },
+        "root_instance_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "delivery_mode": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "origin": {
+          "oneOf": [
+            {
+              "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/deliveryOrigin"
+            },
+            {
+              "$ref": "#/$defs/invalidOrigin"
+            }
+          ]
+        },
+        "envelope": {
+          "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/envelope"
+        },
+        "envelope_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "dispatch_input": {
+          "$ref": "#/$defs/dispatchInput"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "malformedDeliveryInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "candidate",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "delivery"
+        },
+        "candidate": {
+          "type": "null"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "maintenanceMigrationInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "operation_id",
+        "source_aggregate_state_digest",
+        "target_bundle_file",
+        "target_bundle_source_digest",
+        "migration_descriptor_files",
+        "target_validated_bundle_fingerprint",
+        "migration_descriptor_digest_route",
+        "maintenance_mode",
+        "request_digest",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "maintenance_migration"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "source_aggregate_state_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "target_bundle_file": {
+          "$ref": "#/$defs/jsonFileName"
+        },
+        "target_bundle_source_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "migration_descriptor_files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/jsonFileName"
+          }
+        },
+        "target_validated_bundle_fingerprint": {
+          "$ref": "#/$defs/sha256"
+        },
+        "migration_descriptor_digest_route": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/sha256"
+          }
+        },
+        "maintenance_mode": {
+          "const": true
+        },
+        "request_digest": {
+          "$ref": "#/$defs/sha256"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "pendingOutboxInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "effect_id",
+        "desired_pending_state",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "update_pending_outbox"
+        },
+        "effect_id": {
+          "$ref": "#/$defs/sha256"
+        },
+        "desired_pending_state": {
+          "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/pendingOutboxState"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "terminalOutboxInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "effect_id",
+        "terminal_outcome",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "terminalize_outbox"
+        },
+        "effect_id": {
+          "$ref": "#/$defs/sha256"
+        },
+        "terminal_outcome": {
+          "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/terminalOutboxOutcome"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "effectInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "effect_id",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "enum": ["compact_outbox", "delete_outbox_record"]
+        },
+        "effect_id": {
+          "$ref": "#/$defs/sha256"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "retentionInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "target_replay_retention",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "update_replay_retention"
+        },
+        "target_replay_retention": {
+          "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/replayRetention"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "tombstoneInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "operation_id",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "tombstone_root"
+        },
+        "operation_id": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "deleteCheckpointInput": {
+      "type": "object",
+      "required": [
+        "operation",
+        "expected_revision",
+        "expected_checkpoint_digest"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "const": "delete_checkpoint"
+        },
+        "expected_revision": {
+          "$ref": "#/$defs/canonicalDecimal"
+        },
+        "expected_checkpoint_digest": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "operationInput": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/createInput"
+        },
+        {
+          "$ref": "#/$defs/presentedDeliveryInput"
+        },
+        {
+          "$ref": "#/$defs/malformedDeliveryInput"
+        },
+        {
+          "$ref": "#/$defs/maintenanceMigrationInput"
+        },
+        {
+          "$ref": "#/$defs/pendingOutboxInput"
+        },
+        {
+          "$ref": "#/$defs/terminalOutboxInput"
+        },
+        {
+          "$ref": "#/$defs/effectInput"
+        },
+        {
+          "$ref": "#/$defs/retentionInput"
+        },
+        {
+          "$ref": "#/$defs/tombstoneInput"
+        },
+        {
+          "$ref": "#/$defs/deleteCheckpointInput"
+        }
+      ]
+    }
+  }
+}

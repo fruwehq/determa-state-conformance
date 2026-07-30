@@ -1,0 +1,18 @@
+format: 1
+namespace: conformance.execution_checkpoint_migration
+events:
+  increment: { direction: input }
+machines:
+  - machine_id: workflow
+    version: 1
+    root:
+      type: composite
+      history: deep
+      variables:
+        old_count: { type: int, init: 2 }
+        remove_me: { type: string, init: obsolete }
+      initial: { transition_to: old_state }
+      states:
+        old_state:
+          variables:
+            shadow: { type: int, init: 7 }

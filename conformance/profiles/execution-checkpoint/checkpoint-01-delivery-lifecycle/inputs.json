@@ -1,0 +1,641 @@
+{
+  "execution_checkpoint_inputs_format": "determa.execution_checkpoint_profile.inputs",
+  "execution_checkpoint_inputs_schema_version": 1,
+  "requests": {
+    "create": {
+      "operation": "create",
+      "bundle_file": "machine.yaml",
+      "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+      "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+      "namespace": "conformance.execution_checkpoint_delivery",
+      "machine_id": "counter",
+      "machine_version": "1",
+      "root_instance_id": "checkpoint-root",
+      "creation_id": "checkpoint-create",
+      "bindings": {
+        "input": {},
+        "external": {}
+      },
+      "request_digest": "sha256:a1cc0dd8aa01044950276e25598613b80eb095f9d26c1bebe45fb40071821924"
+    },
+    "create_conflict": {
+      "operation": "create",
+      "bundle_file": "machine.yaml",
+      "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+      "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+      "namespace": "conformance.execution_checkpoint_delivery",
+      "machine_id": "counter",
+      "machine_version": "1",
+      "root_instance_id": "checkpoint-root",
+      "creation_id": "conflicting-create",
+      "bindings": {
+        "input": {},
+        "external": {}
+      },
+      "request_digest": "sha256:6df94db59db9d244ac173c520be20c8cad553065255751c2f5135267fcfb04dc"
+    },
+    "create_rejected": {
+      "operation": "create",
+      "bundle_file": "machine.yaml",
+      "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+      "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+      "namespace": "conformance.execution_checkpoint_delivery",
+      "machine_id": "missing_machine",
+      "machine_version": "1",
+      "root_instance_id": "rejected-root",
+      "creation_id": "rejected-create",
+      "bindings": {
+        "input": {},
+        "external": {}
+      },
+      "request_digest": "sha256:eb41bcf14fc5268c673cdd92cd143c432126677d21ae32e28f7b74009ee791f3"
+    },
+    "accept_increment": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "increment",
+        "event_id": "delivery-increment",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:97e64d2c2a26fa9933f713822a2da0e55548644511013847e14969955b64713f",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "input": {
+            "event": "increment",
+            "event_id": "delivery-increment",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {
+              "amount": 1
+            }
+          }
+        }
+      },
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:0f95c281277e3fbe973dcdbe37fccbe3658ebd51f88e11666ffc004510bd6a04"
+    },
+    "process_increment": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "increment",
+        "event_id": "delivery-increment",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:97e64d2c2a26fa9933f713822a2da0e55548644511013847e14969955b64713f",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "input": {
+            "event": "increment",
+            "event_id": "delivery-increment",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {
+              "amount": 1
+            }
+          }
+        }
+      },
+      "expected_revision": "1",
+      "expected_checkpoint_digest": "sha256:445e7861b97c345f49b4fbeee2ae080fab1f914d4eea2167152c29468f9e391d"
+    },
+    "process_increment_stale": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "increment",
+        "event_id": "delivery-increment",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:97e64d2c2a26fa9933f713822a2da0e55548644511013847e14969955b64713f",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "input": {
+            "event": "increment",
+            "event_id": "delivery-increment",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {
+              "amount": 1
+            }
+          }
+        }
+      },
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:0f95c281277e3fbe973dcdbe37fccbe3658ebd51f88e11666ffc004510bd6a04"
+    },
+    "emit_internal": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "emit_internal",
+        "event_id": "delivery-emit-internal",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "5"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:363c887870f56f6d7c3c747dc5052bb8b20126a55f41f356b7d69d01262a701b",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "input": {
+            "event": "emit_internal",
+            "event_id": "delivery-emit-internal",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {
+              "amount": 5
+            }
+          }
+        }
+      },
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:0293620b7ffe958617953853675b2a1276c2c89adbf59eb13c44af62a6764267"
+    },
+    "internal_increment": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "internal",
+      "origin": {
+        "kind": "internal_emission",
+        "producing_receipt_sequence": "2",
+        "emission_index": "0"
+      },
+      "envelope": {
+        "event": "internal_increment",
+        "event_id": "sha256:0a425be6d80acad3056dfb9f959176ad6d5cf0e3817188726480a7af4dce95fc",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "5"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:bdb3faeb6ededc482aa6af077661a62b55161df24b60add7db11ea8d135f6f6f",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "internal": {
+            "event": "internal_increment",
+            "event_id": "sha256:0a425be6d80acad3056dfb9f959176ad6d5cf0e3817188726480a7af4dce95fc",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {
+              "amount": 5
+            }
+          }
+        }
+      },
+      "expected_revision": "3",
+      "expected_checkpoint_digest": "sha256:c1756d1918dca8fe3038dcfb68dd13f4d43fd8e9713cb8bfd75efbef09bf949c"
+    },
+    "unhandled": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "unhandled",
+        "event_id": "delivery-unhandled",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          []
+        ]
+      },
+      "envelope_digest": "sha256:01730c07ab946b4292979085816fb823b4f83bb0a33fd850e03032ab84dbbc66",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "input": {
+            "event": "unhandled",
+            "event_id": "delivery-unhandled",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {}
+          }
+        }
+      },
+      "expected_revision": "4",
+      "expected_checkpoint_digest": "sha256:ff47c414b79d8daab6abf9058f5536dbf2a70e7fc60caa2fbd1244537b015aca"
+    },
+    "rejected": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "unknown_event",
+        "event_id": "delivery-rejected",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          []
+        ]
+      },
+      "envelope_digest": "sha256:faf648f6e69731a8704326081610e3131b7bb347298ea4016efa7097dd59d6b4",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "input": {
+            "event": "unknown_event",
+            "event_id": "delivery-rejected",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {}
+          }
+        }
+      },
+      "expected_revision": "5",
+      "expected_checkpoint_digest": "sha256:6e6f7fae7867cb4d9858e128b943e6599000be677988f98865008b739be320ae"
+    },
+    "fault": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "deliberate_fault",
+        "event_id": "delivery-fault",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          []
+        ]
+      },
+      "envelope_digest": "sha256:2677a22c357c44bf624e25d4dbb812ea63035cf73e3232d152bc93fb1b921faf",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "input": {
+            "event": "deliberate_fault",
+            "event_id": "delivery-fault",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {}
+          }
+        }
+      },
+      "expected_revision": "6",
+      "expected_checkpoint_digest": "sha256:68091752e9d8838b7f080f28fcbe8e2871f4ac2a9c95cf274769525b1b069810"
+    },
+    "malformed": {
+      "operation": "delivery",
+      "candidate": null,
+      "expected_revision": "7",
+      "expected_checkpoint_digest": "sha256:e090b019c4636aaa46ed8f543cc8c462f7f6ee0d9e2dabd593b014dca07d497a"
+    },
+    "wrong_root": {
+      "operation": "delivery",
+      "root_instance_id": "another-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "increment",
+        "event_id": "delivery-increment",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:b09490414288b27b86af453c7f0414235d9f212b9b5c0641fc92ae3ee0f2dd63",
+      "dispatch_input": {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": "sha256:e75ce15ae3d409e145cc9567b9f0caa6ea5965ffa588597151f6483f3cd300a6",
+        "validated_bundle_fingerprint": "sha256:91bf814e3dacc9295a8b36ad924c8aeee78037e687aaaf8fd8e59bfd6bf64fbb",
+        "delivery": {
+          "input": {
+            "event": "increment",
+            "event_id": "delivery-increment",
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-root",
+                "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+              }
+            },
+            "payload": {
+              "amount": 1
+            }
+          }
+        }
+      },
+      "expected_revision": "7",
+      "expected_checkpoint_digest": "sha256:e090b019c4636aaa46ed8f543cc8c462f7f6ee0d9e2dabd593b014dca07d497a"
+    },
+    "invalid_mode": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "invalid",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "increment",
+        "event_id": "delivery-increment",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:97e64d2c2a26fa9933f713822a2da0e55548644511013847e14969955b64713f",
+      "expected_revision": "7",
+      "expected_checkpoint_digest": "sha256:e090b019c4636aaa46ed8f543cc8c462f7f6ee0d9e2dabd593b014dca07d497a"
+    },
+    "invalid_origin": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "invalid"
+      },
+      "envelope": {
+        "event": "increment",
+        "event_id": "delivery-increment",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:97e64d2c2a26fa9933f713822a2da0e55548644511013847e14969955b64713f",
+      "expected_revision": "7",
+      "expected_checkpoint_digest": "sha256:e090b019c4636aaa46ed8f543cc8c462f7f6ee0d9e2dabd593b014dca07d497a"
+    },
+    "digest_mismatch": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "increment",
+        "event_id": "delivery-digest-mismatch",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:7777777777777777777777777777777777777777777777777777777777777777",
+      "expected_revision": "7",
+      "expected_checkpoint_digest": "sha256:e090b019c4636aaa46ed8f543cc8c462f7f6ee0d9e2dabd593b014dca07d497a"
+    },
+    "event_conflict": {
+      "operation": "delivery",
+      "root_instance_id": "checkpoint-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "increment",
+        "event_id": "delivery-fault",
+        "target": {
+          "root": {
+            "root_instance_id": "checkpoint-root",
+            "root_runtime_id": "sha256:1f8282e6ea121e7e2d8b139c0dfb30c8ed0f1a0cad1d0590321587b76736e885"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "99"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:ddd74c8712da7b57c12076a49d22a23929479da7c895e785131ea9486a47acb0",
+      "expected_revision": "7",
+      "expected_checkpoint_digest": "sha256:e090b019c4636aaa46ed8f543cc8c462f7f6ee0d9e2dabd593b014dca07d497a"
+    }
+  }
+}

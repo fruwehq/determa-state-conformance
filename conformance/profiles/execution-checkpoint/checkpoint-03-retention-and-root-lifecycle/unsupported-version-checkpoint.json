@@ -1,0 +1,148 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 2,
+  "root_instance_id": "maintenance-root",
+  "revision": "0",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9",
+      "namespace": "conformance.execution_checkpoint_migration",
+      "root_machine_id": "workflow",
+      "root_machine_version": "1",
+      "root_instance_id": "maintenance-root",
+      "creation_id": "maintenance-create",
+      "root_runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "1",
+      "next_output_sequence": "0",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_migration",
+                "machine_id": "workflow",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "maintenance-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "maintenance-root",
+              "root_runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9",
+            "machine": {
+              "namespace": "conformance.execution_checkpoint_migration",
+              "machine_id": "workflow",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root/states/old_state"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/0/root/states/old_state",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/states/old_state/variables/shadow",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "7"
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/old_count",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "2"
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/remove_me",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "string",
+                "obsolete"
+              ]
+            }
+          ],
+          "history": [
+            {
+              "history_declaration_pointer": "/machines/0/root/history",
+              "recorded_state_definition_pointers": null
+            }
+          ],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/old_state",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null
+        }
+      ],
+      "aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a"
+    }
+  },
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "next_delivery_sequence": "0",
+  "pending_deliveries": [],
+  "next_operation_receipt_sequence": "1",
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "maintenance-create",
+      "request_digest": "sha256:a536acbd5c1db0071fe199d49ddada6581d014f762475102bb566430083e012f",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    }
+  ],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:c4d7bc349b89e7d7a6950871f7cb69a178243e2a609f5e5c8dbb7693457201b1"
+}
