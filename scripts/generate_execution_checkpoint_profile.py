@@ -800,12 +800,43 @@ def generate_delivery() -> dict[str, Any]:
     wrong_root = with_read(wrong_root, faulted_checkpoint)
     invalid_mode = copy.deepcopy(increment_base)
     invalid_mode["delivery_mode"] = "invalid"
+    invalid_mode["envelope_digest"] = hash_value(
+        [
+            "determa-inbox-envelope-digest-1",
+            "1",
+            "checkpoint-root",
+            "invalid",
+            invalid_mode["envelope"],
+        ]
+    )
     invalid_mode.pop("dispatch_input", None)
     invalid_mode = with_read(invalid_mode, faulted_checkpoint)
     invalid_origin = copy.deepcopy(increment_base)
     invalid_origin["origin"] = {"kind": "invalid"}
     invalid_origin.pop("dispatch_input", None)
     invalid_origin = with_read(invalid_origin, faulted_checkpoint)
+    fresh_invalid_mode = copy.deepcopy(invalid_mode)
+    fresh_invalid_mode["envelope"]["event_id"] = "delivery-fresh-invalid-mode"
+    fresh_invalid_mode["envelope_digest"] = hash_value(
+        [
+            "determa-inbox-envelope-digest-1",
+            "1",
+            "checkpoint-root",
+            "invalid",
+            fresh_invalid_mode["envelope"],
+        ]
+    )
+    fresh_invalid_origin = copy.deepcopy(invalid_origin)
+    fresh_invalid_origin["envelope"]["event_id"] = "delivery-fresh-invalid-origin"
+    fresh_invalid_origin["envelope_digest"] = hash_value(
+        [
+            "determa-inbox-envelope-digest-1",
+            "1",
+            "checkpoint-root",
+            "input",
+            fresh_invalid_origin["envelope"],
+        ]
+    )
     digest_mismatch = copy.deepcopy(increment_base)
     digest_mismatch["envelope"]["event_id"] = "delivery-digest-mismatch"
     digest_mismatch["envelope_digest"] = "sha256:" + ("7" * 64)
@@ -854,6 +885,8 @@ def generate_delivery() -> dict[str, Any]:
         "wrong_root": wrong_root,
         "invalid_mode": invalid_mode,
         "invalid_origin": invalid_origin,
+        "fresh_invalid_mode": fresh_invalid_mode,
+        "fresh_invalid_origin": fresh_invalid_origin,
         "digest_mismatch": digest_mismatch,
         "event_conflict": event_conflict,
     }

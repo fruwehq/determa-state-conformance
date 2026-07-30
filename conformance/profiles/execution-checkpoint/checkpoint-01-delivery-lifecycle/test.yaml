@@ -242,22 +242,44 @@ execution_checkpoint_profile:
         checkpoint_after: faulted-checkpoint.json
         checkpoint_mutation: unchanged
         core_call: none
-    - name: invalid_mode_is_not_accepted
-      covers: [pre_acceptance_invalid_delivery_mode]
+    - name: retained_event_conflict_precedes_invalid_mode
+      covers: [replay_event_id_conflict_precedes_invalid_delivery_mode]
       operation: accept_delivery
       checkpoint_before: faulted-checkpoint.json
       input: { file: inputs.json, pointer: /requests/invalid_mode }
+      expect:
+        result: not_accepted
+        code: event_id_conflict
+        checkpoint_after: faulted-checkpoint.json
+        checkpoint_mutation: unchanged
+        core_call: none
+    - name: retained_receipt_replay_precedes_invalid_origin
+      covers: [replay_committed_receipt_precedes_invalid_delivery_origin]
+      operation: accept_delivery
+      checkpoint_before: faulted-checkpoint.json
+      input: { file: inputs.json, pointer: /requests/invalid_origin }
+      expect:
+        result: committed
+        checkpoint_after: faulted-checkpoint.json
+        checkpoint_mutation: unchanged
+        core_call: none
+        receipt_sequence: "1"
+    - name: fresh_invalid_mode_is_not_accepted
+      covers: [pre_acceptance_invalid_delivery_mode]
+      operation: accept_delivery
+      checkpoint_before: faulted-checkpoint.json
+      input: { file: inputs.json, pointer: /requests/fresh_invalid_mode }
       expect:
         result: not_accepted
         code: invalid_delivery_mode
         checkpoint_after: faulted-checkpoint.json
         checkpoint_mutation: unchanged
         core_call: none
-    - name: invalid_origin_is_not_accepted
+    - name: fresh_invalid_origin_is_not_accepted
       covers: [pre_acceptance_invalid_delivery_origin]
       operation: accept_delivery
       checkpoint_before: faulted-checkpoint.json
-      input: { file: inputs.json, pointer: /requests/invalid_origin }
+      input: { file: inputs.json, pointer: /requests/fresh_invalid_origin }
       expect:
         result: not_accepted
         code: invalid_delivery_origin
