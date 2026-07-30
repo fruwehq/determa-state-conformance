@@ -128,6 +128,8 @@ REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
         "migration_audit_non_empty",
         "pre_acceptance_malformed_delivery",
         "pre_acceptance_wrong_root",
+        "replay_event_id_conflict_precedes_invalid_delivery_mode",
+        "replay_committed_receipt_precedes_invalid_delivery_origin",
         "pre_acceptance_invalid_delivery_mode",
         "pre_acceptance_invalid_delivery_origin",
         "pre_acceptance_delivery_digest_mismatch",
@@ -376,6 +378,8 @@ EXECUTION_CHECKPOINT_COVERAGE_RULES = {
     "migration_audit_non_empty": ("maintenance_migration", "response_lost", "response_lost_after_commit", "changed", "migrate", "after_commit_before_response", "migration"),
     "pre_acceptance_malformed_delivery": ("accept_delivery", "not_accepted", "malformed_delivery", "unchanged", "none", None, "malformed"),
     "pre_acceptance_wrong_root": ("accept_delivery", "not_accepted", "wrong_root", "unchanged", "none", None, "wrong_root"),
+    "replay_event_id_conflict_precedes_invalid_delivery_mode": ("accept_delivery", "not_accepted", "event_id_conflict", "unchanged", "none", None, "replay_conflict_before_mode"),
+    "replay_committed_receipt_precedes_invalid_delivery_origin": ("accept_delivery", "committed", None, "unchanged", "none", None, "replay_receipt_before_origin"),
     "pre_acceptance_invalid_delivery_mode": ("accept_delivery", "not_accepted", "invalid_delivery_mode", "unchanged", "none", None, "invalid_mode"),
     "pre_acceptance_invalid_delivery_origin": ("accept_delivery", "not_accepted", "invalid_delivery_origin", "unchanged", "none", None, "invalid_origin"),
     "pre_acceptance_delivery_digest_mismatch": ("accept_delivery", "not_accepted", "delivery_digest_mismatch", "unchanged", "none", None, "digest_mismatch"),
@@ -2168,12 +2172,88 @@ def validate_execution_checkpoint_profile(
         elif predicate == "invalid_mode":
             require(
                 operation_input is not None
+                and before_document is not None
                 and operation_input["delivery_mode"] not in {"input", "internal"}
+                and operation_input["envelope_digest"]
+                == hash_value(
+                    [
+                        "determa-inbox-envelope-digest-1",
+                        "1",
+                        operation_input["root_instance_id"],
+                        operation_input["delivery_mode"],
+                        operation_input["envelope"],
+                    ]
+                )
+                and all(
+                    item.get("event_id")
+                    != operation_input["envelope"]["event_id"]
+                    for item in before_document["operation_receipts"]
+                )
+                and all(
+                    item["envelope"]["event_id"]
+                    != operation_input["envelope"]["event_id"]
+                    for item in before_document["pending_deliveries"]
+                )
             )
         elif predicate == "invalid_origin":
             require(
                 operation_input is not None
+                and before_document is not None
                 and operation_input["origin"].get("kind") == "invalid"
+                and operation_input["envelope_digest"]
+                == hash_value(
+                    [
+                        "determa-inbox-envelope-digest-1",
+                        "1",
+                        operation_input["root_instance_id"],
+                        operation_input["delivery_mode"],
+                        operation_input["envelope"],
+                    ]
+                )
+                and all(
+                    item.get("event_id")
+                    != operation_input["envelope"]["event_id"]
+                    for item in before_document["operation_receipts"]
+                )
+                and all(
+                    item["envelope"]["event_id"]
+                    != operation_input["envelope"]["event_id"]
+                    for item in before_document["pending_deliveries"]
+                )
+            )
+        elif predicate == "replay_conflict_before_mode":
+            require(
+                operation_input is not None
+                and before_document is not None
+                and operation_input["delivery_mode"] not in {"input", "internal"}
+                and operation_input["envelope_digest"]
+                == hash_value(
+                    [
+                        "determa-inbox-envelope-digest-1",
+                        "1",
+                        operation_input["root_instance_id"],
+                        operation_input["delivery_mode"],
+                        operation_input["envelope"],
+                    ]
+                )
+                and any(
+                    item.get("event_id")
+                    == operation_input["envelope"]["event_id"]
+                    and item["request_digest"]
+                    != operation_input["envelope_digest"]
+                    for item in before_document["operation_receipts"]
+                )
+            )
+        elif predicate == "replay_receipt_before_origin":
+            require(
+                operation_input is not None
+                and before_document is not None
+                and receipt is not None
+                and operation_input["origin"].get("kind") == "invalid"
+                and receipt.get("event_id")
+                == operation_input["envelope"]["event_id"]
+                and receipt["request_digest"]
+                == operation_input["envelope_digest"]
             )
         elif predicate == "digest_mismatch":
             require(

@@ -88,6 +88,8 @@
         "migration_audit_non_empty",
         "pre_acceptance_malformed_delivery",
         "pre_acceptance_wrong_root",
+        "replay_event_id_conflict_precedes_invalid_delivery_mode",
+        "replay_committed_receipt_precedes_invalid_delivery_origin",
         "pre_acceptance_invalid_delivery_mode",
         "pre_acceptance_invalid_delivery_origin",
         "pre_acceptance_delivery_digest_mismatch",
