@@ -1,0 +1,178 @@
+{
+  "execution_checkpoint_inputs_format": "determa.execution_checkpoint_profile.inputs",
+  "execution_checkpoint_inputs_schema_version": 1,
+  "requests": {
+    "create_maintenance": {
+      "operation": "create",
+      "bundle_file": "migration-source.yaml",
+      "bundle_source_digest": "sha256:8cb23f483b79c77284ca942fef33fd51ae804aa03d896e63c33ca6a3251606bf",
+      "validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9",
+      "namespace": "conformance.execution_checkpoint_migration",
+      "machine_id": "workflow",
+      "machine_version": "1",
+      "root_instance_id": "maintenance-root",
+      "creation_id": "maintenance-create",
+      "bindings": {
+        "input": {},
+        "external": {}
+      },
+      "request_digest": "sha256:a536acbd5c1db0071fe199d49ddada6581d014f762475102bb566430083e012f"
+    },
+    "maintenance": {
+      "operation": "maintenance_migration",
+      "operation_id": "maintenance-transform",
+      "source_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+      "target_bundle_file": "migration-target.yaml",
+      "target_bundle_source_digest": "sha256:91ae7264e743896a7076dbe4bed82e94b0f765231100f494a8b0de3e740f6691",
+      "migration_descriptor_files": [
+        "migration-descriptor.json"
+      ],
+      "target_validated_bundle_fingerprint": "sha256:67e01dc52ceedc38b15cd248001532d0b44ed62b5a8b622aae20b0e533cb0b10",
+      "migration_descriptor_digest_route": [
+        "sha256:b79f764863cb9b02a706d6feb5a2fb8a78907fd85bff31f7810466a9815e62af"
+      ],
+      "maintenance_mode": true,
+      "request_digest": "sha256:5add1768fcbd3c4dea3400ab11c90e5a7d5dd17162a10b2c2cd2f90914188ff5",
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:9232ed9942a1bb953323035e3532f7ea9004f4f8982628a008a43bdfd5c78a06"
+    },
+    "maintenance_conflict": {
+      "operation": "maintenance_migration",
+      "operation_id": "maintenance-transform",
+      "source_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+      "target_bundle_file": "migration-target.yaml",
+      "target_bundle_source_digest": "sha256:91ae7264e743896a7076dbe4bed82e94b0f765231100f494a8b0de3e740f6691",
+      "migration_descriptor_files": [
+        "migration-descriptor-conflict.json"
+      ],
+      "target_validated_bundle_fingerprint": "sha256:67e01dc52ceedc38b15cd248001532d0b44ed62b5a8b622aae20b0e533cb0b10",
+      "migration_descriptor_digest_route": [
+        "sha256:cb725694e51d4c4399a9b366f92968224528abf8823cb225cdcb6d1acfdb8214"
+      ],
+      "maintenance_mode": true,
+      "request_digest": "sha256:172c7c1d36aeeef92d07f937760b61701e9602bd76e1bf07360aafc4a40cda3e",
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:9232ed9942a1bb953323035e3532f7ea9004f4f8982628a008a43bdfd5c78a06"
+    },
+    "prune_through_1": {
+      "operation": "update_replay_retention",
+      "target_replay_retention": {
+        "mode": "bounded",
+        "permanent_replay_eligible": false,
+        "pruned_through_receipt_sequence": "1",
+        "policy_identifier": "bounded-checkpoint-profile-v1"
+      },
+      "expected_revision": "7",
+      "expected_checkpoint_digest": "sha256:e090b019c4636aaa46ed8f543cc8c462f7f6ee0d9e2dabd593b014dca07d497a"
+    },
+    "prune_through_2_dependency_conflict": {
+      "operation": "update_replay_retention",
+      "target_replay_retention": {
+        "mode": "bounded",
+        "permanent_replay_eligible": false,
+        "pruned_through_receipt_sequence": "2",
+        "policy_identifier": "bounded-checkpoint-profile-v1"
+      },
+      "expected_revision": "7",
+      "expected_checkpoint_digest": "sha256:e090b019c4636aaa46ed8f543cc8c462f7f6ee0d9e2dabd593b014dca07d497a"
+    },
+    "stale_prune": {
+      "operation": "update_replay_retention",
+      "target_replay_retention": {
+        "mode": "bounded",
+        "permanent_replay_eligible": false,
+        "pruned_through_receipt_sequence": "1",
+        "policy_identifier": "bounded-checkpoint-profile-v1"
+      },
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:9232ed9942a1bb953323035e3532f7ea9004f4f8982628a008a43bdfd5c78a06"
+    },
+    "reverse_to_permanent": {
+      "operation": "update_replay_retention",
+      "target_replay_retention": {
+        "mode": "permanent",
+        "permanent_replay_eligible": true,
+        "pruned_through_receipt_sequence": null,
+        "policy_identifier": null
+      },
+      "expected_revision": "8",
+      "expected_checkpoint_digest": "sha256:dc72e2442c1be7b3e449ca4ba649c1de281b2e701893628054b4e79bf498b739"
+    },
+    "create_terminal": {
+      "operation": "create",
+      "bundle_file": "terminal.yaml",
+      "bundle_source_digest": "sha256:bdde48ee8e7ec369cdfb9bb15e0e19e439c048337c5d58f184f246dc4572116f",
+      "validated_bundle_fingerprint": "sha256:f5f28537cc42644e6faf656825c12e8ce141460966bd0e425025f9f1c9f4b668",
+      "namespace": "conformance.persistence_terminal",
+      "machine_id": "terminal",
+      "machine_version": "1",
+      "root_instance_id": "terminal-root",
+      "creation_id": "terminal-create",
+      "bindings": {
+        "input": {},
+        "external": {}
+      },
+      "request_digest": "sha256:a428766458d63299130500e8700f893e084a08776945abd0b8fe3bf597e9bd99"
+    },
+    "tombstone": {
+      "operation": "tombstone_root",
+      "operation_id": "terminal-root-tombstone",
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:d67d19a2d9c2cd783ad23c661a103f98ba613951231ddad83c7187dcc10dd91a"
+    },
+    "stale_tombstone": {
+      "operation": "tombstone_root",
+      "operation_id": "stale-terminal-root-tombstone",
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:9232ed9942a1bb953323035e3532f7ea9004f4f8982628a008a43bdfd5c78a06"
+    },
+    "recreate_tombstoned": {
+      "operation": "create",
+      "bundle_file": "terminal.yaml",
+      "bundle_source_digest": "sha256:bdde48ee8e7ec369cdfb9bb15e0e19e439c048337c5d58f184f246dc4572116f",
+      "validated_bundle_fingerprint": "sha256:f5f28537cc42644e6faf656825c12e8ce141460966bd0e425025f9f1c9f4b668",
+      "namespace": "conformance.persistence_terminal",
+      "machine_id": "terminal",
+      "machine_version": "1",
+      "root_instance_id": "terminal-root",
+      "creation_id": "replacement-create",
+      "bindings": {
+        "input": {},
+        "external": {}
+      },
+      "request_digest": "sha256:ce3c4586847df6c97f663f0a52f553b10daf5726ecfa88d57f6ba9adc830bc0e",
+      "expected_revision": "1",
+      "expected_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
+    },
+    "tombstoned_delivery": {
+      "operation": "delivery",
+      "root_instance_id": "terminal-root",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "envelope": {
+        "event": "after_tombstone",
+        "event_id": "after-tombstone",
+        "target": {
+          "root": {
+            "root_instance_id": "terminal-root",
+            "root_runtime_id": "sha256:2e472294f7be2d181f4845e0f3cbd1f1ee0a9e7a46375e5f381685a8d7e2394b"
+          }
+        },
+        "payload": [
+          "map",
+          []
+        ]
+      },
+      "envelope_digest": "sha256:e09e88b4a9d493bda2f007e7857ca9b99c333a5cee2d762ddf4140c520e00d0a",
+      "expected_revision": "1",
+      "expected_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
+    },
+    "delete_checkpoint": {
+      "operation": "delete_checkpoint",
+      "expected_revision": "1",
+      "expected_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
+    }
+  }
+}

@@ -29,6 +29,8 @@ migrated suite.
   `artifacts.documents` manifest for portable JSON operations.
 - `conformance/profiles/<profile>/` — optional, explicitly non-core compatibility
   surfaces.
+- `conformance/profiles/execution-checkpoint/` — the optional SPEC §17 durable-host
+  checkpoint profile.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
 - `VERSION` — the synchronized specification version, currently `0.1.0`.
 
@@ -239,6 +241,58 @@ empty route. Every descriptor is checked independently against its declared
 requirements and the matching configured per-descriptor limits; no resource dimension
 is summed across the route.
 
+### Execution-checkpoint profile mechanics
+
+An execution-checkpoint case uses `execution_checkpoint_profile.vectors`. The closed
+driver names one host operation, its exact checkpoint before the operation, the
+portable operation input by JSON Pointer, and an exact expectation. Core-calling
+vectors also name one generated projected core result. Creation supplies the exact
+bundle file bytes and validated fingerprint, namespace, machine and version, root
+identity, creation identity, normalized bindings, and request digest. Delivery supplies
+the exact portable envelope, mode, origin, envelope digest, and byte/fingerprint-bound
+native `dispatch` input. Every writer of an existing checkpoint supplies the exact
+revision and checkpoint digest it read.
+The expectation fixes the closed result or failure code, checkpoint after the
+operation, whether bytes are absent/created/changed/unchanged, the one permitted core
+call classification, and any returned receipt, delivery, or effect identity. Closed
+registry and capability vectors cover only SPEC §17.10–§17.11 identifiers, failures,
+and declared capability sets; they do not define factory or configuration APIs.
+Invalid adapter configuration is resolved before capability comparison.
+
+`execution_checkpoint_inputs` and `execution_checkpoint_core_evidence` are separate
+closed driver artifacts. Core evidence permits only the portable create/dispatch or
+migration projection, carries exact immutable SPEC/Python/Rust pins, and binds each
+call to its complete operation input with
+`sha256(JCS(["determa-conformance-execution-checkpoint-operation-input-1", input]))`.
+The validator also binds bundle source bytes, bundle fingerprints, dispatch mode and
+payload, migration descriptors and request digest, prior aggregate digest, and
+resulting aggregate/audit.
+
+`execution_checkpoint` artifacts are strict JSON checked against the pinned SPEC §17
+schema. Validation recomputes the embedded aggregate digest, checkpoint digest,
+pending-envelope digests, canonical sequence/counter ordering, receipt revision and
+retention intervals, root membership, permanent delivery-allocation continuity,
+internal-delivery bidirectional links, outbox producer/revision/receipt links,
+tombstone final-state evidence, and migration-audit links. Relational probes compare
+compact intent digests to the full pre-compaction intent. `canonical_of` files remain
+exact RFC 8785 bytes with no
+trailing newline. Semantic-negative artifacts recompute their outer digest so ordering,
+dependency, and linkage failures cannot pass merely as digest failures.
+
+Coverage labels are checked against a total declarative rule table. Each rule fixes the
+operation, result/code, mutation, core call, failure boundary, and a relational
+state/input/capability predicate. Built-in mutation probes reject swapped labels,
+language-specific evidence members, wrong pins or input digests, rebound dispatch
+drift, excluded result/code/core-call combinations, and capability evaluation before
+configuration validation.
+
+Replay vectors repeat the original `create`, delivery, maintenance, outbox, retention,
+or tombstone operation with equal inputs; there is no driver-only replay or standalone
+compare-and-swap operation. The driver operation names are adapters for conformance
+only. They do not define a
+language API, SQL schema, URI, daemon, socket, worker, or command-line surface. See
+`conformance/profiles/execution-checkpoint/README.md`.
+
 ## Assertion vocabulary (normative)
 
 An `expect` map compares only the fields it names. Common fields are `status`,
@@ -366,6 +420,12 @@ commit, crash recovery, transient retry, permanent quarantine, and pre-transacti
 artifact resolution for hosts that declare it. Its store snapshots and call logs are
 assertion notation, not a standardized database schema or public engine API. See
 `conformance/profiles/persistence/README.md`.
+
+The `execution-checkpoint` profile fixes the portable SPEC §17 checkpoint artifact and
+host-observable create/accept/process/replay, compare-and-swap, retention, tombstone,
+outbox, registry-result, and composed-capability transitions. It binds only hosts that
+declare the profile and does not standardize their storage or public API. See
+`conformance/profiles/execution-checkpoint/README.md`.
 
 ## Coverage
 
@@ -495,7 +555,8 @@ assertion notation, not a standardized database schema or public engine API. See
 - Package imports and dependency/version resolution remain unsupported.
 - Production store protocols, CLI JSON, queue inspection, enabled-event lists, and
   visualization output are implementation/host surfaces rather than portable core
-  behavior. The optional persistence profile binds only hosts that declare it.
+  behavior. Optional persistence and execution-checkpoint profiles bind only hosts
+  that declare them.
 
 ## License
 

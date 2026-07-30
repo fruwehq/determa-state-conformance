@@ -101,6 +101,9 @@
                   "aggregate_state",
                   "migration_descriptor",
                   "aggregate_state_package",
+                  "execution_checkpoint",
+                  "execution_checkpoint_inputs",
+                  "execution_checkpoint_core_evidence",
                   "artifact_resolver",
                   "resource_limits",
                   "json_value"
@@ -118,6 +121,22 @@
               },
               "verify_digest": {
                 "type": "boolean"
+              },
+              "semantic_probe": {
+                "const": "compact_intent_digest"
+              },
+              "semantic_source": {
+                "$ref": "#/$defs/jsonFileName"
+              },
+              "semantic_expected": {
+                "$ref": "#/$defs/jsonFileName"
+              },
+              "semantic_input_file": {
+                "$ref": "#/$defs/jsonFileName"
+              },
+              "semantic_input_pointer": {
+                "type": "string",
+                "pattern": "^(?:/(?:[^~/]|~0|~1)*)+$"
               }
             },
             "allOf": [
