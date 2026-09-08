@@ -307,6 +307,15 @@ only. They do not define a
 language API, SQL schema, URI, daemon, socket, worker, or command-line surface. See
 `conformance/profiles/execution-checkpoint/README.md`.
 
+Scope-isolation cases additionally use a closed
+`execution_checkpoint_profile.vectors` variant. Every such vector supplies one external
+scope selection plus exact host evidence before and after the attempted store/outbox
+operation. The selected scope identity and physical isolation key remain outside
+portable checkpoints and hashes. Rejected missing, ambiguous, mismatched, or
+unauthorized selections assert no core call and byte-identical host state, which also
+proves no checkpoint, receipt, tombstone, outbox, delivery, or broker-acknowledgement
+change.
+
 ## Assertion vocabulary (normative)
 
 An `expect` map compares only the fields it names. Common fields are `status`,
@@ -437,8 +446,9 @@ assertion notation, not a standardized database schema or public engine API. See
 
 The `execution-checkpoint` profile fixes the portable SPEC §17 checkpoint artifact and
 host-observable create/accept/process/replay, compare-and-swap, retention, tombstone,
-outbox, registry-result, and composed-capability transitions. It binds only hosts that
-declare the profile and does not standardize their storage or public API. See
+outbox, logical-store isolation, registry-result, and composed-capability transitions.
+It binds only hosts that declare the profile and does not standardize their storage or
+public API. See
 `conformance/profiles/execution-checkpoint/README.md`.
 
 ## Coverage

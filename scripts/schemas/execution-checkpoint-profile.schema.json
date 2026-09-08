@@ -24,13 +24,20 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/vector"
+            "oneOf": [
+              { "$ref": "#/$defs/vector" },
+              { "$ref": "#/$defs/scopeVector" }
+            ]
           }
         }
       }
     }
   },
   "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
     "jsonFileNameOrNull": {
       "oneOf": [
         {
@@ -156,6 +163,159 @@
         "compact_outbox_missing_reference_retention",
         "shared_transaction_missing_native_use",
         "shared_transaction_missing_store_capability"
+      ]
+    },
+    "scopeCoverage": {
+      "enum": [
+        "portable_identity_scope_independence",
+        "scoped_outbox_routing_scope_a",
+        "scoped_outbox_routing_scope_b",
+        "scoped_outbox_retry_scope_a",
+        "scoped_outbox_retry_scope_b",
+        "scoped_outbox_reconciliation_scope_a",
+        "scoped_outbox_reconciliation_scope_b",
+        "scoped_outbox_deduplication_scope_a",
+        "scoped_outbox_deduplication_scope_b",
+        "missing_scope_rejected",
+        "ambiguous_scope_rejected",
+        "mismatched_scope_rejected",
+        "unauthorized_scope_rejected",
+        "scope_metadata_excluded_from_portable_bytes"
+      ]
+    },
+    "scopeSelection": {
+      "type": "object",
+      "required": ["classification", "requested_scope_id", "candidates"],
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "enum": ["selected", "missing", "ambiguous", "mismatched", "unauthorized"]
+        },
+        "requested_scope_id": {
+          "oneOf": [
+            { "$ref": "#/$defs/nonEmptyString" },
+            { "type": "null" }
+          ]
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["logical_scope_id", "physical_isolation_key", "authorized"],
+            "additionalProperties": false,
+            "properties": {
+              "logical_scope_id": { "$ref": "#/$defs/nonEmptyString" },
+              "physical_isolation_key": { "$ref": "#/$defs/nonEmptyString" },
+              "authorized": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "scopeMutation": {
+      "enum": ["changed", "unchanged"]
+    },
+    "scopeVector": {
+      "type": "object",
+      "required": [
+        "name",
+        "covers",
+        "operation",
+        "scope_selection",
+        "scope_state_before",
+        "scope_state_after",
+        "expect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "covers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/scopeCoverage" }
+        },
+        "operation": {
+          "enum": [
+            "inspect_store",
+            "create",
+            "dispatch",
+            "migrate",
+            "route_outbox",
+            "retry_outbox",
+            "reconcile_outbox",
+            "deduplicate_outbox"
+          ]
+        },
+        "effect_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "scope_selection": { "$ref": "#/$defs/scopeSelection" },
+        "scope_state_before": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "scope_state_after": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "expect": {
+          "type": "object",
+          "required": [
+            "selection_result",
+            "selected_scope_id",
+            "scope_state_mutation",
+            "checkpoint_mutation",
+            "receipt_mutation",
+            "tombstone_mutation",
+            "outbox_mutation",
+            "core_call",
+            "delivery_attempts",
+            "broker_acknowledgements"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "selection_result": { "enum": ["selected", "rejected"] },
+            "selected_scope_id": {
+              "oneOf": [
+                { "$ref": "#/$defs/nonEmptyString" },
+                { "type": "null" }
+              ]
+            },
+            "scope_state_mutation": { "$ref": "#/$defs/scopeMutation" },
+            "checkpoint_mutation": { "$ref": "#/$defs/scopeMutation" },
+            "receipt_mutation": { "$ref": "#/$defs/scopeMutation" },
+            "tombstone_mutation": { "$ref": "#/$defs/scopeMutation" },
+            "outbox_mutation": { "$ref": "#/$defs/scopeMutation" },
+            "core_call": { "enum": ["none", "create", "dispatch", "migrate"] },
+            "delivery_attempts": { "$ref": "#/$defs/canonicalDecimal" },
+            "broker_acknowledgements": { "$ref": "#/$defs/canonicalDecimal" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "required": ["effect_id"] },
+          "then": {
+            "properties": {
+              "operation": {
+                "enum": ["route_outbox", "retry_outbox", "reconcile_outbox", "deduplicate_outbox"]
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "operation": { "enum": ["inspect_store", "create", "dispatch", "migrate"] }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "enum": ["route_outbox", "retry_outbox", "reconcile_outbox", "deduplicate_outbox"]
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": { "required": ["effect_id"] }
+        }
       ]
     },
     "operation": {

@@ -28,7 +28,7 @@ from determa.state.wire import migration_descriptor_digest, typed_value
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance" / "profiles" / "execution-checkpoint"
-SPEC_COMMIT = "cc4b0d734aa1c5953de75fb53b63e390a3b72761"
+SPEC_COMMIT = "ad30c421264901f0f930c5993ae88b90ce043d08"
 PYTHON_CORE_COMMIT = "7b17d788b48049648e7e463aa3d35ba13dc1aa6e"
 RUST_CORE_COMMIT = "d17480c8b281dcd17953f59afcf6b5d23ff44efd"
 
@@ -1678,6 +1678,196 @@ def generate_retention(delivery: dict[str, Any]) -> None:
     )
 
 
+def generate_store_scope() -> None:
+    case = PROFILE / "checkpoint-02-outbox-lifecycle"
+    source_cases = {
+        "outbox-created-checkpoint.json": case,
+        "outbox-retryable-checkpoint.json": case,
+        "outbox-ambiguous-checkpoint.json": case,
+        "outbox-confirmed-checkpoint.json": case,
+        "outbox-compact-checkpoint.json": case,
+        "maintenance-checkpoint.json": PROFILE
+        / "checkpoint-03-retention-and-root-lifecycle",
+        "tombstone-checkpoint.json": PROFILE
+        / "checkpoint-03-retention-and-root-lifecycle",
+    }
+    checkpoints: dict[str, dict[str, Any]] = {}
+    for filename, source_case in source_cases.items():
+        source = source_case / filename
+        target = case / filename
+        if source != target:
+            target.write_bytes(source.read_bytes())
+        document = json.loads(source.read_text(encoding="utf-8"))
+        checkpoints[filename] = {
+            "file": filename,
+            "source_digest": hash_bytes(source.read_bytes()),
+            "execution_checkpoint_digest": document["execution_checkpoint_digest"],
+        }
+
+    effect_id = (
+        "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf"
+    )
+
+    def scope(
+        identifier: str,
+        outbox_checkpoint: str,
+        *,
+        route_attempts: int = 0,
+        retry_transitions: int = 0,
+        reconciliation_transitions: int = 0,
+        deduplication_hits: int = 0,
+        deliveries: int = 0,
+    ) -> dict[str, Any]:
+        return {
+            "logical_scope_id": identifier,
+            "physical_isolation_key": f"physical-isolation-{identifier}",
+            "owning_trust_domain": f"trust-domain-{identifier}",
+            "checkpoints": [
+                checkpoints[outbox_checkpoint],
+                checkpoints["maintenance-checkpoint.json"],
+                checkpoints["tombstone-checkpoint.json"],
+                checkpoints["outbox-compact-checkpoint.json"],
+            ],
+            "outbox_activity": [
+                {
+                    "effect_id": effect_id,
+                    "route_attempts": str(route_attempts),
+                    "retry_transitions": str(retry_transitions),
+                    "reconciliation_transitions": str(
+                        reconciliation_transitions
+                    ),
+                    "deduplication_hits": str(deduplication_hits),
+                    "deliveries": str(deliveries),
+                    "broker_acknowledgements": "0",
+                }
+            ],
+        }
+
+    def state(
+        a_checkpoint: str,
+        b_checkpoint: str,
+        *,
+        a: dict[str, int] | None = None,
+        b: dict[str, int] | None = None,
+    ) -> dict[str, Any]:
+        return {
+            "physical_backend_id": "shared-physical-backend",
+            "scopes": [
+                scope("scope-a", a_checkpoint, **(a or {})),
+                scope("scope-b", b_checkpoint, **(b or {})),
+            ],
+        }
+
+    snapshots = {
+        "scope-base.json": state(
+            "outbox-created-checkpoint.json", "outbox-created-checkpoint.json"
+        ),
+        "scope-routed-a.json": state(
+            "outbox-created-checkpoint.json",
+            "outbox-created-checkpoint.json",
+            a={"route_attempts": 1, "deliveries": 1},
+        ),
+        "scope-retry-a.json": state(
+            "outbox-retryable-checkpoint.json",
+            "outbox-created-checkpoint.json",
+            a={"route_attempts": 1, "retry_transitions": 1, "deliveries": 1},
+        ),
+        "scope-routed-b.json": state(
+            "outbox-retryable-checkpoint.json",
+            "outbox-created-checkpoint.json",
+            a={"route_attempts": 1, "retry_transitions": 1, "deliveries": 1},
+            b={"route_attempts": 1, "deliveries": 1},
+        ),
+        "scope-retry-b.json": state(
+            "outbox-retryable-checkpoint.json",
+            "outbox-retryable-checkpoint.json",
+            a={"route_attempts": 1, "retry_transitions": 1, "deliveries": 1},
+            b={"route_attempts": 1, "retry_transitions": 1, "deliveries": 1},
+        ),
+        "scope-ambiguous-both.json": state(
+            "outbox-ambiguous-checkpoint.json",
+            "outbox-ambiguous-checkpoint.json",
+            a={"route_attempts": 1, "retry_transitions": 1, "deliveries": 1},
+            b={"route_attempts": 1, "retry_transitions": 1, "deliveries": 1},
+        ),
+        "scope-reconciled-a.json": state(
+            "outbox-confirmed-checkpoint.json",
+            "outbox-ambiguous-checkpoint.json",
+            a={
+                "route_attempts": 1,
+                "retry_transitions": 1,
+                "reconciliation_transitions": 1,
+                "deliveries": 1,
+            },
+            b={"route_attempts": 1, "retry_transitions": 1, "deliveries": 1},
+        ),
+        "scope-reconciled-b.json": state(
+            "outbox-confirmed-checkpoint.json",
+            "outbox-confirmed-checkpoint.json",
+            a={
+                "route_attempts": 1,
+                "retry_transitions": 1,
+                "reconciliation_transitions": 1,
+                "deliveries": 1,
+            },
+            b={
+                "route_attempts": 1,
+                "retry_transitions": 1,
+                "reconciliation_transitions": 1,
+                "deliveries": 1,
+            },
+        ),
+        "scope-deduplicated-a.json": state(
+            "outbox-confirmed-checkpoint.json",
+            "outbox-confirmed-checkpoint.json",
+            a={
+                "route_attempts": 1,
+                "retry_transitions": 1,
+                "reconciliation_transitions": 1,
+                "deduplication_hits": 1,
+                "deliveries": 1,
+            },
+            b={
+                "route_attempts": 1,
+                "retry_transitions": 1,
+                "reconciliation_transitions": 1,
+                "deliveries": 1,
+            },
+        ),
+        "scope-deduplicated-b.json": state(
+            "outbox-confirmed-checkpoint.json",
+            "outbox-confirmed-checkpoint.json",
+            a={
+                "route_attempts": 1,
+                "retry_transitions": 1,
+                "reconciliation_transitions": 1,
+                "deduplication_hits": 1,
+                "deliveries": 1,
+            },
+            b={
+                "route_attempts": 1,
+                "retry_transitions": 1,
+                "reconciliation_transitions": 1,
+                "deduplication_hits": 1,
+                "deliveries": 1,
+            },
+        ),
+    }
+    write_json(
+        case / "scope-states.json",
+        {
+            "execution_store_scope_state_format": (
+                "determa.execution_checkpoint_profile.store_scope_state"
+            ),
+            "execution_store_scope_state_schema_version": 1,
+            "snapshots": {
+                filename.removeprefix("scope-").removesuffix(".json"): document
+                for filename, document in snapshots.items()
+            },
+        },
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -1696,6 +1886,7 @@ def main() -> None:
     delivery = generate_delivery()
     generate_outbox()
     generate_retention(delivery)
+    generate_store_scope()
     if args.check:
         changed = [
             str(path.relative_to(ROOT))

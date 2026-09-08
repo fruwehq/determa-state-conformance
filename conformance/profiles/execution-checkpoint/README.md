@@ -57,7 +57,20 @@ capabilities, and composed host features. Validator self-mutations prove that sw
 creation coverage, wrong code/pin/input digest, rebound dispatch drift, extra evidence
 members, and capability-first invalid-configuration handling are rejected.
 
-Coverage is intentionally grouped into three scenario directories:
+The closed scope-isolation vector variant wraps a store or outbox operation with one
+external logical-scope selection and exact scope-state evidence before and after it.
+`execution_store_scope_state` artifacts contain only
+conformance-driver host metadata: each logical scope binds its physical isolation key
+to exact portable checkpoint source bytes and records outbox route, retry,
+reconciliation, deduplication, delivery, and broker-acknowledgement observations. The
+validator requires unique logical scopes and isolation keys, verifies every checkpoint
+binding byte-for-byte, rejects host scope metadata found in portable checkpoint bytes,
+and proves that a successful operation changes at most its selected scope. Missing,
+ambiguous, mismatched, and unauthorized selections preserve the complete scope-state
+artifact byte-for-byte and report no core call, checkpoint/receipt/tombstone/outbox
+mutation, delivery, or broker acknowledgement.
+
+Coverage remains grouped into three scenario directories:
 
 - `checkpoint-01-delivery-lifecycle` covers creation commit/replay/conflict and
   rejection without reservation, durable pending acceptance/replay, injected
@@ -77,6 +90,12 @@ Coverage is intentionally grouped into three scenario directories:
   covers direct injection, bundled and third-party public registration, all four
   standard adapter capability boundaries, and complete positive/negative composed
   host-profile requirements.
+- `checkpoint-02-outbox-lifecycle` also binds two logical stores in one physical
+  backend to byte-identical portable roots, creation/operation/event/effect identities,
+  checkpoints, receipts, root tombstones, and effect tombstones. Equal effect
+  identities route, retry, reconcile, and deduplicate independently in both scopes.
+  The four closed selection failures prove the complete no-call/no-mutation/
+  no-delivery/no-acknowledgement boundary.
 
 The invalid artifacts separately prove format/version classification, structural
 closure, digest mismatch, foreign-root delivery targets, permanent delivery-allocation
@@ -103,9 +122,10 @@ unless `HEAD` is exactly the pinned Python commit and tracked files are clean. T
 recorded commit therefore cannot be produced by importing a different or modified
 checkout.
 
-The checked generation used:
+The scope-state fixtures copy already generated portable checkpoint bytes and add only
+external driver evidence; they invoke no engine. The checked generation used:
 
-- specification `cc4b0d734aa1c5953de75fb53b63e390a3b72761`;
+- specification `ad30c421264901f0f930c5993ae88b90ce043d08`;
 - Python core `7b17d788b48049648e7e463aa3d35ba13dc1aa6e`; and
 - Rust core `d17480c8b281dcd17953f59afcf6b5d23ff44efd`.
 
