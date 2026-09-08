@@ -14,6 +14,10 @@ artifacts:
       kind: aggregate_state_package
       valid: false
       error: unsupported_aggregate_state_package_format
+    - file: legacy-0.0.6-snapshot.json
+      kind: aggregate_state_package
+      valid: false
+      error: unsupported_aggregate_state_package_format
     - file: digest-mismatch-package.json
       kind: aggregate_state_package
       valid: true
@@ -80,6 +84,13 @@ persistence_vectors:
   - name: unsupported_package_discriminator
     operation: restore_package
     aggregate_state_package: unsupported-package-format.json
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_package_format
+      caller_still_owns_aggregate: true
+  - name: legacy_snapshot_rejected_by_selected_package_decoder
+    operation: restore_package
+    aggregate_state_package: legacy-0.0.6-snapshot.json
     expect:
       result: failure
       code: unsupported_aggregate_state_package_format

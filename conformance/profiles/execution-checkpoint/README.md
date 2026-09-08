@@ -105,7 +105,7 @@ checkout.
 
 The checked generation used:
 
-- specification `318ef1f16ae024770090bd338c8b70056df2855b`;
+- specification `cc4b0d734aa1c5953de75fb53b63e390a3b72761`;
 - Python core `7b17d788b48049648e7e463aa3d35ba13dc1aa6e`; and
 - Rust core `d17480c8b281dcd17953f59afcf6b5d23ff44efd`.
 

@@ -1482,6 +1482,64 @@ def validate_fixture_schema(
         )
 
 
+def validate_direct_descriptor_expectation(
+    location: str,
+    expectation: dict[str, Any],
+    manifest: dict[str, Any],
+) -> None:
+    if manifest["valid"]:
+        required_expectation = {"result": "success"}
+    else:
+        manifest_error = manifest["error"]
+        decoder_error = (
+            "invalid_migration_descriptor"
+            if manifest_error in ARTIFACT_SOURCE_ERROR_CODES
+            else manifest_error
+        )
+        required_expectation = {"result": "failure", "code": decoder_error}
+    if expectation != required_expectation:
+        raise ValidationFailure(
+            f"{location}: selected descriptor requires expectation "
+            f"{required_expectation}"
+        )
+
+
+def validate_direct_descriptor_expectation_probes() -> None:
+    valid_manifest = {"valid": True}
+    invalid_manifest = {
+        "valid": False,
+        "error": "unsupported_migration_descriptor_format",
+    }
+    validate_direct_descriptor_expectation(
+        "valid success probe", {"result": "success"}, valid_manifest
+    )
+    validate_direct_descriptor_expectation(
+        "invalid exact failure probe",
+        {
+            "result": "failure",
+            "code": "unsupported_migration_descriptor_format",
+        },
+        invalid_manifest,
+    )
+    rejected_probes = (
+        (
+            "valid failure probe",
+            {
+                "result": "failure",
+                "code": "unsupported_migration_descriptor_format",
+            },
+            valid_manifest,
+        ),
+        ("invalid success probe", {"result": "success"}, invalid_manifest),
+    )
+    for name, expectation, manifest in rejected_probes:
+        try:
+            validate_direct_descriptor_expectation(name, expectation, manifest)
+        except ValidationFailure:
+            continue
+        raise ValidationFailure(f"{name}: adversarial expectation was accepted")
+
+
 def validate_vector_references(
     case: Path,
     test: dict[str, Any],
@@ -1492,6 +1550,9 @@ def validate_vector_references(
     bundle_names = {path.name for path in bundle_paths}
     artifact_kinds = {
         entry["file"]: entry["kind"] for entry in test["artifacts"]["documents"]
+    }
+    artifact_manifest = {
+        entry["file"]: entry for entry in test["artifacts"]["documents"]
     }
     for entry in test["artifacts"]["documents"]:
         if entry["kind"] != "artifact_resolver" or not entry["valid"]:
@@ -1534,6 +1595,7 @@ def validate_vector_references(
         input_artifact_kinds = {
             "aggregate_state": "aggregate_state",
             "aggregate_state_package": "aggregate_state_package",
+            "migration_descriptor": "migration_descriptor",
             "input_envelope": "json_value",
             "resource_limits": "resource_limits",
             "artifact_resolver": "artifact_resolver",
@@ -1576,6 +1638,62 @@ def validate_vector_references(
                     f"{case.name}: vector {vector['name']} descriptor must name "
                     "a migration_descriptor document"
                 )
+        descriptor_error = vector["expect"].get("code")
+        descriptor_decoder_errors = frozenset(
+            ARTIFACT_FORMAT_FIELDS["migration_descriptor"][4:]
+        )
+        if vector["operation"] == "decode_selected_migration_descriptor":
+            filename = vector["migration_descriptor"]
+            manifest = artifact_manifest[filename]
+            validate_direct_descriptor_expectation(
+                f"{case.name}: vector {vector['name']} selected descriptor "
+                f"{filename}",
+                vector["expect"],
+                manifest,
+            )
+        elif descriptor_error in descriptor_decoder_errors:
+            declared_error_files = [
+                filename
+                for filename in vector.get("migration_descriptors", [])
+                if not artifact_manifest[filename]["valid"]
+                and artifact_manifest[filename].get("error") == descriptor_error
+            ]
+            if declared_error_files:
+                request = vector.get("migration_request", vector)
+                route = request.get("migration_route", [])
+                descriptors_by_digest: dict[str, list[str]] = {}
+                for filename in vector.get("migration_descriptors", []):
+                    descriptor = analyze_artifact(case / filename).document
+                    digest = (
+                        descriptor.get("migration_descriptor_digest")
+                        if isinstance(descriptor, dict)
+                        else None
+                    )
+                    if isinstance(digest, str):
+                        descriptors_by_digest.setdefault(digest, []).append(
+                            filename
+                        )
+                selected_error_files: list[str] = []
+                for digest in route:
+                    filenames = descriptors_by_digest.get(digest, [])
+                    if len(filenames) > 1:
+                        raise ValidationFailure(
+                            f"{case.name}: vector {vector['name']} ambiguously selects "
+                            f"migration descriptor digest {digest}"
+                        )
+                    if len(filenames) == 1:
+                        filename = filenames[0]
+                        manifest = artifact_manifest[filename]
+                        if (
+                            not manifest["valid"]
+                            and manifest.get("error") == descriptor_error
+                        ):
+                            selected_error_files.append(filename)
+                if len(selected_error_files) != 1:
+                    raise ValidationFailure(
+                        f"{case.name}: vector {vector['name']} does not uniquely route "
+                        f"to a descriptor declaring {descriptor_error}"
+                    )
         expected_artifact_kinds = {
             "aggregate_state_file": "aggregate_state",
             "exact_bytes_file": "aggregate_state",
@@ -3639,6 +3757,25 @@ def validate_bundle(
     if analysis.error:
         raise ValidationFailure(f"{path}: unexpected {analysis.error}")
 
+    format_value = (
+        analysis.document.get("format")
+        if isinstance(analysis.document, dict)
+        else None
+    )
+    format_is_current = (
+        isinstance(format_value, int)
+        and not isinstance(format_value, bool)
+        and format_value == 1
+    )
+    if not format_is_current:
+        if expected_error == "unsupported_format":
+            return None, False
+        raise ValidationFailure(
+            f"{path}: expected {expected_error or 'valid'}, got unsupported_format"
+        )
+    if expected_error == "unsupported_format":
+        raise ValidationFailure(f"{path}: expected unsupported_format, got format 1")
+
     schema_errors = sorted(
         schema_validator.iter_errors(analysis.document),
         key=lambda error: tuple(str(part) for part in error.path),
@@ -4193,6 +4330,7 @@ def validate_persistence_profile_02(case: Path) -> None:
 
 
 def validate_repository(repository_root: Path, spec_root: Path) -> str:
+    validate_direct_descriptor_expectation_probes()
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
         **{

@@ -1,0 +1,5 @@
+format: 1
+namespace: conformance.case_116_legacy_format_policy
+machines:
+  - machine_id: current_format_one
+    root: {}

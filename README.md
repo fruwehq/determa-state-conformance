@@ -160,6 +160,15 @@ explicitly supplies every definition, descriptor digest, route member, target
 fingerprint, maintenance flag, input envelope, resolver override, and resource-limit
 fixture it uses.
 
+The additional driver-only operation `decode_selected_migration_descriptor` names one
+exact `migration_descriptor` JSON artifact and invokes the selected migration-descriptor
+decoder directly. It exists for source bytes, such as legacy documents without a modern
+routing digest, that cannot faithfully enter a migration route. Its closed expectation is
+only `{result: success}` or `{result: failure, code: <exact decoder code>}`. It does not
+resolve a route, create or restore an aggregate, mutate a resolver, or assert aggregate
+ownership. A manifest-valid selected descriptor requires success; an invalid selected
+descriptor requires failure with its exact decoder-mapped code.
+
 Migration vectors normally use the required top-level `migration_route`,
 `target_validated_bundle_fingerprint`, and `maintenance_mode` driver fields. A vector
 testing request validation may instead use the closed `migration_request` object, whose
@@ -192,6 +201,11 @@ dispatch; and resulting resolver state for package-seeded migration. A failure a
 only the exact closed code and `caller_still_owns_aggregate: true`; no intermediate
 candidate, bytes, audit, emissions, resolver mutation, or disposition is available to
 the caller.
+
+A migration operation expecting a migration-descriptor decoder error must uniquely route
+to an invalid descriptor fixture declaring that exact error. The direct selected-decoder
+operation instead validates only its one named artifact; unrelated descriptors with the
+same manifest classification do not participate in either assertion.
 
 An `artifact_resolver` fixture has exactly `definitions` and
 `migration_descriptors`. Each definition record has exactly
@@ -539,6 +553,7 @@ declare the profile and does not standardize their storage or public API. See
 | 113 | closed migration request, resolution, transform, and descriptor-discriminator failures (§16.8, §16.10, §16.12) |
 | 114 | occurrence-local transform binding across repeated runtimes and activations (§16.9) |
 | 115 | target-identity decimal projections, JavaScript boundaries, signed-64 spawned versions, unbounded component activations, and numeric-form rejection (§16.2, §16.4) |
+| 116 | legacy definition discriminator policy: 0.0.1–0.0.6 rejection, explicit-format structural rejection, and 0.0.7/current format-1 acceptance (§2) |
 
 ## Deliberate format-1 boundaries
 

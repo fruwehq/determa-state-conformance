@@ -1,0 +1,11 @@
+title: legacy definition formats are rejected without fallback or shape inference
+static:
+  documents:
+    - file: legacy-0.0.6-no-format.yaml
+      valid: false
+      error: unsupported_format
+    - file: legacy-0.0.6-explicit-format-1.yaml
+      valid: false
+      error: structural_validation
+    - file: format-1-0.0.7-current.yaml
+      valid: true
