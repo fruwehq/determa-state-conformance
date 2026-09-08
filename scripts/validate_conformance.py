@@ -1482,6 +1482,64 @@ def validate_fixture_schema(
         )
 
 
+def validate_direct_descriptor_expectation(
+    location: str,
+    expectation: dict[str, Any],
+    manifest: dict[str, Any],
+) -> None:
+    if manifest["valid"]:
+        required_expectation = {"result": "success"}
+    else:
+        manifest_error = manifest["error"]
+        decoder_error = (
+            "invalid_migration_descriptor"
+            if manifest_error in ARTIFACT_SOURCE_ERROR_CODES
+            else manifest_error
+        )
+        required_expectation = {"result": "failure", "code": decoder_error}
+    if expectation != required_expectation:
+        raise ValidationFailure(
+            f"{location}: selected descriptor requires expectation "
+            f"{required_expectation}"
+        )
+
+
+def validate_direct_descriptor_expectation_probes() -> None:
+    valid_manifest = {"valid": True}
+    invalid_manifest = {
+        "valid": False,
+        "error": "unsupported_migration_descriptor_format",
+    }
+    validate_direct_descriptor_expectation(
+        "valid success probe", {"result": "success"}, valid_manifest
+    )
+    validate_direct_descriptor_expectation(
+        "invalid exact failure probe",
+        {
+            "result": "failure",
+            "code": "unsupported_migration_descriptor_format",
+        },
+        invalid_manifest,
+    )
+    rejected_probes = (
+        (
+            "valid failure probe",
+            {
+                "result": "failure",
+                "code": "unsupported_migration_descriptor_format",
+            },
+            valid_manifest,
+        ),
+        ("invalid success probe", {"result": "success"}, invalid_manifest),
+    )
+    for name, expectation, manifest in rejected_probes:
+        try:
+            validate_direct_descriptor_expectation(name, expectation, manifest)
+        except ValidationFailure:
+            continue
+        raise ValidationFailure(f"{name}: adversarial expectation was accepted")
+
+
 def validate_vector_references(
     case: Path,
     test: dict[str, Any],
@@ -1587,26 +1645,12 @@ def validate_vector_references(
         if vector["operation"] == "decode_selected_migration_descriptor":
             filename = vector["migration_descriptor"]
             manifest = artifact_manifest[filename]
-            manifest_error = manifest.get("error")
-            selected_decoder_error = (
-                "invalid_migration_descriptor"
-                if manifest_error in ARTIFACT_SOURCE_ERROR_CODES
-                else manifest_error
+            validate_direct_descriptor_expectation(
+                f"{case.name}: vector {vector['name']} selected descriptor "
+                f"{filename}",
+                vector["expect"],
+                manifest,
             )
-            if vector["expect"]["result"] == "success" and not manifest["valid"]:
-                raise ValidationFailure(
-                    f"{case.name}: vector {vector['name']} selected descriptor "
-                    f"{filename} is not valid"
-                )
-            if (
-                selected_decoder_error in descriptor_decoder_errors
-                and descriptor_error != selected_decoder_error
-            ):
-                raise ValidationFailure(
-                    f"{case.name}: vector {vector['name']} selected descriptor "
-                    f"{filename} decodes as {selected_decoder_error}, not "
-                    f"{descriptor_error}"
-                )
         elif descriptor_error in descriptor_decoder_errors:
             declared_error_files = [
                 filename
@@ -4286,6 +4330,7 @@ def validate_persistence_profile_02(case: Path) -> None:
 
 
 def validate_repository(repository_root: Path, spec_root: Path) -> str:
+    validate_direct_descriptor_expectation_probes()
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
         **{

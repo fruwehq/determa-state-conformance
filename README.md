@@ -166,7 +166,8 @@ decoder directly. It exists for source bytes, such as legacy documents without a
 routing digest, that cannot faithfully enter a migration route. Its closed expectation is
 only `{result: success}` or `{result: failure, code: <exact decoder code>}`. It does not
 resolve a route, create or restore an aggregate, mutate a resolver, or assert aggregate
-ownership.
+ownership. A manifest-valid selected descriptor requires success; an invalid selected
+descriptor requires failure with its exact decoder-mapped code.
 
 Migration vectors normally use the required top-level `migration_route`,
 `target_validated_bundle_fingerprint`, and `maintenance_mode` driver fields. A vector
