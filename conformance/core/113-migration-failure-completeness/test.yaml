@@ -117,21 +117,11 @@ persistence_vectors:
       code: unsupported_migration_descriptor_format
       caller_still_owns_aggregate: true
   - name: legacy_snapshot_rejected_by_selected_descriptor_decoder
-    operation: migrate_aggregate
-    aggregate_state: source-aggregate-state.json
-    definitions:
-      - machine.yaml
-      - target.yaml
-    migration_descriptors:
-      - legacy-0.0.6-snapshot.json
-    migration_route:
-      - sha256:f1c291d79913f734268281dc7f55e7890bfa003f27ab319c075bd429d42c1c5d
-    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
-    maintenance_mode: false
+    operation: decode_selected_migration_descriptor
+    migration_descriptor: legacy-0.0.6-snapshot.json
     expect:
       result: failure
       code: unsupported_migration_descriptor_format
-      caller_still_owns_aggregate: true
   - name: unsupported_descriptor_schema_version
     operation: migrate_aggregate
     aggregate_state: source-aggregate-state.json

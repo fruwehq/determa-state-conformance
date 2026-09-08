@@ -1537,6 +1537,7 @@ def validate_vector_references(
         input_artifact_kinds = {
             "aggregate_state": "aggregate_state",
             "aggregate_state_package": "aggregate_state_package",
+            "migration_descriptor": "migration_descriptor",
             "input_envelope": "json_value",
             "resource_limits": "resource_limits",
             "artifact_resolver": "artifact_resolver",
@@ -1580,41 +1581,74 @@ def validate_vector_references(
                     "a migration_descriptor document"
                 )
         descriptor_error = vector["expect"].get("code")
-        descriptor_error_files = [
-            filename
-            for filename in vector.get("migration_descriptors", [])
-            if descriptor_error is not None
-            and not artifact_manifest[filename]["valid"]
-            and artifact_manifest[filename].get("error") == descriptor_error
-        ]
-        if descriptor_error_files:
-            request = vector.get("migration_request", vector)
-            route = request.get("migration_route", [])
-            descriptors_by_digest: dict[str, list[str]] = {}
-            for filename in vector["migration_descriptors"]:
-                descriptor = analyze_artifact(case / filename).document
-                digest = (
-                    descriptor.get("migration_descriptor_digest")
-                    if isinstance(descriptor, dict)
-                    else None
+        descriptor_decoder_errors = frozenset(
+            ARTIFACT_FORMAT_FIELDS["migration_descriptor"][4:]
+        )
+        if vector["operation"] == "decode_selected_migration_descriptor":
+            filename = vector["migration_descriptor"]
+            manifest = artifact_manifest[filename]
+            manifest_error = manifest.get("error")
+            selected_decoder_error = (
+                "invalid_migration_descriptor"
+                if manifest_error in ARTIFACT_SOURCE_ERROR_CODES
+                else manifest_error
+            )
+            if vector["expect"]["result"] == "success" and not manifest["valid"]:
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} selected descriptor "
+                    f"{filename} is not valid"
                 )
-                if isinstance(digest, str):
-                    descriptors_by_digest.setdefault(digest, []).append(filename)
-            for filename in descriptor_error_files:
-                descriptor = analyze_artifact(case / filename).document
-                digest = (
-                    descriptor.get("migration_descriptor_digest")
-                    if isinstance(descriptor, dict)
-                    else None
+            if (
+                selected_decoder_error in descriptor_decoder_errors
+                and descriptor_error != selected_decoder_error
+            ):
+                raise ValidationFailure(
+                    f"{case.name}: vector {vector['name']} selected descriptor "
+                    f"{filename} decodes as {selected_decoder_error}, not "
+                    f"{descriptor_error}"
                 )
-                if (
-                    not isinstance(digest, str)
-                    or route.count(digest) != 1
-                    or descriptors_by_digest.get(digest) != [filename]
-                ):
+        elif descriptor_error in descriptor_decoder_errors:
+            declared_error_files = [
+                filename
+                for filename in vector.get("migration_descriptors", [])
+                if not artifact_manifest[filename]["valid"]
+                and artifact_manifest[filename].get("error") == descriptor_error
+            ]
+            if declared_error_files:
+                request = vector.get("migration_request", vector)
+                route = request.get("migration_route", [])
+                descriptors_by_digest: dict[str, list[str]] = {}
+                for filename in vector.get("migration_descriptors", []):
+                    descriptor = analyze_artifact(case / filename).document
+                    digest = (
+                        descriptor.get("migration_descriptor_digest")
+                        if isinstance(descriptor, dict)
+                        else None
+                    )
+                    if isinstance(digest, str):
+                        descriptors_by_digest.setdefault(digest, []).append(
+                            filename
+                        )
+                selected_error_files: list[str] = []
+                for digest in route:
+                    filenames = descriptors_by_digest.get(digest, [])
+                    if len(filenames) > 1:
+                        raise ValidationFailure(
+                            f"{case.name}: vector {vector['name']} ambiguously selects "
+                            f"migration descriptor digest {digest}"
+                        )
+                    if len(filenames) == 1:
+                        filename = filenames[0]
+                        manifest = artifact_manifest[filename]
+                        if (
+                            not manifest["valid"]
+                            and manifest.get("error") == descriptor_error
+                        ):
+                            selected_error_files.append(filename)
+                if len(selected_error_files) != 1:
                     raise ValidationFailure(
-                        f"{case.name}: vector {vector['name']} does not uniquely "
-                        f"select decoder-error descriptor {filename}"
+                        f"{case.name}: vector {vector['name']} does not uniquely route "
+                        f"to a descriptor declaring {descriptor_error}"
                     )
         expected_artifact_kinds = {
             "aggregate_state_file": "aggregate_state",

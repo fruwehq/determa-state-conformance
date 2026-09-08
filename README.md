@@ -160,6 +160,14 @@ explicitly supplies every definition, descriptor digest, route member, target
 fingerprint, maintenance flag, input envelope, resolver override, and resource-limit
 fixture it uses.
 
+The additional driver-only operation `decode_selected_migration_descriptor` names one
+exact `migration_descriptor` JSON artifact and invokes the selected migration-descriptor
+decoder directly. It exists for source bytes, such as legacy documents without a modern
+routing digest, that cannot faithfully enter a migration route. Its closed expectation is
+only `{result: success}` or `{result: failure, code: <exact decoder code>}`. It does not
+resolve a route, create or restore an aggregate, mutate a resolver, or assert aggregate
+ownership.
+
 Migration vectors normally use the required top-level `migration_route`,
 `target_validated_bundle_fingerprint`, and `maintenance_mode` driver fields. A vector
 testing request validation may instead use the closed `migration_request` object, whose
@@ -193,10 +201,10 @@ only the exact closed code and `caller_still_owns_aggregate: true`; no intermedi
 candidate, bytes, audit, emissions, resolver mutation, or disposition is available to
 the caller.
 
-A vector expecting a migration-descriptor decoder error must route to the exact invalid
-descriptor fixture. That fixture carries a unique `migration_descriptor_digest` routing
-key even when its format discriminator is absent or unsupported; the selected decoder
-still applies format and schema validation in the normative order.
+A migration operation expecting a migration-descriptor decoder error must uniquely route
+to an invalid descriptor fixture declaring that exact error. The direct selected-decoder
+operation instead validates only its one named artifact; unrelated descriptors with the
+same manifest classification do not participate in either assertion.
 
 An `artifact_resolver` fixture has exactly `definitions` and
 `migration_descriptors`. Each definition record has exactly

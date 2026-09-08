@@ -1,5 +1,4 @@
 {
-  "migration_descriptor_format": "determa.legacy_snapshot",
   "machine": {
     "id": "legacy_job",
     "version": "0.0.6"
@@ -7,6 +6,5 @@
   "configuration": ["idle"],
   "extended_state_variables": {
     "attempts": 1
-  },
-  "migration_descriptor_digest": "sha256:f1c291d79913f734268281dc7f55e7890bfa003f27ab319c075bd429d42c1c5d"
+  }
 }

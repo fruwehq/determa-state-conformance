@@ -250,6 +250,36 @@
         }
       ]
     },
+    "decoderExpectation": {
+      "type": "object",
+      "required": ["result"],
+      "additionalProperties": false,
+      "properties": {
+        "result": {
+          "enum": ["success", "failure"]
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "if": {
+        "properties": {
+          "result": {
+            "const": "failure"
+          }
+        },
+        "required": ["result"]
+      },
+      "then": {
+        "required": ["code"]
+      },
+      "else": {
+        "not": {
+          "required": ["code"]
+        }
+      }
+    },
     "aggregateBytesSuccess": {
       "if": {
         "properties": {
@@ -404,7 +434,8 @@
             "restore_package",
             "restore_package_and_migrate",
             "migrate_aggregate",
-            "migrate_and_dispatch"
+            "migrate_and_dispatch",
+            "decode_selected_migration_descriptor"
           ]
         },
         "source_bundle": {
@@ -454,6 +485,9 @@
           "items": {
             "$ref": "#/$defs/jsonFileName"
           }
+        },
+        "migration_descriptor": {
+          "$ref": "#/$defs/jsonFileName"
         },
         "migration_route": {
           "type": "array",
@@ -514,10 +548,57 @@
           "minimum": 2
         },
         "expect": {
-          "$ref": "#/$defs/expectation"
+          "type": "object"
         }
       },
       "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": {
+                "const": "decode_selected_migration_descriptor"
+              }
+            },
+            "required": ["operation"]
+          },
+          "then": {
+            "required": ["migration_descriptor"],
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/decoderExpectation"
+              }
+            },
+            "not": {
+              "anyOf": [
+                { "required": ["source_bundle"] },
+                { "required": ["creation"] },
+                { "required": ["target_bundle"] },
+                { "required": ["aggregate_state"] },
+                { "required": ["aggregate_state_package"] },
+                { "required": ["definitions"] },
+                { "required": ["migration_descriptors"] },
+                { "required": ["migration_route"] },
+                { "required": ["target_validated_bundle_fingerprint"] },
+                { "required": ["maintenance_mode"] },
+                { "required": ["migration_request"] },
+                { "required": ["input_envelope"] },
+                { "required": ["resource_limits"] },
+                { "required": ["artifact_resolver"] },
+                { "required": ["repeat_count"] }
+              ]
+            }
+          },
+          "else": {
+            "properties": {
+              "expect": {
+                "$ref": "#/$defs/expectation"
+              }
+            },
+            "not": {
+              "required": ["migration_descriptor"]
+            }
+          }
+        },
         {
           "if": {
             "properties": {
