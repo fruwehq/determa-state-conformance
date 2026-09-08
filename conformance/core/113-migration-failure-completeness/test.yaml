@@ -125,7 +125,7 @@ persistence_vectors:
     migration_descriptors:
       - legacy-0.0.6-snapshot.json
     migration_route:
-      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+      - sha256:f1c291d79913f734268281dc7f55e7890bfa003f27ab319c075bd429d42c1c5d
     target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
     maintenance_mode: false
     expect:

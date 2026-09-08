@@ -193,6 +193,11 @@ only the exact closed code and `caller_still_owns_aggregate: true`; no intermedi
 candidate, bytes, audit, emissions, resolver mutation, or disposition is available to
 the caller.
 
+A vector expecting a migration-descriptor decoder error must route to the exact invalid
+descriptor fixture. That fixture carries a unique `migration_descriptor_digest` routing
+key even when its format discriminator is absent or unsupported; the selected decoder
+still applies format and schema validation in the normative order.
+
 An `artifact_resolver` fixture has exactly `definitions` and
 `migration_descriptors`. Each definition record has exactly
 `validated_bundle_fingerprint`, `bundle_file`, and Boolean `trusted`; each descriptor

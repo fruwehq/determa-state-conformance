@@ -1493,6 +1493,9 @@ def validate_vector_references(
     artifact_kinds = {
         entry["file"]: entry["kind"] for entry in test["artifacts"]["documents"]
     }
+    artifact_manifest = {
+        entry["file"]: entry for entry in test["artifacts"]["documents"]
+    }
     for entry in test["artifacts"]["documents"]:
         if entry["kind"] != "artifact_resolver" or not entry["valid"]:
             continue
@@ -1576,6 +1579,43 @@ def validate_vector_references(
                     f"{case.name}: vector {vector['name']} descriptor must name "
                     "a migration_descriptor document"
                 )
+        descriptor_error = vector["expect"].get("code")
+        descriptor_error_files = [
+            filename
+            for filename in vector.get("migration_descriptors", [])
+            if descriptor_error is not None
+            and not artifact_manifest[filename]["valid"]
+            and artifact_manifest[filename].get("error") == descriptor_error
+        ]
+        if descriptor_error_files:
+            request = vector.get("migration_request", vector)
+            route = request.get("migration_route", [])
+            descriptors_by_digest: dict[str, list[str]] = {}
+            for filename in vector["migration_descriptors"]:
+                descriptor = analyze_artifact(case / filename).document
+                digest = (
+                    descriptor.get("migration_descriptor_digest")
+                    if isinstance(descriptor, dict)
+                    else None
+                )
+                if isinstance(digest, str):
+                    descriptors_by_digest.setdefault(digest, []).append(filename)
+            for filename in descriptor_error_files:
+                descriptor = analyze_artifact(case / filename).document
+                digest = (
+                    descriptor.get("migration_descriptor_digest")
+                    if isinstance(descriptor, dict)
+                    else None
+                )
+                if (
+                    not isinstance(digest, str)
+                    or route.count(digest) != 1
+                    or descriptors_by_digest.get(digest) != [filename]
+                ):
+                    raise ValidationFailure(
+                        f"{case.name}: vector {vector['name']} does not uniquely "
+                        f"select decoder-error descriptor {filename}"
+                    )
         expected_artifact_kinds = {
             "aggregate_state_file": "aggregate_state",
             "exact_bytes_file": "aggregate_state",
