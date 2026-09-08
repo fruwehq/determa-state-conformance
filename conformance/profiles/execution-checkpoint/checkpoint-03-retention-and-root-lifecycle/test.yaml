@@ -33,6 +33,10 @@ artifacts:
       kind: execution_checkpoint
       valid: false
       error: unsupported_execution_checkpoint_format
+    - file: legacy-0.0.6-snapshot.json
+      kind: execution_checkpoint
+      valid: false
+      error: unsupported_execution_checkpoint_format
     - file: unsupported-version-checkpoint.json
       kind: execution_checkpoint
       valid: false

@@ -3639,6 +3639,25 @@ def validate_bundle(
     if analysis.error:
         raise ValidationFailure(f"{path}: unexpected {analysis.error}")
 
+    format_value = (
+        analysis.document.get("format")
+        if isinstance(analysis.document, dict)
+        else None
+    )
+    format_is_current = (
+        isinstance(format_value, int)
+        and not isinstance(format_value, bool)
+        and format_value == 1
+    )
+    if not format_is_current:
+        if expected_error == "unsupported_format":
+            return None, False
+        raise ValidationFailure(
+            f"{path}: expected {expected_error or 'valid'}, got unsupported_format"
+        )
+    if expected_error == "unsupported_format":
+        raise ValidationFailure(f"{path}: expected unsupported_format, got format 1")
+
     schema_errors = sorted(
         schema_validator.iter_errors(analysis.document),
         key=lambda error: tuple(str(part) for part in error.path),

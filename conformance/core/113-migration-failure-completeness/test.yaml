@@ -27,6 +27,10 @@ artifacts:
       kind: migration_descriptor
       valid: false
       error: unsupported_migration_descriptor_format
+    - file: legacy-0.0.6-snapshot.json
+      kind: migration_descriptor
+      valid: false
+      error: unsupported_migration_descriptor_format
     - file: unsupported-descriptor-schema-version.json
       kind: migration_descriptor
       valid: false
@@ -104,6 +108,22 @@ persistence_vectors:
       - target.yaml
     migration_descriptors:
       - unsupported-descriptor-format.json
+    migration_route:
+      - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
+    target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
+    maintenance_mode: false
+    expect:
+      result: failure
+      code: unsupported_migration_descriptor_format
+      caller_still_owns_aggregate: true
+  - name: legacy_snapshot_rejected_by_selected_descriptor_decoder
+    operation: migrate_aggregate
+    aggregate_state: source-aggregate-state.json
+    definitions:
+      - machine.yaml
+      - target.yaml
+    migration_descriptors:
+      - legacy-0.0.6-snapshot.json
     migration_route:
       - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
     target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc

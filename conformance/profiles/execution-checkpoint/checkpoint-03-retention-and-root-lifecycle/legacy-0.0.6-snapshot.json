@@ -1,0 +1,10 @@
+{
+  "machine": {
+    "id": "legacy_job",
+    "version": "0.0.6"
+  },
+  "configuration": ["idle"],
+  "extended_state_variables": {
+    "attempts": 1
+  }
+}

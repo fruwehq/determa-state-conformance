@@ -539,6 +539,7 @@ declare the profile and does not standardize their storage or public API. See
 | 113 | closed migration request, resolution, transform, and descriptor-discriminator failures (§16.8, §16.10, §16.12) |
 | 114 | occurrence-local transform binding across repeated runtimes and activations (§16.9) |
 | 115 | target-identity decimal projections, JavaScript boundaries, signed-64 spawned versions, unbounded component activations, and numeric-form rejection (§16.2, §16.4) |
+| 116 | legacy definition discriminator policy: 0.0.1–0.0.6 rejection, explicit-format structural rejection, and 0.0.7/current format-1 acceptance (§2) |
 
 ## Deliberate format-1 boundaries
 

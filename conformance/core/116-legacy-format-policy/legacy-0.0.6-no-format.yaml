@@ -1,0 +1,9 @@
+machine_id: legacy_job
+version: 1
+esvs:
+  attempts: { type: integer, init: 0 }
+top:
+  type: composite
+  initial: { transition_to: idle }
+  states:
+    idle: {}

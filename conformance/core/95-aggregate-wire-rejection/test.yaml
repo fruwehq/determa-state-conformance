@@ -22,6 +22,10 @@ artifacts:
       kind: aggregate_state
       valid: false
       error: unsupported_aggregate_state_format
+    - file: legacy-0.0.6-snapshot.json
+      kind: aggregate_state
+      valid: false
+      error: unsupported_aggregate_state_format
     - file: unsupported-schema-version.json
       kind: aggregate_state
       valid: false
@@ -50,6 +54,15 @@ persistence_vectors:
   - name: unsupported_aggregate_discriminator
     operation: restore_and_serialize
     aggregate_state: unsupported-format.json
+    definitions:
+      - machine.yaml
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_format
+      caller_still_owns_aggregate: true
+  - name: legacy_snapshot_rejected_by_selected_aggregate_decoder
+    operation: restore_and_serialize
+    aggregate_state: legacy-0.0.6-snapshot.json
     definitions:
       - machine.yaml
     expect:

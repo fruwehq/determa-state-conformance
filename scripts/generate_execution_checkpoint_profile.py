@@ -28,7 +28,7 @@ from determa.state.wire import migration_descriptor_digest, typed_value
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance" / "profiles" / "execution-checkpoint"
-SPEC_COMMIT = "318ef1f16ae024770090bd338c8b70056df2855b"
+SPEC_COMMIT = "cc4b0d734aa1c5953de75fb53b63e390a3b72761"
 PYTHON_CORE_COMMIT = "7b17d788b48049648e7e463aa3d35ba13dc1aa6e"
 RUST_CORE_COMMIT = "d17480c8b281dcd17953f59afcf6b5d23ff44efd"
 
