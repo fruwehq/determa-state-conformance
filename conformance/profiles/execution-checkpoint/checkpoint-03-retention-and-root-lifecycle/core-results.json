@@ -2,7 +2,7 @@
   "execution_checkpoint_core_evidence_format": "determa.execution_checkpoint_profile.core_evidence",
   "execution_checkpoint_core_evidence_schema_version": 1,
   "provenance": {
-    "spec_commit": "ad30c421264901f0f930c5993ae88b90ce043d08",
+    "spec_commit": "7782671b56165a59caa61a65c29fefc63105ebf8",
     "python_core_commit": "7b17d788b48049648e7e463aa3d35ba13dc1aa6e",
     "python_core_version": "0.1.0",
     "rust_cross_check_commit": "d17480c8b281dcd17953f59afcf6b5d23ff44efd"

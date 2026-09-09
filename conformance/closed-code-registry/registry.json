@@ -1,6 +1,6 @@
 {
   "registry_schema_version": 1,
-  "specification_version": "0.1.0",
+  "specification_version": "0.2.0",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",

@@ -27,7 +27,7 @@
       "additionalProperties": false,
       "properties": {
         "spec_commit": {
-          "const": "ad30c421264901f0f930c5993ae88b90ce043d08"
+          "const": "7782671b56165a59caa61a65c29fefc63105ebf8"
         },
         "python_core_commit": {
           "const": "7b17d788b48049648e7e463aa3d35ba13dc1aa6e"
