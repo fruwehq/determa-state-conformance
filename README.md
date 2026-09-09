@@ -307,14 +307,13 @@ only. They do not define a
 language API, SQL schema, URI, daemon, socket, worker, or command-line surface. See
 `conformance/profiles/execution-checkpoint/README.md`.
 
-Scope-isolation cases additionally use a closed
-`execution_checkpoint_profile.vectors` variant. Every such vector supplies one external
-scope selection plus exact host evidence before and after the attempted store/outbox
-operation. The selected scope identity and physical isolation key remain outside
-portable checkpoints and hashes. Rejected missing, ambiguous, mismatched, or
-unauthorized selections assert no core call and byte-identical host state, which also
-proves no checkpoint, receipt, tombstone, outbox, delivery, or broker-acknowledgement
-change.
+Scope-isolation vectors select one externally authorized logical store scope and then
+invoke the existing foreground `update_pending_outbox` host operation. They compare
+the complete checkpoint and stored outbox-record maps in both scopes before and after
+the call. Missing, ambiguous, mismatched, or unauthorized selection records one
+resolver call, no ExecutionHost, store, or core call, and byte-identical complete store
+state. Equal operation results in two external scopes also require byte-identical
+portable checkpoint serialization, checkpoint digest, and effect identities.
 
 ## Assertion vocabulary (normative)
 

@@ -8,805 +8,328 @@
         {
           "logical_scope_id": "scope-a",
           "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
+          "checkpoints": {
+            "outbox-root": {
               "file": "outbox-created-checkpoint.json",
-              "source_digest": "sha256:d12ccb8da884931273c7c3dafac289772921d641212e8fbde5dc0f5e63a7898b",
+              "serialization_digest": "sha256:ca7465befcb28b5920c0dc5c4c38845a9e6800c6673832f4c48f314c720b80ec",
               "execution_checkpoint_digest": "sha256:cd926634b44b5a0dbdd9c0cbd2a1bca0c47a574bc13a55a953a5b30c83c772de"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
             }
-          ],
-          "outbox_activity": [
+          },
+          "outbox_records": [
             {
               "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "0",
-              "retry_transitions": "0",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "0",
-              "broker_acknowledgements": "0"
+              "record_kind": "pending",
+              "source_digest": "sha256:26d3762de0e1c1e352f38c914b8b7156a70abdfb0db124f20385d7c8d36d2b41"
+            },
+            {
+              "effect_id": "sha256:b5e99277c681a482d8ffb1540bd622dcbd84b78bc6f22d5c7d1c55fb56eed023",
+              "record_kind": "pending",
+              "source_digest": "sha256:39d65ab0594262446055d2f974c5582fc84279c72b9f06f5a31299422e6ffcb5"
+            },
+            {
+              "effect_id": "sha256:21c44ff9f9ec598e5c6eef88be65dc6a27bf7953526206e13086a4f1ecfd8967",
+              "record_kind": "pending",
+              "source_digest": "sha256:bc34ae5871f613ec51b9c42ef1f19017a70adefd65fc86ae338ff8a2ccba3c49"
+            },
+            {
+              "effect_id": "sha256:b25a3aa22c86cacabdf7d63c5810122f0d2b63b4b032f071072ad6dac9a6daa8",
+              "record_kind": "pending",
+              "source_digest": "sha256:230958a28c6b7a5479deec1d994daed9cb45a3ad67c1f58006554d4be4e88818"
+            },
+            {
+              "effect_id": "sha256:c4e3e1fa1acf1b19ce4eef34bcc7fe39edcf94a0325ca9666268f052af2dc28c",
+              "record_kind": "pending",
+              "source_digest": "sha256:481f060a6511f7eefae8109b10179f1680c471221446cba33f1eb94b5c038375"
+            },
+            {
+              "effect_id": "sha256:a5dcc2925fdc59c68734e928ad2b530de6f32724ff25fee32e27653d48c0682b",
+              "record_kind": "pending",
+              "source_digest": "sha256:b7a45a6253563288ff6656a227c84019f15733971e53d35db73cc1dd387d1302"
+            },
+            {
+              "effect_id": "sha256:49c6f94e9c58ee776f805022e4ec04a5f4bd6f84686aacfcc3b3ab3725888560",
+              "record_kind": "pending",
+              "source_digest": "sha256:b22445c5ee6ced09465d8499b0697e758088ea9e373b5b38c9c9f1f2dceea3d5"
+            },
+            {
+              "effect_id": "sha256:abe2e131eedbb3ea02efb1754b97facf6e4d94d01a9250ee099a81ed99340469",
+              "record_kind": "pending",
+              "source_digest": "sha256:1481ca64556984346cf662d25d16be95927764a4c1b7750a1883514a20d0bbc5"
             }
           ]
         },
         {
           "logical_scope_id": "scope-b",
           "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
+          "checkpoints": {
+            "outbox-root": {
               "file": "outbox-created-checkpoint.json",
-              "source_digest": "sha256:d12ccb8da884931273c7c3dafac289772921d641212e8fbde5dc0f5e63a7898b",
+              "serialization_digest": "sha256:ca7465befcb28b5920c0dc5c4c38845a9e6800c6673832f4c48f314c720b80ec",
               "execution_checkpoint_digest": "sha256:cd926634b44b5a0dbdd9c0cbd2a1bca0c47a574bc13a55a953a5b30c83c772de"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
             }
-          ],
-          "outbox_activity": [
+          },
+          "outbox_records": [
             {
               "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "0",
-              "retry_transitions": "0",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "0",
-              "broker_acknowledgements": "0"
+              "record_kind": "pending",
+              "source_digest": "sha256:26d3762de0e1c1e352f38c914b8b7156a70abdfb0db124f20385d7c8d36d2b41"
+            },
+            {
+              "effect_id": "sha256:b5e99277c681a482d8ffb1540bd622dcbd84b78bc6f22d5c7d1c55fb56eed023",
+              "record_kind": "pending",
+              "source_digest": "sha256:39d65ab0594262446055d2f974c5582fc84279c72b9f06f5a31299422e6ffcb5"
+            },
+            {
+              "effect_id": "sha256:21c44ff9f9ec598e5c6eef88be65dc6a27bf7953526206e13086a4f1ecfd8967",
+              "record_kind": "pending",
+              "source_digest": "sha256:bc34ae5871f613ec51b9c42ef1f19017a70adefd65fc86ae338ff8a2ccba3c49"
+            },
+            {
+              "effect_id": "sha256:b25a3aa22c86cacabdf7d63c5810122f0d2b63b4b032f071072ad6dac9a6daa8",
+              "record_kind": "pending",
+              "source_digest": "sha256:230958a28c6b7a5479deec1d994daed9cb45a3ad67c1f58006554d4be4e88818"
+            },
+            {
+              "effect_id": "sha256:c4e3e1fa1acf1b19ce4eef34bcc7fe39edcf94a0325ca9666268f052af2dc28c",
+              "record_kind": "pending",
+              "source_digest": "sha256:481f060a6511f7eefae8109b10179f1680c471221446cba33f1eb94b5c038375"
+            },
+            {
+              "effect_id": "sha256:a5dcc2925fdc59c68734e928ad2b530de6f32724ff25fee32e27653d48c0682b",
+              "record_kind": "pending",
+              "source_digest": "sha256:b7a45a6253563288ff6656a227c84019f15733971e53d35db73cc1dd387d1302"
+            },
+            {
+              "effect_id": "sha256:49c6f94e9c58ee776f805022e4ec04a5f4bd6f84686aacfcc3b3ab3725888560",
+              "record_kind": "pending",
+              "source_digest": "sha256:b22445c5ee6ced09465d8499b0697e758088ea9e373b5b38c9c9f1f2dceea3d5"
+            },
+            {
+              "effect_id": "sha256:abe2e131eedbb3ea02efb1754b97facf6e4d94d01a9250ee099a81ed99340469",
+              "record_kind": "pending",
+              "source_digest": "sha256:1481ca64556984346cf662d25d16be95927764a4c1b7750a1883514a20d0bbc5"
             }
           ]
         }
       ]
     },
-    "routed-a": {
+    "updated-a": {
       "physical_backend_id": "shared-physical-backend",
       "scopes": [
         {
           "logical_scope_id": "scope-a",
           "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
-              "file": "outbox-created-checkpoint.json",
-              "source_digest": "sha256:d12ccb8da884931273c7c3dafac289772921d641212e8fbde5dc0f5e63a7898b",
-              "execution_checkpoint_digest": "sha256:cd926634b44b5a0dbdd9c0cbd2a1bca0c47a574bc13a55a953a5b30c83c772de"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "0",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        },
-        {
-          "logical_scope_id": "scope-b",
-          "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
-              "file": "outbox-created-checkpoint.json",
-              "source_digest": "sha256:d12ccb8da884931273c7c3dafac289772921d641212e8fbde5dc0f5e63a7898b",
-              "execution_checkpoint_digest": "sha256:cd926634b44b5a0dbdd9c0cbd2a1bca0c47a574bc13a55a953a5b30c83c772de"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "0",
-              "retry_transitions": "0",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "0",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        }
-      ]
-    },
-    "retry-a": {
-      "physical_backend_id": "shared-physical-backend",
-      "scopes": [
-        {
-          "logical_scope_id": "scope-a",
-          "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
+          "checkpoints": {
+            "outbox-root": {
               "file": "outbox-retryable-checkpoint.json",
-              "source_digest": "sha256:177429b5fcc2817846f5cf67b13e94655ed8ef0bda2020838cadfbdc57e134c5",
+              "serialization_digest": "sha256:f0057ee2df7c9ec04df361d99273883fd96333e7ee9e89f92840c7b8c313b4de",
               "execution_checkpoint_digest": "sha256:f63bb78127af91eb2b7c731aacca7936137d95717f30433d7bc20a1b94a235c4"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
             }
-          ],
-          "outbox_activity": [
+          },
+          "outbox_records": [
             {
               "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
+              "record_kind": "pending",
+              "source_digest": "sha256:b318cbe3e89bbb3c29e5a1ed13f31eab36783aef4cef3d8ec940170798067e22"
+            },
+            {
+              "effect_id": "sha256:b5e99277c681a482d8ffb1540bd622dcbd84b78bc6f22d5c7d1c55fb56eed023",
+              "record_kind": "pending",
+              "source_digest": "sha256:39d65ab0594262446055d2f974c5582fc84279c72b9f06f5a31299422e6ffcb5"
+            },
+            {
+              "effect_id": "sha256:21c44ff9f9ec598e5c6eef88be65dc6a27bf7953526206e13086a4f1ecfd8967",
+              "record_kind": "pending",
+              "source_digest": "sha256:bc34ae5871f613ec51b9c42ef1f19017a70adefd65fc86ae338ff8a2ccba3c49"
+            },
+            {
+              "effect_id": "sha256:b25a3aa22c86cacabdf7d63c5810122f0d2b63b4b032f071072ad6dac9a6daa8",
+              "record_kind": "pending",
+              "source_digest": "sha256:230958a28c6b7a5479deec1d994daed9cb45a3ad67c1f58006554d4be4e88818"
+            },
+            {
+              "effect_id": "sha256:c4e3e1fa1acf1b19ce4eef34bcc7fe39edcf94a0325ca9666268f052af2dc28c",
+              "record_kind": "pending",
+              "source_digest": "sha256:481f060a6511f7eefae8109b10179f1680c471221446cba33f1eb94b5c038375"
+            },
+            {
+              "effect_id": "sha256:a5dcc2925fdc59c68734e928ad2b530de6f32724ff25fee32e27653d48c0682b",
+              "record_kind": "pending",
+              "source_digest": "sha256:b7a45a6253563288ff6656a227c84019f15733971e53d35db73cc1dd387d1302"
+            },
+            {
+              "effect_id": "sha256:49c6f94e9c58ee776f805022e4ec04a5f4bd6f84686aacfcc3b3ab3725888560",
+              "record_kind": "pending",
+              "source_digest": "sha256:b22445c5ee6ced09465d8499b0697e758088ea9e373b5b38c9c9f1f2dceea3d5"
+            },
+            {
+              "effect_id": "sha256:abe2e131eedbb3ea02efb1754b97facf6e4d94d01a9250ee099a81ed99340469",
+              "record_kind": "pending",
+              "source_digest": "sha256:1481ca64556984346cf662d25d16be95927764a4c1b7750a1883514a20d0bbc5"
             }
           ]
         },
         {
           "logical_scope_id": "scope-b",
           "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
+          "checkpoints": {
+            "outbox-root": {
               "file": "outbox-created-checkpoint.json",
-              "source_digest": "sha256:d12ccb8da884931273c7c3dafac289772921d641212e8fbde5dc0f5e63a7898b",
+              "serialization_digest": "sha256:ca7465befcb28b5920c0dc5c4c38845a9e6800c6673832f4c48f314c720b80ec",
               "execution_checkpoint_digest": "sha256:cd926634b44b5a0dbdd9c0cbd2a1bca0c47a574bc13a55a953a5b30c83c772de"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
             }
-          ],
-          "outbox_activity": [
+          },
+          "outbox_records": [
             {
               "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "0",
-              "retry_transitions": "0",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "0",
-              "broker_acknowledgements": "0"
+              "record_kind": "pending",
+              "source_digest": "sha256:26d3762de0e1c1e352f38c914b8b7156a70abdfb0db124f20385d7c8d36d2b41"
+            },
+            {
+              "effect_id": "sha256:b5e99277c681a482d8ffb1540bd622dcbd84b78bc6f22d5c7d1c55fb56eed023",
+              "record_kind": "pending",
+              "source_digest": "sha256:39d65ab0594262446055d2f974c5582fc84279c72b9f06f5a31299422e6ffcb5"
+            },
+            {
+              "effect_id": "sha256:21c44ff9f9ec598e5c6eef88be65dc6a27bf7953526206e13086a4f1ecfd8967",
+              "record_kind": "pending",
+              "source_digest": "sha256:bc34ae5871f613ec51b9c42ef1f19017a70adefd65fc86ae338ff8a2ccba3c49"
+            },
+            {
+              "effect_id": "sha256:b25a3aa22c86cacabdf7d63c5810122f0d2b63b4b032f071072ad6dac9a6daa8",
+              "record_kind": "pending",
+              "source_digest": "sha256:230958a28c6b7a5479deec1d994daed9cb45a3ad67c1f58006554d4be4e88818"
+            },
+            {
+              "effect_id": "sha256:c4e3e1fa1acf1b19ce4eef34bcc7fe39edcf94a0325ca9666268f052af2dc28c",
+              "record_kind": "pending",
+              "source_digest": "sha256:481f060a6511f7eefae8109b10179f1680c471221446cba33f1eb94b5c038375"
+            },
+            {
+              "effect_id": "sha256:a5dcc2925fdc59c68734e928ad2b530de6f32724ff25fee32e27653d48c0682b",
+              "record_kind": "pending",
+              "source_digest": "sha256:b7a45a6253563288ff6656a227c84019f15733971e53d35db73cc1dd387d1302"
+            },
+            {
+              "effect_id": "sha256:49c6f94e9c58ee776f805022e4ec04a5f4bd6f84686aacfcc3b3ab3725888560",
+              "record_kind": "pending",
+              "source_digest": "sha256:b22445c5ee6ced09465d8499b0697e758088ea9e373b5b38c9c9f1f2dceea3d5"
+            },
+            {
+              "effect_id": "sha256:abe2e131eedbb3ea02efb1754b97facf6e4d94d01a9250ee099a81ed99340469",
+              "record_kind": "pending",
+              "source_digest": "sha256:1481ca64556984346cf662d25d16be95927764a4c1b7750a1883514a20d0bbc5"
             }
           ]
         }
       ]
     },
-    "routed-b": {
+    "updated-b": {
       "physical_backend_id": "shared-physical-backend",
       "scopes": [
         {
           "logical_scope_id": "scope-a",
           "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
+          "checkpoints": {
+            "outbox-root": {
               "file": "outbox-retryable-checkpoint.json",
-              "source_digest": "sha256:177429b5fcc2817846f5cf67b13e94655ed8ef0bda2020838cadfbdc57e134c5",
+              "serialization_digest": "sha256:f0057ee2df7c9ec04df361d99273883fd96333e7ee9e89f92840c7b8c313b4de",
               "execution_checkpoint_digest": "sha256:f63bb78127af91eb2b7c731aacca7936137d95717f30433d7bc20a1b94a235c4"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
             }
-          ],
-          "outbox_activity": [
+          },
+          "outbox_records": [
             {
               "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
+              "record_kind": "pending",
+              "source_digest": "sha256:b318cbe3e89bbb3c29e5a1ed13f31eab36783aef4cef3d8ec940170798067e22"
+            },
+            {
+              "effect_id": "sha256:b5e99277c681a482d8ffb1540bd622dcbd84b78bc6f22d5c7d1c55fb56eed023",
+              "record_kind": "pending",
+              "source_digest": "sha256:39d65ab0594262446055d2f974c5582fc84279c72b9f06f5a31299422e6ffcb5"
+            },
+            {
+              "effect_id": "sha256:21c44ff9f9ec598e5c6eef88be65dc6a27bf7953526206e13086a4f1ecfd8967",
+              "record_kind": "pending",
+              "source_digest": "sha256:bc34ae5871f613ec51b9c42ef1f19017a70adefd65fc86ae338ff8a2ccba3c49"
+            },
+            {
+              "effect_id": "sha256:b25a3aa22c86cacabdf7d63c5810122f0d2b63b4b032f071072ad6dac9a6daa8",
+              "record_kind": "pending",
+              "source_digest": "sha256:230958a28c6b7a5479deec1d994daed9cb45a3ad67c1f58006554d4be4e88818"
+            },
+            {
+              "effect_id": "sha256:c4e3e1fa1acf1b19ce4eef34bcc7fe39edcf94a0325ca9666268f052af2dc28c",
+              "record_kind": "pending",
+              "source_digest": "sha256:481f060a6511f7eefae8109b10179f1680c471221446cba33f1eb94b5c038375"
+            },
+            {
+              "effect_id": "sha256:a5dcc2925fdc59c68734e928ad2b530de6f32724ff25fee32e27653d48c0682b",
+              "record_kind": "pending",
+              "source_digest": "sha256:b7a45a6253563288ff6656a227c84019f15733971e53d35db73cc1dd387d1302"
+            },
+            {
+              "effect_id": "sha256:49c6f94e9c58ee776f805022e4ec04a5f4bd6f84686aacfcc3b3ab3725888560",
+              "record_kind": "pending",
+              "source_digest": "sha256:b22445c5ee6ced09465d8499b0697e758088ea9e373b5b38c9c9f1f2dceea3d5"
+            },
+            {
+              "effect_id": "sha256:abe2e131eedbb3ea02efb1754b97facf6e4d94d01a9250ee099a81ed99340469",
+              "record_kind": "pending",
+              "source_digest": "sha256:1481ca64556984346cf662d25d16be95927764a4c1b7750a1883514a20d0bbc5"
             }
           ]
         },
         {
           "logical_scope_id": "scope-b",
           "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
-              "file": "outbox-created-checkpoint.json",
-              "source_digest": "sha256:d12ccb8da884931273c7c3dafac289772921d641212e8fbde5dc0f5e63a7898b",
-              "execution_checkpoint_digest": "sha256:cd926634b44b5a0dbdd9c0cbd2a1bca0c47a574bc13a55a953a5b30c83c772de"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "0",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        }
-      ]
-    },
-    "retry-b": {
-      "physical_backend_id": "shared-physical-backend",
-      "scopes": [
-        {
-          "logical_scope_id": "scope-a",
-          "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
+          "checkpoints": {
+            "outbox-root": {
               "file": "outbox-retryable-checkpoint.json",
-              "source_digest": "sha256:177429b5fcc2817846f5cf67b13e94655ed8ef0bda2020838cadfbdc57e134c5",
+              "serialization_digest": "sha256:f0057ee2df7c9ec04df361d99273883fd96333e7ee9e89f92840c7b8c313b4de",
               "execution_checkpoint_digest": "sha256:f63bb78127af91eb2b7c731aacca7936137d95717f30433d7bc20a1b94a235c4"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
             }
-          ],
-          "outbox_activity": [
+          },
+          "outbox_records": [
             {
               "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        },
-        {
-          "logical_scope_id": "scope-b",
-          "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
-              "file": "outbox-retryable-checkpoint.json",
-              "source_digest": "sha256:177429b5fcc2817846f5cf67b13e94655ed8ef0bda2020838cadfbdc57e134c5",
-              "execution_checkpoint_digest": "sha256:f63bb78127af91eb2b7c731aacca7936137d95717f30433d7bc20a1b94a235c4"
+              "record_kind": "pending",
+              "source_digest": "sha256:b318cbe3e89bbb3c29e5a1ed13f31eab36783aef4cef3d8ec940170798067e22"
             },
             {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
+              "effect_id": "sha256:b5e99277c681a482d8ffb1540bd622dcbd84b78bc6f22d5c7d1c55fb56eed023",
+              "record_kind": "pending",
+              "source_digest": "sha256:39d65ab0594262446055d2f974c5582fc84279c72b9f06f5a31299422e6ffcb5"
             },
             {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
+              "effect_id": "sha256:21c44ff9f9ec598e5c6eef88be65dc6a27bf7953526206e13086a4f1ecfd8967",
+              "record_kind": "pending",
+              "source_digest": "sha256:bc34ae5871f613ec51b9c42ef1f19017a70adefd65fc86ae338ff8a2ccba3c49"
             },
             {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        }
-      ]
-    },
-    "ambiguous-both": {
-      "physical_backend_id": "shared-physical-backend",
-      "scopes": [
-        {
-          "logical_scope_id": "scope-a",
-          "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
-              "file": "outbox-ambiguous-checkpoint.json",
-              "source_digest": "sha256:0cf867e2841797c1fac496b7dc8e31779a0e47ba32b7c998b108ac0bc88acc56",
-              "execution_checkpoint_digest": "sha256:7ccc7622945a2f20d645270e4db80ac4a7b97425b754f565927ebc238235e22a"
+              "effect_id": "sha256:b25a3aa22c86cacabdf7d63c5810122f0d2b63b4b032f071072ad6dac9a6daa8",
+              "record_kind": "pending",
+              "source_digest": "sha256:230958a28c6b7a5479deec1d994daed9cb45a3ad67c1f58006554d4be4e88818"
             },
             {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
+              "effect_id": "sha256:c4e3e1fa1acf1b19ce4eef34bcc7fe39edcf94a0325ca9666268f052af2dc28c",
+              "record_kind": "pending",
+              "source_digest": "sha256:481f060a6511f7eefae8109b10179f1680c471221446cba33f1eb94b5c038375"
             },
             {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
+              "effect_id": "sha256:a5dcc2925fdc59c68734e928ad2b530de6f32724ff25fee32e27653d48c0682b",
+              "record_kind": "pending",
+              "source_digest": "sha256:b7a45a6253563288ff6656a227c84019f15733971e53d35db73cc1dd387d1302"
             },
             {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        },
-        {
-          "logical_scope_id": "scope-b",
-          "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
-              "file": "outbox-ambiguous-checkpoint.json",
-              "source_digest": "sha256:0cf867e2841797c1fac496b7dc8e31779a0e47ba32b7c998b108ac0bc88acc56",
-              "execution_checkpoint_digest": "sha256:7ccc7622945a2f20d645270e4db80ac4a7b97425b754f565927ebc238235e22a"
+              "effect_id": "sha256:49c6f94e9c58ee776f805022e4ec04a5f4bd6f84686aacfcc3b3ab3725888560",
+              "record_kind": "pending",
+              "source_digest": "sha256:b22445c5ee6ced09465d8499b0697e758088ea9e373b5b38c9c9f1f2dceea3d5"
             },
             {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        }
-      ]
-    },
-    "reconciled-a": {
-      "physical_backend_id": "shared-physical-backend",
-      "scopes": [
-        {
-          "logical_scope_id": "scope-a",
-          "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
-              "file": "outbox-confirmed-checkpoint.json",
-              "source_digest": "sha256:55ac8700af8f1fa9b6972081abef9c2c9ca02b92c9f29ce332a41dc16ebbd154",
-              "execution_checkpoint_digest": "sha256:5cd256a11298dfb28a81db17cf58198e9af10728f34abe0cdb43cfe048ace1c7"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "1",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        },
-        {
-          "logical_scope_id": "scope-b",
-          "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
-              "file": "outbox-ambiguous-checkpoint.json",
-              "source_digest": "sha256:0cf867e2841797c1fac496b7dc8e31779a0e47ba32b7c998b108ac0bc88acc56",
-              "execution_checkpoint_digest": "sha256:7ccc7622945a2f20d645270e4db80ac4a7b97425b754f565927ebc238235e22a"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "0",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        }
-      ]
-    },
-    "reconciled-b": {
-      "physical_backend_id": "shared-physical-backend",
-      "scopes": [
-        {
-          "logical_scope_id": "scope-a",
-          "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
-              "file": "outbox-confirmed-checkpoint.json",
-              "source_digest": "sha256:55ac8700af8f1fa9b6972081abef9c2c9ca02b92c9f29ce332a41dc16ebbd154",
-              "execution_checkpoint_digest": "sha256:5cd256a11298dfb28a81db17cf58198e9af10728f34abe0cdb43cfe048ace1c7"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "1",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        },
-        {
-          "logical_scope_id": "scope-b",
-          "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
-              "file": "outbox-confirmed-checkpoint.json",
-              "source_digest": "sha256:55ac8700af8f1fa9b6972081abef9c2c9ca02b92c9f29ce332a41dc16ebbd154",
-              "execution_checkpoint_digest": "sha256:5cd256a11298dfb28a81db17cf58198e9af10728f34abe0cdb43cfe048ace1c7"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "1",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        }
-      ]
-    },
-    "deduplicated-a": {
-      "physical_backend_id": "shared-physical-backend",
-      "scopes": [
-        {
-          "logical_scope_id": "scope-a",
-          "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
-              "file": "outbox-confirmed-checkpoint.json",
-              "source_digest": "sha256:55ac8700af8f1fa9b6972081abef9c2c9ca02b92c9f29ce332a41dc16ebbd154",
-              "execution_checkpoint_digest": "sha256:5cd256a11298dfb28a81db17cf58198e9af10728f34abe0cdb43cfe048ace1c7"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "1",
-              "deduplication_hits": "1",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        },
-        {
-          "logical_scope_id": "scope-b",
-          "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
-              "file": "outbox-confirmed-checkpoint.json",
-              "source_digest": "sha256:55ac8700af8f1fa9b6972081abef9c2c9ca02b92c9f29ce332a41dc16ebbd154",
-              "execution_checkpoint_digest": "sha256:5cd256a11298dfb28a81db17cf58198e9af10728f34abe0cdb43cfe048ace1c7"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "1",
-              "deduplication_hits": "0",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        }
-      ]
-    },
-    "deduplicated-b": {
-      "physical_backend_id": "shared-physical-backend",
-      "scopes": [
-        {
-          "logical_scope_id": "scope-a",
-          "physical_isolation_key": "physical-isolation-scope-a",
-          "owning_trust_domain": "trust-domain-scope-a",
-          "checkpoints": [
-            {
-              "file": "outbox-confirmed-checkpoint.json",
-              "source_digest": "sha256:55ac8700af8f1fa9b6972081abef9c2c9ca02b92c9f29ce332a41dc16ebbd154",
-              "execution_checkpoint_digest": "sha256:5cd256a11298dfb28a81db17cf58198e9af10728f34abe0cdb43cfe048ace1c7"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "1",
-              "deduplication_hits": "1",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
-            }
-          ]
-        },
-        {
-          "logical_scope_id": "scope-b",
-          "physical_isolation_key": "physical-isolation-scope-b",
-          "owning_trust_domain": "trust-domain-scope-b",
-          "checkpoints": [
-            {
-              "file": "outbox-confirmed-checkpoint.json",
-              "source_digest": "sha256:55ac8700af8f1fa9b6972081abef9c2c9ca02b92c9f29ce332a41dc16ebbd154",
-              "execution_checkpoint_digest": "sha256:5cd256a11298dfb28a81db17cf58198e9af10728f34abe0cdb43cfe048ace1c7"
-            },
-            {
-              "file": "maintenance-checkpoint.json",
-              "source_digest": "sha256:edd1635e89a264ac029c4a74be8fb0f0546a5bcad5482fe841d98035e1c4ed68",
-              "execution_checkpoint_digest": "sha256:eb6f41ecb1a76d178897a0f169642be191e4156951c55a90cbe87f68e41c5a2c"
-            },
-            {
-              "file": "tombstone-checkpoint.json",
-              "source_digest": "sha256:520cc6291878297c801b0fc42b8034bf4da4e1812e57ce88019c6ccbb70e0e55",
-              "execution_checkpoint_digest": "sha256:05cd0f72def39a009f2ce132b3103b36ec7d4734e18e5bf5f54d6c408dbc3332"
-            },
-            {
-              "file": "outbox-compact-checkpoint.json",
-              "source_digest": "sha256:aee667d14ea8c5a9b69b15a02cacd1f8b2c8471281cb33c39355838bcba9ee07",
-              "execution_checkpoint_digest": "sha256:bc4cd291b3421128e7776f00fec251a8d98b4a54d4f9d38caebf67c63c726642"
-            }
-          ],
-          "outbox_activity": [
-            {
-              "effect_id": "sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf",
-              "route_attempts": "1",
-              "retry_transitions": "1",
-              "reconciliation_transitions": "1",
-              "deduplication_hits": "1",
-              "deliveries": "1",
-              "broker_acknowledgements": "0"
+              "effect_id": "sha256:abe2e131eedbb3ea02efb1754b97facf6e4d94d01a9250ee099a81ed99340469",
+              "record_kind": "pending",
+              "source_digest": "sha256:1481ca64556984346cf662d25d16be95927764a4c1b7750a1883514a20d0bbc5"
             }
           ]
         }

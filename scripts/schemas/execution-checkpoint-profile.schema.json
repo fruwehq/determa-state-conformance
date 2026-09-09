@@ -167,20 +167,13 @@
     },
     "scopeCoverage": {
       "enum": [
-        "portable_identity_scope_independence",
-        "scoped_outbox_routing_scope_a",
-        "scoped_outbox_routing_scope_b",
-        "scoped_outbox_retry_scope_a",
-        "scoped_outbox_retry_scope_b",
-        "scoped_outbox_reconciliation_scope_a",
-        "scoped_outbox_reconciliation_scope_b",
-        "scoped_outbox_deduplication_scope_a",
-        "scoped_outbox_deduplication_scope_b",
+        "scoped_outbox_update_scope_a",
+        "scoped_outbox_update_scope_b",
         "missing_scope_rejected",
         "ambiguous_scope_rejected",
         "mismatched_scope_rejected",
         "unauthorized_scope_rejected",
-        "scope_metadata_excluded_from_portable_bytes"
+        "portable_state_scope_invariance"
       ]
     },
     "scopeSelection": {
@@ -212,8 +205,30 @@
         }
       }
     },
-    "scopeMutation": {
-      "enum": ["changed", "unchanged"]
+    "scopeCallTrace": {
+      "type": "object",
+      "required": ["resolver", "execution_host", "store", "core"],
+      "additionalProperties": false,
+      "properties": {
+        "resolver": {
+          "type": "array",
+          "items": { "const": "resolve_execution_store_scope" }
+        },
+        "execution_host": {
+          "type": "array",
+          "items": { "const": "update_pending_outbox" }
+        },
+        "store": {
+          "type": "array",
+          "items": {
+            "enum": ["load_checkpoint", "compare_and_swap_checkpoint"]
+          }
+        },
+        "core": {
+          "type": "array",
+          "maxItems": 0
+        }
+      }
     },
     "scopeVector": {
       "type": "object",
@@ -221,6 +236,8 @@
         "name",
         "covers",
         "operation",
+        "effect_id",
+        "desired_pending_state",
         "scope_selection",
         "scope_state_before",
         "scope_state_after",
@@ -236,18 +253,18 @@
           "items": { "$ref": "#/$defs/scopeCoverage" }
         },
         "operation": {
-          "enum": [
-            "inspect_store",
-            "create",
-            "dispatch",
-            "migrate",
-            "route_outbox",
-            "retry_outbox",
-            "reconcile_outbox",
-            "deduplicate_outbox"
-          ]
+          "const": "update_pending_outbox"
         },
         "effect_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "desired_pending_state": {
+          "type": "object",
+          "required": ["status", "reason_code"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "const": "retryable_failure" },
+            "reason_code": { "const": "temporary_unavailable" }
+          }
+        },
         "scope_selection": { "$ref": "#/$defs/scopeSelection" },
         "scope_state_before": {
           "$ref": "#/$defs/artifactRef"
@@ -261,13 +278,9 @@
             "selection_result",
             "selected_scope_id",
             "scope_state_mutation",
-            "checkpoint_mutation",
-            "receipt_mutation",
-            "tombstone_mutation",
-            "outbox_mutation",
-            "core_call",
-            "delivery_attempts",
-            "broker_acknowledgements"
+            "checkpoint_map_mutation",
+            "outbox_record_map_mutation",
+            "calls"
           ],
           "additionalProperties": false,
           "properties": {
@@ -278,45 +291,13 @@
                 { "type": "null" }
               ]
             },
-            "scope_state_mutation": { "$ref": "#/$defs/scopeMutation" },
-            "checkpoint_mutation": { "$ref": "#/$defs/scopeMutation" },
-            "receipt_mutation": { "$ref": "#/$defs/scopeMutation" },
-            "tombstone_mutation": { "$ref": "#/$defs/scopeMutation" },
-            "outbox_mutation": { "$ref": "#/$defs/scopeMutation" },
-            "core_call": { "enum": ["none", "create", "dispatch", "migrate"] },
-            "delivery_attempts": { "$ref": "#/$defs/canonicalDecimal" },
-            "broker_acknowledgements": { "$ref": "#/$defs/canonicalDecimal" }
+            "scope_state_mutation": { "enum": ["changed", "unchanged"] },
+            "checkpoint_map_mutation": { "enum": ["changed", "unchanged"] },
+            "outbox_record_map_mutation": { "enum": ["changed", "unchanged"] },
+            "calls": { "$ref": "#/$defs/scopeCallTrace" }
           }
         }
-      },
-      "allOf": [
-        {
-          "if": { "required": ["effect_id"] },
-          "then": {
-            "properties": {
-              "operation": {
-                "enum": ["route_outbox", "retry_outbox", "reconcile_outbox", "deduplicate_outbox"]
-              }
-            }
-          },
-          "else": {
-            "properties": {
-              "operation": { "enum": ["inspect_store", "create", "dispatch", "migrate"] }
-            }
-          }
-        },
-        {
-          "if": {
-            "properties": {
-              "operation": {
-                "enum": ["route_outbox", "retry_outbox", "reconcile_outbox", "deduplicate_outbox"]
-              }
-            },
-            "required": ["operation"]
-          },
-          "then": { "required": ["effect_id"] }
-        }
-      ]
+      }
     },
     "operation": {
       "enum": [

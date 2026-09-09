@@ -22,8 +22,6 @@ artifacts:
       valid: true
       canonical_of: outbox-total-checkpoint.json
     - { file: outbox-compact-checkpoint.json, kind: execution_checkpoint, valid: true }
-    - { file: maintenance-checkpoint.json, kind: execution_checkpoint, valid: true }
-    - { file: tombstone-checkpoint.json, kind: execution_checkpoint, valid: true }
     - { file: scope-states.json, kind: execution_store_scope_state, valid: true }
     - file: invalid-dangling-outbox-checkpoint.json
       kind: execution_checkpoint
@@ -193,11 +191,11 @@ execution_checkpoint_profile:
         checkpoint_after: outbox-compact-checkpoint.json
         checkpoint_mutation: unchanged
         core_call: none
-    - name: portable_identities_are_independent_of_scope
-      covers:
-        - portable_identity_scope_independence
-        - scope_metadata_excluded_from_portable_bytes
-      operation: inspect_store
+    - name: pending_outbox_update_in_scope_a
+      covers: [scoped_outbox_update_scope_a]
+      operation: update_pending_outbox
+      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
+      desired_pending_state: { status: retryable_failure, reason_code: temporary_unavailable }
       scope_selection:
         classification: selected
         requested_scope_id: scope-a
@@ -206,70 +204,23 @@ execution_checkpoint_profile:
             physical_isolation_key: physical-isolation-scope-a
             authorized: true
       scope_state_before: { file: scope-states.json, pointer: /snapshots/base }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/base }
-      expect:
-        selection_result: selected
-        selected_scope_id: scope-a
-        scope_state_mutation: unchanged
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: unchanged
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: equal_effect_routes_in_scope_a
-      covers: [scoped_outbox_routing_scope_a]
-      operation: route_outbox
-      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
-      scope_selection:
-        classification: selected
-        requested_scope_id: scope-a
-        candidates:
-          - logical_scope_id: scope-a
-            physical_isolation_key: physical-isolation-scope-a
-            authorized: true
-      scope_state_before: { file: scope-states.json, pointer: /snapshots/base }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/routed-a }
+      scope_state_after: { file: scope-states.json, pointer: /snapshots/updated-a }
       expect:
         selection_result: selected
         selected_scope_id: scope-a
         scope_state_mutation: changed
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: changed
-        core_call: none
-        delivery_attempts: "1"
-        broker_acknowledgements: "0"
-    - name: equal_effect_retries_in_scope_a
-      covers: [scoped_outbox_retry_scope_a]
-      operation: retry_outbox
+        checkpoint_map_mutation: changed
+        outbox_record_map_mutation: changed
+        calls:
+          resolver: [resolve_execution_store_scope]
+          execution_host: [update_pending_outbox]
+          store: [load_checkpoint, compare_and_swap_checkpoint]
+          core: []
+    - name: pending_outbox_update_in_scope_b
+      covers: [scoped_outbox_update_scope_b, portable_state_scope_invariance]
+      operation: update_pending_outbox
       effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
-      scope_selection:
-        classification: selected
-        requested_scope_id: scope-a
-        candidates:
-          - logical_scope_id: scope-a
-            physical_isolation_key: physical-isolation-scope-a
-            authorized: true
-      scope_state_before: { file: scope-states.json, pointer: /snapshots/routed-a }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/retry-a }
-      expect:
-        selection_result: selected
-        selected_scope_id: scope-a
-        scope_state_mutation: changed
-        checkpoint_mutation: changed
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: changed
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: equal_effect_routes_in_scope_b
-      covers: [scoped_outbox_routing_scope_b]
-      operation: route_outbox
-      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
+      desired_pending_state: { status: retryable_failure, reason_code: temporary_unavailable }
       scope_selection:
         classification: selected
         requested_scope_id: scope-b
@@ -277,142 +228,24 @@ execution_checkpoint_profile:
           - logical_scope_id: scope-b
             physical_isolation_key: physical-isolation-scope-b
             authorized: true
-      scope_state_before: { file: scope-states.json, pointer: /snapshots/retry-a }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/routed-b }
+      scope_state_before: { file: scope-states.json, pointer: /snapshots/updated-a }
+      scope_state_after: { file: scope-states.json, pointer: /snapshots/updated-b }
       expect:
         selection_result: selected
         selected_scope_id: scope-b
         scope_state_mutation: changed
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: changed
-        core_call: none
-        delivery_attempts: "1"
-        broker_acknowledgements: "0"
-    - name: equal_effect_retries_in_scope_b
-      covers: [scoped_outbox_retry_scope_b]
-      operation: retry_outbox
-      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
-      scope_selection:
-        classification: selected
-        requested_scope_id: scope-b
-        candidates:
-          - logical_scope_id: scope-b
-            physical_isolation_key: physical-isolation-scope-b
-            authorized: true
-      scope_state_before: { file: scope-states.json, pointer: /snapshots/routed-b }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/retry-b }
-      expect:
-        selection_result: selected
-        selected_scope_id: scope-b
-        scope_state_mutation: changed
-        checkpoint_mutation: changed
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: changed
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: equal_effect_reconciles_in_scope_a
-      covers: [scoped_outbox_reconciliation_scope_a]
-      operation: reconcile_outbox
-      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
-      scope_selection:
-        classification: selected
-        requested_scope_id: scope-a
-        candidates:
-          - logical_scope_id: scope-a
-            physical_isolation_key: physical-isolation-scope-a
-            authorized: true
-      scope_state_before: { file: scope-states.json, pointer: /snapshots/ambiguous-both }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/reconciled-a }
-      expect:
-        selection_result: selected
-        selected_scope_id: scope-a
-        scope_state_mutation: changed
-        checkpoint_mutation: changed
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: changed
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: equal_effect_reconciles_in_scope_b
-      covers: [scoped_outbox_reconciliation_scope_b]
-      operation: reconcile_outbox
-      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
-      scope_selection:
-        classification: selected
-        requested_scope_id: scope-b
-        candidates:
-          - logical_scope_id: scope-b
-            physical_isolation_key: physical-isolation-scope-b
-            authorized: true
-      scope_state_before: { file: scope-states.json, pointer: /snapshots/reconciled-a }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/reconciled-b }
-      expect:
-        selection_result: selected
-        selected_scope_id: scope-b
-        scope_state_mutation: changed
-        checkpoint_mutation: changed
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: changed
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: equal_effect_deduplicates_in_scope_a
-      covers: [scoped_outbox_deduplication_scope_a]
-      operation: deduplicate_outbox
-      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
-      scope_selection:
-        classification: selected
-        requested_scope_id: scope-a
-        candidates:
-          - logical_scope_id: scope-a
-            physical_isolation_key: physical-isolation-scope-a
-            authorized: true
-      scope_state_before: { file: scope-states.json, pointer: /snapshots/reconciled-b }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/deduplicated-a }
-      expect:
-        selection_result: selected
-        selected_scope_id: scope-a
-        scope_state_mutation: changed
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: changed
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: equal_effect_deduplicates_in_scope_b
-      covers: [scoped_outbox_deduplication_scope_b]
-      operation: deduplicate_outbox
-      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
-      scope_selection:
-        classification: selected
-        requested_scope_id: scope-b
-        candidates:
-          - logical_scope_id: scope-b
-            physical_isolation_key: physical-isolation-scope-b
-            authorized: true
-      scope_state_before: { file: scope-states.json, pointer: /snapshots/deduplicated-a }
-      scope_state_after: { file: scope-states.json, pointer: /snapshots/deduplicated-b }
-      expect:
-        selection_result: selected
-        selected_scope_id: scope-b
-        scope_state_mutation: changed
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: changed
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: missing_scope_fails_before_create
+        checkpoint_map_mutation: changed
+        outbox_record_map_mutation: changed
+        calls:
+          resolver: [resolve_execution_store_scope]
+          execution_host: [update_pending_outbox]
+          store: [load_checkpoint, compare_and_swap_checkpoint]
+          core: []
+    - name: missing_scope_fails_before_host_operation
       covers: [missing_scope_rejected]
-      operation: create
+      operation: update_pending_outbox
+      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
+      desired_pending_state: { status: retryable_failure, reason_code: temporary_unavailable }
       scope_selection:
         classification: missing
         requested_scope_id: null
@@ -423,16 +256,18 @@ execution_checkpoint_profile:
         selection_result: rejected
         selected_scope_id: null
         scope_state_mutation: unchanged
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: unchanged
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: ambiguous_scope_fails_before_dispatch
+        checkpoint_map_mutation: unchanged
+        outbox_record_map_mutation: unchanged
+        calls:
+          resolver: [resolve_execution_store_scope]
+          execution_host: []
+          store: []
+          core: []
+    - name: ambiguous_scope_fails_before_host_operation
       covers: [ambiguous_scope_rejected]
-      operation: dispatch
+      operation: update_pending_outbox
+      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
+      desired_pending_state: { status: retryable_failure, reason_code: temporary_unavailable }
       scope_selection:
         classification: ambiguous
         requested_scope_id: scope-a
@@ -449,16 +284,18 @@ execution_checkpoint_profile:
         selection_result: rejected
         selected_scope_id: null
         scope_state_mutation: unchanged
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: unchanged
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: mismatched_scope_fails_before_migrate
+        checkpoint_map_mutation: unchanged
+        outbox_record_map_mutation: unchanged
+        calls:
+          resolver: [resolve_execution_store_scope]
+          execution_host: []
+          store: []
+          core: []
+    - name: mismatched_scope_fails_before_host_operation
       covers: [mismatched_scope_rejected]
-      operation: migrate
+      operation: update_pending_outbox
+      effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
+      desired_pending_state: { status: retryable_failure, reason_code: temporary_unavailable }
       scope_selection:
         classification: mismatched
         requested_scope_id: scope-a
@@ -472,17 +309,18 @@ execution_checkpoint_profile:
         selection_result: rejected
         selected_scope_id: null
         scope_state_mutation: unchanged
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: unchanged
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
-    - name: unauthorized_scope_fails_before_outbox_route
+        checkpoint_map_mutation: unchanged
+        outbox_record_map_mutation: unchanged
+        calls:
+          resolver: [resolve_execution_store_scope]
+          execution_host: []
+          store: []
+          core: []
+    - name: unauthorized_scope_fails_before_host_operation
       covers: [unauthorized_scope_rejected]
-      operation: route_outbox
+      operation: update_pending_outbox
       effect_id: sha256:32839a15fe64da6ba3647e5241235299b85ec70b0aedc67eb9f2265758b75bbf
+      desired_pending_state: { status: retryable_failure, reason_code: temporary_unavailable }
       scope_selection:
         classification: unauthorized
         requested_scope_id: scope-a
@@ -496,10 +334,10 @@ execution_checkpoint_profile:
         selection_result: rejected
         selected_scope_id: null
         scope_state_mutation: unchanged
-        checkpoint_mutation: unchanged
-        receipt_mutation: unchanged
-        tombstone_mutation: unchanged
-        outbox_mutation: unchanged
-        core_call: none
-        delivery_attempts: "0"
-        broker_acknowledgements: "0"
+        checkpoint_map_mutation: unchanged
+        outbox_record_map_mutation: unchanged
+        calls:
+          resolver: [resolve_execution_store_scope]
+          execution_host: []
+          store: []
+          core: []
