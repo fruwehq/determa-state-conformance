@@ -24,13 +24,20 @@
           "type": "array",
           "minItems": 1,
           "items": {
-            "$ref": "#/$defs/vector"
+            "oneOf": [
+              { "$ref": "#/$defs/vector" },
+              { "$ref": "#/$defs/scopeVector" }
+            ]
           }
         }
       }
     }
   },
   "$defs": {
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
     "jsonFileNameOrNull": {
       "oneOf": [
         {
@@ -157,6 +164,140 @@
         "shared_transaction_missing_native_use",
         "shared_transaction_missing_store_capability"
       ]
+    },
+    "scopeCoverage": {
+      "enum": [
+        "scoped_outbox_update_scope_a",
+        "scoped_outbox_update_scope_b",
+        "missing_scope_rejected",
+        "ambiguous_scope_rejected",
+        "mismatched_scope_rejected",
+        "unauthorized_scope_rejected",
+        "portable_state_scope_invariance"
+      ]
+    },
+    "scopeSelection": {
+      "type": "object",
+      "required": ["classification", "requested_scope_id", "candidates"],
+      "additionalProperties": false,
+      "properties": {
+        "classification": {
+          "enum": ["selected", "missing", "ambiguous", "mismatched", "unauthorized"]
+        },
+        "requested_scope_id": {
+          "oneOf": [
+            { "$ref": "#/$defs/nonEmptyString" },
+            { "type": "null" }
+          ]
+        },
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["logical_scope_id", "physical_isolation_key", "authorized"],
+            "additionalProperties": false,
+            "properties": {
+              "logical_scope_id": { "$ref": "#/$defs/nonEmptyString" },
+              "physical_isolation_key": { "$ref": "#/$defs/nonEmptyString" },
+              "authorized": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    },
+    "scopeCallTrace": {
+      "type": "object",
+      "required": ["resolver", "execution_host", "store", "core"],
+      "additionalProperties": false,
+      "properties": {
+        "resolver": {
+          "type": "array",
+          "items": { "const": "resolve_execution_store_scope" }
+        },
+        "execution_host": {
+          "type": "array",
+          "items": { "const": "update_pending_outbox" }
+        },
+        "store": {
+          "type": "array",
+          "items": {
+            "enum": ["load_checkpoint", "compare_and_swap_checkpoint"]
+          }
+        },
+        "core": {
+          "type": "array",
+          "maxItems": 0
+        }
+      }
+    },
+    "scopeVector": {
+      "type": "object",
+      "required": [
+        "name",
+        "covers",
+        "operation",
+        "effect_id",
+        "desired_pending_state",
+        "scope_selection",
+        "scope_state_before",
+        "scope_state_after",
+        "expect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+        "covers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/scopeCoverage" }
+        },
+        "operation": {
+          "const": "update_pending_outbox"
+        },
+        "effect_id": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "desired_pending_state": {
+          "type": "object",
+          "required": ["status", "reason_code"],
+          "additionalProperties": false,
+          "properties": {
+            "status": { "const": "retryable_failure" },
+            "reason_code": { "const": "temporary_unavailable" }
+          }
+        },
+        "scope_selection": { "$ref": "#/$defs/scopeSelection" },
+        "scope_state_before": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "scope_state_after": {
+          "$ref": "#/$defs/artifactRef"
+        },
+        "expect": {
+          "type": "object",
+          "required": [
+            "selection_result",
+            "selected_scope_id",
+            "scope_state_mutation",
+            "checkpoint_map_mutation",
+            "outbox_record_map_mutation",
+            "calls"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "selection_result": { "enum": ["selected", "rejected"] },
+            "selected_scope_id": {
+              "oneOf": [
+                { "$ref": "#/$defs/nonEmptyString" },
+                { "type": "null" }
+              ]
+            },
+            "scope_state_mutation": { "enum": ["changed", "unchanged"] },
+            "checkpoint_map_mutation": { "enum": ["changed", "unchanged"] },
+            "outbox_record_map_mutation": { "enum": ["changed", "unchanged"] },
+            "calls": { "$ref": "#/$defs/scopeCallTrace" }
+          }
+        }
+      }
     },
     "operation": {
       "enum": [

@@ -28,7 +28,7 @@ from determa.state.wire import migration_descriptor_digest, typed_value
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance" / "profiles" / "execution-checkpoint"
-SPEC_COMMIT = "cc4b0d734aa1c5953de75fb53b63e390a3b72761"
+SPEC_COMMIT = "ad30c421264901f0f930c5993ae88b90ce043d08"
 PYTHON_CORE_COMMIT = "7b17d788b48049648e7e463aa3d35ba13dc1aa6e"
 RUST_CORE_COMMIT = "d17480c8b281dcd17953f59afcf6b5d23ff44efd"
 
@@ -1678,6 +1678,100 @@ def generate_retention(delivery: dict[str, Any]) -> None:
     )
 
 
+def generate_store_scope() -> None:
+    case = PROFILE / "checkpoint-02-outbox-lifecycle"
+    source_files = (
+        "outbox-created-checkpoint.json",
+        "outbox-retryable-checkpoint.json",
+    )
+    checkpoints: dict[str, dict[str, Any]] = {}
+    outbox_records: dict[str, list[dict[str, Any]]] = {}
+    for filename in source_files:
+        source = case / filename
+        document = json.loads(source.read_text(encoding="utf-8"))
+        checkpoints[filename] = {
+            "file": filename,
+            "serialization_digest": hash_value(document),
+            "execution_checkpoint_digest": document[
+                "execution_checkpoint_digest"
+            ],
+        }
+        records = [
+            ("pending", item)
+            for item in document["pending_outbox_intents"]
+        ] + [
+            ("terminal", item)
+            for item in document["terminal_outbox_records"]
+        ] + [
+            ("tombstone", item)
+            for item in document["outbox_effect_tombstones"]
+        ]
+        outbox_records[filename] = [
+            {
+                "effect_id": (
+                    record["effect_id"]
+                    if kind == "tombstone"
+                    else record["intent"]["effect_id"]
+                ),
+                "record_kind": kind,
+                "source_digest": hash_value(record),
+            }
+            for kind, record in records
+        ]
+
+    def scope(
+        identifier: str,
+        outbox_checkpoint: str,
+    ) -> dict[str, Any]:
+        return {
+            "logical_scope_id": identifier,
+            "physical_isolation_key": f"physical-isolation-{identifier}",
+            "checkpoints": {
+                "outbox-root": checkpoints[outbox_checkpoint]
+            },
+            "outbox_records": outbox_records[outbox_checkpoint],
+        }
+
+    def state(
+        a_checkpoint: str,
+        b_checkpoint: str,
+    ) -> dict[str, Any]:
+        return {
+            "physical_backend_id": "shared-physical-backend",
+            "scopes": [
+                scope("scope-a", a_checkpoint),
+                scope("scope-b", b_checkpoint),
+            ],
+        }
+
+    snapshots = {
+        "scope-base.json": state(
+            "outbox-created-checkpoint.json", "outbox-created-checkpoint.json"
+        ),
+        "scope-updated-a.json": state(
+            "outbox-retryable-checkpoint.json",
+            "outbox-created-checkpoint.json",
+        ),
+        "scope-updated-b.json": state(
+            "outbox-retryable-checkpoint.json",
+            "outbox-retryable-checkpoint.json",
+        ),
+    }
+    write_json(
+        case / "scope-states.json",
+        {
+            "execution_store_scope_state_format": (
+                "determa.execution_checkpoint_profile.store_scope_state"
+            ),
+            "execution_store_scope_state_schema_version": 1,
+            "snapshots": {
+                filename.removeprefix("scope-").removesuffix(".json"): document
+                for filename, document in snapshots.items()
+            },
+        },
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -1696,6 +1790,7 @@ def main() -> None:
     delivery = generate_delivery()
     generate_outbox()
     generate_retention(delivery)
+    generate_store_scope()
     if args.check:
         changed = [
             str(path.relative_to(ROOT))
