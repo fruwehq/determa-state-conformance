@@ -1,0 +1,598 @@
+{
+  "registry_schema_version": 1,
+  "specification_version": "0.1.0",
+  "categories": [
+    {
+      "id": "checkpoint_artifact_failure",
+      "description": "Closed failures produced while restoring a portable execution checkpoint."
+    },
+    {
+      "id": "checkpoint_host_failure",
+      "description": "Closed failures from execution-checkpoint host operations after request classification."
+    },
+    {
+      "id": "checkpoint_pre_acceptance_failure",
+      "description": "Closed not-accepted results returned before host input becomes durable."
+    },
+    {
+      "id": "creation_rejection",
+      "description": "Closed pre-step rejections from the core create operation."
+    },
+    {
+      "id": "dispatch_rejection",
+      "description": "Closed pre-step rejections from the core dispatch operation."
+    },
+    {
+      "id": "disposition",
+      "description": "Closed dispositions returned for a non-null core delivery."
+    },
+    {
+      "id": "engine_fault",
+      "description": "Closed faults committed by an accepted core run-to-completion step."
+    },
+    {
+      "id": "execution_store_adapter_failure",
+      "description": "Closed failures from public execution-store registration and resolution."
+    },
+    {
+      "id": "execution_store_failure",
+      "description": "Closed infrastructure outcomes surfaced by an execution-store transaction."
+    },
+    {
+      "id": "machine_load_failure",
+      "description": "Closed source, schema, semantic, and CEL failures from loading a format-1 bundle."
+    },
+    {
+      "id": "persistence_failure",
+      "description": "Closed decoder, resolver, migration, and persistence-policy failures."
+    }
+  ],
+  "entries": [
+    {
+      "category": "checkpoint_artifact_failure",
+      "code": "execution_checkpoint_digest_mismatch",
+      "condition": "A structurally and semantically valid checkpoint carries the wrong checkpoint digest.",
+      "source": "SPEC.md section 17.1"
+    },
+    {
+      "category": "checkpoint_artifact_failure",
+      "code": "invalid_execution_checkpoint",
+      "condition": "A recognized checkpoint fails its closed schema or semantic invariants.",
+      "source": "SPEC.md section 17.1"
+    },
+    {
+      "category": "checkpoint_artifact_failure",
+      "code": "unsupported_execution_checkpoint_format",
+      "condition": "The selected checkpoint decoder receives an unknown or absent checkpoint format.",
+      "source": "SPEC.md sections 16.1 and 17.1"
+    },
+    {
+      "category": "checkpoint_artifact_failure",
+      "code": "unsupported_execution_checkpoint_schema_version",
+      "condition": "The selected checkpoint decoder receives an unsupported checkpoint schema version.",
+      "source": "SPEC.md section 17.1"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "checkpoint_revision_conflict",
+      "condition": "A writer's expected checkpoint revision or digest is stale.",
+      "source": "SPEC.md sections 17.1 and 17.9"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "creation_id_conflict",
+      "condition": "An existing root is presented with a different creation identity or request digest.",
+      "source": "SPEC.md section 17.3"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "creation_rejected",
+      "condition": "Core creation rejects before a checkpoint or root identity is committed.",
+      "source": "SPEC.md section 17.3; execution-checkpoint profile creation_rejection_without_checkpoint"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "effect_id_conflict",
+      "condition": "An existing outbox effect identity is reused with unequal intent or terminal outcome.",
+      "source": "SPEC.md section 17.6"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "event_id_conflict",
+      "condition": "A retained pending or committed event identity is reused with a different request digest.",
+      "source": "SPEC.md sections 17.1, 17.3, and 17.4"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "injected_pre_commit_failure",
+      "condition": "The conformance host injects a failure before transaction commit to prove rollback.",
+      "source": "execution-checkpoint profile pre_commit_rollback"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "invalid_execution_checkpoint",
+      "condition": "A host operation detects an invalid checkpoint or forbidden checkpoint mutation.",
+      "source": "SPEC.md sections 17.4, 17.6, and 17.8"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "operation_id_conflict",
+      "condition": "A maintenance or tombstone operation identity is reused for a different request.",
+      "source": "SPEC.md sections 17.5 and 17.8"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "physical_deletion_unsupported",
+      "condition": "A caller requests physical deletion forbidden by checkpoint schema version 1.",
+      "source": "SPEC.md section 17.8; execution-checkpoint profile physical_deletion_unsupported"
+    },
+    {
+      "category": "checkpoint_host_failure",
+      "code": "response_lost_after_commit",
+      "condition": "The conformance host loses the response after a successful durable commit.",
+      "source": "SPEC.md sections 17.4 and 17.9; execution-checkpoint profile post_commit_response_loss_replay"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "delivery_digest_mismatch",
+      "condition": "A supplied delivery digest differs from the canonical delivery request digest.",
+      "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "event_id_conflict",
+      "condition": "A pending or retained event identity has a different canonical request digest.",
+      "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "invalid_delivery_mode",
+      "condition": "The delivery mode is outside the closed mode union or inconsistent with the request.",
+      "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "invalid_delivery_origin",
+      "condition": "The delivery origin is outside the closed origin union or inconsistent with its mode.",
+      "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "malformed_delivery",
+      "condition": "The supplied value cannot provide the closed envelope and identity fields needed for acceptance.",
+      "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "tombstoned_root",
+      "condition": "A non-replay delivery targets a checkpoint whose root record is a tombstone.",
+      "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "wrong_root",
+      "condition": "The supplied root identity does not name the selected checkpoint.",
+      "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "creation_rejection",
+      "code": "invalid_binding",
+      "condition": "Creation bindings are missing, extra, wrongly typed, or contain invalid portable values.",
+      "source": "SPEC.md sections 4.5, 5.4, and 8"
+    },
+    {
+      "category": "creation_rejection",
+      "code": "invalid_creation_request",
+      "condition": "The root or creation identity, or another creation request field, is invalid.",
+      "source": "SPEC.md sections 2 and 8"
+    },
+    {
+      "category": "creation_rejection",
+      "code": "invalid_machine_target",
+      "condition": "The requested root machine does not identify a valid creatable machine.",
+      "source": "SPEC.md section 8"
+    },
+    {
+      "category": "dispatch_rejection",
+      "code": "inactive_component_target",
+      "condition": "Host ingress targets a component that is not currently active.",
+      "source": "SPEC.md sections 6.1 and 8"
+    },
+    {
+      "category": "dispatch_rejection",
+      "code": "incompatible_bundle",
+      "condition": "The supplied bundle is incompatible with the aggregate's validated definition identity.",
+      "source": "SPEC.md section 8"
+    },
+    {
+      "category": "dispatch_rejection",
+      "code": "invalid_correlation",
+      "condition": "The envelope carries an invalid or unresolved public correlation identity.",
+      "source": "SPEC.md sections 2, 5.5, and 8"
+    },
+    {
+      "category": "dispatch_rejection",
+      "code": "invalid_event",
+      "condition": "The envelope event identity or delivery member is invalid.",
+      "source": "SPEC.md sections 2, 6.1, and 8"
+    },
+    {
+      "category": "dispatch_rejection",
+      "code": "invalid_instance_target",
+      "condition": "Pre-step target identity or reference validation fails.",
+      "source": "SPEC.md sections 2, 6.1, and 8"
+    },
+    {
+      "category": "dispatch_rejection",
+      "code": "invalid_payload",
+      "condition": "The envelope payload violates its declaration or portable value requirements.",
+      "source": "SPEC.md sections 2, 4.4, and 8"
+    },
+    {
+      "category": "dispatch_rejection",
+      "code": "invalid_prior_state",
+      "condition": "Supplied prior state is structurally or semantically invalid for dispatch.",
+      "source": "SPEC.md sections 2, 6.1, and 8"
+    },
+    {
+      "category": "disposition",
+      "code": "faulted",
+      "condition": "An accepted run-to-completion step commits an engine fault.",
+      "source": "SPEC.md section 8"
+    },
+    {
+      "category": "disposition",
+      "code": "handled",
+      "condition": "An accepted envelope completes a successful run-to-completion step.",
+      "source": "SPEC.md section 8"
+    },
+    {
+      "category": "disposition",
+      "code": "rejected",
+      "condition": "Validation rejects a delivery before a run-to-completion step.",
+      "source": "SPEC.md section 8"
+    },
+    {
+      "category": "disposition",
+      "code": "unhandled",
+      "condition": "No enabled handler exists for the accepted envelope.",
+      "source": "SPEC.md section 8"
+    },
+    {
+      "category": "engine_fault",
+      "code": "action_fault",
+      "condition": "An accepted structured action fails during the tentative step.",
+      "source": "SPEC.md section 10.1"
+    },
+    {
+      "category": "engine_fault",
+      "code": "binding_not_empty",
+      "condition": "A spawn binding target that must be empty already contains a live reference.",
+      "source": "SPEC.md sections 7.1 and 10.1"
+    },
+    {
+      "category": "engine_fault",
+      "code": "cascade_fault",
+      "condition": "Deterministic contained-runtime fault propagation exceeds the permitted cascade.",
+      "source": "SPEC.md section 10.1"
+    },
+    {
+      "category": "engine_fault",
+      "code": "contained_runtime_fault",
+      "condition": "A contained runtime faults and its owner cannot absorb the reserved failure event.",
+      "source": "SPEC.md section 10.1"
+    },
+    {
+      "category": "engine_fault",
+      "code": "guard_fault",
+      "condition": "An accepted guard evaluation fails during the tentative step.",
+      "source": "SPEC.md section 10.1"
+    },
+    {
+      "category": "engine_fault",
+      "code": "inactive_component_target",
+      "condition": "An accepted action sends to a component that is no longer active.",
+      "source": "SPEC.md section 10.1"
+    },
+    {
+      "category": "engine_fault",
+      "code": "invalid_instance_target",
+      "condition": "An accepted action evaluates or addresses an invalid instance target.",
+      "source": "SPEC.md section 10.1"
+    },
+    {
+      "category": "engine_fault",
+      "code": "invariant_fault",
+      "condition": "The engine detects a violated runtime invariant during the step.",
+      "source": "SPEC.md section 10.1"
+    },
+    {
+      "category": "execution_store_adapter_failure",
+      "code": "adapter_capability_mismatch",
+      "condition": "The configured store does not prove every requested capability.",
+      "source": "SPEC.md section 17.10"
+    },
+    {
+      "category": "execution_store_adapter_failure",
+      "code": "duplicate_adapter_registration",
+      "condition": "Registration attempts to replace an existing adapter identifier.",
+      "source": "SPEC.md section 17.10"
+    },
+    {
+      "category": "execution_store_adapter_failure",
+      "code": "invalid_adapter_configuration",
+      "condition": "An adapter identifier, URI, or configuration is invalid.",
+      "source": "SPEC.md section 17.10"
+    },
+    {
+      "category": "execution_store_adapter_failure",
+      "code": "unknown_adapter",
+      "condition": "Resolution names an adapter identifier absent from the public registry.",
+      "source": "SPEC.md section 17.10"
+    },
+    {
+      "category": "execution_store_failure",
+      "code": "execution_store_failure",
+      "condition": "The execution store reports an infrastructure failure before a durable host result.",
+      "source": "SPEC.md section 17.3; current Rust StoreErrorCode"
+    },
+    {
+      "category": "execution_store_failure",
+      "code": "injected_pre_commit_failure",
+      "condition": "The conformance store injects failure before committing a candidate transaction.",
+      "source": "execution-checkpoint profile pre_commit_rollback"
+    },
+    {
+      "category": "execution_store_failure",
+      "code": "response_lost_after_commit",
+      "condition": "The conformance store commits successfully but loses the operation response.",
+      "source": "execution-checkpoint profile post_commit_response_loss_replay"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "cel_profile_error",
+      "condition": "A CEL expression violates the closed portable CEL syntax, symbol, overload, or type profile.",
+      "source": "SPEC.md sections 5.1 and 5.5"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "destroyed_reference_binding",
+      "condition": "A binding would retain an instance reference beyond the declaring variable's lifetime.",
+      "source": "SPEC.md section 5.1"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "destroyed_variable_write",
+      "condition": "An action may write a variable after its declaring scope is destroyed.",
+      "source": "SPEC.md section 5.1"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "duplicate_key",
+      "condition": "A source mapping or JSON object contains a duplicate member name.",
+      "source": "SPEC.md section 2"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "invalid_binding",
+      "condition": "A component or spawn author binding cannot satisfy the target declaration.",
+      "source": "SPEC.md sections 4.5 and 5.1"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "invalid_boolean_syntax",
+      "condition": "A YAML source uses a noncanonical Boolean scalar.",
+      "source": "SPEC.md section 2"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "invalid_null_syntax",
+      "condition": "A YAML source uses a noncanonical null scalar.",
+      "source": "SPEC.md section 2"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "invalid_numeric_syntax",
+      "condition": "A YAML source uses numeric syntax outside the required JSON number grammar.",
+      "source": "SPEC.md section 2"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "invalid_unicode",
+      "condition": "A source string is not a sequence of Unicode scalar values.",
+      "source": "SPEC.md section 2"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "non_json_value",
+      "condition": "The parsed source is not one acyclic JSON-compatible value tree.",
+      "source": "SPEC.md section 2"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "non_string_map_key",
+      "condition": "A source mapping contains a key that is not a string.",
+      "source": "SPEC.md section 2"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "numeric_value_out_of_range",
+      "condition": "A numeric source value is outside the portable numeric domain.",
+      "source": "SPEC.md sections 2 and 5.2"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "root_local_transition",
+      "condition": "A local transition targets the machine root, which has no parent.",
+      "source": "SPEC.md section 5.1"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "root_reentry",
+      "condition": "A transition or history target would reenter the machine root.",
+      "source": "SPEC.md section 5.1"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "semantic_validation",
+      "condition": "Bundle semantics fail a closed load rule without a more specific code.",
+      "source": "SPEC.md section 5.1"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "structural_validation",
+      "condition": "The parsed bundle fails the closed format-1 JSON Schema.",
+      "source": "SPEC.md sections 2 and 5.1"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "unsupported_format",
+      "condition": "A machine document does not select the exact supported integer format.",
+      "source": "SPEC.md sections 2 and 3"
+    },
+    {
+      "category": "machine_load_failure",
+      "code": "unsupported_yaml_feature",
+      "condition": "A source uses anchors, aliases, merge keys, explicit tags, or another forbidden YAML feature.",
+      "source": "SPEC.md section 2"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "aggregate_state_digest_mismatch",
+      "condition": "An aggregate envelope's supplied digest differs from its canonical aggregate digest.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "definition_fingerprint_mismatch",
+      "condition": "Resolved definition bytes do not reproduce the requested validated bundle fingerprint.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "definition_untrusted",
+      "condition": "A resolved definition is absent from the deployment trust authority.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "invalid_aggregate_state",
+      "condition": "A recognized aggregate fails its closed schema or semantic invariants.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "invalid_aggregate_state_package",
+      "condition": "A recognized package fails structure, attachment uniqueness, or cross-reference validation.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "invalid_migration_descriptor",
+      "condition": "A recognized migration descriptor fails its closed schema or semantic rules.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "invalid_migration_request",
+      "condition": "The migration request is incomplete, malformed, or internally inconsistent.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "migration_descriptor_untrusted",
+      "condition": "A resolved migration descriptor is absent from the deployment trust authority.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "migration_resource_limit_exceeded",
+      "condition": "Migration input, evaluation, or output exceeds a deterministic configured resource limit.",
+      "source": "SPEC.md sections 16.11 and 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "migration_route_mismatch",
+      "condition": "A descriptor route member does not connect the exact adjacent definition identities.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "migration_route_missing",
+      "condition": "No complete ordered descriptor route reaches the requested target definition.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "migration_totality_failure",
+      "condition": "Migration cannot produce a complete state valid under the target definition.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "migration_transform_fault",
+      "condition": "A statically valid migration transform fails during evaluation.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "source_definition_unavailable",
+      "condition": "The definition named by the stored aggregate cannot be resolved.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "target_definition_unavailable",
+      "condition": "A requested target or intermediate non-source definition cannot be resolved.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "terminal_migration_rejected",
+      "condition": "Migration policy rejects a terminal aggregate even in maintenance mode.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "terminal_migration_requires_maintenance",
+      "condition": "Migration of a completed or faulted aggregate is requested outside maintenance mode.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "unsupported_aggregate_state_format",
+      "condition": "The selected aggregate decoder receives an unknown or absent aggregate-state format.",
+      "source": "SPEC.md sections 16.1 and 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "unsupported_aggregate_state_package_format",
+      "condition": "The selected package decoder receives an unknown or absent package format.",
+      "source": "SPEC.md sections 16.1 and 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "unsupported_aggregate_state_package_schema_version",
+      "condition": "The selected package decoder receives an unsupported package schema version.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "unsupported_aggregate_state_schema_version",
+      "condition": "The selected aggregate decoder receives an unsupported aggregate schema version.",
+      "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "unsupported_migration_descriptor_format",
+      "condition": "The selected descriptor decoder receives an unknown or absent descriptor format.",
+      "source": "SPEC.md sections 16.1 and 16.12"
+    },
+    {
+      "category": "persistence_failure",
+      "code": "unsupported_migration_descriptor_schema_version",
+      "condition": "The selected descriptor decoder receives an unsupported descriptor schema version.",
+      "source": "SPEC.md section 16.12"
+    }
+  ]
+}

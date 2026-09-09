@@ -34,6 +34,8 @@ from ruamel.yaml.tokens import (
     ValueToken,
 )
 
+from closed_code_registry import RegistryValidationError, validate_registry
+
 
 JSON_NUMBER = re.compile(
     r"^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?$"
@@ -4330,6 +4332,10 @@ def validate_persistence_profile_02(case: Path) -> None:
 
 
 def validate_repository(repository_root: Path, spec_root: Path) -> str:
+    try:
+        registry_categories, registry_entries = validate_registry(repository_root)
+    except RegistryValidationError as error:
+        raise ValidationFailure(f"closed-code registry: {error}") from error
     validate_direct_descriptor_expectation_probes()
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
@@ -4739,6 +4745,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             )
 
     return (
+        f"validated {registry_entries} closed-code entries across "
+        f"{registry_categories} categories; "
         f"validated {len(document_paths)} bundle documents across {len(cases)} "
         f"case directories against spec {spec_version}; "
         f"{artifact_documents} JSON artifacts, "

@@ -40,3 +40,9 @@ jobs:
         run: >-
           python scripts/validate_conformance.py
           --spec-root .determa-state-spec
+
+      - name: Test closed-code registry validation
+        run: python scripts/test_closed_code_registry.py
+
+      - name: Check generated closed-code vectors
+        run: python scripts/closed_code_registry.py --check

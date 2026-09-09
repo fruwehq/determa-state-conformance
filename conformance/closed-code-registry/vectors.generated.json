@@ -1,0 +1,152 @@
+{
+  "vector_schema_version": 1,
+  "registry_sha256": "5e4d0c7840976483861ed0023efebbf618f681713279f59c1bd8c70d18c3b149",
+  "categories": [
+    {
+      "id": "checkpoint_artifact_failure",
+      "codes": [
+        "execution_checkpoint_digest_mismatch",
+        "invalid_execution_checkpoint",
+        "unsupported_execution_checkpoint_format",
+        "unsupported_execution_checkpoint_schema_version"
+      ]
+    },
+    {
+      "id": "checkpoint_host_failure",
+      "codes": [
+        "checkpoint_revision_conflict",
+        "creation_id_conflict",
+        "creation_rejected",
+        "effect_id_conflict",
+        "event_id_conflict",
+        "injected_pre_commit_failure",
+        "invalid_execution_checkpoint",
+        "operation_id_conflict",
+        "physical_deletion_unsupported",
+        "response_lost_after_commit"
+      ]
+    },
+    {
+      "id": "checkpoint_pre_acceptance_failure",
+      "codes": [
+        "delivery_digest_mismatch",
+        "event_id_conflict",
+        "invalid_delivery_mode",
+        "invalid_delivery_origin",
+        "malformed_delivery",
+        "tombstoned_root",
+        "wrong_root"
+      ]
+    },
+    {
+      "id": "creation_rejection",
+      "codes": [
+        "invalid_binding",
+        "invalid_creation_request",
+        "invalid_machine_target"
+      ]
+    },
+    {
+      "id": "dispatch_rejection",
+      "codes": [
+        "inactive_component_target",
+        "incompatible_bundle",
+        "invalid_correlation",
+        "invalid_event",
+        "invalid_instance_target",
+        "invalid_payload",
+        "invalid_prior_state"
+      ]
+    },
+    {
+      "id": "disposition",
+      "codes": [
+        "faulted",
+        "handled",
+        "rejected",
+        "unhandled"
+      ]
+    },
+    {
+      "id": "engine_fault",
+      "codes": [
+        "action_fault",
+        "binding_not_empty",
+        "cascade_fault",
+        "contained_runtime_fault",
+        "guard_fault",
+        "inactive_component_target",
+        "invalid_instance_target",
+        "invariant_fault"
+      ]
+    },
+    {
+      "id": "execution_store_adapter_failure",
+      "codes": [
+        "adapter_capability_mismatch",
+        "duplicate_adapter_registration",
+        "invalid_adapter_configuration",
+        "unknown_adapter"
+      ]
+    },
+    {
+      "id": "execution_store_failure",
+      "codes": [
+        "execution_store_failure",
+        "injected_pre_commit_failure",
+        "response_lost_after_commit"
+      ]
+    },
+    {
+      "id": "machine_load_failure",
+      "codes": [
+        "cel_profile_error",
+        "destroyed_reference_binding",
+        "destroyed_variable_write",
+        "duplicate_key",
+        "invalid_binding",
+        "invalid_boolean_syntax",
+        "invalid_null_syntax",
+        "invalid_numeric_syntax",
+        "invalid_unicode",
+        "non_json_value",
+        "non_string_map_key",
+        "numeric_value_out_of_range",
+        "root_local_transition",
+        "root_reentry",
+        "semantic_validation",
+        "structural_validation",
+        "unsupported_format",
+        "unsupported_yaml_feature"
+      ]
+    },
+    {
+      "id": "persistence_failure",
+      "codes": [
+        "aggregate_state_digest_mismatch",
+        "definition_fingerprint_mismatch",
+        "definition_untrusted",
+        "invalid_aggregate_state",
+        "invalid_aggregate_state_package",
+        "invalid_migration_descriptor",
+        "invalid_migration_request",
+        "migration_descriptor_untrusted",
+        "migration_resource_limit_exceeded",
+        "migration_route_mismatch",
+        "migration_route_missing",
+        "migration_totality_failure",
+        "migration_transform_fault",
+        "source_definition_unavailable",
+        "target_definition_unavailable",
+        "terminal_migration_rejected",
+        "terminal_migration_requires_maintenance",
+        "unsupported_aggregate_state_format",
+        "unsupported_aggregate_state_package_format",
+        "unsupported_aggregate_state_package_schema_version",
+        "unsupported_aggregate_state_schema_version",
+        "unsupported_migration_descriptor_format",
+        "unsupported_migration_descriptor_schema_version"
+      ]
+    }
+  ]
+}
