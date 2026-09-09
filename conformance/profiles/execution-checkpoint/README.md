@@ -57,6 +57,15 @@ capabilities, and composed host features. Validator self-mutations prove that sw
 creation coverage, wrong code/pin/input digest, rebound dispatch drift, extra evidence
 members, and capability-first invalid-configuration handling are rejected.
 
+The scope-isolation variant adds only behavior executable through existing foreground
+host/store operations. Each vector invokes an external scope resolver and, on success,
+the existing `update_pending_outbox` ExecutionHost operation. Exact call traces cover
+the resolver, ExecutionHost, store, and core boundaries. The state artifact binds the
+complete checkpoint map and complete stored outbox-record map for every scope; a
+successful call may change only the selected scope. Rejected missing, ambiguous,
+mismatched, or unauthorized selection preserves the complete artifact byte-for-byte
+and makes no ExecutionHost, store, or core call.
+
 Coverage is intentionally grouped into three scenario directories:
 
 - `checkpoint-01-delivery-lifecycle` covers creation commit/replay/conflict and
@@ -69,6 +78,10 @@ Coverage is intentionally grouped into three scenario directories:
   terminal states; idempotent pending and terminal updates; unequal-effect conflict;
   stale writer rejection; compact effect tombstones; receipt linkage; canonical
   ordering; and forbidden deletion while a retained receipt references the effect.
+  Its scope-isolation vectors perform the same pending-outbox update independently in
+  two externally selected logical scopes and require byte-identical portable
+  checkpoint serialization, checkpoint digest, and effect identities after both
+  operations.
 - `checkpoint-03-retention-and-root-lifecycle` covers a non-empty keyed maintenance
   migration/audit, post-commit response loss and replay, operation conflict, permanent
   retention, irreversible bounded retention in both directions, dependency-safe
@@ -105,7 +118,7 @@ checkout.
 
 The checked generation used:
 
-- specification `cc4b0d734aa1c5953de75fb53b63e390a3b72761`;
+- specification `ad30c421264901f0f930c5993ae88b90ce043d08`;
 - Python core `7b17d788b48049648e7e463aa3d35ba13dc1aa6e`; and
 - Rust core `d17480c8b281dcd17953f59afcf6b5d23ff44efd`.
 

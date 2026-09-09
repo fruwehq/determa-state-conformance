@@ -80,6 +80,7 @@ DRIVER_ARTIFACT_KINDS = {
     "execution_checkpoint_core_evidence": (
         "execution-checkpoint-core-evidence.schema.json"
     ),
+    "execution_store_scope_state": "execution-store-scope-state.schema.json",
 }
 MINIMUM_RESOURCE_LIMIT_FLOORS = {
     "maximum_aggregate_bytes": "1048576",
@@ -196,6 +197,25 @@ REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
         "compact_outbox_missing_reference_retention",
         "shared_transaction_missing_native_use",
         "shared_transaction_missing_store_capability",
+        "scoped_outbox_update_scope_a",
+        "scoped_outbox_update_scope_b",
+        "missing_scope_rejected",
+        "ambiguous_scope_rejected",
+        "mismatched_scope_rejected",
+        "unauthorized_scope_rejected",
+        "portable_state_scope_invariance",
+    }
+)
+
+EXECUTION_STORE_SCOPE_COVERAGE = frozenset(
+    {
+        "scoped_outbox_update_scope_a",
+        "scoped_outbox_update_scope_b",
+        "missing_scope_rejected",
+        "ambiguous_scope_rejected",
+        "mismatched_scope_rejected",
+        "unauthorized_scope_rejected",
+        "portable_state_scope_invariance",
     }
 )
 EXECUTION_CHECKPOINT_OPERATION_OUTCOMES: dict[
@@ -448,7 +468,7 @@ EXECUTION_CHECKPOINT_COVERAGE_RULES = {
     "shared_transaction_missing_store_capability": ("validate_host_profile", "failure", "adapter_capability_mismatch", "absent", "none", None, "missing_shared_capability"),
 }
 if frozenset(EXECUTION_CHECKPOINT_COVERAGE_RULES) != (
-    REQUIRED_EXECUTION_CHECKPOINT_COVERAGE
+    REQUIRED_EXECUTION_CHECKPOINT_COVERAGE - EXECUTION_STORE_SCOPE_COVERAGE
 ):
     raise RuntimeError("execution-checkpoint coverage rules are not total")
 ARTIFACT_FORMAT_FIELDS = {
@@ -1421,6 +1441,16 @@ def artifact_entries(
                 if next(validator.iter_errors(probe), None) is None:
                     raise ValidationFailure(
                         f"{path}: core evidence schema accepts a wrong provenance pin"
+                    )
+            if kind == "execution_store_scope_state":
+                probe = copy.deepcopy(analysis.document)
+                first_scope = probe["snapshots"][
+                    next(iter(probe["snapshots"]))
+                ]["scopes"][0]
+                first_scope["language_specific"] = True
+                if next(validator.iter_errors(probe), None) is None:
+                    raise ValidationFailure(
+                        f"{path}: scope-state schema accepts extra members"
                     )
         elif entry.get("semantic_probe") is not None:
             if (
@@ -2718,7 +2748,13 @@ def validate_execution_checkpoint_profile(
 
     names: set[str] = set()
     coverage: set[str] = set()
-    vectors = test["execution_checkpoint_profile"]["vectors"]
+    all_vectors = test["execution_checkpoint_profile"]["vectors"]
+    scope_vectors = [
+        vector for vector in all_vectors if "scope_selection" in vector
+    ]
+    vectors = [
+        vector for vector in all_vectors if "scope_selection" not in vector
+    ]
     for filename, entry in manifest.items():
         if entry["kind"] != "execution_checkpoint_core_evidence":
             continue
@@ -3493,6 +3529,337 @@ def validate_execution_checkpoint_profile(
                     f"{location}: composed host-profile result is incorrect"
                 )
 
+    def scope_state(
+        reference: dict[str, str], location: str
+    ) -> tuple[dict[str, Any], bytes]:
+        filename = reference["file"]
+        entry = manifest.get(filename)
+        if (
+            entry is None
+            or entry["kind"] != "execution_store_scope_state"
+            or not entry["valid"]
+        ):
+            raise ValidationFailure(
+                f"{location}: {filename} must be a valid scope state"
+            )
+        value = resolve_ref(
+            reference,
+            location,
+            "execution_store_scope_state",
+        )
+        if not isinstance(value, dict):
+            raise ValidationFailure(f"{location}: scope state must be an object")
+        return value, canonical_json_bytes(value)
+
+    def checkpoint_outbox_records(document: dict[str, Any]) -> list[dict[str, str]]:
+        records = [
+            ("pending", item)
+            for item in document["pending_outbox_intents"]
+        ] + [
+            ("terminal", item)
+            for item in document["terminal_outbox_records"]
+        ] + [
+            ("tombstone", item)
+            for item in document["outbox_effect_tombstones"]
+        ]
+        return [
+            {
+                "effect_id": (
+                    record["effect_id"]
+                    if kind == "tombstone"
+                    else record["intent"]["effect_id"]
+                ),
+                "record_kind": kind,
+                "source_digest": hash_value(record),
+            }
+            for kind, record in records
+        ]
+
+    def validate_scope_state(
+        document: dict[str, Any], location: str
+    ) -> dict[str, dict[str, Any]]:
+        scopes: dict[str, dict[str, Any]] = {}
+        isolation_keys: set[str] = set()
+        for scope_document in document["scopes"]:
+            identifier = scope_document["logical_scope_id"]
+            isolation_key = scope_document["physical_isolation_key"]
+            if identifier in scopes or isolation_key in isolation_keys:
+                raise ValidationFailure(
+                    f"{location}: logical scopes and isolation keys must be unique"
+                )
+            scopes[identifier] = scope_document
+            isolation_keys.add(isolation_key)
+            actual_records: list[dict[str, str]] = []
+            for root_instance_id, binding in scope_document["checkpoints"].items():
+                resolved = checkpoint(binding["file"], location)
+                if resolved is None:
+                    raise ValidationFailure(
+                        f"{location}: missing checkpoint {binding['file']}"
+                    )
+                checkpoint_document, source = resolved
+                if (
+                    checkpoint_document["root_instance_id"] != root_instance_id
+                    or binding["serialization_digest"]
+                    != hash_bytes(canonical_json_bytes(checkpoint_document))
+                    or binding["execution_checkpoint_digest"]
+                    != checkpoint_document["execution_checkpoint_digest"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: checkpoint map is not byte-exact"
+                    )
+                actual_records.extend(
+                    checkpoint_outbox_records(checkpoint_document)
+                )
+            effect_ids = [item["effect_id"] for item in actual_records]
+            if (
+                len(effect_ids) != len(set(effect_ids))
+                or scope_document["outbox_records"] != actual_records
+            ):
+                raise ValidationFailure(
+                    f"{location}: complete outbox-record map is not exact"
+                )
+        return scopes
+
+    for index, vector in enumerate(scope_vectors):
+        location = f"{case.name} scope vector {index} ({vector['name']})"
+        if vector["name"] in names:
+            raise ValidationFailure(f"{case.name}: duplicate vector {vector['name']}")
+        names.add(vector["name"])
+        duplicate_coverage = coverage & set(vector["covers"])
+        if duplicate_coverage:
+            raise ValidationFailure(
+                f"{location}: duplicate coverage {sorted(duplicate_coverage)}"
+            )
+        coverage.update(vector["covers"])
+
+        before_document, before_source = scope_state(
+            vector["scope_state_before"], location
+        )
+        after_document, after_source = scope_state(
+            vector["scope_state_after"], location
+        )
+        before_scopes = validate_scope_state(before_document, location)
+        after_scopes = validate_scope_state(after_document, location)
+        if (
+            before_document["physical_backend_id"]
+            != after_document["physical_backend_id"]
+            or set(before_scopes) != set(after_scopes)
+        ):
+            raise ValidationFailure(
+                f"{location}: backend or logical scope membership changed"
+            )
+
+        selection = vector["scope_selection"]
+        classification = selection["classification"]
+        requested = selection["requested_scope_id"]
+        candidates = selection["candidates"]
+        candidate_ids = [item["logical_scope_id"] for item in candidates]
+        candidate_keys = [item["physical_isolation_key"] for item in candidates]
+        if (
+            len(candidate_ids) != len(set(candidate_ids))
+            or len(candidate_keys) != len(set(candidate_keys))
+        ):
+            raise ValidationFailure(f"{location}: scope candidates are not distinct")
+        for candidate in candidates:
+            candidate_scope = before_scopes.get(candidate["logical_scope_id"])
+            if (
+                candidate_scope is None
+                or candidate_scope["physical_isolation_key"]
+                != candidate["physical_isolation_key"]
+            ):
+                raise ValidationFailure(
+                    f"{location}: scope candidate is not bound to store state"
+                )
+        selected_scope_id: str | None = None
+        if classification == "selected":
+            if (
+                requested is None
+                or len(candidates) != 1
+                or candidates[0]["logical_scope_id"] != requested
+                or not candidates[0]["authorized"]
+            ):
+                raise ValidationFailure(
+                    f"{location}: selected scope is not exact and authorized"
+                )
+            selected_scope_id = requested
+        elif classification == "missing":
+            if requested is not None or candidates:
+                raise ValidationFailure(f"{location}: missing selection is not empty")
+        elif classification == "ambiguous":
+            if requested is None or len(candidates) < 2:
+                raise ValidationFailure(f"{location}: ambiguous selection is not exact")
+        elif classification == "mismatched":
+            if (
+                requested is None
+                or len(candidates) != 1
+                or candidates[0]["logical_scope_id"] == requested
+                or not candidates[0]["authorized"]
+            ):
+                raise ValidationFailure(f"{location}: mismatched selection is not exact")
+        elif classification == "unauthorized":
+            if (
+                requested is None
+                or len(candidates) != 1
+                or candidates[0]["logical_scope_id"] != requested
+                or candidates[0]["authorized"]
+            ):
+                raise ValidationFailure(f"{location}: unauthorized selection is not exact")
+
+        expectation = vector["expect"]
+        expected_result = "selected" if selected_scope_id is not None else "rejected"
+        if (
+            expectation["selection_result"] != expected_result
+            or expectation["selected_scope_id"] != selected_scope_id
+        ):
+            raise ValidationFailure(f"{location}: scope selection result drift")
+        state_changed = before_source != after_source
+        if (expectation["scope_state_mutation"] == "changed") != state_changed:
+            raise ValidationFailure(f"{location}: scope-state mutation drift")
+
+        expected_calls = {
+            "resolver": ["resolve_execution_store_scope"],
+            "execution_host": (
+                ["update_pending_outbox"] if selected_scope_id is not None else []
+            ),
+            "store": (
+                ["load_checkpoint", "compare_and_swap_checkpoint"]
+                if selected_scope_id is not None
+                else []
+            ),
+            "core": [],
+        }
+        if expectation["calls"] != expected_calls:
+            raise ValidationFailure(f"{location}: resolver/host/store/core trace drift")
+
+        if selected_scope_id is None:
+            if (
+                before_source != after_source
+                or before_document != after_document
+                or expectation["checkpoint_map_mutation"] != "unchanged"
+                or expectation["outbox_record_map_mutation"] != "unchanged"
+            ):
+                raise ValidationFailure(
+                    f"{location}: rejected scope selection changed complete store state"
+                )
+        else:
+            for identifier in set(before_scopes) - {selected_scope_id}:
+                if before_scopes[identifier] != after_scopes[identifier]:
+                    raise ValidationFailure(
+                        f"{location}: non-selected scope {identifier} changed"
+                    )
+            before_scope = before_scopes[selected_scope_id]
+            after_scope = after_scopes[selected_scope_id]
+            if any(
+                before_scope[field] != after_scope[field]
+                for field in ("logical_scope_id", "physical_isolation_key")
+            ):
+                raise ValidationFailure(f"{location}: selected scope metadata changed")
+            checkpoint_changed = (
+                before_scope["checkpoints"] != after_scope["checkpoints"]
+            )
+            outbox_changed = (
+                before_scope["outbox_records"] != after_scope["outbox_records"]
+            )
+            if (
+                (expectation["checkpoint_map_mutation"] == "changed")
+                != checkpoint_changed
+                or (expectation["outbox_record_map_mutation"] == "changed")
+                != outbox_changed
+            ):
+                raise ValidationFailure(f"{location}: selected scope mutation drift")
+            if set(before_scope["checkpoints"]) != set(after_scope["checkpoints"]):
+                raise ValidationFailure(f"{location}: checkpoint map membership changed")
+            changed_roots = [
+                root_instance_id
+                for root_instance_id in before_scope["checkpoints"]
+                if before_scope["checkpoints"][root_instance_id]
+                != after_scope["checkpoints"][root_instance_id]
+            ]
+            if len(changed_roots) != 1:
+                raise ValidationFailure(
+                    f"{location}: host operation must change exactly one checkpoint"
+                )
+            root_instance_id = changed_roots[0]
+            before_checkpoint = checkpoint(
+                before_scope["checkpoints"][root_instance_id]["file"], location
+            )
+            after_checkpoint = checkpoint(
+                after_scope["checkpoints"][root_instance_id]["file"], location
+            )
+            assert before_checkpoint is not None and after_checkpoint is not None
+            if (
+                canonical_decimal(
+                    after_checkpoint[0]["revision"], f"{location} after revision"
+                )
+                != canonical_decimal(
+                    before_checkpoint[0]["revision"], f"{location} before revision"
+                )
+                + 1
+            ):
+                raise ValidationFailure(
+                    f"{location}: selected checkpoint revision did not advance once"
+                )
+            before_records = {
+                item["effect_id"]: item for item in before_scope["outbox_records"]
+            }
+            after_records = {
+                item["effect_id"]: item for item in after_scope["outbox_records"]
+            }
+            effect_id = vector["effect_id"]
+            if (
+                set(before_records) != set(after_records)
+                or effect_id not in before_records
+                or before_records[effect_id] == after_records[effect_id]
+                or any(
+                    before_records[key] != after_records[key]
+                    for key in set(before_records) - {effect_id}
+                )
+            ):
+                raise ValidationFailure(
+                    f"{location}: operation changed the wrong outbox-record map entry"
+                )
+            updated_record = next(
+                (
+                    item
+                    for item in after_checkpoint[0]["pending_outbox_intents"]
+                    if item["intent"]["effect_id"] == effect_id
+                ),
+                None,
+            )
+            if (
+                updated_record is None
+                or updated_record["delivery_state"]
+                != vector["desired_pending_state"]
+            ):
+                raise ValidationFailure(
+                    f"{location}: pending-outbox result differs from host input"
+                )
+
+        for label in vector["covers"]:
+            expected = {
+                "scoped_outbox_update_scope_a": ("selected", "scope-a"),
+                "scoped_outbox_update_scope_b": ("selected", "scope-b"),
+                "missing_scope_rejected": ("missing", None),
+                "ambiguous_scope_rejected": ("ambiguous", None),
+                "mismatched_scope_rejected": ("mismatched", None),
+                "unauthorized_scope_rejected": ("unauthorized", None),
+                "portable_state_scope_invariance": ("selected", "scope-b"),
+            }[label]
+            if (classification, selected_scope_id) != expected:
+                raise ValidationFailure(
+                    f"{location}: coverage {label} does not match behavior"
+                )
+        if "portable_state_scope_invariance" in vector["covers"]:
+            scope_a = after_scopes["scope-a"]
+            scope_b = after_scopes["scope-b"]
+            if (
+                scope_a["checkpoints"] != scope_b["checkpoints"]
+                or scope_a["outbox_records"] != scope_b["outbox_records"]
+            ):
+                raise ValidationFailure(
+                    f"{location}: portable checkpoint bytes, digests, or effects differ"
+                )
+
     if run_mutation_probes:
         def expect_profile_probe_rejection(
             name: str,
@@ -3522,6 +3889,37 @@ def validate_execution_checkpoint_profile(
                 ),
                 None,
             )
+
+        if scope_vectors:
+            rejected = next(
+                vector
+                for vector in scope_vectors
+                if vector["scope_selection"]["classification"] == "missing"
+            )
+            probe = copy.deepcopy(test)
+            probe_vector = next(
+                item
+                for item in probe["execution_checkpoint_profile"]["vectors"]
+                if item["name"] == rejected["name"]
+            )
+            probe_vector["expect"]["calls"]["execution_host"] = [
+                "update_pending_outbox"
+            ]
+            expect_profile_probe_rejection("host call after rejected scope", probe)
+
+            selected_a = next(
+                vector
+                for vector in scope_vectors
+                if "scoped_outbox_update_scope_a" in vector["covers"]
+            )
+            probe = copy.deepcopy(test)
+            probe_vector = next(
+                item
+                for item in probe["execution_checkpoint_profile"]["vectors"]
+                if item["name"] == selected_a["name"]
+            )
+            probe_vector["scope_state_after"]["pointer"] = "/snapshots/updated-b"
+            expect_profile_probe_rejection("non-selected scope mutation", probe)
 
         creation_commit_index = vector_index_for("creation_commit")
         creation_replay_index = vector_index_for("creation_replay")
@@ -3602,7 +4000,7 @@ def validate_execution_checkpoint_profile(
                 probe,
             )
 
-    return coverage, len(vectors)
+    return coverage, len(all_vectors)
 
 
 def validate_execution_checkpoint_schema_totality(
@@ -3655,6 +4053,8 @@ def validate_execution_checkpoint_schema_totality(
     for index, vector in enumerate(
         test["execution_checkpoint_profile"]["vectors"]
     ):
+        if "scope_selection" in vector:
+            continue
         operation = vector["operation"]
         if operation in seen:
             continue
@@ -3715,6 +4115,31 @@ def validate_execution_checkpoint_schema_totality(
                     f"{case.name}: schema accepts impossible "
                     f"{operation}/{core_call} core call"
                 )
+
+    scope_vectors = [
+        (index, vector)
+        for index, vector in enumerate(
+            test["execution_checkpoint_profile"]["vectors"]
+        )
+        if "scope_selection" in vector
+    ]
+    if scope_vectors:
+        index, _ = scope_vectors[0]
+        probe = copy.deepcopy(test)
+        probe["execution_checkpoint_profile"]["vectors"][index][
+            "language_specific"
+        ] = True
+        if next(validator.iter_errors(probe), None) is None:
+            raise ValidationFailure(
+                f"{case.name}: scope vector schema accepts extra members"
+            )
+
+        probe = copy.deepcopy(test)
+        del probe["execution_checkpoint_profile"]["vectors"][index]["effect_id"]
+        if next(validator.iter_errors(probe), None) is None:
+            raise ValidationFailure(
+                f"{case.name}: scope vector accepts no effect identity"
+            )
 
 
 def validate_static_entry(entry: Any, case: Path) -> tuple[Path, bool, str | None]:

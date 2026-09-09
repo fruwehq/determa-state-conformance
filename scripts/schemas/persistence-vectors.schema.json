@@ -104,6 +104,7 @@
                   "execution_checkpoint",
                   "execution_checkpoint_inputs",
                   "execution_checkpoint_core_evidence",
+                  "execution_store_scope_state",
                   "artifact_resolver",
                   "resource_limits",
                   "json_value"
