@@ -36,7 +36,12 @@ migrated suite.
 - `conformance/closed-code-registry/vectors.generated.json` — the generated
   category/code projection consumed by implementation harnesses.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
-- `VERSION` — the synchronized specification version, currently `0.1.0`.
+- `VERSION` — the synchronized specification version, currently `0.2.0`.
+
+Release 0.2.0 contains the existing 111 core cases, 108 persistence vectors, 12
+persistence-profile steps, 91 execution-checkpoint vectors including six scope vectors,
+and 89 closed-code registry entries across 11 categories. The release metadata does not
+change their behavior expectations or unresolved future scope.
 
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
 pre-schema rejections, checks declared structural results against an immutable
