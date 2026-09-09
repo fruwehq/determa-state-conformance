@@ -94,8 +94,16 @@ def validate_registry(
         raise RegistryValidationError("categories must be ordered by id")
     if len(category_ids) != len(set(category_ids)):
         raise RegistryValidationError("duplicate category id")
+    category_vocabulary = schema["$defs"]["category"]["enum"]
+    missing_categories = set(category_vocabulary) - set(category_ids)
+    extra_categories = set(category_ids) - set(category_vocabulary)
+    if missing_categories or extra_categories:
+        raise RegistryValidationError(
+            "category vocabulary mismatch: "
+            f"missing={sorted(missing_categories)}, extra={sorted(extra_categories)}"
+        )
 
-    declared_categories = set(category_ids)
+    declared_categories = set(category_vocabulary)
     used_categories: set[str] = set()
     seen_entries: set[tuple[str, str]] = set()
     entry_keys: list[tuple[str, str]] = []

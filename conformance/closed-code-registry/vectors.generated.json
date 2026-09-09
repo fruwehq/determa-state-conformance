@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "5e4d0c7840976483861ed0023efebbf618f681713279f59c1bd8c70d18c3b149",
+  "registry_sha256": "765459aa8bd8e455fbba1a822c76dd9a2fba8ac9019949ec30fb0fa80bb645f2",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -92,7 +92,6 @@
     {
       "id": "execution_store_failure",
       "codes": [
-        "execution_store_failure",
         "injected_pre_commit_failure",
         "response_lost_after_commit"
       ]
@@ -115,7 +114,6 @@
         "root_local_transition",
         "root_reentry",
         "semantic_validation",
-        "structural_validation",
         "unsupported_format",
         "unsupported_yaml_feature"
       ]

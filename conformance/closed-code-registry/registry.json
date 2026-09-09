@@ -332,12 +332,6 @@
     },
     {
       "category": "execution_store_failure",
-      "code": "execution_store_failure",
-      "condition": "The execution store reports an infrastructure failure before a durable host result.",
-      "source": "SPEC.md section 17.3; current Rust StoreErrorCode"
-    },
-    {
-      "category": "execution_store_failure",
       "code": "injected_pre_commit_failure",
       "condition": "The conformance store injects failure before committing a candidate transaction.",
       "source": "execution-checkpoint profile pre_commit_rollback"
@@ -423,7 +417,7 @@
     {
       "category": "machine_load_failure",
       "code": "root_local_transition",
-      "condition": "A local transition targets the machine root, which has no parent.",
+      "condition": "A transition selected on the machine root declares local: true, regardless of its target.",
       "source": "SPEC.md section 5.1"
     },
     {
@@ -437,12 +431,6 @@
       "code": "semantic_validation",
       "condition": "Bundle semantics fail a closed load rule without a more specific code.",
       "source": "SPEC.md section 5.1"
-    },
-    {
-      "category": "machine_load_failure",
-      "code": "structural_validation",
-      "condition": "The parsed bundle fails the closed format-1 JSON Schema.",
-      "source": "SPEC.md sections 2 and 5.1"
     },
     {
       "category": "machine_load_failure",

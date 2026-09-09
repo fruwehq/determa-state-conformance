@@ -45,14 +45,26 @@ class ClosedCodeRegistryTests(unittest.TestCase):
     def test_unknown_category_is_rejected(self) -> None:
         registry = copy.deepcopy(self.registry)
         registry["entries"][0]["category"] = "unknown_category"
-        self.assert_invalid(registry, "uncategorized code")
+        self.assert_invalid(registry, "is not one of")
 
     def test_empty_category_is_rejected(self) -> None:
         registry = copy.deepcopy(self.registry)
-        registry["categories"].append(
-            {"id": "unused_category", "description": "Unused test category."}
-        )
+        category = registry["categories"][0]["id"]
+        registry["entries"] = [
+            entry for entry in registry["entries"] if entry["category"] != category
+        ]
         self.assert_invalid(registry, "categories without codes")
+
+    def test_removing_a_whole_category_is_rejected(self) -> None:
+        registry = copy.deepcopy(self.registry)
+        category = registry["categories"][0]["id"]
+        registry["categories"] = [
+            item for item in registry["categories"] if item["id"] != category
+        ]
+        registry["entries"] = [
+            entry for entry in registry["entries"] if entry["category"] != category
+        ]
+        self.assert_invalid(registry, "category vocabulary mismatch")
 
     def test_missing_required_member_is_rejected(self) -> None:
         registry = copy.deepcopy(self.registry)

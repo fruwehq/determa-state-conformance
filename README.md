@@ -64,9 +64,9 @@ string with its trigger and normative source. The same portable string may occur
 more than one category when the specification deliberately permits it on distinct
 surfaces; duplicate category/code pairs are invalid.
 
-`scripts/validate_conformance.py` validates the registry schema, category closure,
-ordering, duplicates, and generated vector bytes. Update the generated projection only
-from the registry:
+`scripts/validate_conformance.py` validates the registry schema, the independent
+closed category vocabulary, complete category coverage, ordering, duplicates, and
+generated vector bytes. Update the generated projection only from the registry:
 
 ```sh
 python scripts/closed_code_registry.py

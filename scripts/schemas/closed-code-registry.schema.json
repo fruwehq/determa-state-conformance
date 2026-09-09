@@ -1,6 +1,23 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://determa.dev/schemas/conformance/closed-code-registry.schema.json",
+  "$defs": {
+    "category": {
+      "enum": [
+        "checkpoint_artifact_failure",
+        "checkpoint_host_failure",
+        "checkpoint_pre_acceptance_failure",
+        "creation_rejection",
+        "dispatch_rejection",
+        "disposition",
+        "engine_fault",
+        "execution_store_adapter_failure",
+        "execution_store_failure",
+        "machine_load_failure",
+        "persistence_failure"
+      ]
+    }
+  },
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -26,8 +43,7 @@
         "required": ["id", "description"],
         "properties": {
           "id": {
-            "type": "string",
-            "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+            "$ref": "#/$defs/category"
           },
           "description": {
             "type": "string",
@@ -45,8 +61,7 @@
         "required": ["category", "code", "condition", "source"],
         "properties": {
           "category": {
-            "type": "string",
-            "pattern": "^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$"
+            "$ref": "#/$defs/category"
           },
           "code": {
             "type": "string",
