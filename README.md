@@ -31,6 +31,10 @@ migrated suite.
   surfaces.
 - `conformance/profiles/execution-checkpoint/` — the optional SPEC §17 durable-host
   checkpoint profile.
+- `conformance/closed-code-registry/registry.json` — the single machine-readable
+  authority for closed portable failure, rejection, fault, and disposition sets.
+- `conformance/closed-code-registry/vectors.generated.json` — the generated
+  category/code projection consumed by implementation harnesses.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
 - `VERSION` — the synchronized specification version, currently `0.1.0`.
 
@@ -52,6 +56,29 @@ python scripts/validate_conformance.py --spec-root ../determa-state-spec
 
 The supplied specification checkout must be the dependency revision under review; the
 workflow pins that revision by commit rather than following a mutable branch.
+
+### Closed-code registry
+
+The registry assigns each closed set a stable category and records every exact portable
+string with its trigger and normative source. The same portable string may occur in
+more than one category when the specification deliberately permits it on distinct
+surfaces; duplicate category/code pairs are invalid.
+
+`scripts/validate_conformance.py` validates the registry schema, the independent
+closed category vocabulary, complete category coverage, ordering, duplicates, and
+generated vector bytes. Update the generated projection only from the registry:
+
+```sh
+python scripts/closed_code_registry.py
+python scripts/closed_code_registry.py --check
+python scripts/test_closed_code_registry.py
+```
+
+The registry is conformance-first. Current Python and Rust releases do not yet expose
+enumerable complete code sets, so this repository does not claim to compare their
+production exports. Separate implementation changes must add discoverable exports and
+exact registry-set gates without requiring language-specific enum or type names to
+match.
 
 ## Driver mechanics (non-normative)
 
