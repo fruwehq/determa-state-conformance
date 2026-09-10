@@ -236,6 +236,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "capacity_zero_and_overflow_fault",
         "checkpoint_v1_requires_upgrade",
         "checkpoint_v2_schema_positive_negative",
+        "checkpoint_pending_replay_precedes_stale_cas",
         "cleanup_fault_rollback",
         "component_mailbox_isolation",
         "core_step_v2_schema_positive_negative",
@@ -293,6 +294,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "upgrade_aggregate_v1_to_v2",
         "upgrade_checkpoint_v1_to_v2_legacy_evidence",
         "upgrade_checkpoint_v1_to_v2_populated_outbox",
+        "upgrade_checkpoint_v1_spawned_target",
         "version2_counter_allocation",
         "version2_dependency_safe_pruning",
         "version2_dependency_pruning_rejected",
@@ -1063,6 +1065,12 @@ def validate_engine_fault_code(fault: Any, location: str) -> None:
         )
 
 
+def validate_aggregate_v1_fault_codes(document: dict[str, Any]) -> None:
+    """Validate only normative runtime fault records in a standalone v1 aggregate."""
+    for runtime in document["runtimes"]:
+        validate_engine_fault_code(runtime.get("fault"), "aggregate v1 runtime")
+
+
 def validate_reserved_failure_envelope(envelope: dict[str, Any], location: str) -> None:
     if envelope["event"] not in {
         "determa.component_failed",
@@ -1349,6 +1357,10 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
         }
     )
     for item in pending:
+        validate_typed_value_canonical(
+            item["envelope"]["payload"],
+            "checkpoint pending delivery envelope payload",
+        )
         accepted_revision = canonical_decimal(
             item["accepted_revision"], "checkpoint pending accepted revision"
         )
@@ -1596,6 +1608,12 @@ def validate_aggregate_v2_semantics(document: dict[str, Any]) -> None:
                 variable["value"],
                 f"aggregate v2 variable {variable['variable_declaration_pointer']}",
             )
+        for mailbox_name in ("ready_mailbox", "deferred_mailbox"):
+            for entry in runtime[mailbox_name]:
+                validate_typed_value_canonical(
+                    entry["envelope"]["payload"],
+                    f"aggregate v2 {mailbox_name} envelope payload",
+                )
         require_canonical_collection(
             runtime["history"],
             lambda item: item["history_declaration_pointer"].encode("utf-8"),
@@ -1789,6 +1807,8 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
                     mailbox_acceptance_sequences.add(entry["acceptance_sequence"])
 
     receipts = document["operation_receipts"]
+    legacy_terminal_events: dict[str, dict[str, Any]] = {}
+    legacy_terminal_acceptance_sequences: set[str] = set()
     for receipt in receipts:
         validate_engine_fault_code(receipt.get("fault"), "checkpoint v2 receipt")
         outcome = receipt.get("outcome")
@@ -1807,6 +1827,18 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
                     legacy_outcome.get("fault"),
                     "checkpoint v2 legacy terminal outcome",
                 )
+            if legacy_receipt.get("operation_kind") == "delivery":
+                event_id = legacy_receipt["event_id"]
+                acceptance_sequence = legacy_receipt["accepted_delivery_sequence"]
+                if (
+                    event_id in legacy_terminal_events
+                    or acceptance_sequence in legacy_terminal_acceptance_sequences
+                ):
+                    raise ValidationFailure(
+                        "checkpoint v2: duplicate legacy terminal event identity"
+                    )
+                legacy_terminal_events[event_id] = legacy_receipt
+                legacy_terminal_acceptance_sequences.add(acceptance_sequence)
     sequences = [
         canonical_decimal(receipt["receipt_sequence"], "receipt sequence")
         for receipt in receipts
@@ -1914,7 +1946,9 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
             "checkpoint v2: terminal and tombstone acceptance allocations overlap"
         )
     if mailbox_acceptance_sequences & (
-        terminal_acceptance_sequences | tombstone_acceptance_sequences
+        terminal_acceptance_sequences
+        | tombstone_acceptance_sequences
+        | legacy_terminal_acceptance_sequences
     ):
         raise ValidationFailure(
             "checkpoint v2: live and terminal acceptance allocations overlap"
@@ -1938,6 +1972,16 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
         raise ValidationFailure(
             "checkpoint v2: acceptance receipt overlaps replacement tombstone allocation"
         )
+    if acceptance_sequences & legacy_terminal_acceptance_sequences:
+        raise ValidationFailure(
+            "checkpoint v2: acceptance receipt overlaps legacy terminal allocation"
+        )
+    if legacy_terminal_acceptance_sequences & (
+        terminal_acceptance_sequences | tombstone_acceptance_sequences
+    ):
+        raise ValidationFailure(
+            "checkpoint v2: legacy and version-2 terminal allocations overlap"
+        )
     mailbox_event_ids = set(mailbox_entries)
     if mailbox_event_ids & terminal_receipts.keys():
         raise ValidationFailure("checkpoint v2: event is live and terminal")
@@ -1945,6 +1989,12 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
         raise ValidationFailure("checkpoint v2: event overlaps tombstone")
     if acceptance_receipts.keys() & tombstones.keys():
         raise ValidationFailure("checkpoint v2: acceptance receipt overlaps replacement tombstone")
+    if acceptance_receipts.keys() & legacy_terminal_events.keys():
+        raise ValidationFailure("checkpoint v2: acceptance receipt overlaps legacy terminal event")
+    if mailbox_event_ids & legacy_terminal_events.keys():
+        raise ValidationFailure("checkpoint v2: legacy terminal event remains in a mailbox")
+    if (terminal_receipts.keys() | tombstones.keys()) & legacy_terminal_events.keys():
+        raise ValidationFailure("checkpoint v2: legacy terminal event has multiple lifecycle locations")
     next_receipt = canonical_decimal(
         document["next_operation_receipt_sequence"], "next receipt sequence"
     )
@@ -1961,6 +2011,7 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
                 list(acceptance_sequences)
                 + list(terminal_acceptance_sequences)
                 + list(tombstone_acceptance_sequences)
+                + list(legacy_terminal_acceptance_sequences)
             )
         ]
         if retained_acceptance_allocations and max(retained_acceptance_allocations) >= next_acceptance:
@@ -1969,7 +2020,6 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
     legacy_producer_references: dict[
         str, list[tuple[dict[str, Any], dict[str, Any]]]
     ] = {}
-    legacy_terminal_events: dict[str, dict[str, Any]] = {}
     referenced_effects: set[str] = set()
     for producer in receipts:
         for reference in producer.get("emission_references", []):
@@ -1979,13 +2029,6 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
                 referenced_effects.add(reference["effect_id"])
         legacy_receipt = producer.get("legacy_receipt")
         if isinstance(legacy_receipt, dict):
-            if legacy_receipt.get("operation_kind") == "delivery":
-                event_id = legacy_receipt["event_id"]
-                if event_id in legacy_terminal_events:
-                    raise ValidationFailure(
-                        "checkpoint v2: duplicate legacy terminal event identity"
-                    )
-                legacy_terminal_events[event_id] = legacy_receipt
             for reference in legacy_receipt.get("emission_references", []):
                 if reference.get("kind") == "internal_delivery":
                     legacy_producer_references.setdefault(
@@ -2106,6 +2149,9 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
 
     admitted = analyze_artifact(case / "admitted-checkpoint-v2.json").document
     upgraded = analyze_artifact(case / "upgraded-checkpoint-v2.json").document
+    upgraded_outbox = analyze_artifact(
+        case / "upgraded-outbox-checkpoint-v2.json"
+    ).document
     probes: dict[str, dict[str, Any]] = {}
     orphan = copy.deepcopy(admitted)
     orphan["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"] = []
@@ -2140,6 +2186,44 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
     removed_legacy_event = copy.deepcopy(missing_legacy_acceptance)
     removed_legacy_event["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"] = []
     probes["removed upgraded legacy work and receipt"] = reseal(removed_legacy_event)
+    legacy_counter = copy.deepcopy(upgraded_outbox)
+    legacy_counter["root_record"]["aggregate_state"][
+        "next_acceptance_sequence"
+    ] = "0"
+    probes["legacy terminal acceptance counter"] = reseal(legacy_counter)
+    legacy_duplicate_location = copy.deepcopy(upgraded)
+    legacy_duplicate_aggregate = legacy_duplicate_location["root_record"][
+        "aggregate_state"
+    ]
+    duplicate_entry = copy.deepcopy(
+        legacy_duplicate_aggregate["runtimes"][0]["ready_mailbox"][0]
+    )
+    legacy_receipt = next(
+        receipt["legacy_receipt"]
+        for receipt in legacy_duplicate_location["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+    )
+    duplicate_entry["acceptance_sequence"] = legacy_receipt[
+        "accepted_delivery_sequence"
+    ]
+    duplicate_entry["envelope"]["event_id"] = legacy_receipt["event_id"]
+    duplicate_entry["envelope"]["cause_id"] = legacy_receipt["event_id"]
+    duplicate_entry["envelope_digest"] = hash_value(
+        [
+            "determa-inbox-envelope-digest-2",
+            "2",
+            legacy_duplicate_aggregate["root_instance_id"],
+            duplicate_entry["delivery_mode"],
+            duplicate_entry["envelope"],
+        ]
+    )
+    legacy_duplicate_aggregate["runtimes"][0]["deferred_mailbox"] = [
+        duplicate_entry
+    ]
+    probes["legacy terminal duplicated into mailbox"] = reseal(
+        legacy_duplicate_location
+    )
     duplicate_location = copy.deepcopy(admitted)
     duplicate_location["root_record"]["aggregate_state"]["runtimes"][0]["deferred_mailbox"] = copy.deepcopy(
         duplicate_location["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"]
@@ -2188,6 +2272,41 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
         duplicate_effect["pending_outbox_intents"][0]["intent"]["effect_id"]
     )
     probes["populated outbox effect identity"] = reseal(duplicate_effect)
+    for label, members in (
+        (
+            "checkpoint reversed envelope payload",
+            [["transaction_id", ["string", "tx-1"]], ["alpha", ["string", "a"]]],
+        ),
+        (
+            "checkpoint duplicate envelope payload key",
+            [
+                ["transaction_id", ["string", "tx-1"]],
+                ["transaction_id", ["string", "tx-2"]],
+            ],
+        ),
+    ):
+        malformed_payload = copy.deepcopy(admitted)
+        entry = malformed_payload["root_record"]["aggregate_state"]["runtimes"][0][
+            "ready_mailbox"
+        ][0]
+        entry["envelope"]["payload"] = ["map", members]
+        entry["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                malformed_payload["root_instance_id"],
+                entry["delivery_mode"],
+                entry["envelope"],
+            ]
+        )
+        acceptance = next(
+            receipt
+            for receipt in malformed_payload["operation_receipts"]
+            if receipt.get("operation_kind") == "acceptance"
+            and receipt.get("event_id") == entry["envelope"]["event_id"]
+        )
+        acceptance["request_digest"] = entry["envelope_digest"]
+        probes[label] = reseal(malformed_payload)
     for name, probe in probes.items():
         try:
             validate_execution_checkpoint_v2_semantics(probe)
@@ -2195,9 +2314,79 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
             continue
         raise ValidationFailure(f"version-2 adversarial probe was accepted: {name}")
 
+    spawned_v1 = analyze_artifact(case / "spawned-child-checkpoint-v1.json").document
+    for label, members in (
+        (
+            "version-1 reversed envelope payload",
+            [["transaction_id", ["string", "tx-1"]], ["alpha", ["string", "a"]]],
+        ),
+        (
+            "version-1 duplicate envelope payload key",
+            [
+                ["transaction_id", ["string", "tx-1"]],
+                ["transaction_id", ["string", "tx-2"]],
+            ],
+        ),
+    ):
+        probe = copy.deepcopy(spawned_v1)
+        pending = probe["pending_deliveries"][0]
+        pending["envelope"]["payload"] = ["map", members]
+        pending["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-1",
+                "1",
+                probe["root_instance_id"],
+                pending["delivery_mode"],
+                pending["envelope"],
+            ]
+        )
+        probe.pop("execution_checkpoint_digest")
+        probe["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-1", probe]
+        )
+        try:
+            validate_execution_checkpoint_semantics(probe)
+        except ValidationFailure:
+            continue
+        raise ValidationFailure(f"adversarial probe was accepted: {label}")
+
 
 def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) -> None:
-    from generate_version2_vectors import upgrade_checkpoint
+    from generate_version2_vectors import target_runtime_id, upgrade_checkpoint
+
+    target_probe_paths = (
+        repository_root
+        / "conformance/profiles/execution-checkpoint/checkpoint-01-delivery-lifecycle/created-checkpoint.json",
+        repository_root
+        / "conformance/core/117-version2-mailboxes/component-isolation-aggregate.json",
+        repository_root
+        / "conformance/core/105-owned-runtime-migration/source-aggregate-state.json",
+    )
+    targets = []
+    for path in target_probe_paths:
+        document = analyze_artifact(path).document
+        aggregate = document.get("root_record", {}).get("aggregate_state", document)
+        runtime = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["relation"]["kind"]
+            in {"root", "component", "owned_spawned_instance"}
+            and not any(
+                next(iter(existing)) == next(iter(item["target_identity"]))
+                for existing in targets
+            )
+        )
+        targets.append(runtime["target_identity"])
+        if target_runtime_id(runtime["target_identity"]) != runtime["runtime_id"]:
+            raise ValidationFailure(
+                "version-1 checkpoint target resolver changed runtime identity"
+            )
+    if {next(iter(target)) for target in targets} != {
+        "root",
+        "component",
+        "spawned_instance",
+    }:
+        raise ValidationFailure("checkpoint target resolver probe is incomplete")
 
     checkpoint_root = repository_root / "conformance/profiles/execution-checkpoint"
     retained_paths: set[Path] = set()
@@ -2210,7 +2399,7 @@ def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) ->
             checkpoint = analyze_artifact(path).document
             if checkpoint["root_record"]["status"] == "retained":
                 retained_paths.add(path)
-    if len(retained_paths) != 28:
+    if len(retained_paths) != 29:
         raise ValidationFailure(
             "version-1 retained checkpoint upgrade probe set is incomplete"
         )
@@ -2219,12 +2408,44 @@ def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) ->
         validate_execution_checkpoint_v2_semantics(upgraded)
 
 
+def validate_version1_fault_code_adversarial_probes(repository_root: Path) -> None:
+    faulted = analyze_artifact(
+        repository_root
+        / "conformance/core/94-aggregate-wire-round-trip/faulted-aggregate-state.json"
+    ).document
+    invalid = copy.deepcopy(faulted)
+    next(runtime for runtime in invalid["runtimes"] if runtime["fault"] is not None)[
+        "fault"
+    ]["code"] = "action_evaluation_failed"
+    try:
+        validate_aggregate_v1_fault_codes(invalid)
+    except ValidationFailure:
+        pass
+    else:
+        raise ValidationFailure(
+            "version-1 fault-code probe accepted action_evaluation_failed"
+        )
+
+    application_data = copy.deepcopy(
+        analyze_artifact(
+            repository_root
+            / "conformance/core/105-owned-runtime-migration/source-aggregate-state.json"
+        ).document
+    )
+    runtime = next(item for item in application_data["runtimes"] if item["variables"])
+    runtime["variables"][0]["value"] = encode_typed_value(
+        {"fault": {"code": "payment_declined"}}
+    )
+    validate_aggregate_v1_fault_codes(application_data)
+
+
 def validate_version2_aggregate_adversarial_probes(repository_root: Path) -> None:
     from generate_version2_vectors import upgrade_aggregate
 
     case = repository_root / "conformance/core/117-version2-mailboxes"
     component = analyze_artifact(case / "component-isolation-aggregate.json").document
     mailbox = analyze_artifact(case / "base-aggregate.json").document
+    payload_mailbox = analyze_artifact(case / "repeated-before.json").document
     probes: dict[str, dict[str, Any]] = {}
 
     def reseal(value: dict[str, Any]) -> dict[str, Any]:
@@ -2302,6 +2523,50 @@ def validate_version2_aggregate_adversarial_probes(repository_root: Path) -> Non
         [["map", [["alpha", ["integer", "1"]], ["alpha", ["integer", "2"]]]]],
     ]
     probes["duplicate recursive typed-map keys"] = reseal(duplicate_nested_map)
+
+    payload_entry = next(
+        entry
+        for runtime in payload_mailbox["runtimes"]
+        for mailbox_entries in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+        for entry in mailbox_entries
+        if any(
+            member[0] == "transaction_id"
+            for member in entry["envelope"]["payload"][1]
+        )
+    )
+    for label, members in (
+        (
+            "reversed envelope payload map",
+            [["transaction_id", ["string", "tx-1"]], ["alpha", ["string", "a"]]],
+        ),
+        (
+            "duplicate envelope payload map key",
+            [
+                ["transaction_id", ["string", "tx-1"]],
+                ["transaction_id", ["string", "tx-2"]],
+            ],
+        ),
+    ):
+        probe = copy.deepcopy(payload_mailbox)
+        candidate = next(
+            entry
+            for runtime in probe["runtimes"]
+            for mailbox_entries in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+            for entry in mailbox_entries
+            if entry["envelope"]["event_id"]
+            == payload_entry["envelope"]["event_id"]
+        )
+        candidate["envelope"]["payload"] = ["map", members]
+        candidate["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                probe["root_instance_id"],
+                candidate["delivery_mode"],
+                candidate["envelope"],
+            ]
+        )
+        probes[label] = reseal(probe)
 
     component_counter_order = copy.deepcopy(component)
     root = next(runtime for runtime in component_counter_order["runtimes"] if runtime["relation"]["kind"] == "root")
@@ -2437,6 +2702,11 @@ def artifact_error(
         return version_error
     if next(validator.iter_errors(document), None) is not None:
         return structural_error
+    if kind == "aggregate_state":
+        try:
+            validate_aggregate_v1_fault_codes(document)
+        except ValidationFailure:
+            return structural_error
     if kind == "aggregate_state_v2":
         try:
             validate_aggregate_v2_semantics(document)
@@ -2939,6 +3209,74 @@ def validate_direct_descriptor_expectation_probes() -> None:
         raise ValidationFailure(f"{name}: adversarial expectation was accepted")
 
 
+def checkpoint_replay_result(
+    checkpoint: dict[str, Any], delivery: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Return the exact replay response justified by retained v2 evidence."""
+    event_id = delivery["envelope"]["event_id"]
+    request_digest = delivery["envelope_digest"]
+    root_record = checkpoint["root_record"]
+    if root_record["status"] == "retained":
+        for runtime in root_record["aggregate_state"]["runtimes"]:
+            for location, mailbox in (
+                ("ready", runtime["ready_mailbox"]),
+                ("deferred", runtime["deferred_mailbox"]),
+            ):
+                for entry in mailbox:
+                    if (
+                        entry["envelope"]["event_id"] == event_id
+                        and entry["envelope_digest"] == request_digest
+                    ):
+                        return {
+                            "result": "replay",
+                            "event_id": event_id,
+                            "acceptance_sequence": entry["acceptance_sequence"],
+                            "location": location,
+                        }
+    acceptance = next(
+        (
+            receipt
+            for receipt in checkpoint["operation_receipts"]
+            if receipt.get("operation_kind") == "acceptance"
+            and receipt.get("event_id") == event_id
+            and receipt.get("request_digest") == request_digest
+        ),
+        None,
+    )
+    terminal = next(
+        (
+            receipt
+            for receipt in checkpoint["operation_receipts"]
+            if receipt.get("operation_kind") == "event_terminal"
+            and receipt.get("event_id") == event_id
+            and receipt.get("request_digest") == request_digest
+        ),
+        None,
+    )
+    if acceptance is not None and terminal is not None:
+        return {
+            "result": "replay",
+            "acceptance_receipt_sequence": acceptance["receipt_sequence"],
+            "terminal_receipt_sequence": terminal["receipt_sequence"],
+        }
+    tombstone = next(
+        (
+            item
+            for item in checkpoint["event_identity_tombstones"]
+            if item["event_id"] == event_id
+            and item["request_digest"] == request_digest
+        ),
+        None,
+    )
+    if tombstone is not None:
+        return {
+            "result": "replay",
+            "terminal_receipt_sequence": tombstone["terminal_receipt_sequence"],
+            "terminal_disposition": tombstone["terminal_disposition"],
+        }
+    return None
+
+
 def validate_version2_vectors(
     case: Path,
     test: dict[str, Any],
@@ -2996,6 +3334,9 @@ def validate_version2_vectors(
         return next((runtime for runtime in aggregate["runtimes"] if runtime["runtime_id"] == runtime_id), None)
 
     def validate_delivery(delivery: dict[str, Any], aggregate: dict[str, Any], location: str) -> None:
+        validate_typed_value_canonical(
+            delivery["envelope"]["payload"], f"{location}: delivery payload"
+        )
         expected = hash_value([
             "determa-inbox-envelope-digest-2", "2", aggregate["root_instance_id"],
             delivery["delivery_mode"], delivery["envelope"],
@@ -3075,16 +3416,15 @@ def validate_version2_vectors(
                 and selected.get("expected_checkpoint_digest")
                 == checkpoint_before["execution_checkpoint_digest"]
             )
-            replay_precedes_cas = bool(
-                {
-                    "terminal_replay_precedes_stale_cas",
-                    "terminal_tombstone_replay",
-                }
-                & covers
+            replay_result = (
+                checkpoint_replay_result(checkpoint_before, selected["deliveries"][0])
+                if operation == "checkpoint_admit_v2"
+                and len(selected.get("deliveries", [])) == 1
+                else None
             )
             if (
                 not cas_matches
-                and not replay_precedes_cas
+                and replay_result is None
                 and expectation.get("code") != "checkpoint_revision_conflict"
             ):
                 raise ValidationFailure(
@@ -3095,11 +3435,22 @@ def validate_version2_vectors(
                 if (
                     selected != original_request
                     or cas_matches
+                    or replay_result is None
                     or int(selected["expected_revision"])
                     >= int(checkpoint_before["revision"])
                 ):
                     raise ValidationFailure(
                         f"{location}: terminal replay did not reuse the exact old request"
+                    )
+            if "checkpoint_pending_replay_precedes_stale_cas" in covers:
+                if (
+                    selected != request.document["admit"]
+                    or cas_matches
+                    or replay_result is None
+                    or replay_result.get("location") not in {"ready", "deferred"}
+                ):
+                    raise ValidationFailure(
+                        f"{location}: pending replay is not derived from retained evidence"
                     )
             if "distinct_stale_checkpoint_writer_rejected" in covers:
                 candidate_ids = {
@@ -3639,6 +3990,24 @@ def validate_version2_vectors(
                     raise ValidationFailure(
                         f"{location}: checkpoint upgrade lost populated outbox"
                     )
+                if "upgrade_checkpoint_v1_spawned_target" in covers:
+                    pending = source["pending_deliveries"]
+                    spawned = next(
+                        runtime
+                        for runtime in source["root_record"]["aggregate_state"][
+                            "runtimes"
+                        ]
+                        if runtime["relation"]["kind"]
+                        == "owned_spawned_instance"
+                    )
+                    if (
+                        len(pending) != 1
+                        or pending[0]["envelope"]["target"]
+                        != spawned["target_identity"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: source lacks an exact spawned-child target"
+                        )
                 converted = {
                     entry["envelope"]["event_id"]: entry
                     for runtime in aggregate["runtimes"]
@@ -3650,6 +4019,10 @@ def validate_version2_vectors(
                     entry = converted.get(pending["envelope"]["event_id"])
                     if entry is None or entry["acceptance_sequence"] != pending["delivery_sequence"] or entry["envelope_digest"] == pending["envelope_digest"]:
                         raise ValidationFailure(f"{location}: legacy pending delivery conversion is incomplete")
+                    if entry["envelope"]["target"] != pending["envelope"]["target"]:
+                        raise ValidationFailure(
+                            f"{location}: checkpoint upgrade changed target identity"
+                        )
                     acceptance = next((receipt for receipt in result_document["operation_receipts"] if receipt.get("operation_kind") == "acceptance" and receipt.get("event_id") == pending["envelope"]["event_id"]), None)
                     if pending["delivery_mode"] == "internal" and (
                         acceptance is None
@@ -3679,11 +4052,13 @@ def validate_version2_vectors(
                             f"{location}: native internal source handler was not admitted"
                         )
                 else:
-                    matching_terminal = next((receipt for receipt in checkpoint_before["operation_receipts"] if receipt.get("operation_kind") == "event_terminal" and receipt.get("event_id") == event_id), None)
-                    matching_tombstone = next((item for item in checkpoint_before["event_identity_tombstones"] if item["event_id"] == event_id), None)
-                    evidence = matching_terminal or matching_tombstone
-                    if evidence is None or evidence["request_digest"] != delivery["envelope_digest"]:
-                        raise ValidationFailure(f"{location}: replay result lacks byte-identical prior identity")
+                    exact_replay = checkpoint_replay_result(
+                        checkpoint_before, delivery
+                    )
+                    if exact_replay is None or result_document != exact_replay:
+                        raise ValidationFailure(
+                            f"{location}: replay result does not match retained evidence"
+                        )
             if "native_internal_handler_provenance" in covers:
                 checkpoint_before = artifact(vector["checkpoint_before"]).document
                 before_aggregate = checkpoint_before["root_record"]["aggregate_state"]
@@ -3882,6 +4257,39 @@ def validate_version2_vectors(
             except ValidationFailure:
                 continue
             raise ValidationFailure(f"{case.name}: adversarial probe was accepted: {probe_name}")
+    if run_mutation_probes and case.name == "checkpoint-04-version2-mailboxes":
+        terminal_result = artifact("terminal-replay-result.json").document
+        tombstone_result = artifact("tombstone-replay-result.json").document
+        probes = {}
+        for field, sequence in (
+            ("acceptance_receipt_sequence", "999"),
+            ("terminal_receipt_sequence", "1000"),
+        ):
+            result = copy.deepcopy(terminal_result)
+            result[field] = sequence
+            probes[f"terminal replay {field}"] = {
+                "terminal-replay-result.json": result
+            }
+        wrong_disposition = copy.deepcopy(tombstone_result)
+        wrong_disposition["terminal_disposition"] = "faulted"
+        probes["tombstone replay disposition"] = {
+            "tombstone-replay-result.json": wrong_disposition
+        }
+        for probe_name, overrides in probes.items():
+            try:
+                validate_version2_vectors(
+                    case,
+                    test,
+                    bundle_paths,
+                    artifact_paths,
+                    artifact_overrides=overrides,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                f"{case.name}: adversarial probe was accepted: {probe_name}"
+            )
     return coverage
 
 
@@ -7075,6 +7483,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     except RegistryValidationError as error:
         raise ValidationFailure(f"closed-code registry: {error}") from error
     validate_direct_descriptor_expectation_probes()
+    validate_version1_fault_code_adversarial_probes(repository_root)
     validate_version2_aggregate_adversarial_probes(repository_root)
     validate_version2_checkpoint_adversarial_probes(repository_root)
     validate_all_retained_version1_checkpoint_upgrades(repository_root)
