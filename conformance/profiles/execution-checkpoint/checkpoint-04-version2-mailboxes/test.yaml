@@ -202,6 +202,17 @@ version2_vectors:
       code: event_id_conflict
       unchanged_file: terminal-checkpoint-v2.json
       caller_still_owns_input: true
+  - name: checkpoint_wrong_root_precedes_duplicate_batch
+    covers: [wrong_root_precedes_batch_duplicate]
+    operation: checkpoint_admit_v2
+    checkpoint_before: base-checkpoint.json
+    request_file: operation-inputs.json
+    request_pointer: /wrong_root_duplicate
+    expect:
+      result: failure
+      code: wrong_root
+      unchanged_file: base-checkpoint.json
+      caller_still_owns_input: true
   - name: checkpoint_distinct_stale_writer
     covers: [distinct_stale_checkpoint_writer_rejected]
     operation: checkpoint_admit_v2

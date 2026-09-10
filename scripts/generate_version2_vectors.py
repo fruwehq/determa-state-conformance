@@ -1653,6 +1653,18 @@ def produce_mailbox() -> dict[str, bytes]:
         delivery_mode="internal",
         source={"runtime": copy.deepcopy(root_runtime(rollback)["target_identity"])},
     )
+    completed_root_delivery = delivery_input(
+        cancelled,
+        root_runtime(cancelled),
+        "fanout",
+        "completed-root-admission",
+    )
+    faulted_root_delivery = delivery_input(
+        rollback,
+        root_runtime(rollback),
+        "fanout",
+        "faulted-root-admission",
+    )
 
     reserved_admission_before = copy.deepcopy(reserved_after)
     reserved_source = component_runtimes(reserved_admission_before)[0]
@@ -1779,6 +1791,14 @@ def produce_mailbox() -> dict[str, bytes]:
         "faulted_root_descendant_admit": {
             "operation": "admit_v2",
             "deliveries": [delivery_from_entry(faulted_root_descendant_entry)],
+        },
+        "completed_root_admit": {
+            "operation": "admit_v2",
+            "deliveries": [completed_root_delivery],
+        },
+        "faulted_root_admit": {
+            "operation": "admit_v2",
+            "deliveries": [faulted_root_delivery],
         },
         "completed_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(completed_component, component_runtimes(completed_component)[0], "component_work", "completed-component-admission")]},
         "faulted_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(faulted_component, component_runtimes(faulted_component)[0], "component_work", "faulted-component-admission")]},
@@ -2861,6 +2881,24 @@ def produce_checkpoint() -> dict[str, bytes]:
         ],
         "checkpoint": tombstoned,
     }
+    wrong_root_duplicate_delivery = {
+        "delivery_mode": entry["delivery_mode"],
+        "envelope": copy.deepcopy(entry["envelope"]),
+        "envelope_digest": entry["envelope_digest"],
+    }
+    wrong_root_target = next(
+        iter(wrong_root_duplicate_delivery["envelope"]["target"].values())
+    )
+    wrong_root_target["root_instance_id"] = "foreign-checkpoint-root"
+    wrong_root_duplicate_delivery["envelope_digest"] = digest(
+        [
+            "determa-inbox-envelope-digest-2",
+            "2",
+            "foreign-checkpoint-root",
+            wrong_root_duplicate_delivery["delivery_mode"],
+            wrong_root_duplicate_delivery["envelope"],
+        ]
+    )
     operations = {
         "upgrade": with_checkpoint_cas(
             {"operation": "upgrade_checkpoint_v1_to_v2"}, v1
@@ -3002,6 +3040,16 @@ def produce_checkpoint() -> dict[str, bytes]:
             "envelope": {**entry["envelope"], "payload": typed_value({"amount": 2})},
             "envelope_digest": digest(["determa-inbox-envelope-digest-2", "2", aggregate["root_instance_id"], entry["delivery_mode"], {**entry["envelope"], "payload": typed_value({"amount": 2})}]),
         }]}, terminal),
+        "wrong_root_duplicate": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [
+                    wrong_root_duplicate_delivery,
+                    copy.deepcopy(wrong_root_duplicate_delivery),
+                ],
+            },
+            operational_base,
+        ),
         "bounded_prune": with_checkpoint_cas({
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": event_terminal["receipt_sequence"],

@@ -269,6 +269,14 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /completed_root_step
     expect: { result: success, exact_result_file: completed-root-step-result.json }
+  - name: completed_root_admission_rejection
+    covers: [completed_root_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: completed-root-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /completed_root_admit
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: completed-root-aggregate.json, caller_still_owns_input: true }
   - name: deterministic_deferral_overflow
     covers:
       - capacity_zero_and_overflow_fault
@@ -334,6 +342,14 @@ version2_vectors:
     state_before: faulted-root-retained-component-aggregate.json
     request_file: operation-inputs.json
     request_pointer: /faulted_root_descendant_admit
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true }
+  - name: faulted_root_admission_rejection
+    covers: [faulted_root_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: faulted-root-retained-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /faulted_root_admit
     expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true }
   - name: faulted_root_rejects_retained_component_step
     covers: [faulted_root_descendant_step_rejection]

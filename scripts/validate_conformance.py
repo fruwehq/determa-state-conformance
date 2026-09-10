@@ -264,12 +264,14 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "completed_component_admission_rejection",
         "completed_component_step_rejection",
         "completed_root_step_rejection",
+        "completed_root_admission_rejection",
         "disposed_component_admission_rejection",
         "disposed_component_step_rejection",
         "faulted_component_admission_rejection",
         "faulted_component_step_rejection",
         "faulted_root_descendant_admission_rejection",
         "faulted_root_descendant_step_rejection",
+        "faulted_root_admission_rejection",
         "internal_emission_active_target",
         "internal_emission_disposed_target",
         "internal_emission_retained_faulted_target",
@@ -303,6 +305,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "reserved_events_not_deferrable",
         "reserved_internal_event_admission",
         "delivery_digest_rejection",
+        "wrong_root_precedes_batch_duplicate",
         "root_mailbox_isolation",
         "spawned_mailbox_isolation",
         "terminal_receipt_replay",
@@ -1947,6 +1950,25 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
     ]
     if sequences != sorted(sequences) or len(sequences) != len(set(sequences)):
         raise ValidationFailure("checkpoint v2: receipt order is invalid")
+    receipt_chronology: list[tuple[int, int]] = []
+    for receipt, receipt_sequence in zip(receipts, sequences, strict=True):
+        if "committed_revision" in receipt:
+            effective_revision = receipt["committed_revision"]
+        elif "accepted_revision" in receipt:
+            effective_revision = receipt["accepted_revision"]
+        else:
+            effective_revision = receipt["legacy_receipt"]["committed_revision"]
+        receipt_chronology.append(
+            (
+                canonical_decimal(
+                    effective_revision,
+                    "checkpoint v2 receipt chronology revision",
+                ),
+                receipt_sequence,
+            )
+        )
+    if receipt_chronology != sorted(receipt_chronology):
+        raise ValidationFailure("checkpoint v2: receipt chronology is invalid")
     if sequences and canonical_decimal(
         document["next_operation_receipt_sequence"], "next receipt sequence"
     ) <= max(sequences):
@@ -2372,6 +2394,34 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
     )["committed_revision"] = "0"
     probes["wrapped legacy terminal revision precedes acceptance"] = reseal(
         legacy_terminal_before_acceptance
+    )
+    native_global_chronology = analyze_artifact(
+        case / "native-internal-checkpoint-v2.json"
+    ).document
+    next(
+        receipt
+        for receipt in native_global_chronology["operation_receipts"]
+        if receipt["operation_kind"] == "acceptance"
+        and receipt["receipt_sequence"] == "3"
+    )["accepted_revision"] = "2"
+    probes["native receipt global chronology regression"] = reseal(
+        native_global_chronology
+    )
+    legacy_global_chronology = copy.deepcopy(upgraded)
+    next(
+        receipt["legacy_receipt"]
+        for receipt in legacy_global_chronology["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["receipt_sequence"] == "2"
+    )["accepted_revision"] = "1"
+    next(
+        receipt["legacy_receipt"]
+        for receipt in legacy_global_chronology["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["receipt_sequence"] == "2"
+    )["committed_revision"] = "1"
+    probes["wrapped legacy global chronology regression"] = reseal(
+        legacy_global_chronology
     )
     orphan = copy.deepcopy(admitted)
     orphan["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"] = []
@@ -3711,10 +3761,78 @@ def validate_version2_vectors(
             return "delivery_digest_mismatch"
         return None
 
+    def delivery_root_instance_id(delivery: dict[str, Any]) -> str:
+        target = delivery["envelope"]["target"]
+        return next(iter(target.values()))["root_instance_id"]
+
+    def aggregate_has_conflicting_identity(
+        aggregate: dict[str, Any], delivery: dict[str, Any]
+    ) -> bool:
+        event_id = delivery["envelope"]["event_id"]
+        digest = delivery["envelope_digest"]
+        return any(
+            entry["envelope"]["event_id"] == event_id
+            and entry["envelope_digest"] != digest
+            for runtime in aggregate["runtimes"]
+            for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+            for entry in mailbox
+        )
+
+    def checkpoint_has_conflicting_identity(
+        checkpoint: dict[str, Any], delivery: dict[str, Any]
+    ) -> bool:
+        event_id = delivery["envelope"]["event_id"]
+        digest = delivery["envelope_digest"]
+        digest_domain = delivery.get(
+            "request_digest_domain", "determa-inbox-envelope-digest-2"
+        )
+        retained_digests: list[str] = []
+        if digest_domain == "determa-inbox-envelope-digest-1":
+            retained_digests.extend(
+                receipt["legacy_receipt"]["request_digest"]
+                for receipt in checkpoint["operation_receipts"]
+                if receipt.get("operation_kind") == "legacy_v1_operation"
+                and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+                and receipt["legacy_receipt"].get("event_id") == event_id
+            )
+        else:
+            if checkpoint["root_record"]["status"] == "retained":
+                retained_digests.extend(
+                    entry["envelope_digest"]
+                    for runtime in checkpoint["root_record"]["aggregate_state"][
+                        "runtimes"
+                    ]
+                    for mailbox in (
+                        runtime["ready_mailbox"],
+                        runtime["deferred_mailbox"],
+                    )
+                    for entry in mailbox
+                    if entry["envelope"]["event_id"] == event_id
+                )
+            retained_digests.extend(
+                receipt["request_digest"]
+                for receipt in checkpoint["operation_receipts"]
+                if receipt.get("operation_kind")
+                in {"acceptance", "event_terminal"}
+                and receipt.get("event_id") == event_id
+            )
+        retained_digests.extend(
+            item["request_digest"]
+            for item in checkpoint["event_identity_tombstones"]
+            if item["event_id"] == event_id
+            and item.get(
+                "request_digest_domain", "determa-inbox-envelope-digest-2"
+            )
+            == digest_domain
+        )
+        return any(retained_digest != digest for retained_digest in retained_digests)
+
     def delivery_contract_error(
         delivery: dict[str, Any],
         aggregate: dict[str, Any],
         bundle_path: Path,
+        *,
+        checkpoint_host: bool,
     ) -> str | None:
         envelope = delivery["envelope"]
         root = next(
@@ -3735,7 +3853,7 @@ def validate_version2_vectors(
         if root["status"] != "running":
             return (
                 "terminal_root"
-                if runtime["relation"]["kind"] == "root"
+                if checkpoint_host and runtime["relation"]["kind"] == "root"
                 else "invalid_instance_target"
             )
         if runtime["relation"]["kind"] == "component":
@@ -4110,7 +4228,23 @@ def validate_version2_vectors(
                 delivery["envelope"]["event_id"]
                 for delivery in selected["deliveries"]
             ]
-            duplicate_event_ids = len(event_ids) != len(set(event_ids))
+            wrong_root = operation == "checkpoint_admit_v2" and any(
+                delivery_root_instance_id(delivery)
+                != checkpoint_before["root_instance_id"]
+                for delivery in selected["deliveries"]
+            )
+            if wrong_root:
+                if expectation.get("code") != "wrong_root":
+                    raise ValidationFailure(
+                        f"{location}: foreign root lacks precedence rejection"
+                    )
+            elif expectation.get("code") == "wrong_root":
+                raise ValidationFailure(
+                    f"{location}: wrong-root rejection lacks a foreign root"
+                )
+            duplicate_event_ids = (
+                not wrong_root and len(event_ids) != len(set(event_ids))
+            )
             if duplicate_event_ids:
                 if expectation.get("code") != "duplicate_event_id_in_batch":
                     raise ValidationFailure(
@@ -4119,6 +4253,26 @@ def validate_version2_vectors(
             elif expectation.get("code") == "duplicate_event_id_in_batch":
                 raise ValidationFailure(
                     f"{location}: duplicate rejection lacks duplicate input identity"
+                )
+            conflicting_event_identity = (
+                not wrong_root
+                and not duplicate_event_ids
+                and operation in {"admit_v2", "checkpoint_admit_v2"}
+                and any(
+                    checkpoint_has_conflicting_identity(checkpoint_before, delivery)
+                    if operation == "checkpoint_admit_v2"
+                    else aggregate_has_conflicting_identity(prior_aggregate, delivery)
+                    for delivery in selected["deliveries"]
+                )
+            )
+            if conflicting_event_identity:
+                if expectation.get("code") != "event_id_conflict":
+                    raise ValidationFailure(
+                        f"{location}: conflicting retained identity lacks exact rejection"
+                    )
+            elif expectation.get("code") == "event_id_conflict":
+                raise ValidationFailure(
+                    f"{location}: conflict rejection lacks retained conflicting evidence"
                 )
             replay_evidence = (
                 [
@@ -4153,7 +4307,7 @@ def validate_version2_vectors(
             for delivery, replay in zip(
                 selected["deliveries"], replay_evidence, strict=True
             ):
-                if duplicate_event_ids:
+                if wrong_root or duplicate_event_ids or conflicting_event_identity:
                     continue
                 delivery_error = delivery_validation_error(
                     delivery, delivery_identity, location
@@ -4172,7 +4326,10 @@ def validate_version2_vectors(
                     and operation in {"admit_v2", "checkpoint_admit_v2"}
                 ):
                     contract_error = delivery_contract_error(
-                        delivery, prior_aggregate, case / vector["bundle"]
+                        delivery,
+                        prior_aggregate,
+                        case / vector["bundle"],
+                        checkpoint_host=operation == "checkpoint_admit_v2",
                     )
                     if contract_error is not None:
                         contract_errors.append(contract_error)
@@ -5576,6 +5733,26 @@ def validate_version2_vectors(
                 "cleanup-rollback-before.json"
             ).document
         }
+        unseen_core_conflict_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        unseen_core_conflict = unseen_core_conflict_inputs[
+            "conflicting_replay"
+        ]["deliveries"][0]
+        unseen_core_conflict["envelope"]["event_id"] = "unseen-core-conflict"
+        unseen_core_conflict["envelope"]["cause_id"] = "unseen-core-conflict"
+        unseen_core_conflict["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("base-aggregate.json").document["root_instance_id"],
+                unseen_core_conflict["delivery_mode"],
+                unseen_core_conflict["envelope"],
+            ]
+        )
+        probes["core conflict expectation without retained identity"] = {
+            "operation-inputs.json": unseen_core_conflict_inputs
+        }
         for probe_name, overrides in probes.items():
             try:
                 validate_version2_vectors(
@@ -5634,6 +5811,32 @@ def validate_version2_vectors(
             "tombstoned-batch-replay-result.json"
         ).document
         probes = {}
+        unseen_checkpoint_conflict_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        unseen_checkpoint_conflict = unseen_checkpoint_conflict_inputs[
+            "terminal_conflict"
+        ]["deliveries"][0]
+        unseen_checkpoint_conflict["envelope"]["event_id"] = (
+            "unseen-checkpoint-conflict"
+        )
+        unseen_checkpoint_conflict["envelope"]["cause_id"] = (
+            "unseen-checkpoint-conflict"
+        )
+        unseen_checkpoint_conflict["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("terminal-checkpoint-v2.json").document[
+                    "root_instance_id"
+                ],
+                unseen_checkpoint_conflict["delivery_mode"],
+                unseen_checkpoint_conflict["envelope"],
+            ]
+        )
+        probes["checkpoint conflict expectation without retained identity"] = {
+            "operation-inputs.json": unseen_checkpoint_conflict_inputs
+        }
         for field, sequence in (
             ("acceptance_receipt_sequence", "999"),
             ("terminal_receipt_sequence", "1000"),
