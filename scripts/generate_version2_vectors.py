@@ -406,6 +406,15 @@ def seal_checkpoint(value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
+def seal_checkpoint_v1(value: dict[str, Any]) -> dict[str, Any]:
+    value = copy.deepcopy(value)
+    value.pop("execution_checkpoint_digest", None)
+    value["execution_checkpoint_digest"] = digest(
+        ["determa-execution-checkpoint-digest-1", value]
+    )
+    return value
+
+
 def rebind_single_root(
     value: dict[str, Any], validated_bundle_fingerprint: str
 ) -> dict[str, Any]:
@@ -2220,13 +2229,12 @@ def upgrade_checkpoint(value: dict[str, Any]) -> dict[str, Any]:
             "acceptance_sequence": pending["delivery_sequence"],
             "accepted_revision": pending["accepted_revision"],
             "delivery_mode": pending["delivery_mode"],
-        }
-        if pending["delivery_mode"] == "internal":
-            receipt["legacy_v1_delivery"] = {
+            "legacy_v1_delivery": {
                 "delivery_sequence": pending["delivery_sequence"],
                 "envelope_digest": pending["envelope_digest"],
                 "origin": origin,
-            }
+            },
+        }
         receipts.append(receipt)
         next_receipt_sequence += 1
         next_queue_sequence += 1
@@ -2265,6 +2273,64 @@ def produce_checkpoint() -> dict[str, bytes]:
 
     v1 = load(CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "internal-pending-checkpoint.json")
     upgraded = upgrade_checkpoint(v1)
+    delivery_trace = CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle"
+    created_v1 = load(delivery_trace / "created-checkpoint.json")
+    delivery_inputs = load(delivery_trace / "inputs.json")["requests"]
+    delivery_results = load(delivery_trace / "core-results.json")["calls"]
+    multi_pending_v1 = copy.deepcopy(created_v1)
+    for accepted_revision, request_name in (("1", "accept_increment"), ("2", "unhandled")):
+        request = delivery_inputs[request_name]
+        delivery_sequence = multi_pending_v1["next_delivery_sequence"]
+        multi_pending_v1["next_delivery_sequence"] = str(int(delivery_sequence) + 1)
+        multi_pending_v1["revision"] = accepted_revision
+        multi_pending_v1["pending_deliveries"].append(
+            {
+                "delivery_sequence": delivery_sequence,
+                "accepted_revision": accepted_revision,
+                "delivery_mode": request["delivery_mode"],
+                "origin": copy.deepcopy(request["origin"]),
+                "envelope": copy.deepcopy(request["envelope"]),
+                "envelope_digest": request["envelope_digest"],
+            }
+        )
+        multi_pending_v1 = seal_checkpoint_v1(multi_pending_v1)
+    process_request = delivery_inputs["process_increment"]
+    process_result = delivery_results["increment"]
+    processed_pending = multi_pending_v1["pending_deliveries"].pop(0)
+    multi_pending_v1.pop("execution_checkpoint_digest", None)
+    multi_pending_v1["revision"] = "3"
+    multi_pending_v1["root_record"]["aggregate_state"] = copy.deepcopy(
+        process_result["aggregate_state"]
+    )
+    receipt_sequence = multi_pending_v1["next_operation_receipt_sequence"]
+    multi_pending_v1["next_operation_receipt_sequence"] = str(
+        int(receipt_sequence) + 1
+    )
+    multi_pending_v1["operation_receipts"].append(
+        {
+            "operation_kind": "delivery",
+            "receipt_sequence": receipt_sequence,
+            "event_id": process_request["envelope"]["event_id"],
+            "request_digest": process_request["envelope_digest"],
+            "accepted_delivery_sequence": processed_pending["delivery_sequence"],
+            "accepted_revision": processed_pending["accepted_revision"],
+            "delivery_mode": process_request["delivery_mode"],
+            "origin": copy.deepcopy(process_request["origin"]),
+            "committed_revision": "3",
+            "resulting_aggregate_state_digest": process_result["aggregate_state"][
+                "aggregate_state_digest"
+            ],
+            "outcome": {
+                "status": process_result["status"],
+                "disposition": process_result["disposition"],
+                "fault": copy.deepcopy(process_result["fault"]),
+                "rejection": copy.deepcopy(process_result["rejection"]),
+            },
+            "emission_references": [],
+        }
+    )
+    multi_pending_v1 = seal_checkpoint_v1(multi_pending_v1)
+    multi_pending_upgraded = upgrade_checkpoint(multi_pending_v1)
     outbox_v1 = load(
         CHECKPOINT.parent
         / "checkpoint-02-outbox-lifecycle"
@@ -2549,6 +2615,22 @@ def produce_checkpoint() -> dict[str, bytes]:
         / "faulted-checkpoint.json"
     )
     faulted_upgraded = upgrade_checkpoint(faulted_v1)
+    faulted_aggregate = faulted_upgraded["root_record"]["aggregate_state"]
+    faulted_root = root_runtime(faulted_aggregate)
+    terminal_mismatch_entry = envelope_entry(
+        faulted_aggregate,
+        faulted_root,
+        event="increment",
+        event_id="checkpoint-v2-terminal-fresh-mismatch",
+        acceptance_sequence=int(faulted_aggregate["next_acceptance_sequence"]),
+        queue_sequence=int(faulted_aggregate["next_queue_sequence"]),
+        payload=typed_value({"amount": 1}),
+    )
+    terminal_mismatch_delivery = {
+        "delivery_mode": terminal_mismatch_entry["delivery_mode"],
+        "envelope": terminal_mismatch_entry["envelope"],
+        "envelope_digest": "sha256:" + ("7" * 64),
+    }
     tombstoned = copy.deepcopy(faulted_upgraded)
     terminal_aggregate = tombstoned["root_record"]["aggregate_state"]
     terminal_root = root_runtime(terminal_aggregate)
@@ -2564,6 +2646,28 @@ def produce_checkpoint() -> dict[str, bytes]:
     }
     tombstoned["revision"] = str(int(faulted_upgraded["revision"]) + 1)
     tombstoned = seal_checkpoint(tombstoned)
+    tombstoned_fresh_delivery = copy.deepcopy(terminal_mismatch_delivery)
+    tombstoned_fresh_delivery["envelope"]["event_id"] = (
+        "checkpoint-v2-tombstoned-fresh"
+    )
+    tombstoned_fresh_delivery["envelope"]["cause_id"] = (
+        "checkpoint-v2-tombstoned-fresh"
+    )
+
+    invalid_mode_delivery = copy.deepcopy(terminal_mismatch_entry)
+    invalid_mode_delivery = {
+        "delivery_mode": "invalid",
+        "envelope": invalid_mode_delivery["envelope"],
+        "envelope_digest": digest(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                operational_base["root_instance_id"],
+                "invalid",
+                invalid_mode_delivery["envelope"],
+            ]
+        ),
+    }
 
     spawned_tombstoned = copy.deepcopy(spawned_terminal_checkpoint_v2)
     spawned_terminal_aggregate = spawned_tombstoned["root_record"]["aggregate_state"]
@@ -2910,6 +3014,10 @@ def produce_checkpoint() -> dict[str, bytes]:
             {"operation": "upgrade_checkpoint_v1_to_v2"},
             spawned_checkpoint_v1,
         ),
+        "upgrade_multi_pending": with_checkpoint_cas(
+            {"operation": "upgrade_checkpoint_v1_to_v2"},
+            multi_pending_v1,
+        ),
         "admit": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
             "delivery_mode": entry["delivery_mode"],
             "envelope": entry["envelope"],
@@ -3040,6 +3148,31 @@ def produce_checkpoint() -> dict[str, bytes]:
             "envelope": {**entry["envelope"], "payload": typed_value({"amount": 2})},
             "envelope_digest": digest(["determa-inbox-envelope-digest-2", "2", aggregate["root_instance_id"], entry["delivery_mode"], {**entry["envelope"], "payload": typed_value({"amount": 2})}]),
         }]}, terminal),
+        "terminal_precedes_digest": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [terminal_mismatch_delivery],
+            },
+            faulted_upgraded,
+        ),
+        "tombstone_precedes_digest": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [tombstoned_fresh_delivery],
+            },
+            tombstoned,
+        ),
+        "malformed_delivery": with_checkpoint_cas(
+            {"operation": "checkpoint_admit_v2", "deliveries": [{}]},
+            operational_base,
+        ),
+        "invalid_delivery_mode": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [invalid_mode_delivery],
+            },
+            operational_base,
+        ),
         "wrong_root_duplicate": with_checkpoint_cas(
             {
                 "operation": "checkpoint_admit_v2",
@@ -3076,6 +3209,10 @@ def produce_checkpoint() -> dict[str, bytes]:
     }
     return {
         "base-checkpoint-v1.json": canonical(v1),
+        "multi-pending-checkpoint-v1.json": canonical(multi_pending_v1),
+        "multi-pending-upgraded-checkpoint-v2.json": canonical(
+            multi_pending_upgraded
+        ),
         "base-outbox-checkpoint-v1.json": canonical(outbox_v1),
         "base-checkpoint.json": canonical(operational_base),
         "spawned-child-checkpoint-v1.json": canonical(spawned_checkpoint_v1),
@@ -3098,6 +3235,7 @@ def produce_checkpoint() -> dict[str, bytes]:
         "compact-checkpoint-v2.json": canonical(compact),
         "compacted-legacy-checkpoint-v2.json": canonical(compacted_legacy),
         "tombstoned-checkpoint-v2.json": canonical(tombstoned),
+        "faulted-checkpoint-v2.json": canonical(faulted_upgraded),
         "invalid-duplicate-location-checkpoint-v2.json": canonical(invalid),
         "invalid-acceptance-tombstone-overlap-checkpoint-v2.json": canonical(
             invalid_acceptance_tombstone_overlap

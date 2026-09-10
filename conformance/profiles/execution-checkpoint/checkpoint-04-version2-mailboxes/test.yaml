@@ -9,6 +9,8 @@ artifacts:
   documents:
     - { file: base-checkpoint.json, kind: execution_checkpoint_v2, valid: true }
     - { file: base-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
+    - { file: multi-pending-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
+    - { file: multi-pending-upgraded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-child-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: spawned-child-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-terminal-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
@@ -26,6 +28,7 @@ artifacts:
     - { file: compact-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: compacted-legacy-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: tombstoned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: faulted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: invalid-duplicate-location-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-acceptance-tombstone-overlap-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-tombstone-counter-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
@@ -62,6 +65,13 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /upgrade_spawned_child
     expect: { result: success, exact_result_file: spawned-child-checkpoint-v2.json }
+  - name: checkpoint_upgrade_preserves_multi_pending_acceptance_history
+    covers: [upgrade_checkpoint_v1_multi_pending_history]
+    operation: upgrade_checkpoint_v1_to_v2
+    checkpoint_before: multi-pending-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /upgrade_multi_pending
+    expect: { result: success, exact_result_file: multi-pending-upgraded-checkpoint-v2.json }
   - name: checkpoint_atomic_admission
     covers: [receipt_acceptance_terminal_distinction]
     operation: checkpoint_admit_v2
@@ -201,6 +211,50 @@ version2_vectors:
       result: failure
       code: event_id_conflict
       unchanged_file: terminal-checkpoint-v2.json
+      caller_still_owns_input: true
+  - name: checkpoint_terminal_root_precedes_digest_validation
+    covers: [terminal_root_precedes_delivery_validation]
+    operation: checkpoint_admit_v2
+    checkpoint_before: faulted-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /terminal_precedes_digest
+    expect:
+      result: failure
+      code: terminal_root
+      unchanged_file: faulted-checkpoint-v2.json
+      caller_still_owns_input: true
+  - name: checkpoint_tombstoned_root_precedes_digest_validation
+    covers: [tombstoned_root_precedes_delivery_validation]
+    operation: checkpoint_admit_v2
+    checkpoint_before: tombstoned-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /tombstone_precedes_digest
+    expect:
+      result: failure
+      code: tombstoned_root
+      unchanged_file: tombstoned-checkpoint-v2.json
+      caller_still_owns_input: true
+  - name: checkpoint_malformed_delivery_rejection
+    covers: [version2_malformed_delivery_rejected]
+    operation: checkpoint_admit_v2
+    checkpoint_before: base-checkpoint.json
+    request_file: operation-inputs.json
+    request_pointer: /malformed_delivery
+    expect:
+      result: failure
+      code: malformed_delivery
+      unchanged_file: base-checkpoint.json
+      caller_still_owns_input: true
+  - name: checkpoint_invalid_delivery_mode_rejection
+    covers: [version2_invalid_delivery_mode_rejected]
+    operation: checkpoint_admit_v2
+    checkpoint_before: base-checkpoint.json
+    request_file: operation-inputs.json
+    request_pointer: /invalid_delivery_mode
+    expect:
+      result: failure
+      code: invalid_delivery_mode
+      unchanged_file: base-checkpoint.json
       caller_still_owns_input: true
   - name: checkpoint_wrong_root_precedes_duplicate_batch
     covers: [wrong_root_precedes_batch_duplicate]

@@ -25,8 +25,28 @@
     "delivery": {
       "oneOf": [
         { "$ref": "#/$defs/nativeDelivery" },
-        { "$ref": "#/$defs/legacyTerminalReplayDelivery" }
+        { "$ref": "#/$defs/legacyTerminalReplayDelivery" },
+        { "$ref": "#/$defs/invalidModeDelivery" },
+        { "$ref": "#/$defs/malformedDelivery" }
       ]
+    },
+    "malformedDelivery": {
+      "type": "object",
+      "maxProperties": 0
+    },
+    "invalidModeDelivery": {
+      "type": "object",
+      "required": ["delivery_mode", "envelope", "envelope_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "delivery_mode": {
+          "type": "string",
+          "minLength": 1,
+          "not": { "enum": ["input", "internal"] }
+        },
+        "envelope": { "$ref": "https://determa.dev/state/schema/aggregate-state-v2.schema.json#/$defs/envelope" },
+        "envelope_digest": { "$ref": "#/$defs/sha256" }
+      }
     },
     "nativeDelivery": {
       "type": "object",
