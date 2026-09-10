@@ -90,6 +90,11 @@ Coverage is intentionally grouped into three scenario directories:
   covers direct injection, bundled and third-party public registration, all four
   standard adapter capability boundaries, and complete positive/negative composed
   host-profile requirements.
+- `checkpoint-04-version2-mailboxes` covers explicit checkpoint version conversion,
+  aggregate-owned admission, acceptance versus terminal evidence, equal/conflicting
+  replay, dependency-closed compaction, tombstone replay, and version-2 artifact
+  rejection. It uses the repository-level `version2_vectors` driver and does not alter
+  any version-1 checkpoint vector.
 
 The invalid artifacts separately prove format/version classification, structural
 closure, digest mismatch, foreign-root delivery targets, permanent delivery-allocation

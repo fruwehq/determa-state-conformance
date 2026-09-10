@@ -1,0 +1,103 @@
+title: queue-bearing artifact migration and explicit version conversion
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: base-aggregate-v1.json, kind: aggregate_state, valid: true }
+    - { file: base-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
+    - { file: base-descriptor-v1.json, kind: migration_descriptor, valid: true }
+    - { file: upgraded-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
+    - { file: descriptor-v2.json, kind: migration_descriptor_v2, valid: true }
+    - { file: package-v2.json, kind: aggregate_state_package_v2, valid: true }
+    - { file: invalid-descriptor-v2.json, kind: migration_descriptor_v2, valid: false, error: invalid_migration_descriptor }
+    - { file: invalid-package-v2.json, kind: aggregate_state_package_v2, valid: false, error: unsupported_aggregate_state_package_schema_version }
+    - { file: invalid-counter-aggregate-v2.json, kind: aggregate_state_v2, valid: false, error: invalid_aggregate_state }
+    - { file: disposal-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: fault-frozen-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
+    - { file: migration-preserve-result.json, kind: version2_operation_result, valid: true }
+    - { file: migration-fault-frozen-preserve-result.json, kind: version2_operation_result, valid: true }
+    - { file: migration-dispose-result.json, kind: version2_operation_result, valid: true }
+    - { file: downgrade-result.json, kind: version2_operation_result, valid: true }
+    - { file: migration-requests.json, kind: json_value, valid: true }
+version2_vectors:
+  - name: explicit_aggregate_upgrade
+    covers: [upgrade_aggregate_v1_to_v2]
+    operation: upgrade_aggregate_v1_to_v2
+    state_before: base-aggregate-v1.json
+    expect: { result: success, exact_result_file: upgraded-aggregate-v2.json }
+  - name: empty_queue_aggregate_downgrade
+    covers: [downgrade_totality]
+    operation: downgrade_aggregate_v2_to_v1
+    state_before: upgraded-aggregate-v2.json
+    expect: { result: success, exact_result_file: downgrade-result.json }
+  - name: migration_preserves_compatible_work
+    covers:
+      - migration_backlog_independent_descriptor
+      - migration_descriptor_v2_schema_positive_negative
+      - migration_package_v2_schema_positive_negative
+    operation: migrate_aggregate_v2
+    state_before: base-aggregate-v2.json
+    descriptor_file: descriptor-v2.json
+    request_file: migration-requests.json
+    request_pointer: /preserve
+    expect: { result: success, exact_result_file: migration-preserve-result.json }
+  - name: migration_preserves_fault_frozen_work
+    covers: [migration_fault_frozen_preservation]
+    operation: migrate_aggregate_v2
+    state_before: fault-frozen-aggregate-v2.json
+    descriptor_file: descriptor-v2.json
+    request_file: migration-requests.json
+    request_pointer: /preserve
+    expect: { result: success, exact_result_file: migration-fault-frozen-preserve-result.json }
+  - name: migration_explicitly_disposes_removed_work
+    covers: [migration_preserve_dispose_default]
+    operation: migrate_aggregate_v2
+    state_before: disposal-before.json
+    descriptor_file: descriptor-v2.json
+    request_file: migration-requests.json
+    request_pointer: /dispose
+    expect: { result: success, exact_result_file: migration-dispose-result.json }
+  - name: migration_rejects_stale_target
+    covers: [migration_stale_target_failure]
+    operation: migrate_aggregate_v2
+    state_before: base-aggregate-v2.json
+    descriptor_file: descriptor-v2.json
+    request_file: migration-requests.json
+    request_pointer: /stale_target
+    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v2.json }
+  - name: migration_rejects_removed_event
+    covers: [migration_removed_event_failure]
+    operation: migrate_aggregate_v2
+    state_before: base-aggregate-v2.json
+    descriptor_file: descriptor-v2.json
+    request_file: migration-requests.json
+    request_pointer: /event_removed
+    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v2.json }
+  - name: migration_rejects_incompatible_payload
+    covers: [migration_payload_incompatible_failure]
+    operation: migrate_aggregate_v2
+    state_before: base-aggregate-v2.json
+    descriptor_file: descriptor-v2.json
+    request_file: migration-requests.json
+    request_pointer: /payload_incompatible
+    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v2.json }
+  - name: migration_rejects_incompatible_correlation
+    covers: [migration_correlation_incompatible_failure]
+    operation: migrate_aggregate_v2
+    state_before: base-aggregate-v2.json
+    descriptor_file: descriptor-v2.json
+    request_file: migration-requests.json
+    request_pointer: /correlation_incompatible
+    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v2.json }
+  - name: migration_rejects_capacity_loss
+    covers: [migration_capacity_totality]
+    operation: migrate_aggregate_v2
+    state_before: base-aggregate-v2.json
+    descriptor_file: descriptor-v2.json
+    request_file: migration-requests.json
+    request_pointer: /lowered_capacity
+    expect:
+      result: failure
+      code: migration_totality_failure
+      unchanged_file: base-aggregate-v2.json

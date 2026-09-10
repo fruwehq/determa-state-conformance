@@ -1,0 +1,110 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/version2-operation-result.schema.json",
+  "title": "Determa State version-2 operation result",
+  "oneOf": [
+    { "$ref": "#/$defs/admission" },
+    { "$ref": "#/$defs/pendingReplay" },
+    { "$ref": "#/$defs/terminalReplay" },
+    { "$ref": "#/$defs/tombstoneReplay" },
+    { "$ref": "#/$defs/migration" },
+    { "$ref": "#/$defs/downgrade" }
+  ],
+  "$defs": {
+    "canonicalDecimal": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "admission": {
+      "type": "object",
+      "required": ["result", "accepted"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "accepted" },
+        "accepted": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["event_id", "acceptance_sequence", "queue_sequence"],
+            "additionalProperties": false,
+            "properties": {
+              "event_id": { "type": "string", "minLength": 1 },
+              "acceptance_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+              "queue_sequence": { "$ref": "#/$defs/canonicalDecimal" }
+            }
+          }
+        }
+      }
+    },
+    "pendingReplay": {
+      "type": "object",
+      "required": ["result", "event_id", "acceptance_sequence", "location"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "replay" },
+        "event_id": { "type": "string", "minLength": 1 },
+        "acceptance_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+        "location": { "enum": ["ready", "deferred"] }
+      }
+    },
+    "terminalReplay": {
+      "type": "object",
+      "required": ["result", "acceptance_receipt_sequence", "terminal_receipt_sequence"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "replay" },
+        "acceptance_receipt_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+        "terminal_receipt_sequence": { "$ref": "#/$defs/canonicalDecimal" }
+      }
+    },
+    "tombstoneReplay": {
+      "type": "object",
+      "required": ["result", "terminal_receipt_sequence", "terminal_disposition"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "replay" },
+        "terminal_receipt_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+        "terminal_disposition": {
+          "enum": ["handled", "unhandled", "faulted", "disposed", "migration_disposed"]
+        }
+      }
+    },
+    "migrationDisposition": {
+      "type": "object",
+      "required": ["disposition", "reason", "migration_descriptor_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "disposition": { "const": "migration_disposed" },
+        "reason": { "type": "string", "minLength": 1 },
+        "migration_descriptor_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "migration": {
+      "type": "object",
+      "required": ["result", "aggregate_state", "dispositions"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "success" },
+        "aggregate_state": { "$ref": "https://determa.dev/state/schema/aggregate-state-v2.schema.json" },
+        "dispositions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/migrationDisposition" }
+        }
+      }
+    },
+    "downgrade": {
+      "type": "object",
+      "required": ["result", "aggregate_state"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "success" },
+        "aggregate_state": { "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json" }
+      }
+    }
+  }
+}

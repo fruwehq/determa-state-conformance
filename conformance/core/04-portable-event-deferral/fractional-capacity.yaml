@@ -1,0 +1,11 @@
+format: 1
+namespace: conformance.case_04_invalid_fractional_capacity
+events: {}
+machines:
+  - machine_id: invalid
+    root:
+      type: composite
+      deferred_event_capacity: 1.5
+      initial: { transition_to: idle }
+      states:
+        idle: {}

@@ -71,9 +71,14 @@ INSTANCE_REFERENCE_FIELDS = frozenset(
 )
 ARTIFACT_KINDS = {
     "aggregate_state": "aggregate-state.schema.json",
+    "aggregate_state_v2": "aggregate-state-v2.schema.json",
     "migration_descriptor": "migration-descriptor.schema.json",
+    "migration_descriptor_v2": "migration-descriptor-v2.schema.json",
     "aggregate_state_package": "aggregate-state-package.schema.json",
+    "aggregate_state_package_v2": "aggregate-state-package-v2.schema.json",
+    "core_step_result_v2": "core-step-result-v2.schema.json",
     "execution_checkpoint": "execution-checkpoint.schema.json",
+    "execution_checkpoint_v2": "execution-checkpoint-v2.schema.json",
 }
 DRIVER_ARTIFACT_KINDS = {
     "artifact_resolver": "artifact-resolver.schema.json",
@@ -83,6 +88,7 @@ DRIVER_ARTIFACT_KINDS = {
         "execution-checkpoint-core-evidence.schema.json"
     ),
     "execution_store_scope_state": "execution-store-scope-state.schema.json",
+    "version2_operation_result": "version2-operation-result.schema.json",
 }
 MINIMUM_RESOURCE_LIMIT_FLOORS = {
     "maximum_aggregate_bytes": "1048576",
@@ -206,6 +212,64 @@ REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
         "mismatched_scope_rejected",
         "unauthorized_scope_rejected",
         "portable_state_scope_invariance",
+    }
+)
+REQUIRED_VERSION2_COVERAGE = frozenset(
+    {
+        "aggregate_v2_schema_positive_negative",
+        "automatic_selective_recall",
+        "batch_duplicate_rejection",
+        "canonical_v2_bytes_and_digests",
+        "capacity_unbounded",
+        "capacity_zero_and_overflow_fault",
+        "checkpoint_v1_requires_upgrade",
+        "checkpoint_v2_schema_positive_negative",
+        "cleanup_fault_rollback",
+        "component_mailbox_isolation",
+        "core_step_v2_schema_positive_negative",
+        "deferred_only_not_runnable",
+        "downgrade_totality",
+        "conflicting_pending_replay",
+        "conflicting_terminal_replay",
+        "equal_pending_replay",
+        "equal_terminal_replay",
+        "explicit_target_single_step",
+        "fault_frozen_mailbox_retention",
+        "fifo_recall_to_ready_tail",
+        "fresh_queue_sequence_on_recall",
+        "inactive_component_target",
+        "internal_emission_active_target",
+        "internal_emission_disposed_target",
+        "internal_emission_retained_faulted_target",
+        "internal_emission_rollback",
+        "invalid_machine_runtime_target",
+        "lifecycle_aggregate_completion_disposal",
+        "lifecycle_cancellation_disposal",
+        "lifecycle_natural_completion_disposal",
+        "mailbox_envelope_identity_preserved",
+        "mailbox_location_totality",
+        "migration_backlog_independent_descriptor",
+        "migration_capacity_totality",
+        "migration_descriptor_v2_schema_positive_negative",
+        "migration_fault_frozen_preservation",
+        "migration_package_v2_schema_positive_negative",
+        "migration_preserve_dispose_default",
+        "migration_stale_target_failure",
+        "migration_removed_event_failure",
+        "migration_payload_incompatible_failure",
+        "migration_correlation_incompatible_failure",
+        "receipt_acceptance_terminal_distinction",
+        "reclassification_and_repeated_deferral",
+        "reserved_events_not_deferrable",
+        "root_mailbox_isolation",
+        "spawned_mailbox_isolation",
+        "terminal_receipt_replay",
+        "terminal_processing_receipt",
+        "terminal_tombstone_replay",
+        "upgrade_aggregate_v1_to_v2",
+        "upgrade_checkpoint_v1_to_v2_legacy_evidence",
+        "version2_counter_allocation",
+        "version2_dependency_safe_pruning",
     }
 )
 
@@ -483,11 +547,29 @@ ARTIFACT_FORMAT_FIELDS = {
         "unsupported_aggregate_state_schema_version",
         "invalid_aggregate_state",
     ),
+    "aggregate_state_v2": (
+        "aggregate_state_format",
+        "determa.aggregate_state",
+        "aggregate_state_schema_version",
+        2,
+        "unsupported_aggregate_state_format",
+        "unsupported_aggregate_state_schema_version",
+        "invalid_aggregate_state",
+    ),
     "migration_descriptor": (
         "migration_descriptor_format",
         "determa.aggregate_migration",
         "migration_descriptor_schema_version",
         1,
+        "unsupported_migration_descriptor_format",
+        "unsupported_migration_descriptor_schema_version",
+        "invalid_migration_descriptor",
+    ),
+    "migration_descriptor_v2": (
+        "migration_descriptor_format",
+        "determa.aggregate_migration",
+        "migration_descriptor_schema_version",
+        2,
         "unsupported_migration_descriptor_format",
         "unsupported_migration_descriptor_schema_version",
         "invalid_migration_descriptor",
@@ -501,11 +583,38 @@ ARTIFACT_FORMAT_FIELDS = {
         "unsupported_aggregate_state_package_schema_version",
         "invalid_aggregate_state_package",
     ),
+    "aggregate_state_package_v2": (
+        "aggregate_state_package_format",
+        "determa.aggregate_state_package",
+        "aggregate_state_package_schema_version",
+        2,
+        "unsupported_aggregate_state_package_format",
+        "unsupported_aggregate_state_package_schema_version",
+        "invalid_aggregate_state_package",
+    ),
+    "core_step_result_v2": (
+        "core_step_result_format",
+        "determa.core_step_result",
+        "core_step_result_schema_version",
+        2,
+        "unsupported_core_step_result_format",
+        "unsupported_core_step_result_schema_version",
+        "invalid_core_step_result",
+    ),
     "execution_checkpoint": (
         "execution_checkpoint_format",
         "determa.execution_checkpoint",
         "execution_checkpoint_schema_version",
         1,
+        "unsupported_execution_checkpoint_format",
+        "unsupported_execution_checkpoint_schema_version",
+        "invalid_execution_checkpoint",
+    ),
+    "execution_checkpoint_v2": (
+        "execution_checkpoint_format",
+        "determa.execution_checkpoint",
+        "execution_checkpoint_schema_version",
+        2,
         "unsupported_execution_checkpoint_format",
         "unsupported_execution_checkpoint_schema_version",
         "invalid_execution_checkpoint",
@@ -630,30 +739,46 @@ def decode_typed_value(value: list[Any]) -> Any:
 
 
 def verify_artifact_digest(kind: str, document: Any, path: Path) -> None:
-    if kind == "aggregate_state":
+    if kind in {"aggregate_state", "aggregate_state_v2"}:
         digest = document.get("aggregate_state_digest")
         without_digest = dict(document)
         without_digest.pop("aggregate_state_digest", None)
-        expected = hash_value(
-            ["determa-aggregate-state-digest-1", without_digest]
+        domain = (
+            "determa-aggregate-state-digest-2"
+            if kind == "aggregate_state_v2"
+            else "determa-aggregate-state-digest-1"
         )
+        expected = hash_value([domain, without_digest])
         if digest != expected:
             raise ValidationFailure(
                 f"{path}: aggregate_state_digest {digest!r} != {expected!r}"
             )
-    elif kind == "migration_descriptor":
+    elif kind in {"migration_descriptor", "migration_descriptor_v2"}:
         digest = document.get("migration_descriptor_digest")
         without_digest = dict(document)
         without_digest.pop("migration_descriptor_digest", None)
-        expected = hash_value(
-            ["determa-migration-descriptor-1", without_digest]
+        domain = (
+            "determa-migration-descriptor-2"
+            if kind == "migration_descriptor_v2"
+            else "determa-migration-descriptor-1"
         )
+        expected = hash_value([domain, without_digest])
         if digest != expected:
             raise ValidationFailure(
                 f"{path}: migration_descriptor_digest {digest!r} != {expected!r}"
             )
-    elif kind == "aggregate_state_package":
-        verify_artifact_digest("aggregate_state", document["aggregate_state"], path)
+    elif kind in {"aggregate_state_package", "aggregate_state_package_v2"}:
+        aggregate_kind = (
+            "aggregate_state_v2"
+            if kind == "aggregate_state_package_v2"
+            else "aggregate_state"
+        )
+        descriptor_kind = (
+            "migration_descriptor_v2"
+            if kind == "aggregate_state_package_v2"
+            else "migration_descriptor"
+        )
+        verify_artifact_digest(aggregate_kind, document["aggregate_state"], path)
         definition_digests: set[str] = set()
         for attachment in document["normalized_definitions"]:
             digest = attachment["validated_bundle_fingerprint"]
@@ -670,25 +795,30 @@ def verify_artifact_digest(kind: str, document: Any, path: Path) -> None:
             definition_digests.add(digest)
         descriptor_digests: set[str] = set()
         for descriptor in document["migration_descriptors"]:
-            verify_artifact_digest("migration_descriptor", descriptor, path)
+            verify_artifact_digest(descriptor_kind, descriptor, path)
             digest = descriptor["migration_descriptor_digest"]
             if digest in descriptor_digests:
                 raise ValidationFailure(
                     f"{path}: duplicate descriptor attachment {digest}"
                 )
             descriptor_digests.add(digest)
-    elif kind == "execution_checkpoint":
+    elif kind in {"execution_checkpoint", "execution_checkpoint_v2"}:
         root_record = document["root_record"]
         if root_record["status"] == "retained":
             verify_artifact_digest(
-                "aggregate_state", root_record["aggregate_state"], path
+                "aggregate_state_v2" if kind == "execution_checkpoint_v2" else "aggregate_state",
+                root_record["aggregate_state"],
+                path,
             )
         digest = document.get("execution_checkpoint_digest")
         without_digest = dict(document)
         without_digest.pop("execution_checkpoint_digest", None)
-        expected = hash_value(
-            ["determa-execution-checkpoint-digest-1", without_digest]
+        domain = (
+            "determa-execution-checkpoint-digest-2"
+            if kind == "execution_checkpoint_v2"
+            else "determa-execution-checkpoint-digest-1"
         )
+        expected = hash_value([domain, without_digest])
         if digest != expected:
             raise ValidationFailure(
                 f"{path}: execution_checkpoint_digest {digest!r} != {expected!r}"
@@ -1071,6 +1201,215 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
             )
 
 
+def validate_aggregate_v2_semantics(document: dict[str, Any]) -> None:
+    runtime_ids: set[str] = set()
+    event_ids: set[str] = set()
+    acceptance_sequences: set[int] = set()
+    queue_sequences: set[int] = set()
+    entries: list[dict[str, Any]] = []
+    root_runtime = None
+
+    for runtime in document["runtimes"]:
+        runtime_id = runtime["runtime_id"]
+        if runtime_id in runtime_ids:
+            raise ValidationFailure("aggregate v2: duplicate runtime id")
+        runtime_ids.add(runtime_id)
+        if runtime["relation"]["kind"] == "root":
+            if root_runtime is not None:
+                raise ValidationFailure("aggregate v2: multiple root runtimes")
+            root_runtime = runtime
+        if runtime["status"] == "completed" and (
+            runtime["ready_mailbox"] or runtime["deferred_mailbox"]
+        ):
+            raise ValidationFailure("aggregate v2: completed runtime retains mailbox work")
+        for mailbox_name in ("ready_mailbox", "deferred_mailbox"):
+            mailbox = runtime[mailbox_name]
+            order = [
+                canonical_decimal(entry["queue_sequence"], "mailbox queue sequence")
+                for entry in mailbox
+            ]
+            if order != sorted(order) or len(order) != len(set(order)):
+                raise ValidationFailure("aggregate v2: mailbox order is not strict")
+            for entry in mailbox:
+                event_id = entry["envelope"]["event_id"]
+                acceptance = canonical_decimal(
+                    entry["acceptance_sequence"], "mailbox acceptance sequence"
+                )
+                queue = canonical_decimal(
+                    entry["queue_sequence"], "mailbox queue sequence"
+                )
+                if event_id in event_ids or acceptance in acceptance_sequences:
+                    raise ValidationFailure("aggregate v2: duplicate mailbox identity")
+                if queue in queue_sequences:
+                    raise ValidationFailure("aggregate v2: reused queue sequence")
+                event_ids.add(event_id)
+                acceptance_sequences.add(acceptance)
+                queue_sequences.add(queue)
+                if entry["envelope"]["target"] != runtime["target_identity"]:
+                    raise ValidationFailure("aggregate v2: mailbox target mismatch")
+                expected_digest = hash_value(
+                    [
+                        "determa-inbox-envelope-digest-2",
+                        "2",
+                        document["root_instance_id"],
+                        entry["delivery_mode"],
+                        entry["envelope"],
+                    ]
+                )
+                if entry["envelope_digest"] != expected_digest:
+                    raise ValidationFailure("aggregate v2: envelope digest mismatch")
+                entries.append(entry)
+
+    if root_runtime is None:
+        raise ValidationFailure("aggregate v2: missing root runtime")
+    if (
+        root_runtime["runtime_id"] != document["root_runtime_id"]
+        or root_runtime["target_identity"].get("root", {}).get("root_instance_id")
+        != document["root_instance_id"]
+    ):
+        raise ValidationFailure("aggregate v2: root identity mismatch")
+    next_acceptance = canonical_decimal(
+        document["next_acceptance_sequence"], "next acceptance sequence"
+    )
+    next_queue = canonical_decimal(
+        document["next_queue_sequence"], "next queue sequence"
+    )
+    if acceptance_sequences and next_acceptance <= max(acceptance_sequences):
+        raise ValidationFailure("aggregate v2: acceptance counter regression")
+    if queue_sequences and next_queue <= max(queue_sequences):
+        raise ValidationFailure("aggregate v2: queue counter regression")
+
+
+def validate_core_step_v2_semantics(document: dict[str, Any]) -> None:
+    disposition = document["disposition"]
+    rejection = document["rejection"]
+    if disposition == "rejected":
+        if rejection is None or document["fault"] is not None:
+            raise ValidationFailure("core step v2: malformed rejection")
+        if document["emissions"] or document["lifecycle_dispositions"]:
+            raise ValidationFailure("core step v2: rejection has side effects")
+    elif rejection is not None:
+        raise ValidationFailure("core step v2: non-rejection carries rejection")
+    if disposition == "faulted":
+        if document["fault"] is None:
+            raise ValidationFailure("core step v2: faulted result lacks fault")
+    elif document["fault"] is not None:
+        raise ValidationFailure("core step v2: non-fault result carries fault")
+    if disposition == "not_runnable" and (
+        document["emissions"] or document["lifecycle_dispositions"]
+    ):
+        raise ValidationFailure("core step v2: not-runnable result mutated output")
+
+    mailbox_entries: dict[str, dict[str, Any]] = {}
+    for runtime in document["state"]["runtimes"]:
+        for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"]):
+            for entry in mailbox:
+                mailbox_entries[entry["envelope"]["event_id"]] = entry
+    lifecycle_dispositions = document["lifecycle_dispositions"]
+    disposition_event_ids = [item["event_id"] for item in lifecycle_dispositions]
+    if len(disposition_event_ids) != len(set(disposition_event_ids)):
+        raise ValidationFailure("core step v2: duplicate lifecycle disposition")
+    if mailbox_entries.keys() & set(disposition_event_ids):
+        raise ValidationFailure("core step v2: emitted event has two locations")
+
+    internal_event_ids: set[str] = set()
+    for emission in document["emissions"]:
+        kind = emission.get("kind")
+        if kind not in {"internal_mailbox", "internal_disposed"}:
+            continue
+        event_id = emission["event_id"]
+        if event_id in internal_event_ids:
+            raise ValidationFailure("core step v2: duplicate internal emission reference")
+        internal_event_ids.add(event_id)
+        if kind == "internal_mailbox":
+            entry = mailbox_entries.get(event_id)
+            if entry is None or (
+                entry["acceptance_sequence"] != emission["acceptance_sequence"]
+                or entry["queue_sequence"] != emission["queue_sequence"]
+            ):
+                raise ValidationFailure(
+                    "core step v2: unresolved internal mailbox emission"
+                )
+            continue
+        index = canonical_decimal(
+            emission["lifecycle_disposition_index"],
+            "lifecycle disposition index",
+        )
+        if index >= len(lifecycle_dispositions):
+            raise ValidationFailure(
+                "core step v2: unresolved internal disposed emission"
+            )
+        lifecycle = lifecycle_dispositions[index]
+        if (
+            lifecycle["event_id"] != event_id
+            or lifecycle["acceptance_sequence"] != emission["acceptance_sequence"]
+        ):
+            raise ValidationFailure(
+                "core step v2: mismatched internal disposed emission"
+            )
+
+
+def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None:
+    root_record = document["root_record"]
+    mailbox_event_ids: set[str] = set()
+    mailbox_acceptance: set[str] = set()
+    if root_record["status"] == "retained":
+        aggregate = root_record["aggregate_state"]
+        validate_aggregate_v2_semantics(aggregate)
+        if aggregate["root_instance_id"] != document["root_instance_id"]:
+            raise ValidationFailure("checkpoint v2: root mismatch")
+        for runtime in aggregate["runtimes"]:
+            for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"]):
+                for entry in mailbox:
+                    mailbox_event_ids.add(entry["envelope"]["event_id"])
+                    mailbox_acceptance.add(entry["acceptance_sequence"])
+
+    receipts = document["operation_receipts"]
+    sequences = [
+        canonical_decimal(receipt["receipt_sequence"], "receipt sequence")
+        for receipt in receipts
+    ]
+    if sequences != sorted(sequences) or len(sequences) != len(set(sequences)):
+        raise ValidationFailure("checkpoint v2: receipt order is invalid")
+    if sequences and canonical_decimal(
+        document["next_operation_receipt_sequence"], "next receipt sequence"
+    ) <= max(sequences):
+        raise ValidationFailure("checkpoint v2: receipt counter regression")
+
+    acceptance_receipts = {
+        receipt["event_id"]: receipt
+        for receipt in receipts
+        if receipt["operation_kind"] == "acceptance"
+    }
+    terminal_receipts = {
+        receipt["event_id"]: receipt
+        for receipt in receipts
+        if receipt["operation_kind"] == "event_terminal"
+    }
+    tombstones = {
+        item["event_id"]: item for item in document["event_identity_tombstones"]
+    }
+    if mailbox_event_ids & terminal_receipts.keys():
+        raise ValidationFailure("checkpoint v2: event is live and terminal")
+    if mailbox_event_ids & tombstones.keys() or terminal_receipts.keys() & tombstones.keys():
+        raise ValidationFailure("checkpoint v2: event overlaps tombstone")
+    for event_id in mailbox_event_ids:
+        receipt = acceptance_receipts.get(event_id)
+        if receipt is None:
+            raise ValidationFailure("checkpoint v2: mailbox event lacks acceptance")
+        if receipt["acceptance_sequence"] not in mailbox_acceptance:
+            raise ValidationFailure("checkpoint v2: acceptance sequence mismatch")
+    for event_id, terminal in terminal_receipts.items():
+        acceptance = acceptance_receipts.get(event_id)
+        if acceptance is None:
+            raise ValidationFailure("checkpoint v2: terminal event lacks acceptance")
+        if (
+            acceptance["request_digest"] != terminal["request_digest"]
+            or acceptance["acceptance_sequence"] != terminal["acceptance_sequence"]
+        ):
+            raise ValidationFailure("checkpoint v2: terminal identity mismatch")
+
+
 def artifact_error(
     kind: str,
     document: Any,
@@ -1099,12 +1438,30 @@ def artifact_error(
         return version_error
     if next(validator.iter_errors(document), None) is not None:
         return structural_error
-    if kind == "execution_checkpoint":
+    if kind == "aggregate_state_v2":
+        try:
+            validate_aggregate_v2_semantics(document)
+        except ValidationFailure:
+            return structural_error
+    if kind == "migration_descriptor_v2":
+        selectors = [
+            (rule["machine_id"], rule["event"], rule["delivery_mode"])
+            for rule in document["queued_event_rules"]
+        ]
+        if len(selectors) != len(set(selectors)):
+            return structural_error
+    if kind == "core_step_result_v2":
+        try:
+            validate_aggregate_v2_semantics(document["state"])
+            validate_core_step_v2_semantics(document)
+        except ValidationFailure:
+            return structural_error
+    if kind in {"execution_checkpoint", "execution_checkpoint_v2"}:
         root_record = document["root_record"]
         if root_record["status"] == "retained":
             try:
                 verify_artifact_digest(
-                    "aggregate_state",
+                    "aggregate_state_v2" if kind == "execution_checkpoint_v2" else "aggregate_state",
                     root_record["aggregate_state"],
                     Path("<embedded aggregate>"),
                 )
@@ -1113,14 +1470,25 @@ def artifact_error(
         without_digest = dict(document)
         without_digest.pop("execution_checkpoint_digest", None)
         expected_digest = hash_value(
-            ["determa-execution-checkpoint-digest-1", without_digest]
+            [
+                "determa-execution-checkpoint-digest-2"
+                if kind == "execution_checkpoint_v2"
+                else "determa-execution-checkpoint-digest-1",
+                without_digest,
+            ]
         )
         if document["execution_checkpoint_digest"] != expected_digest:
             return "execution_checkpoint_digest_mismatch"
-        try:
-            validate_execution_checkpoint_semantics(document)
-        except ValidationFailure:
-            return structural_error
+        if kind == "execution_checkpoint":
+            try:
+                validate_execution_checkpoint_semantics(document)
+            except ValidationFailure:
+                return structural_error
+        else:
+            try:
+                validate_execution_checkpoint_v2_semantics(document)
+            except ValidationFailure:
+                return structural_error
     return None
 
 
@@ -1570,6 +1938,125 @@ def validate_direct_descriptor_expectation_probes() -> None:
         except ValidationFailure:
             continue
         raise ValidationFailure(f"{name}: adversarial expectation was accepted")
+
+
+def validate_version2_vectors(
+    case: Path,
+    test: dict[str, Any],
+    bundle_paths: set[Path],
+    artifact_paths: set[Path],
+) -> set[str]:
+    """Validate the closed language-neutral version-2 operation table."""
+    bundle_names = {path.name for path in bundle_paths}
+    artifact_names = {path.name for path in artifact_paths}
+    manifests = {
+        entry["file"]: entry for entry in test["artifacts"]["documents"]
+    }
+    coverage: set[str] = set()
+    names: set[str] = set()
+
+    state_operations = {
+        "admit_v2",
+        "step_v2",
+        "downgrade_aggregate_v2_to_v1",
+        "migrate_aggregate_v2",
+    }
+    checkpoint_operations = {
+        "checkpoint_admit_v2",
+        "checkpoint_step_v2",
+        "checkpoint_prune_v2",
+        "checkpoint_tombstone_v2",
+        "checkpoint_migrate_v2",
+        "checkpoint_v1_accept",
+    }
+    descriptor_operations = {"migrate_aggregate_v2", "checkpoint_migrate_v2"}
+
+    for index, vector in enumerate(test["version2_vectors"]):
+        location = f"{case.name}: version2 vector {index}"
+        name = vector["name"]
+        if name in names:
+            raise ValidationFailure(f"{location}: duplicate name {name}")
+        names.add(name)
+
+        duplicate = coverage & set(vector["covers"])
+        if duplicate:
+            raise ValidationFailure(
+                f"{location}: duplicate coverage {sorted(duplicate)}"
+            )
+        coverage.update(vector["covers"])
+
+        operation = vector["operation"]
+        if operation == "create_v2" and "bundle" not in vector:
+            raise ValidationFailure(f"{location}: create_v2 requires bundle")
+        if operation in state_operations and "state_before" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires state_before")
+        if operation == "upgrade_aggregate_v1_to_v2" and "state_before" not in vector:
+            raise ValidationFailure(f"{location}: aggregate upgrade requires state_before")
+        if operation in checkpoint_operations and "checkpoint_before" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires checkpoint_before")
+        if operation == "upgrade_checkpoint_v1_to_v2" and "checkpoint_before" not in vector:
+            raise ValidationFailure(f"{location}: checkpoint upgrade requires checkpoint_before")
+        if operation in descriptor_operations and "descriptor_file" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires descriptor_file")
+        if operation in {"admit_v2", "checkpoint_admit_v2", "checkpoint_v1_accept"} and "request_file" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires request_file")
+        if ("request_file" in vector) != ("request_pointer" in vector):
+            raise ValidationFailure(
+                f"{location}: request_file and request_pointer must appear together"
+            )
+        if operation in {"step_v2", "checkpoint_step_v2"} and "target_runtime_id" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires target_runtime_id")
+
+        if "bundle" in vector and vector["bundle"] not in bundle_names:
+            raise ValidationFailure(f"{location}: undeclared bundle {vector['bundle']}")
+        for field in (
+            "state_before",
+            "checkpoint_before",
+            "request_file",
+            "descriptor_file",
+        ):
+            filename = vector.get(field)
+            if filename is not None and filename not in artifact_names:
+                raise ValidationFailure(f"{location}: undeclared artifact {filename}")
+        if "request_file" in vector:
+            request = analyze_artifact(case / vector["request_file"])
+            selected: Any = request.document
+            try:
+                for encoded in vector["request_pointer"].split("/")[1:]:
+                    token = encoded.replace("~1", "/").replace("~0", "~")
+                    selected = selected[int(token)] if isinstance(selected, list) else selected[token]
+            except (KeyError, IndexError, TypeError, ValueError) as error:
+                raise ValidationFailure(
+                    f"{location}: unresolved request pointer {vector['request_pointer']}"
+                ) from error
+
+        expectation = vector["expect"]
+        result_file = expectation.get("exact_result_file")
+        if result_file is not None:
+            manifest = manifests.get(result_file)
+            if manifest is None or not manifest["valid"]:
+                raise ValidationFailure(
+                    f"{location}: exact result must be a valid declared artifact"
+                )
+            analysis = analyze_artifact(case / result_file)
+            if analysis.error is not None or analysis.source != canonical_json_bytes(
+                analysis.document
+            ):
+                raise ValidationFailure(
+                    f"{location}: exact result is not canonical RFC 8785 bytes"
+                )
+        unchanged_file = expectation.get("unchanged_file")
+        if unchanged_file is not None:
+            if unchanged_file not in artifact_names:
+                raise ValidationFailure(
+                    f"{location}: undeclared unchanged artifact {unchanged_file}"
+                )
+            prior = vector.get("state_before", vector.get("checkpoint_before"))
+            if prior is not None and unchanged_file != prior:
+                raise ValidationFailure(
+                    f"{location}: failure must preserve the exact supplied artifact"
+                )
+    return coverage
 
 
 def validate_vector_references(
@@ -4784,6 +5271,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             / "schemas"
             / "execution-checkpoint-profile.schema.json"
         ),
+        "version2_vectors": (
+            repository_root / "scripts" / "schemas" / "version2-vectors.schema.json"
+        ),
     }
     schemas: dict[str, dict[str, Any]] = {}
     resources: list[tuple[str, Resource[Any]]] = []
@@ -4816,6 +5306,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     )
     execution_checkpoint_profile_validator = Draft202012Validator(
         schemas["execution_checkpoint_profile"], registry=registry
+    )
+    version2_vector_validator = Draft202012Validator(
+        schemas["version2_vectors"], registry=registry
     )
 
     conformance_version = (repository_root / "VERSION").read_text().strip()
@@ -4861,6 +5354,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     persistence_profile_steps = 0
     execution_checkpoint_vectors = 0
     execution_checkpoint_coverage: set[str] = set()
+    version2_vectors = 0
+    version2_coverage: set[str] = set()
 
     for case in cases:
         test = load_fixture_document(case / "test.yaml")
@@ -4871,6 +5366,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 "persistence_vectors",
                 "persistence_profile",
                 "execution_checkpoint_profile",
+                "version2_vectors",
             )
             if name in test
         }
@@ -4889,6 +5385,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             validate_execution_checkpoint_schema_totality(
                 test, execution_checkpoint_profile_validator, case
             )
+        if "version2_vectors" in test:
+            validate_fixture_schema(test, version2_vector_validator, case)
         if "load" in test and test["load"] != {"valid": True}:
             raise ValidationFailure(f"{case.name}: unsupported load assertion")
 
@@ -5114,6 +5612,18 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 )
             execution_checkpoint_coverage.update(case_coverage)
             execution_checkpoint_vectors += vector_count
+        elif "version2_vectors" in test:
+            case_coverage = validate_version2_vectors(
+                case, test, referenced, referenced_artifacts
+            )
+            duplicate_coverage = version2_coverage & case_coverage
+            if duplicate_coverage:
+                raise ValidationFailure(
+                    f"{case.name}: version-2 coverage repeated across cases: "
+                    f"{sorted(duplicate_coverage)}"
+                )
+            version2_coverage.update(case_coverage)
+            version2_vectors += len(test["version2_vectors"])
 
         actual_bundles = {
             path
@@ -5168,6 +5678,15 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 f"missing={sorted(missing_coverage)}, "
                 f"unexpected={sorted(unexpected_coverage)}"
             )
+    if version2_vectors:
+        missing_coverage = REQUIRED_VERSION2_COVERAGE - version2_coverage
+        unexpected_coverage = version2_coverage - REQUIRED_VERSION2_COVERAGE
+        if missing_coverage or unexpected_coverage:
+            raise ValidationFailure(
+                "version-2 coverage mismatch: "
+                f"missing={sorted(missing_coverage)}, "
+                f"unexpected={sorted(unexpected_coverage)}"
+            )
 
     return (
         f"validated {registry_entries} closed-code entries across "
@@ -5180,7 +5699,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{static_schema_passes} schema-valid static documents, and "
         f"{scenarios} runtime scenarios, {persistence_vectors} persistence vectors, "
         f"{persistence_profile_steps} persistence-profile steps, and "
-        f"{execution_checkpoint_vectors} execution-checkpoint vectors"
+        f"{execution_checkpoint_vectors} execution-checkpoint vectors, "
+        f"{version2_vectors} version-2 vectors"
     )
 
 

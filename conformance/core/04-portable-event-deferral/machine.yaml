@@ -1,0 +1,54 @@
+format: 1
+namespace: conformance.case_04_portable_event_deferral
+
+events:
+  enter_busy: { direction: input }
+  leave_busy: { direction: input }
+  same_state_handle: { direction: input }
+  same_state_false: { direction: input }
+  child_handle: { direction: input }
+  child_defer: { direction: input }
+  ancestor_handle: { direction: input }
+  guard_fault: { direction: input }
+
+machines:
+  - machine_id: deferral
+    version: 1
+    root:
+      type: composite
+      deferred_event_capacity: 4
+      variables:
+        handled_count: { type: int, init: 0 }
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            enter_busy: { transition_to: busy.deep }
+        busy:
+          type: composite
+          deferred_events: [child_handle]
+          initial: { transition_to: busy.deep }
+          on_events:
+            child_defer:
+              action:
+                - assign: { handled_count: "handled_count + 100" }
+            ancestor_handle:
+              action:
+                - assign: { handled_count: "handled_count + 10" }
+            leave_busy: { transition_to: idle }
+          states:
+            deep:
+              deferred_events: [same_state_handle, same_state_false, child_defer]
+              on_events:
+                same_state_handle:
+                  action:
+                    - assign: { handled_count: "handled_count + 1" }
+                same_state_false:
+                  guard: "false"
+                  action:
+                    - assign: { handled_count: "handled_count + 1000" }
+                child_handle:
+                  action:
+                    - assign: { handled_count: "handled_count + 2" }
+                guard_fault:
+                  guard: "1 / 0 == 0"

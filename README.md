@@ -11,8 +11,9 @@ a core case disagree, the core case wins and the specification must be corrected
 Host and plugin behavior deliberately excluded by format 1 is not made normative merely
 by this repository. Cases under `conformance/profiles/<profile>/` bind only
 implementations that declare support for that profile, and never override core prose.
-Queue delivery policy, timers, dead letters, production stores, CLI shapes, and other
-host surfaces remain outside core conformance. SPEC §16 separately defines a portable
+External broker delivery policy, timers, production stores, CLI shapes, and other host
+surfaces remain outside core conformance. Runtime-local ready/deferred mailboxes in
+aggregate-state version 2 are core state and do not define a broker or worker. SPEC §16 separately defines a portable
 aggregate wire and pure migration operations; core cases 94 onward cover that boundary.
 
 Migration note: repository revisions before issue #21 used the pre-format-1 grammar and
@@ -42,6 +43,10 @@ Release 0.2.0 contains the existing 111 core cases, 108 persistence vectors, 12
 persistence-profile steps, 91 execution-checkpoint vectors including six scope vectors,
 and 89 closed-code registry entries across 11 categories. The release metadata does not
 change their behavior expectations or unresolved future scope.
+
+The unreleased issue-45 additions retain `VERSION` 0.2.0 while review is in progress:
+core case 04, cases 117–118, and checkpoint case 04 add the version-2 contracts without
+changing any released version-1 fixture.
 
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
 pre-schema rejections, checks declared structural results against an immutable
@@ -347,6 +352,27 @@ resolver call, no ExecutionHost, store, or core call, and byte-identical complet
 state. Equal operation results in two external scopes also require byte-identical
 portable checkpoint serialization, checkpoint digest, and effect identities.
 
+### Queue-bearing version-2 vector mechanics
+
+Cases with `version2_vectors` exercise only the pure, language-neutral operations from
+SPEC §§8, 16.15, and 17.15. Their operation names are driver adapters, not required
+public API names. A vector supplies the exact aggregate/checkpoint before value where
+required, an exact target or request artifact, and either canonical RFC 8785 result
+bytes or one closed failure code with the byte-identical unchanged input artifact.
+
+One `step_v2` names one runtime and processes at most its ready head. No version-2
+operation chooses another runtime or drains an aggregate. Repository validation checks
+result artifacts against the pinned schemas, recomputes aggregate, checkpoint,
+envelope, and descriptor digests, validates single mailbox ownership and receipt
+relations, rejects repeated coverage claims, and requires the closed coverage set.
+
+Generate or independently verify the canonical fixtures with:
+
+```sh
+python scripts/generate_version2_vectors.py
+python scripts/generate_version2_vectors.py --check
+```
+
 ## Assertion vocabulary (normative)
 
 An `expect` map compares only the fields it names. Common fields are `status`,
@@ -489,7 +515,7 @@ public API. See
 | 01 | guarded leaf dispatch and unhandled disposition (§6) |
 | 02 | ancestor handling and composite self-reset (§6) |
 | 03 | initial-transition actions (§4, §6) |
-| 04 | intentionally absent: deferral is queue-plugin policy (§11) |
+| 04 | UML level-by-level event deferral, direct version-1 caller ownership, grammar, capacity, and guard precedence (§4, §6, §8) |
 | 05 | scoped variables, shadowing, destruction, and reinitialization (§4) |
 | 06 | input payload validation (§4, §6) |
 | 07 | internal reaction versus transition exit/entry (§6) |
@@ -595,13 +621,16 @@ public API. See
 | 114 | occurrence-local transform binding across repeated runtimes and activations (§16.9) |
 | 115 | target-identity decimal projections, JavaScript boundaries, signed-64 spawned versions, unbounded component activations, and numeric-form rejection (§16.2, §16.4) |
 | 116 | legacy definition discriminator policy: 0.0.1–0.0.6 rejection, explicit-format structural rejection, and 0.0.7/current format-1 acceptance (§2) |
+| 117 | runtime-local ready/deferred mailboxes, explicit one-step processing, recall, capacity, isolation, and lifecycle outcomes (§6–§10, §16.15) |
+| 118 | queue-bearing artifact schemas, canonical bytes, explicit version conversion, and migration totality (§16.15) |
 
 ## Deliberate format-1 boundaries
 
 - Parallel behavior uses isolated components; regions and implicit broadcast do not
   exist.
-- Deferral, discard, retry, acknowledgement, and dead-letter policy belong to a queue
-  plugin. The core stores no unhandled or faulting envelope.
+- Direct aggregate-state version-1 dispatch leaves a deferred envelope caller-owned and
+  performs no automatic recall. Aggregate-state version 2 instead owns accepted ready
+  and deferred envelopes; external broker retry and acknowledgement remain host policy.
 - Time behavior uses declared external requests and later correlated inputs. The core has
   no clock or timer.
 - Separate named contracts are replaced by bundle public event declarations.

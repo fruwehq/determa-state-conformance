@@ -1,0 +1,113 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 2,
+  "root_instance_id": "job-42",
+  "revision": "0",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 2,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+      "namespace": "example.persistence",
+      "root_machine_id": "job",
+      "root_machine_version": "1",
+      "root_instance_id": "job-42",
+      "creation_id": "create-1",
+      "root_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "1",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "0",
+      "next_queue_sequence": "0",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+              "machine": {
+                "namespace": "example.persistence",
+                "machine_id": "job",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "job-42"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "job-42",
+              "root_runtime_id": "sha256:ab3984abc4339d050582192e1da1bb5e393917d9e9e0745475006f7d5d4dd93d"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+            "machine": {
+              "namespace": "example.persistence",
+              "machine_id": "job",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "ready_mailbox": [],
+          "deferred_mailbox": [],
+          "fault": null
+        }
+      ],
+      "aggregate_state_digest": "sha256:60d00f1d230f6e477a0683562b8ea5f96946b4e1dd8efb412125575055c65f52"
+    }
+  },
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "next_operation_receipt_sequence": "1",
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "create-1",
+      "request_digest": "sha256:d45fc61bc0c9db90b3f7bca2f0c3e01ef3444c2f7ec54ef241ad7557d0dbf2a9",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:60d00f1d230f6e477a0683562b8ea5f96946b4e1dd8efb412125575055c65f52",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    }
+  ],
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:ed5a5f814fc3253f8b1bbdae7cc287b8d85da147ce7538d1e5d24b8ed7007351"
+}
