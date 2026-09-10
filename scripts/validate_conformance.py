@@ -123,6 +123,9 @@ MINIMUM_RESOURCE_LIMIT_FLOORS = {
 REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
     {
         "creation_commit",
+        "spawned_trace_creation",
+        "spawned_trace_start",
+        "spawned_trace_child_acceptance",
         "creation_replay",
         "creation_conflict",
         "creation_rejection_without_checkpoint",
@@ -229,6 +232,7 @@ REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
 REQUIRED_VERSION2_COVERAGE = frozenset(
     {
         "aggregate_v2_schema_positive_negative",
+        "all_replay_multi_event_batch",
         "automatic_selective_recall",
         "batch_duplicate_rejection",
         "canonical_v2_bytes_and_digests",
@@ -278,6 +282,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "migration_package_v2_schema_positive_negative",
         "migration_preserve_dispose_default",
         "migration_stale_target_transform",
+        "mixed_replay_new_batch",
         "migration_removed_event_failure",
         "migration_payload_incompatible_failure",
         "migration_correlation_incompatible_failure",
@@ -301,6 +306,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "version2_equal_pruning_cutoff",
         "version2_invalid_pruning_cutoff_rejected",
         "version2_lower_pruning_cutoff_rejected",
+        "wrapped_legacy_terminal_replay",
     }
 )
 
@@ -469,6 +475,9 @@ EXECUTION_CHECKPOINT_OPERATION_OUTCOMES: dict[
 }
 EXECUTION_CHECKPOINT_COVERAGE_RULES = {
     "creation_commit": ("create", "committed", None, "created", "create", None, "creation"),
+    "spawned_trace_creation": ("create", "committed", None, "created", "create", None, "creation"),
+    "spawned_trace_start": ("foreground_process_delivery", "committed", None, "changed", "dispatch", None, "foreground"),
+    "spawned_trace_child_acceptance": ("accept_delivery", "pending", None, "changed", "none", None, "pending_acceptance"),
     "creation_replay": ("create", "committed", None, "unchanged", "none", None, "creation"),
     "creation_conflict": ("create", "failure", "creation_id_conflict", "unchanged", "none", None, "creation_conflict"),
     "creation_rejection_without_checkpoint": ("create", "failure", "creation_rejected", "absent", "create", None, "creation_rejection"),
@@ -1869,6 +1878,11 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
         canonical_decimal(item["intent"]["sequence"], "pending outbox sequence")
         for item in document["pending_outbox_intents"]
     ]
+    for index, item in enumerate(document["pending_outbox_intents"]):
+        validate_typed_value_canonical(
+            item["intent"]["payload"],
+            f"checkpoint v2 pending outbox intent {index} payload",
+        )
     if (
         pending_intent_sequences != sorted(pending_intent_sequences)
         or len(pending_intent_sequences) != len(set(pending_intent_sequences))
@@ -1877,6 +1891,11 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
     terminal_outbox_sequences = require_sequence_order(
         document["terminal_outbox_records"], "terminal_sequence", "terminal outbox sequence"
     )
+    for index, item in enumerate(document["terminal_outbox_records"]):
+        validate_typed_value_canonical(
+            item["intent"]["payload"],
+            f"checkpoint v2 terminal outbox intent {index} payload",
+        )
     tombstone_outbox_sequences = require_sequence_order(
         document["outbox_effect_tombstones"], "terminal_sequence", "outbox tombstone sequence"
     )
@@ -2135,6 +2154,8 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
 
 
 def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> None:
+    from generate_version2_vectors import upgrade_checkpoint
+
     case = repository_root / "conformance/profiles/execution-checkpoint/checkpoint-04-version2-mailboxes"
 
     def reseal(value: dict[str, Any]) -> dict[str, Any]:
@@ -2272,6 +2293,39 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
         duplicate_effect["pending_outbox_intents"][0]["intent"]["effect_id"]
     )
     probes["populated outbox effect identity"] = reseal(duplicate_effect)
+    for label, payload in (
+        (
+            "nested reordered pending outbox payload",
+            [
+                "map",
+                [["details", ["map", [["beta", ["integer", "2"]], ["alpha", ["integer", "1"]]]]]],
+            ],
+        ),
+        (
+            "duplicate pending outbox payload key",
+            [
+                "map",
+                [
+                    ["transaction_id", ["string", "tx-1"]],
+                    ["transaction_id", ["string", "tx-2"]],
+                ],
+            ],
+        ),
+    ):
+        malformed_outbox = copy.deepcopy(populated_outbox)
+        malformed_outbox["pending_outbox_intents"][0]["intent"]["payload"] = payload
+        probes[label] = reseal(malformed_outbox)
+    terminal_outbox = upgrade_checkpoint(
+        analyze_artifact(
+            repository_root
+            / "conformance/profiles/execution-checkpoint/checkpoint-02-outbox-lifecycle/outbox-total-checkpoint.json"
+        ).document
+    )
+    terminal_outbox["terminal_outbox_records"][0]["intent"]["payload"] = [
+        "map",
+        [["details", ["map", [["beta", ["integer", "2"]], ["alpha", ["integer", "1"]]]]]],
+    ]
+    probes["nested reordered terminal outbox payload"] = reseal(terminal_outbox)
     for label, members in (
         (
             "checkpoint reversed envelope payload",
@@ -2399,7 +2453,7 @@ def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) ->
             checkpoint = analyze_artifact(path).document
             if checkpoint["root_record"]["status"] == "retained":
                 retained_paths.add(path)
-    if len(retained_paths) != 29:
+    if len(retained_paths) != 32:
         raise ValidationFailure(
             "version-1 retained checkpoint upgrade probe set is incomplete"
         )
@@ -3215,6 +3269,33 @@ def checkpoint_replay_result(
     """Return the exact replay response justified by retained v2 evidence."""
     event_id = delivery["envelope"]["event_id"]
     request_digest = delivery["envelope_digest"]
+    digest_domain = delivery.get(
+        "request_digest_domain", "determa-inbox-envelope-digest-2"
+    )
+    if digest_domain == "determa-inbox-envelope-digest-1":
+        legacy = next(
+            (
+                receipt
+                for receipt in checkpoint["operation_receipts"]
+                if receipt.get("operation_kind") == "legacy_v1_operation"
+                and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+                and receipt["legacy_receipt"].get("event_id") == event_id
+                and receipt["legacy_receipt"].get("request_digest")
+                == request_digest
+            ),
+            None,
+        )
+        if legacy is None:
+            return None
+        nested = legacy["legacy_receipt"]
+        return {
+            "result": "replay",
+            "event_id": event_id,
+            "acceptance_sequence": nested["accepted_delivery_sequence"],
+            "terminal_receipt_sequence": legacy["receipt_sequence"],
+            "terminal_disposition": nested["outcome"]["disposition"],
+            "request_digest_domain": digest_domain,
+        }
     root_record = checkpoint["root_record"]
     if root_record["status"] == "retained":
         for runtime in root_record["aggregate_state"]["runtimes"]:
@@ -3337,8 +3418,12 @@ def validate_version2_vectors(
         validate_typed_value_canonical(
             delivery["envelope"]["payload"], f"{location}: delivery payload"
         )
+        digest_domain = delivery.get(
+            "request_digest_domain", "determa-inbox-envelope-digest-2"
+        )
+        digest_version = "1" if digest_domain.endswith("-1") else "2"
         expected = hash_value([
-            "determa-inbox-envelope-digest-2", "2", aggregate["root_instance_id"],
+            digest_domain, digest_version, aggregate["root_instance_id"],
             delivery["delivery_mode"], delivery["envelope"],
         ])
         if delivery["envelope_digest"] != expected:
@@ -3416,15 +3501,20 @@ def validate_version2_vectors(
                 and selected.get("expected_checkpoint_digest")
                 == checkpoint_before["execution_checkpoint_digest"]
             )
-            replay_result = (
-                checkpoint_replay_result(checkpoint_before, selected["deliveries"][0])
+            replay_results = (
+                [
+                    checkpoint_replay_result(checkpoint_before, delivery)
+                    for delivery in selected["deliveries"]
+                ]
                 if operation == "checkpoint_admit_v2"
-                and len(selected.get("deliveries", [])) == 1
-                else None
+                else []
+            )
+            all_replay = bool(replay_results) and all(
+                result is not None for result in replay_results
             )
             if (
                 not cas_matches
-                and replay_result is None
+                and not all_replay
                 and expectation.get("code") != "checkpoint_revision_conflict"
             ):
                 raise ValidationFailure(
@@ -3435,7 +3525,7 @@ def validate_version2_vectors(
                 if (
                     selected != original_request
                     or cas_matches
-                    or replay_result is None
+                    or not all_replay
                     or int(selected["expected_revision"])
                     >= int(checkpoint_before["revision"])
                 ):
@@ -3446,8 +3536,8 @@ def validate_version2_vectors(
                 if (
                     selected != request.document["admit"]
                     or cas_matches
-                    or replay_result is None
-                    or replay_result.get("location") not in {"ready", "deferred"}
+                    or not all_replay
+                    or replay_results[0].get("location") not in {"ready", "deferred"}
                 ):
                     raise ValidationFailure(
                         f"{location}: pending replay is not derived from retained evidence"
@@ -3499,6 +3589,14 @@ def validate_version2_vectors(
             and operation in {"admit_v2", "step_v2"}
         ):
             validate_aggregate_against_bundle(prior_aggregate, case / vector["bundle"])
+        if (
+            prior_aggregate is not None
+            and operation == "upgrade_checkpoint_v1_to_v2"
+            and "bundle" in vector
+        ):
+            validate_aggregate_against_bundle(
+                prior_aggregate, case / vector["bundle"]
+            )
         if "deliveries" in selected:
             if prior_aggregate is None:
                 raise ValidationFailure(f"{location}: delivery operation lacks a retained aggregate")
@@ -4036,25 +4134,285 @@ def validate_version2_vectors(
                         raise ValidationFailure(f"{location}: legacy internal or terminal replay evidence is absent")
             if operation == "checkpoint_admit_v2":
                 checkpoint_before = artifact(vector["checkpoint_before"]).document
-                delivery = selected["deliveries"][0]
-                event_id = delivery["envelope"]["event_id"]
+                deliveries = selected["deliveries"]
+                replay_evidence = [
+                    checkpoint_replay_result(checkpoint_before, delivery)
+                    for delivery in deliveries
+                ]
+                new_deliveries = [
+                    delivery
+                    for delivery, evidence in zip(
+                        deliveries, replay_evidence, strict=True
+                    )
+                    if evidence is None
+                ]
+
+                def admitted_member(
+                    checkpoint: dict[str, Any], delivery: dict[str, Any]
+                ) -> tuple[dict[str, Any], dict[str, Any]]:
+                    event_id = delivery["envelope"]["event_id"]
+                    aggregate = checkpoint["root_record"]["aggregate_state"]
+                    entry = next(
+                        (
+                            entry
+                            for runtime in aggregate["runtimes"]
+                            for mailbox in (
+                                runtime["ready_mailbox"],
+                                runtime["deferred_mailbox"],
+                            )
+                            for entry in mailbox
+                            if entry["envelope"]["event_id"] == event_id
+                        ),
+                        None,
+                    )
+                    receipt = next(
+                        (
+                            receipt
+                            for receipt in checkpoint["operation_receipts"]
+                            if receipt.get("operation_kind") == "acceptance"
+                            and receipt.get("event_id") == event_id
+                        ),
+                        None,
+                    )
+                    if (
+                        entry is None
+                        or receipt is None
+                        or entry["envelope"] != delivery["envelope"]
+                        or entry["envelope_digest"] != delivery["envelope_digest"]
+                        or receipt["request_digest"] != delivery["envelope_digest"]
+                        or receipt["acceptance_sequence"]
+                        != entry["acceptance_sequence"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: checkpoint admission result is not bound to delivery"
+                    )
+                    return entry, receipt
+
+                def validate_admission_checkpoint(
+                    checkpoint: dict[str, Any],
+                ) -> None:
+                    before_aggregate = checkpoint_before["root_record"]["aggregate_state"]
+                    after_aggregate = checkpoint["root_record"]["aggregate_state"]
+                    before_runtimes = {
+                        runtime["runtime_id"]: runtime
+                        for runtime in before_aggregate["runtimes"]
+                    }
+                    after_runtimes = {
+                        runtime["runtime_id"]: runtime
+                        for runtime in after_aggregate["runtimes"]
+                    }
+                    if before_runtimes.keys() != after_runtimes.keys():
+                        raise ValidationFailure(
+                            f"{location}: admission changed the runtime set"
+                        )
+                    for runtime_id, before_runtime in before_runtimes.items():
+                        after_runtime = after_runtimes[runtime_id]
+                        expected_new = [
+                            delivery["envelope"]["event_id"]
+                            for delivery in new_deliveries
+                            if delivery["envelope"]["target"]
+                            == before_runtime["target_identity"]
+                        ]
+                        before_ready = before_runtime["ready_mailbox"]
+                        after_ready = after_runtime["ready_mailbox"]
+                        if (
+                            after_ready[: len(before_ready)] != before_ready
+                            or [
+                                entry["envelope"]["event_id"]
+                                for entry in after_ready[len(before_ready) :]
+                            ]
+                            != expected_new
+                            or after_runtime["deferred_mailbox"]
+                            != before_runtime["deferred_mailbox"]
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: resulting mailbox is not the exact request append"
+                            )
+                        before_projection = copy.deepcopy(before_runtime)
+                        after_projection = copy.deepcopy(after_runtime)
+                        for projection in (before_projection, after_projection):
+                            projection.pop("ready_mailbox")
+                            projection.pop("deferred_mailbox")
+                        if before_projection != after_projection:
+                            raise ValidationFailure(
+                                f"{location}: admission changed non-mailbox runtime state"
+                            )
+                    unmatched_targets = [
+                        delivery["envelope"]["event_id"]
+                        for delivery in new_deliveries
+                        if not any(
+                            delivery["envelope"]["target"]
+                            == runtime["target_identity"]
+                            for runtime in before_aggregate["runtimes"]
+                        )
+                    ]
+                    if unmatched_targets:
+                        raise ValidationFailure(
+                            f"{location}: accepted delivery has no exact target runtime"
+                        )
+                    new_count = len(new_deliveries)
+                    expected_revision = str(
+                        int(checkpoint_before["revision"]) + (1 if new_count else 0)
+                    )
+                    expected_receipts = checkpoint_before["operation_receipts"]
+                    if (
+                        checkpoint["revision"] != expected_revision
+                        or after_aggregate["next_acceptance_sequence"]
+                        != str(
+                            int(before_aggregate["next_acceptance_sequence"])
+                            + new_count
+                        )
+                        or after_aggregate["next_queue_sequence"]
+                        != str(int(before_aggregate["next_queue_sequence"]) + new_count)
+                        or checkpoint["next_operation_receipt_sequence"]
+                        != str(
+                            int(checkpoint_before["next_operation_receipt_sequence"])
+                            + new_count
+                        )
+                        or checkpoint["operation_receipts"][: len(expected_receipts)]
+                        != expected_receipts
+                        or len(checkpoint["operation_receipts"])
+                        != len(expected_receipts) + new_count
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: admission counters or receipt history are not exact"
+                        )
+                    for index, delivery in enumerate(new_deliveries):
+                        entry, receipt = admitted_member(checkpoint, delivery)
+                        if (
+                            entry["acceptance_sequence"]
+                            != str(int(before_aggregate["next_acceptance_sequence"]) + index)
+                            or entry["queue_sequence"]
+                            != str(int(before_aggregate["next_queue_sequence"]) + index)
+                            or receipt
+                            != {
+                                "operation_kind": "acceptance",
+                                "receipt_sequence": str(
+                                    int(
+                                        checkpoint_before[
+                                            "next_operation_receipt_sequence"
+                                        ]
+                                    )
+                                    + index
+                                ),
+                                "event_id": delivery["envelope"]["event_id"],
+                                "request_digest": delivery["envelope_digest"],
+                                "acceptance_sequence": entry["acceptance_sequence"],
+                                "accepted_revision": expected_revision,
+                                "delivery_mode": delivery["delivery_mode"],
+                            }
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: admitted member allocation is not request-bound"
+                            )
+                    before_checkpoint_projection = copy.deepcopy(checkpoint_before)
+                    after_checkpoint_projection = copy.deepcopy(checkpoint)
+                    for projection in (
+                        before_checkpoint_projection,
+                        after_checkpoint_projection,
+                    ):
+                        projection.pop("execution_checkpoint_digest")
+                        projection.pop("revision")
+                        projection.pop("next_operation_receipt_sequence")
+                        projection.pop("operation_receipts")
+                        aggregate = projection["root_record"]["aggregate_state"]
+                        aggregate.pop("aggregate_state_digest")
+                        aggregate.pop("next_acceptance_sequence")
+                        aggregate.pop("next_queue_sequence")
+                        for runtime in aggregate["runtimes"]:
+                            runtime.pop("ready_mailbox")
+                            runtime.pop("deferred_mailbox")
+                    if before_checkpoint_projection != after_checkpoint_projection:
+                        raise ValidationFailure(
+                            f"{location}: admission changed unrelated checkpoint state"
+                        )
+
                 if manifests[result_file]["kind"] == "execution_checkpoint_v2":
-                    aggregate = result_document["root_record"]["aggregate_state"]
-                    entry = next((entry for runtime in aggregate["runtimes"] for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"]) for entry in mailbox if entry["envelope"]["event_id"] == event_id), None)
-                    receipt = next((receipt for receipt in result_document["operation_receipts"] if receipt.get("operation_kind") == "acceptance" and receipt.get("event_id") == event_id), None)
-                    if entry is None or receipt is None or entry["envelope_digest"] != delivery["envelope_digest"] or receipt["request_digest"] != delivery["envelope_digest"]:
-                        raise ValidationFailure(f"{location}: checkpoint admission result is not bound to delivery")
+                    if any(evidence is not None for evidence in replay_evidence):
+                        raise ValidationFailure(
+                            f"{location}: checkpoint-only result omits replay evidence"
+                        )
+                    for delivery in deliveries:
+                        admitted_member(result_document, delivery)
+                    validate_admission_checkpoint(result_document)
                     if "native_internal_handler_admission" in covers and (
-                        delivery["envelope"]["event"] != "emit_internal"
-                        or entry["envelope"]["event"] != "emit_internal"
+                        deliveries[0]["envelope"]["event"] != "emit_internal"
                     ):
                         raise ValidationFailure(
                             f"{location}: native internal source handler was not admitted"
                         )
+                elif result_document["result"] == "batch":
+                    members = result_document["members"]
+                    result_checkpoint = result_document["checkpoint"]
+                    validate_admission_checkpoint(result_checkpoint)
+                    if len(members) != len(deliveries) or [
+                        member["event_id"] for member in members
+                    ] != [delivery["envelope"]["event_id"] for delivery in deliveries]:
+                        raise ValidationFailure(
+                            f"{location}: batch result is not in request order"
+                        )
+                    new_index = 0
+                    for delivery, evidence, member in zip(
+                        deliveries, replay_evidence, members, strict=True
+                    ):
+                        if evidence is not None:
+                            if member != {
+                                "event_id": delivery["envelope"]["event_id"],
+                                "disposition": "replay",
+                                "evidence": evidence,
+                            }:
+                                raise ValidationFailure(
+                                    f"{location}: batch replay evidence mismatch"
+                                )
+                            continue
+                        entry, receipt = admitted_member(result_checkpoint, delivery)
+                        if member != {
+                            "event_id": delivery["envelope"]["event_id"],
+                            "disposition": "accepted",
+                            "acceptance_sequence": entry["acceptance_sequence"],
+                            "queue_sequence": entry["queue_sequence"],
+                        }:
+                            raise ValidationFailure(
+                                f"{location}: batch acceptance evidence mismatch"
+                            )
+                        expected_acceptance = str(
+                            int(
+                                checkpoint_before["root_record"]["aggregate_state"][
+                                    "next_acceptance_sequence"
+                                ]
+                            )
+                            + new_index
+                        )
+                        expected_receipt = str(
+                            int(checkpoint_before["next_operation_receipt_sequence"])
+                            + new_index
+                        )
+                        if (
+                            entry["acceptance_sequence"] != expected_acceptance
+                            or receipt["receipt_sequence"] != expected_receipt
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: batch new-member allocation is not contiguous"
+                            )
+                        new_index += 1
+                    if new_index == 0:
+                        if result_checkpoint != checkpoint_before:
+                            raise ValidationFailure(
+                                f"{location}: all-replay batch mutated checkpoint"
+                            )
+                    elif (
+                        result_checkpoint["revision"]
+                        != str(int(checkpoint_before["revision"]) + 1)
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: mixed batch did not commit exactly once"
+                        )
                 else:
-                    exact_replay = checkpoint_replay_result(
-                        checkpoint_before, delivery
-                    )
+                    if len(deliveries) != 1:
+                        raise ValidationFailure(
+                            f"{location}: multi-member replay lacks ordered evidence"
+                        )
+                    exact_replay = replay_evidence[0]
                     if exact_replay is None or result_document != exact_replay:
                         raise ValidationFailure(
                             f"{location}: replay result does not match retained evidence"
@@ -4260,6 +4618,8 @@ def validate_version2_vectors(
     if run_mutation_probes and case.name == "checkpoint-04-version2-mailboxes":
         terminal_result = artifact("terminal-replay-result.json").document
         tombstone_result = artifact("tombstone-replay-result.json").document
+        all_replay_result = artifact("all-replay-batch-result.json").document
+        mixed_result = artifact("mixed-replay-new-batch-result.json").document
         probes = {}
         for field, sequence in (
             ("acceptance_receipt_sequence", "999"),
@@ -4274,6 +4634,35 @@ def validate_version2_vectors(
         wrong_disposition["terminal_disposition"] = "faulted"
         probes["tombstone replay disposition"] = {
             "tombstone-replay-result.json": wrong_disposition
+        }
+        unknown_member = copy.deepcopy(all_replay_result)
+        unknown_member["members"][0]["event_id"] = "not-in-request"
+        probes["all-replay member not in request"] = {
+            "all-replay-batch-result.json": unknown_member
+        }
+        fabricated_member = copy.deepcopy(mixed_result)
+        fabricated_member["members"][1]["event_id"] = "not-in-request"
+        probes["mixed member not in request"] = {
+            "mixed-replay-new-batch-result.json": fabricated_member
+        }
+        fabricated_sequence = copy.deepcopy(mixed_result)
+        fabricated_sequence["members"][1]["acceptance_sequence"] = "999"
+        probes["mixed acceptance sequence 999"] = {
+            "mixed-replay-new-batch-result.json": fabricated_sequence
+        }
+        fabricated_queue_sequence = copy.deepcopy(mixed_result)
+        fabricated_queue_sequence["members"][1]["queue_sequence"] = "999"
+        probes["mixed queue sequence 999"] = {
+            "mixed-replay-new-batch-result.json": fabricated_queue_sequence
+        }
+        mutated_legacy_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        mutated_legacy_inputs["legacy_terminal_replay"]["deliveries"][0][
+            "request_digest_domain"
+        ] = "determa-inbox-envelope-digest-2"
+        probes["legacy replay digest domain substitution"] = {
+            "operation-inputs.json": mutated_legacy_inputs
         }
         for probe_name, overrides in probes.items():
             try:

@@ -7,6 +7,8 @@
     { "$ref": "#/$defs/pendingReplay" },
     { "$ref": "#/$defs/terminalReplay" },
     { "$ref": "#/$defs/tombstoneReplay" },
+    { "$ref": "#/$defs/legacyTerminalReplay" },
+    { "$ref": "#/$defs/batchAdmission" },
     { "$ref": "#/$defs/migration" },
     { "$ref": "#/$defs/downgrade" }
   ],
@@ -72,6 +74,67 @@
         "terminal_disposition": {
           "enum": ["handled", "unhandled", "faulted", "disposed", "migration_disposed"]
         }
+      }
+    },
+    "legacyTerminalReplay": {
+      "type": "object",
+      "required": ["result", "event_id", "acceptance_sequence", "terminal_receipt_sequence", "terminal_disposition", "request_digest_domain"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "replay" },
+        "event_id": { "type": "string", "minLength": 1 },
+        "acceptance_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+        "terminal_receipt_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+        "terminal_disposition": {
+          "enum": ["handled", "unhandled", "rejected", "faulted"]
+        },
+        "request_digest_domain": { "const": "determa-inbox-envelope-digest-1" }
+      }
+    },
+    "batchMember": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["event_id", "disposition", "acceptance_sequence", "queue_sequence"],
+          "additionalProperties": false,
+          "properties": {
+            "event_id": { "type": "string", "minLength": 1 },
+            "disposition": { "const": "accepted" },
+            "acceptance_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+            "queue_sequence": { "$ref": "#/$defs/canonicalDecimal" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["event_id", "disposition", "evidence"],
+          "additionalProperties": false,
+          "properties": {
+            "event_id": { "type": "string", "minLength": 1 },
+            "disposition": { "const": "replay" },
+            "evidence": {
+              "oneOf": [
+                { "$ref": "#/$defs/pendingReplay" },
+                { "$ref": "#/$defs/terminalReplay" },
+                { "$ref": "#/$defs/tombstoneReplay" },
+                { "$ref": "#/$defs/legacyTerminalReplay" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "batchAdmission": {
+      "type": "object",
+      "required": ["result", "members", "checkpoint"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "batch" },
+        "members": {
+          "type": "array",
+          "minItems": 2,
+          "items": { "$ref": "#/$defs/batchMember" }
+        },
+        "checkpoint": { "$ref": "https://determa.dev/state/schema/execution-checkpoint-v2.schema.json" }
       }
     },
     "migrationDisposition": {

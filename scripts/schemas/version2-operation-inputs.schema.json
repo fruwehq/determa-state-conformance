@@ -23,6 +23,12 @@
       }
     },
     "delivery": {
+      "oneOf": [
+        { "$ref": "#/$defs/nativeDelivery" },
+        { "$ref": "#/$defs/legacyTerminalReplayDelivery" }
+      ]
+    },
+    "nativeDelivery": {
       "type": "object",
       "required": ["delivery_mode", "envelope", "envelope_digest"],
       "additionalProperties": false,
@@ -30,6 +36,17 @@
         "delivery_mode": { "enum": ["input", "internal"] },
         "envelope": { "$ref": "https://determa.dev/state/schema/aggregate-state-v2.schema.json#/$defs/envelope" },
         "envelope_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "legacyTerminalReplayDelivery": {
+      "type": "object",
+      "required": ["delivery_mode", "envelope", "envelope_digest", "request_digest_domain"],
+      "additionalProperties": false,
+      "properties": {
+        "delivery_mode": { "enum": ["input", "internal"] },
+        "envelope": { "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/envelope" },
+        "envelope_digest": { "$ref": "#/$defs/sha256" },
+        "request_digest_domain": { "const": "determa-inbox-envelope-digest-1" }
       }
     },
     "create": {

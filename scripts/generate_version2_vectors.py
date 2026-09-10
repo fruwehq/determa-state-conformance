@@ -406,15 +406,6 @@ def seal_checkpoint(value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
-def seal_checkpoint_v1(value: dict[str, Any]) -> dict[str, Any]:
-    value = copy.deepcopy(value)
-    value.pop("execution_checkpoint_digest", None)
-    value["execution_checkpoint_digest"] = digest(
-        ["determa-execution-checkpoint-digest-1", value]
-    )
-    return value
-
-
 def rebind_single_root(
     value: dict[str, Any], validated_bundle_fingerprint: str
 ) -> dict[str, Any]:
@@ -2095,121 +2086,10 @@ def produce_checkpoint() -> dict[str, bytes]:
     }
     operational_base = seal_checkpoint(operational_base)
 
-    spawned_aggregate = load(
-        ROOT / "conformance/core/105-owned-runtime-migration/source-aggregate-state.json"
-    )
-    spawned_runtime = next(
-        runtime
-        for runtime in spawned_aggregate["runtimes"]
-        if runtime["relation"]["kind"] == "owned_spawned_instance"
-    )
-    spawned_envelope = {
-        "event": "pay",
-        "event_id": "python-host-spawned-child-pay",
-        "target": copy.deepcopy(spawned_runtime["target_identity"]),
-        "payload": typed_value({"amount": 100}),
-    }
-    spawned_pending_digest = digest(
-        [
-            "determa-inbox-envelope-digest-1",
-            "1",
-            spawned_aggregate["root_instance_id"],
-            "input",
-            spawned_envelope,
-        ]
-    )
-    spawned_root = next(
-        runtime
-        for runtime in spawned_aggregate["runtimes"]
-        if runtime["relation"]["kind"] == "root"
-    )
-    spawn_start_envelope = {
-        "event": "start",
-        "event_id": "checkpoint-spawn-start",
-        "target": copy.deepcopy(spawned_root["target_identity"]),
-        "payload": ["map", []],
-    }
-    spawn_start_digest = digest(
-        [
-            "determa-inbox-envelope-digest-1",
-            "1",
-            spawned_aggregate["root_instance_id"],
-            "input",
-            spawn_start_envelope,
-        ]
-    )
-    spawned_checkpoint_v1 = seal_checkpoint_v1(
-        {
-            "execution_checkpoint_format": "determa.execution_checkpoint",
-            "execution_checkpoint_schema_version": 1,
-            "root_instance_id": spawned_aggregate["root_instance_id"],
-            "revision": "2",
-            "root_record": {
-                "status": "retained",
-                "aggregate_state": spawned_aggregate,
-            },
-            "replay_retention": {
-                "mode": "permanent",
-                "permanent_replay_eligible": True,
-                "pruned_through_receipt_sequence": None,
-                "policy_identifier": None,
-            },
-            "next_delivery_sequence": "2",
-            "pending_deliveries": [
-                {
-                    "delivery_sequence": "1",
-                    "accepted_revision": "2",
-                    "delivery_mode": "input",
-                    "origin": {"kind": "host_input"},
-                    "envelope": spawned_envelope,
-                    "envelope_digest": spawned_pending_digest,
-                }
-            ],
-            "next_operation_receipt_sequence": "2",
-            "operation_receipts": [
-                {
-                    "operation_kind": "creation",
-                    "receipt_sequence": "0",
-                    "creation_id": spawned_aggregate["creation_id"],
-                    "request_digest": digest(
-                        ["python-host-checkpoint-fixture", spawned_aggregate["creation_id"]]
-                    ),
-                    "committed_revision": "0",
-                    "resulting_aggregate_state_digest": (
-                        "sha256:3f8f16534a6e97f6704315b29824f8bbf624d9f020bf3cafa6ce078d0e1cbb0f"
-                    ),
-                    "status": "running",
-                    "fault": None,
-                    "emission_references": [],
-                },
-                {
-                    "operation_kind": "delivery",
-                    "receipt_sequence": "1",
-                    "event_id": spawn_start_envelope["event_id"],
-                    "request_digest": spawn_start_digest,
-                    "accepted_delivery_sequence": "0",
-                    "accepted_revision": "1",
-                    "delivery_mode": "input",
-                    "origin": {"kind": "host_input"},
-                    "committed_revision": "1",
-                    "resulting_aggregate_state_digest": spawned_aggregate[
-                        "aggregate_state_digest"
-                    ],
-                    "outcome": {
-                        "status": "running",
-                        "disposition": "handled",
-                        "fault": None,
-                        "rejection": None,
-                    },
-                    "emission_references": [],
-                },
-            ],
-            "pending_outbox_intents": [],
-            "next_outbox_terminal_sequence": "0",
-            "terminal_outbox_records": [],
-            "outbox_effect_tombstones": [],
-            "migration_audit_records": [],
-        }
+    spawned_checkpoint_v1 = load(
+        CHECKPOINT.parent
+        / "checkpoint-05-spawned-host-trace"
+        / "spawned-child-checkpoint-v1.json"
     )
     spawned_checkpoint_v2 = upgrade_checkpoint(spawned_checkpoint_v1)
     admitted = copy.deepcopy(operational_base)
@@ -2469,6 +2349,147 @@ def produce_checkpoint() -> dict[str, bytes]:
         queue_sequence=0,
         payload=typed_value({"amount": 1}),
     )
+    mixed_new_entry = envelope_entry(
+        admitted["root_record"]["aggregate_state"],
+        root_runtime(admitted["root_record"]["aggregate_state"]),
+        event="increment",
+        event_id="checkpoint-v2-mixed-new",
+        acceptance_sequence=int(
+            admitted["root_record"]["aggregate_state"]["next_acceptance_sequence"]
+        ),
+        queue_sequence=int(
+            admitted["root_record"]["aggregate_state"]["next_queue_sequence"]
+        ),
+        payload=typed_value({"amount": 2}),
+    )
+    mixed_checkpoint = copy.deepcopy(admitted)
+    mixed_aggregate = mixed_checkpoint["root_record"]["aggregate_state"]
+    root_runtime(mixed_aggregate)["ready_mailbox"].append(mixed_new_entry)
+    mixed_aggregate["next_acceptance_sequence"] = str(
+        int(mixed_new_entry["acceptance_sequence"]) + 1
+    )
+    mixed_aggregate["next_queue_sequence"] = str(
+        int(mixed_new_entry["queue_sequence"]) + 1
+    )
+    mixed_checkpoint["revision"] = str(int(admitted["revision"]) + 1)
+    mixed_receipt_sequence = mixed_checkpoint["next_operation_receipt_sequence"]
+    mixed_checkpoint["operation_receipts"].append(
+        {
+            "operation_kind": "acceptance",
+            "receipt_sequence": mixed_receipt_sequence,
+            "event_id": mixed_new_entry["envelope"]["event_id"],
+            "request_digest": mixed_new_entry["envelope_digest"],
+            "acceptance_sequence": mixed_new_entry["acceptance_sequence"],
+            "accepted_revision": mixed_checkpoint["revision"],
+            "delivery_mode": mixed_new_entry["delivery_mode"],
+        }
+    )
+    mixed_checkpoint["next_operation_receipt_sequence"] = str(
+        int(mixed_receipt_sequence) + 1
+    )
+    mixed_checkpoint["root_record"]["aggregate_state"] = seal_aggregate(
+        mixed_aggregate
+    )
+    mixed_checkpoint = seal_checkpoint(mixed_checkpoint)
+
+    original_v1_input = load(
+        CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "inputs.json"
+    )["requests"]["accept_increment"]
+    legacy_replay_delivery = {
+        "delivery_mode": original_v1_input["delivery_mode"],
+        "envelope": original_v1_input["envelope"],
+        "envelope_digest": original_v1_input["envelope_digest"],
+        "request_digest_domain": "determa-inbox-envelope-digest-1",
+    }
+
+    def terminal_replay_evidence(
+        checkpoint: dict[str, Any], event_id: str
+    ) -> dict[str, Any]:
+        acceptance = next(
+            receipt
+            for receipt in checkpoint["operation_receipts"]
+            if receipt.get("operation_kind") == "acceptance"
+            and receipt.get("event_id") == event_id
+        )
+        terminal_receipt = next(
+            receipt
+            for receipt in checkpoint["operation_receipts"]
+            if receipt.get("operation_kind") == "event_terminal"
+            and receipt.get("event_id") == event_id
+        )
+        return {
+            "result": "replay",
+            "acceptance_receipt_sequence": acceptance["receipt_sequence"],
+            "terminal_receipt_sequence": terminal_receipt["receipt_sequence"],
+        }
+
+    all_replay_deliveries = [
+        {
+            "delivery_mode": entry["delivery_mode"],
+            "envelope": entry["envelope"],
+            "envelope_digest": entry["envelope_digest"],
+        },
+        {
+            "delivery_mode": native_host_entry["delivery_mode"],
+            "envelope": native_host_entry["envelope"],
+            "envelope_digest": native_host_entry["envelope_digest"],
+        },
+    ]
+    all_replay_result = {
+        "result": "batch",
+        "members": [
+            {
+                "event_id": delivery["envelope"]["event_id"],
+                "disposition": "replay",
+                "evidence": terminal_replay_evidence(
+                    native_terminal, delivery["envelope"]["event_id"]
+                ),
+            }
+            for delivery in all_replay_deliveries
+        ],
+        "checkpoint": native_terminal,
+    }
+    mixed_result = {
+        "result": "batch",
+        "members": [
+            {
+                "event_id": entry["envelope"]["event_id"],
+                "disposition": "replay",
+                "evidence": {
+                    "result": "replay",
+                    "event_id": entry["envelope"]["event_id"],
+                    "acceptance_sequence": entry["acceptance_sequence"],
+                    "location": "ready",
+                },
+            },
+            {
+                "event_id": mixed_new_entry["envelope"]["event_id"],
+                "disposition": "accepted",
+                "acceptance_sequence": mixed_new_entry["acceptance_sequence"],
+                "queue_sequence": mixed_new_entry["queue_sequence"],
+            },
+        ],
+        "checkpoint": mixed_checkpoint,
+    }
+    legacy_receipt = next(
+        receipt
+        for receipt in upgraded["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["legacy_receipt"].get("event_id")
+        == original_v1_input["envelope"]["event_id"]
+    )
+    legacy_replay_result = {
+        "result": "replay",
+        "event_id": legacy_receipt["legacy_receipt"]["event_id"],
+        "acceptance_sequence": legacy_receipt["legacy_receipt"][
+            "accepted_delivery_sequence"
+        ],
+        "terminal_receipt_sequence": legacy_receipt["receipt_sequence"],
+        "terminal_disposition": legacy_receipt["legacy_receipt"]["outcome"][
+            "disposition"
+        ],
+        "request_digest_domain": "determa-inbox-envelope-digest-1",
+    }
     operations = {
         "upgrade": with_checkpoint_cas(
             {"operation": "upgrade_checkpoint_v1_to_v2"}, v1
@@ -2520,6 +2541,38 @@ def produce_checkpoint() -> dict[str, bytes]:
             "envelope": entry["envelope"],
             "envelope_digest": entry["envelope_digest"],
         }]}, operational_base),
+        "all_replay_batch": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": all_replay_deliveries,
+            },
+            operational_base,
+        ),
+        "mixed_replay_new_batch": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [
+                    {
+                        "delivery_mode": entry["delivery_mode"],
+                        "envelope": entry["envelope"],
+                        "envelope_digest": entry["envelope_digest"],
+                    },
+                    {
+                        "delivery_mode": mixed_new_entry["delivery_mode"],
+                        "envelope": mixed_new_entry["envelope"],
+                        "envelope_digest": mixed_new_entry["envelope_digest"],
+                    },
+                ],
+            },
+            admitted,
+        ),
+        "legacy_terminal_replay": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [legacy_replay_delivery],
+            },
+            v1,
+        ),
         "tombstone_equal_replay": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
             "delivery_mode": entry["delivery_mode"],
             "envelope": entry["envelope"],
@@ -2576,6 +2629,7 @@ def produce_checkpoint() -> dict[str, bytes]:
         "upgraded-checkpoint-v2.json": canonical(upgraded),
         "upgraded-outbox-checkpoint-v2.json": canonical(upgraded_outbox),
         "admitted-checkpoint-v2.json": canonical(admitted),
+        "mixed-admitted-checkpoint-v2.json": canonical(mixed_checkpoint),
         "terminal-checkpoint-v2.json": canonical(terminal),
         "native-emit-admitted-checkpoint-v2.json": canonical(native_emit_admitted),
         "native-internal-checkpoint-v2.json": canonical(native_internal),
@@ -2603,6 +2657,9 @@ def produce_checkpoint() -> dict[str, bytes]:
                 "location": "ready",
             }
         ),
+        "all-replay-batch-result.json": canonical(all_replay_result),
+        "mixed-replay-new-batch-result.json": canonical(mixed_result),
+        "legacy-terminal-replay-result.json": canonical(legacy_replay_result),
         "tombstone-replay-result.json": canonical(
             {"result": "replay", "terminal_receipt_sequence": terminal_sequence, "terminal_disposition": "handled"}
         ),

@@ -40,12 +40,12 @@ migrated suite.
 - `VERSION` — the synchronized specification version, currently `0.2.0`.
 
 Release 0.2.0 contains the existing 111 core cases, 108 persistence vectors, 12
-persistence-profile steps, 91 execution-checkpoint vectors including six scope vectors,
-and 89 closed-code registry entries across 11 categories. The release metadata does not
+persistence-profile steps, 94 execution-checkpoint vectors including six scope vectors,
+and 101 closed-code registry entries across 11 categories. The release metadata does not
 change their behavior expectations or unresolved future scope.
 
 The unreleased issue-45 additions retain `VERSION` 0.2.0 while review is in progress:
-core case 04, cases 117–118, and checkpoint case 04 add the version-2 contracts without
+core case 04, cases 117–118, and checkpoint cases 04–05 add the version-2 contracts without
 changing any released version-1 fixture.
 
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate

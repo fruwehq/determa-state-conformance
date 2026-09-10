@@ -1,0 +1,49 @@
+title: execution checkpoint spawned child independent host trace
+static:
+  documents:
+    - { file: spawn-machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: inputs.json, kind: execution_checkpoint_inputs, valid: true }
+    - { file: core-results.json, kind: execution_checkpoint_core_evidence, valid: true }
+    - { file: spawned-created-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
+    - { file: spawned-started-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
+    - { file: spawned-child-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
+execution_checkpoint_profile:
+  vectors:
+    - name: spawned_trace_create
+      covers: [spawned_trace_creation]
+      operation: create
+      checkpoint_before: null
+      input: { file: inputs.json, pointer: /requests/create }
+      core_result: { file: core-results.json, pointer: /calls/create }
+      expect:
+        result: committed
+        checkpoint_after: spawned-created-checkpoint-v1.json
+        checkpoint_mutation: created
+        core_call: create
+        receipt_sequence: "0"
+    - name: spawned_trace_start
+      covers: [spawned_trace_start]
+      operation: foreground_process_delivery
+      checkpoint_before: spawned-created-checkpoint-v1.json
+      input: { file: inputs.json, pointer: /requests/start }
+      core_result: { file: core-results.json, pointer: /calls/start }
+      expect:
+        result: committed
+        checkpoint_after: spawned-started-checkpoint-v1.json
+        checkpoint_mutation: changed
+        core_call: dispatch
+        receipt_sequence: "1"
+    - name: spawned_trace_accept_child
+      covers: [spawned_trace_child_acceptance]
+      operation: accept_delivery
+      checkpoint_before: spawned-started-checkpoint-v1.json
+      input: { file: inputs.json, pointer: /requests/accept_child }
+      expect:
+        result: pending
+        checkpoint_after: spawned-child-checkpoint-v1.json
+        checkpoint_mutation: changed
+        core_call: none
+        delivery_sequence: "1"
+        accepted_revision: "2"

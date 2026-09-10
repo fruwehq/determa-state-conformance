@@ -69,6 +69,9 @@
     "coverage": {
       "enum": [
         "creation_commit",
+        "spawned_trace_creation",
+        "spawned_trace_start",
+        "spawned_trace_child_acceptance",
         "creation_replay",
         "creation_conflict",
         "creation_rejection_without_checkpoint",

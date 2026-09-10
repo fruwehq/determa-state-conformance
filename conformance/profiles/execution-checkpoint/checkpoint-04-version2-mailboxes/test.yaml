@@ -3,6 +3,7 @@ static:
   documents:
     - { file: machine.yaml, valid: true }
     - { file: deferral-machine.yaml, valid: true }
+    - { file: spawn-machine.yaml, valid: true }
 artifacts:
   documents:
     - { file: base-checkpoint.json, kind: execution_checkpoint_v2, valid: true }
@@ -13,6 +14,7 @@ artifacts:
     - { file: upgraded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: upgraded-outbox-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: admitted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: mixed-admitted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-emit-admitted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
@@ -25,6 +27,9 @@ artifacts:
     - { file: operation-inputs.json, kind: version2_operation_inputs, valid: true }
     - { file: pending-replay-result.json, kind: version2_operation_result, valid: true }
     - { file: terminal-replay-result.json, kind: version2_operation_result, valid: true }
+    - { file: all-replay-batch-result.json, kind: version2_operation_result, valid: true }
+    - { file: mixed-replay-new-batch-result.json, kind: version2_operation_result, valid: true }
+    - { file: legacy-terminal-replay-result.json, kind: version2_operation_result, valid: true }
     - { file: tombstone-replay-result.json, kind: version2_operation_result, valid: true }
 version2_vectors:
   - name: explicit_checkpoint_upgrade
@@ -39,6 +44,7 @@ version2_vectors:
   - name: checkpoint_upgrade_preserves_spawned_child_target
     covers: [upgrade_checkpoint_v1_spawned_target]
     operation: upgrade_checkpoint_v1_to_v2
+    bundle: spawn-machine.yaml
     checkpoint_before: spawned-child-checkpoint-v1.json
     request_file: operation-inputs.json
     request_pointer: /upgrade_spawned_child
@@ -90,6 +96,27 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /pending_equal_replay
     expect: { result: success, exact_result_file: pending-replay-result.json }
+  - name: checkpoint_all_replay_batch
+    covers: [all_replay_multi_event_batch]
+    operation: checkpoint_admit_v2
+    checkpoint_before: native-internal-terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /all_replay_batch
+    expect: { result: success, exact_result_file: all-replay-batch-result.json }
+  - name: checkpoint_mixed_replay_new_batch
+    covers: [mixed_replay_new_batch]
+    operation: checkpoint_admit_v2
+    checkpoint_before: admitted-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /mixed_replay_new_batch
+    expect: { result: success, exact_result_file: mixed-replay-new-batch-result.json }
+  - name: checkpoint_wrapped_legacy_terminal_replay
+    covers: [wrapped_legacy_terminal_replay]
+    operation: checkpoint_admit_v2
+    checkpoint_before: upgraded-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /legacy_terminal_replay
+    expect: { result: success, exact_result_file: legacy-terminal-replay-result.json }
   - name: checkpoint_native_internal_processing
     covers: [native_internal_producer_reference]
     operation: checkpoint_step_v2
