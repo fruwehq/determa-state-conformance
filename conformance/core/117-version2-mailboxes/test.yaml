@@ -46,6 +46,12 @@ artifacts:
     - { file: internal-emission-runtime-completed-result.json, kind: core_step_result_v2, valid: true }
     - { file: internal-emission-aggregate-completed-result.json, kind: core_step_result_v2, valid: true }
     - { file: internal-emission-rollback-result.json, kind: core_step_result_v2, valid: true }
+    - { file: faulted-root-retained-component-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: faulted-root-retained-component-step-result.json, kind: core_step_result_v2, valid: true }
+    - { file: reserved-admission-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: reserved-admitted-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: reserved-admission-result.json, kind: version2_operation_result, valid: true }
+    - { file: reserved-dispatch-result.json, kind: core_step_result_v2, valid: true }
     - { file: invalid-core-step-result-v2.json, kind: core_step_result_v2, valid: false, error: invalid_core_step_result }
     - { file: operation-inputs.json, kind: version2_operation_inputs, valid: true }
     - { file: admission-success.json, kind: version2_operation_result, valid: true }
@@ -83,6 +89,30 @@ version2_vectors:
     expect:
       result: failure
       code: duplicate_event_id_in_batch
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: digest_mismatch_batch_is_atomic
+    covers: [delivery_digest_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /digest_mismatch_batch
+    expect:
+      result: failure
+      code: delivery_digest_mismatch
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: host_cause_must_equal_event_identity
+    covers: [host_cause_identity_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /host_cause_mismatch
+    expect:
+      result: failure
+      code: invalid_delivery_source
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
   - name: undeclared_event_batch_is_atomic
@@ -297,11 +327,35 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /cleanup_rollback_step
     expect: { result: success, exact_result_file: internal-emission-rollback-result.json }
-  - name: reserved_component_completion_is_handled
+  - name: faulted_root_rejects_retained_component_admission
+    covers: [faulted_root_descendant_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: faulted-root-retained-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /faulted_root_descendant_admit
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true }
+  - name: faulted_root_rejects_retained_component_step
+    covers: [faulted_root_descendant_step_rejection]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: faulted-root-retained-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /faulted_root_descendant_step
+    expect: { result: success, exact_result_file: faulted-root-retained-component-step-result.json }
+  - name: reserved_component_completion_is_admitted
+    covers: [reserved_internal_event_admission]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: reserved-admission-before.json
+    request_file: operation-inputs.json
+    request_pointer: /reserved_event_admit
+    expect: { result: success, exact_result_file: reserved-admission-result.json }
+  - name: admitted_reserved_component_completion_is_handled
     covers: [reserved_events_not_deferrable]
     operation: step_v2
     bundle: component-machine.yaml
-    state_before: reserved-event-before.json
+    state_before: reserved-admitted-aggregate.json
     request_file: operation-inputs.json
-    request_pointer: /reserved_event_step
-    expect: { result: success, exact_result_file: reserved-event-handled-result.json }
+    request_pointer: /reserved_admitted_step
+    expect: { result: success, exact_result_file: reserved-dispatch-result.json }

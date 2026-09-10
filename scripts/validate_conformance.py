@@ -268,6 +268,8 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "disposed_component_step_rejection",
         "faulted_component_admission_rejection",
         "faulted_component_step_rejection",
+        "faulted_root_descendant_admission_rejection",
+        "faulted_root_descendant_step_rejection",
         "internal_emission_active_target",
         "internal_emission_disposed_target",
         "internal_emission_retained_faulted_target",
@@ -275,6 +277,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "invalid_machine_runtime_target",
         "invalid_event_batch_atomic_rejection",
         "invalid_payload_batch_atomic_rejection",
+        "host_cause_identity_rejection",
         "lifecycle_aggregate_completion_disposal",
         "lifecycle_cancellation_disposal",
         "lifecycle_natural_completion_disposal",
@@ -298,6 +301,8 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "receipt_acceptance_terminal_distinction",
         "reclassification_and_repeated_deferral",
         "reserved_events_not_deferrable",
+        "reserved_internal_event_admission",
+        "delivery_digest_rejection",
         "root_mailbox_isolation",
         "spawned_mailbox_isolation",
         "terminal_receipt_replay",
@@ -1896,6 +1901,25 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
                 raise ValidationFailure(
                     "checkpoint v2: legacy accepted revision is in the future"
                 )
+            if (
+                legacy_committed_revision is not None
+                and legacy_accepted_revision is not None
+                and canonical_decimal(
+                    legacy_accepted_revision,
+                    "checkpoint v2 legacy accepted revision",
+                )
+                > canonical_decimal(
+                    legacy_committed_revision,
+                    "checkpoint v2 legacy committed revision",
+                )
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: legacy terminal revision precedes acceptance"
+                )
+            if legacy_receipt.get("receipt_sequence") != receipt["receipt_sequence"]:
+                raise ValidationFailure(
+                    "checkpoint v2: legacy receipt wrapper sequence mismatch"
+                )
             validate_engine_fault_code(
                 legacy_receipt.get("fault"), "checkpoint v2 legacy receipt"
             )
@@ -2151,7 +2175,7 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
         matches = producer_references.get(event_id, [])
         if len(matches) != 1:
             raise ValidationFailure("checkpoint v2: internal event producer is not unique")
-        _, reference = matches[0]
+        producer, reference = matches[0]
         if entry is not None:
             if reference["kind"] != "internal_mailbox" or reference["acceptance_sequence"] != entry["acceptance_sequence"] or reference["queue_sequence"] != entry["queue_sequence"]:
                 raise ValidationFailure("checkpoint v2: internal mailbox producer mismatch")
@@ -2159,6 +2183,27 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
             assert terminal is not None
             if reference["kind"] != "internal_terminal" or reference["acceptance_sequence"] != terminal["acceptance_sequence"] or reference["terminal_receipt_sequence"] != terminal["receipt_sequence"]:
                 raise ValidationFailure("checkpoint v2: internal terminal producer mismatch")
+            producer_revision = producer.get("committed_revision")
+            if producer_revision is None and isinstance(
+                producer.get("legacy_receipt"), dict
+            ):
+                producer_revision = producer["legacy_receipt"].get(
+                    "committed_revision"
+                )
+            if (
+                producer_revision is not None
+                and canonical_decimal(
+                    terminal["committed_revision"],
+                    "checkpoint v2 internal terminal revision",
+                )
+                < canonical_decimal(
+                    producer_revision,
+                    "checkpoint v2 producer committed revision",
+                )
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: internal terminal precedes its producer"
+                )
 
     for event_id, entry in mailbox_entries.items():
         source = entry["envelope"]["source"]
@@ -2194,6 +2239,27 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
         if acceptance is not None:
             if acceptance["request_digest"] != terminal["request_digest"] or acceptance["acceptance_sequence"] != terminal["acceptance_sequence"]:
                 raise ValidationFailure("checkpoint v2: terminal identity mismatch")
+            if (
+                canonical_decimal(
+                    terminal["committed_revision"],
+                    "checkpoint v2 terminal committed revision",
+                )
+                < canonical_decimal(
+                    acceptance["accepted_revision"],
+                    "checkpoint v2 acceptance revision",
+                )
+                or canonical_decimal(
+                    terminal["receipt_sequence"],
+                    "checkpoint v2 terminal receipt sequence",
+                )
+                <= canonical_decimal(
+                    acceptance["receipt_sequence"],
+                    "checkpoint v2 acceptance receipt sequence",
+                )
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: terminal evidence precedes acceptance"
+                )
         else:
             validate_producer(event_id, None, terminal)
     located = (
@@ -2284,6 +2350,28 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
     ] = "999"
     probes["legacy receipt revision beyond checkpoint"] = reseal(
         future_legacy_revision
+    )
+    native_terminal_before_acceptance = analyze_artifact(
+        case / "terminal-checkpoint-v2.json"
+    ).document
+    next(
+        receipt
+        for receipt in native_terminal_before_acceptance["operation_receipts"]
+        if receipt["operation_kind"] == "event_terminal"
+    )["committed_revision"] = "0"
+    probes["native terminal revision precedes acceptance"] = reseal(
+        native_terminal_before_acceptance
+    )
+    legacy_terminal_before_acceptance = copy.deepcopy(upgraded)
+    next(
+        receipt["legacy_receipt"]
+        for receipt in legacy_terminal_before_acceptance["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+        and receipt["legacy_receipt"].get("accepted_revision") == "1"
+    )["committed_revision"] = "0"
+    probes["wrapped legacy terminal revision precedes acceptance"] = reseal(
+        legacy_terminal_before_acceptance
     )
     orphan = copy.deepcopy(admitted)
     orphan["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"] = []
@@ -3600,9 +3688,9 @@ def validate_version2_vectors(
     def target_runtime(aggregate: dict[str, Any], runtime_id: str) -> dict[str, Any] | None:
         return next((runtime for runtime in aggregate["runtimes"] if runtime["runtime_id"] == runtime_id), None)
 
-    def validate_delivery(
+    def delivery_validation_error(
         delivery: dict[str, Any], aggregate_or_root: dict[str, Any] | str, location: str
-    ) -> None:
+    ) -> str | None:
         validate_typed_value_canonical(
             delivery["envelope"]["payload"], f"{location}: delivery payload"
         )
@@ -3620,7 +3708,8 @@ def validate_version2_vectors(
             delivery["delivery_mode"], delivery["envelope"],
         ])
         if delivery["envelope_digest"] != expected:
-            raise ValidationFailure(f"{location}: delivery envelope digest mismatch")
+            return "delivery_digest_mismatch"
+        return None
 
     def delivery_contract_error(
         delivery: dict[str, Any],
@@ -3628,6 +3717,11 @@ def validate_version2_vectors(
         bundle_path: Path,
     ) -> str | None:
         envelope = delivery["envelope"]
+        root = next(
+            runtime
+            for runtime in aggregate["runtimes"]
+            if runtime["relation"]["kind"] == "root"
+        )
         runtime = next(
             (
                 item
@@ -3638,6 +3732,12 @@ def validate_version2_vectors(
         )
         if runtime is None:
             return "invalid_instance_target"
+        if root["status"] != "running":
+            return (
+                "terminal_root"
+                if runtime["relation"]["kind"] == "root"
+                else "invalid_instance_target"
+            )
         if runtime["relation"]["kind"] == "component":
             if runtime["status"] != "running":
                 return "inactive_component_target"
@@ -3669,6 +3769,73 @@ def validate_version2_vectors(
                 "map": isinstance(value, dict),
                 "list": isinstance(value, list),
             }[expected_type]
+
+        if delivery["delivery_mode"] == "input":
+            if envelope["source"] != {"host": True} or envelope["cause_id"] != envelope["event_id"]:
+                return "invalid_delivery_source"
+
+        reserved_event = envelope["event"]
+        if reserved_event in {
+            "done",
+            "determa.component_completed",
+            "determa.component_failed",
+            "determa.spawned_instance_failed",
+        }:
+            if delivery["delivery_mode"] != "internal" or "host" in envelope["source"]:
+                return "invalid_event"
+            payload = decode_typed_value(envelope["payload"])
+            if not isinstance(payload, dict):
+                return "invalid_payload"
+            public_fault_fields = {
+                "runtime_id",
+                "cause_id",
+                "code",
+                "step_sequence",
+                "source_locator",
+            }
+            if reserved_event == "determa.component_completed":
+                valid = set(payload) == {"component_id", "component_runtime_id"} and all(
+                    isinstance(payload[field], str) for field in payload
+                )
+            elif reserved_event == "determa.component_failed":
+                fault = payload.get("fault")
+                valid = (
+                    set(payload) == {"component_id", "component_runtime_id", "fault"}
+                    and isinstance(payload.get("component_id"), str)
+                    and isinstance(payload.get("component_runtime_id"), str)
+                    and isinstance(fault, dict)
+                    and set(fault) == public_fault_fields
+                    and all(isinstance(fault[field], str) for field in fault)
+                )
+            elif reserved_event == "determa.spawned_instance_failed":
+                fault = payload.get("fault")
+                valid = (
+                    set(payload) == {"instance", "instance_id", "machine_id", "machine_version", "fault"}
+                    and isinstance(payload.get("instance"), dict)
+                    and isinstance(payload.get("instance_id"), str)
+                    and isinstance(payload.get("machine_id"), str)
+                    and isinstance(payload.get("machine_version"), int)
+                    and not isinstance(payload.get("machine_version"), bool)
+                    and isinstance(fault, dict)
+                    and set(fault) == public_fault_fields
+                    and all(isinstance(fault[field], str) for field in fault)
+                )
+            elif payload.get("relationship") == "parallel":
+                valid = set(payload) == {"relationship", "state_path", "owner_runtime_id"} and all(
+                    isinstance(payload[field], str) for field in payload
+                )
+            elif payload.get("relationship") == "spawned_instance":
+                valid = (
+                    set(payload) == {"relationship", "instance", "instance_id", "machine_id", "machine_version"}
+                    and isinstance(payload.get("instance"), dict)
+                    and isinstance(payload.get("instance_id"), str)
+                    and isinstance(payload.get("machine_id"), str)
+                    and isinstance(payload.get("machine_version"), int)
+                    and not isinstance(payload.get("machine_version"), bool)
+                )
+            else:
+                valid = False
+            return None if valid else "invalid_payload"
 
         declaration = bundle.get("events", {}).get(envelope["event"])
         if declaration is None:
@@ -3939,6 +4106,20 @@ def validate_version2_vectors(
                 delivery_identity = checkpoint_before["root_instance_id"]
             if delivery_identity is None:
                 raise ValidationFailure(f"{location}: delivery operation lacks a retained aggregate")
+            event_ids = [
+                delivery["envelope"]["event_id"]
+                for delivery in selected["deliveries"]
+            ]
+            duplicate_event_ids = len(event_ids) != len(set(event_ids))
+            if duplicate_event_ids:
+                if expectation.get("code") != "duplicate_event_id_in_batch":
+                    raise ValidationFailure(
+                        f"{location}: duplicate input identity lacks exact rejection"
+                    )
+            elif expectation.get("code") == "duplicate_event_id_in_batch":
+                raise ValidationFailure(
+                    f"{location}: duplicate rejection lacks duplicate input identity"
+                )
             replay_evidence = (
                 [
                     checkpoint_replay_result(checkpoint_before, delivery)
@@ -3967,10 +4148,23 @@ def validate_version2_vectors(
                 if operation == "admit_v2"
                 else [None for _ in selected["deliveries"]]
             )
+            delivery_errors: list[str] = []
+            contract_errors: list[str] = []
             for delivery, replay in zip(
                 selected["deliveries"], replay_evidence, strict=True
             ):
-                validate_delivery(delivery, delivery_identity, location)
+                if duplicate_event_ids:
+                    continue
+                delivery_error = delivery_validation_error(
+                    delivery, delivery_identity, location
+                )
+                if delivery_error is not None:
+                    delivery_errors.append(delivery_error)
+                    if expectation.get("code") != delivery_error:
+                        raise ValidationFailure(
+                            f"{location}: delivery requires {delivery_error}"
+                        )
+                    continue
                 if (
                     replay is None
                     and prior_aggregate is not None
@@ -3980,23 +4174,60 @@ def validate_version2_vectors(
                     contract_error = delivery_contract_error(
                         delivery, prior_aggregate, case / vector["bundle"]
                     )
-                    if contract_error is not None and expectation.get("code") != contract_error:
-                        raise ValidationFailure(
-                            f"{location}: delivery contract requires {contract_error}"
-                        )
-            event_ids = [delivery["envelope"]["event_id"] for delivery in selected["deliveries"]]
-            if len(event_ids) != len(set(event_ids)) and expectation.get("code") != "duplicate_event_id_in_batch":
-                raise ValidationFailure(f"{location}: duplicate input identity lacks exact rejection")
+                    if contract_error is not None:
+                        contract_errors.append(contract_error)
+                        if expectation.get("code") != contract_error:
+                            raise ValidationFailure(
+                                f"{location}: delivery contract requires {contract_error}"
+                            )
+            if (
+                expectation.get("code") == "delivery_digest_mismatch"
+                and not delivery_errors
+            ):
+                raise ValidationFailure(
+                    f"{location}: digest rejection lacks a mismatched delivery"
+                )
+            if expectation.get("code") in {
+                "invalid_delivery_source",
+                "invalid_instance_target",
+                "inactive_component_target",
+                "invalid_event",
+                "invalid_payload",
+                "invalid_correlation",
+                "terminal_root",
+            } and expectation.get("code") not in contract_errors:
+                raise ValidationFailure(
+                    f"{location}: contract rejection lacks its declared violation"
+                )
 
         if operation in {"step_v2", "checkpoint_step_v2"}:
             if prior_aggregate is None:
                 raise ValidationFailure(f"{location}: step lacks a retained aggregate")
             runtime_id = selected["target_runtime_id"]
             runtime = target_runtime(prior_aggregate, runtime_id)
+            aggregate_root = next(
+                item
+                for item in prior_aggregate["runtimes"]
+                if item["relation"]["kind"] == "root"
+            )
             rejection = expectation.get("code")
             if runtime is None and rejection != "invalid_instance_target" and expectation.get("result") != "success":
                 raise ValidationFailure(f"{location}: fabricated runtime target was accepted")
-            if runtime is not None and runtime["relation"]["kind"] == "component" and runtime["status"] in {"completed", "faulted"}:
+            if aggregate_root["status"] != "running" and runtime is not None:
+                result_document = (
+                    artifact(expectation["exact_result_file"]).document
+                    if expectation.get("exact_result_file")
+                    else None
+                )
+                if (
+                    result_document is None
+                    or result_document.get("rejection", {}).get("code")
+                    != "invalid_instance_target"
+                ):
+                    raise ValidationFailure(
+                        f"{location}: terminal aggregate descendant step is not distinguished"
+                    )
+            elif runtime is not None and runtime["relation"]["kind"] == "component" and runtime["status"] in {"completed", "faulted"}:
                 result_document = artifact(expectation["exact_result_file"]).document if expectation.get("exact_result_file") else None
                 if result_document is None or result_document.get("rejection", {}).get("code") != "inactive_component_target":
                     raise ValidationFailure(f"{location}: inactive component step is not distinguished")
@@ -4419,8 +4650,11 @@ def validate_version2_vectors(
                     and result_document["rejection"]["code"]
                     == "invalid_instance_target"
                     and not (
-                        prior_runtime["relation"]["kind"] != "component"
-                        and prior_runtime["status"] in {"completed", "faulted"}
+                        aggregate_root["status"] != "running"
+                        or (
+                            prior_runtime["relation"]["kind"] != "component"
+                            and prior_runtime["status"] in {"completed", "faulted"}
+                        )
                     )
                 ):
                     raise ValidationFailure(
@@ -5267,6 +5501,80 @@ def validate_version2_vectors(
         replay_sequence["acceptance_sequence"] = "999"
         probes["core replay acceptance sequence 999"] = {
             "replay-success.json": replay_sequence
+        }
+        corrected_contract_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        corrected_host = corrected_contract_inputs["host_cause_mismatch"][
+            "deliveries"
+        ][0]
+        corrected_host["envelope"]["cause_id"] = corrected_host["envelope"][
+            "event_id"
+        ]
+        corrected_host["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("base-aggregate.json").document["root_instance_id"],
+                corrected_host["delivery_mode"],
+                corrected_host["envelope"],
+            ]
+        )
+        probes["host cause rejection without cause violation"] = {
+            "operation-inputs.json": corrected_contract_inputs
+        }
+        corrected_digest_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        corrected_digest = corrected_digest_inputs["digest_mismatch_batch"][
+            "deliveries"
+        ][1]
+        corrected_digest["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("base-aggregate.json").document["root_instance_id"],
+                corrected_digest["delivery_mode"],
+                corrected_digest["envelope"],
+            ]
+        )
+        probes["digest rejection without digest violation"] = {
+            "operation-inputs.json": corrected_digest_inputs
+        }
+        nonduplicate_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        nonduplicate_inputs["duplicate_batch"]["deliveries"][1]["envelope"][
+            "event_id"
+        ] = "not-a-duplicate"
+        probes["duplicate rejection without duplicate identity"] = {
+            "operation-inputs.json": nonduplicate_inputs
+        }
+        undeclared_reserved_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        undeclared_reserved = undeclared_reserved_inputs["reserved_event_admit"][
+            "deliveries"
+        ][0]
+        undeclared_reserved["envelope"]["event"] = "unreserved.lifecycle_event"
+        undeclared_reserved["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("reserved-admission-before.json").document[
+                    "root_instance_id"
+                ],
+                undeclared_reserved["delivery_mode"],
+                undeclared_reserved["envelope"],
+            ]
+        )
+        probes["undeclared non-reserved internal event admission"] = {
+            "operation-inputs.json": undeclared_reserved_inputs
+        }
+        probes["running root descendant classified as terminal"] = {
+            "faulted-root-retained-component-aggregate.json": artifact(
+                "cleanup-rollback-before.json"
+            ).document
         }
         for probe_name, overrides in probes.items():
             try:

@@ -1529,6 +1529,13 @@ def produce_mailbox() -> dict[str, bytes]:
     outputs["internal-emission-rollback-result.json"] = step_result(
         rollback, "faulted", status="faulted", fault=rollback_fault
     )
+    outputs["faulted-root-retained-component-aggregate.json"] = rollback
+    outputs["faulted-root-retained-component-step-result.json"] = step_result(
+        rollback,
+        "rejected",
+        status="faulted",
+        rejection="invalid_instance_target",
+    )
 
     invalid_aggregate = copy.deepcopy(base)
     del invalid_aggregate["runtimes"][0]["deferred_mailbox"]
@@ -1559,10 +1566,19 @@ def produce_mailbox() -> dict[str, bytes]:
             "envelope_digest": entry["envelope_digest"],
         }
 
+    def delivery_from_entry(entry: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "delivery_mode": entry["delivery_mode"],
+            "envelope": copy.deepcopy(entry["envelope"]),
+            "envelope_digest": entry["envelope_digest"],
+        }
+
     base_root = base["runtimes"][0]
     duplicate_delivery = delivery_input(
         base, base_root, "received", "duplicate"
     )
+    duplicate_delivery_with_bad_digest = copy.deepcopy(duplicate_delivery)
+    duplicate_delivery_with_bad_digest["envelope_digest"] = "sha256:" + "0" * 64
     valid_contract_delivery = delivery_input(
         base, base_root, "received", "contract-valid-first"
     )
@@ -1575,6 +1591,23 @@ def produce_mailbox() -> dict[str, bytes]:
         "new_request",
         "contract-wrong-payload",
         typed_value({"transaction_id": 17}),
+    )
+    digest_mismatch_delivery = delivery_input(
+        base, base_root, "authorized", "digest-mismatch"
+    )
+    digest_mismatch_delivery["envelope_digest"] = "sha256:" + "0" * 64
+    unrelated_host_cause = delivery_input(
+        base, base_root, "received", "host-cause-mismatch"
+    )
+    unrelated_host_cause["envelope"]["cause_id"] = "unrelated-cause"
+    unrelated_host_cause["envelope_digest"] = digest(
+        [
+            "determa-inbox-envelope-digest-2",
+            "2",
+            base["root_instance_id"],
+            unrelated_host_cause["delivery_mode"],
+            unrelated_host_cause["envelope"],
+        ]
     )
     equal_replay = {
         "delivery_mode": deferred_retry["delivery_mode"],
@@ -1609,6 +1642,70 @@ def produce_mailbox() -> dict[str, bytes]:
             disposed_delivery["envelope"],
         ]
     )
+    faulted_root_component = component_runtimes(rollback)[0]
+    faulted_root_descendant_entry = envelope_entry(
+        rollback,
+        faulted_root_component,
+        event="component_work",
+        event_id="faulted-root-descendant-admission",
+        acceptance_sequence=0,
+        queue_sequence=0,
+        delivery_mode="internal",
+        source={"runtime": copy.deepcopy(root_runtime(rollback)["target_identity"])},
+    )
+
+    reserved_admission_before = copy.deepcopy(reserved_after)
+    reserved_source = component_runtimes(reserved_admission_before)[0]
+    reserved_target = root_runtime(reserved_admission_before)
+    reserved_entry = envelope_entry(
+        reserved_admission_before,
+        reserved_target,
+        event="determa.component_completed",
+        event_id="reserved-component-completed-admission",
+        acceptance_sequence=int(reserved_admission_before["next_acceptance_sequence"]),
+        queue_sequence=int(reserved_admission_before["next_queue_sequence"]),
+        delivery_mode="internal",
+        source={"runtime": copy.deepcopy(reserved_source["target_identity"])},
+        payload=typed_value(
+            {
+                "component_id": reserved_source["relation"]["component_id"],
+                "component_runtime_id": reserved_source["runtime_id"],
+            }
+        ),
+    )
+    reserved_admitted = copy.deepcopy(reserved_admission_before)
+    root_runtime(reserved_admitted)["ready_mailbox"].append(reserved_entry)
+    reserved_admitted["next_acceptance_sequence"] = str(
+        int(reserved_admitted["next_acceptance_sequence"]) + 1
+    )
+    reserved_admitted["next_queue_sequence"] = str(
+        int(reserved_admitted["next_queue_sequence"]) + 1
+    )
+    reserved_admitted = seal_aggregate(reserved_admitted)
+    reserved_dispatched = copy.deepcopy(reserved_admitted)
+    root_runtime(reserved_dispatched)["ready_mailbox"].pop(0)
+    reserved_dispatched["next_logical_step_sequence"] = str(
+        int(reserved_dispatched["next_logical_step_sequence"]) + 1
+    )
+    reserved_dispatched = seal_aggregate(reserved_dispatched)
+    outputs["reserved-admission-before.json"] = reserved_admission_before
+    outputs["reserved-admitted-aggregate.json"] = reserved_admitted
+    outputs["reserved-admission-result.json"] = {
+        "result": "accepted",
+        "status": "running",
+        "accepted": [
+            {
+                "event_id": reserved_entry["envelope"]["event_id"],
+                "acceptance_sequence": reserved_entry["acceptance_sequence"],
+                "queue_sequence": reserved_entry["queue_sequence"],
+            }
+        ],
+        "state": reserved_admitted,
+        "rejection": None,
+    }
+    outputs["reserved-dispatch-result.json"] = step_result(
+        reserved_dispatched, "handled"
+    )
     operation_inputs = {
         "create": create_input,
         "admit_two": {
@@ -1620,7 +1717,15 @@ def produce_mailbox() -> dict[str, bytes]:
         },
         "duplicate_batch": {
             "operation": "admit_v2",
-            "deliveries": [duplicate_delivery, copy.deepcopy(duplicate_delivery)],
+            "deliveries": [duplicate_delivery, duplicate_delivery_with_bad_digest],
+        },
+        "digest_mismatch_batch": {
+            "operation": "admit_v2",
+            "deliveries": [valid_contract_delivery, digest_mismatch_delivery],
+        },
+        "host_cause_mismatch": {
+            "operation": "admit_v2",
+            "deliveries": [unrelated_host_cause],
         },
         "undeclared_event_batch": {
             "operation": "admit_v2",
@@ -1659,6 +1764,22 @@ def produce_mailbox() -> dict[str, bytes]:
         "aggregate_completion_step": {"operation": "step_v2", "target_runtime_id": aggregate_before["root_runtime_id"]},
         "cleanup_rollback_step": {"operation": "step_v2", "target_runtime_id": rollback_before["root_runtime_id"]},
         "reserved_event_step": {"operation": "step_v2", "target_runtime_id": reserved_before["root_runtime_id"]},
+        "reserved_event_admit": {
+            "operation": "admit_v2",
+            "deliveries": [delivery_from_entry(reserved_entry)],
+        },
+        "reserved_admitted_step": {
+            "operation": "step_v2",
+            "target_runtime_id": reserved_admitted["root_runtime_id"],
+        },
+        "faulted_root_descendant_step": {
+            "operation": "step_v2",
+            "target_runtime_id": faulted_root_component["runtime_id"],
+        },
+        "faulted_root_descendant_admit": {
+            "operation": "admit_v2",
+            "deliveries": [delivery_from_entry(faulted_root_descendant_entry)],
+        },
         "completed_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(completed_component, component_runtimes(completed_component)[0], "component_work", "completed-component-admission")]},
         "faulted_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(faulted_component, component_runtimes(faulted_component)[0], "component_work", "faulted-component-admission")]},
         "disposed_component_admit": {"operation": "admit_v2", "deliveries": [disposed_delivery]},
