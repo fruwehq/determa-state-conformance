@@ -240,6 +240,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "capacity_zero_and_overflow_fault",
         "checkpoint_v1_requires_upgrade",
         "checkpoint_v2_schema_positive_negative",
+        "compacted_legacy_terminal_replay",
         "checkpoint_pending_replay_precedes_stale_cas",
         "cleanup_fault_rollback",
         "component_mailbox_isolation",
@@ -296,6 +297,8 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "distinct_stale_checkpoint_writer_rejected",
         "terminal_processing_receipt",
         "terminal_tombstone_replay",
+        "tombstoned_root_batch_replay",
+        "tombstoned_root_single_replay",
         "upgrade_aggregate_v1_to_v2",
         "upgrade_checkpoint_v1_to_v2_legacy_evidence",
         "upgrade_checkpoint_v1_to_v2_populated_outbox",
@@ -1443,6 +1446,16 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
     pending_outbox = document["pending_outbox_intents"]
     terminal_outbox = document["terminal_outbox_records"]
     outbox_tombstones = document["outbox_effect_tombstones"]
+    for index, item in enumerate(pending_outbox):
+        validate_typed_value_canonical(
+            item["intent"]["payload"],
+            f"checkpoint pending outbox intent {index} payload",
+        )
+    for index, item in enumerate(terminal_outbox):
+        validate_typed_value_canonical(
+            item["intent"]["payload"],
+            f"checkpoint terminal outbox intent {index} payload",
+        )
     pending_intent_sequences = [
         canonical_decimal(
             item["intent"]["sequence"], "checkpoint outbox intent sequence"
@@ -2404,6 +2417,60 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
             continue
         raise ValidationFailure(f"adversarial probe was accepted: {label}")
 
+    outbox_case = (
+        repository_root
+        / "conformance/profiles/execution-checkpoint/checkpoint-02-outbox-lifecycle"
+    )
+    for outbox_location, filename, collection in (
+        ("pending", "outbox-created-checkpoint.json", "pending_outbox_intents"),
+        ("terminal", "outbox-total-checkpoint.json", "terminal_outbox_records"),
+    ):
+        source = analyze_artifact(outbox_case / filename).document
+        for shape, payload in (
+            (
+                "reordered",
+                [
+                    "map",
+                    [
+                        [
+                            "details",
+                            [
+                                "map",
+                                [
+                                    ["beta", ["integer", "2"]],
+                                    ["alpha", ["integer", "1"]],
+                                ],
+                            ],
+                        ]
+                    ],
+                ],
+            ),
+            (
+                "duplicate",
+                [
+                    "map",
+                    [
+                        ["transaction_id", ["string", "tx-1"]],
+                        ["transaction_id", ["string", "tx-2"]],
+                    ],
+                ],
+            ),
+        ):
+            probe = copy.deepcopy(source)
+            probe[collection][0]["intent"]["payload"] = payload
+            probe.pop("execution_checkpoint_digest")
+            probe["execution_checkpoint_digest"] = hash_value(
+                ["determa-execution-checkpoint-digest-1", probe]
+            )
+            try:
+                validate_execution_checkpoint_semantics(probe)
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                "adversarial probe was accepted: "
+                f"v1 {outbox_location} outbox {shape} payload"
+            )
+
 
 def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) -> None:
     from generate_version2_vectors import target_runtime_id, upgrade_checkpoint
@@ -3285,15 +3352,36 @@ def checkpoint_replay_result(
             ),
             None,
         )
-        if legacy is None:
+        if legacy is not None:
+            nested = legacy["legacy_receipt"]
+            return {
+                "result": "replay",
+                "event_id": event_id,
+                "acceptance_sequence": nested["accepted_delivery_sequence"],
+                "terminal_receipt_sequence": legacy["receipt_sequence"],
+                "terminal_disposition": nested["outcome"]["disposition"],
+                "request_digest_domain": digest_domain,
+            }
+        legacy_tombstone = next(
+            (
+                item
+                for item in checkpoint["event_identity_tombstones"]
+                if item["event_id"] == event_id
+                and item["request_digest"] == request_digest
+                and item["request_digest_domain"] == digest_domain
+            ),
+            None,
+        )
+        if legacy_tombstone is None:
             return None
-        nested = legacy["legacy_receipt"]
         return {
             "result": "replay",
             "event_id": event_id,
-            "acceptance_sequence": nested["accepted_delivery_sequence"],
-            "terminal_receipt_sequence": legacy["receipt_sequence"],
-            "terminal_disposition": nested["outcome"]["disposition"],
+            "acceptance_sequence": legacy_tombstone["acceptance_sequence"],
+            "terminal_receipt_sequence": legacy_tombstone[
+                "terminal_receipt_sequence"
+            ],
+            "terminal_disposition": legacy_tombstone["terminal_disposition"],
             "request_digest_domain": digest_domain,
         }
     root_record = checkpoint["root_record"]
@@ -3414,7 +3502,9 @@ def validate_version2_vectors(
     def target_runtime(aggregate: dict[str, Any], runtime_id: str) -> dict[str, Any] | None:
         return next((runtime for runtime in aggregate["runtimes"] if runtime["runtime_id"] == runtime_id), None)
 
-    def validate_delivery(delivery: dict[str, Any], aggregate: dict[str, Any], location: str) -> None:
+    def validate_delivery(
+        delivery: dict[str, Any], aggregate_or_root: dict[str, Any] | str, location: str
+    ) -> None:
         validate_typed_value_canonical(
             delivery["envelope"]["payload"], f"{location}: delivery payload"
         )
@@ -3422,12 +3512,53 @@ def validate_version2_vectors(
             "request_digest_domain", "determa-inbox-envelope-digest-2"
         )
         digest_version = "1" if digest_domain.endswith("-1") else "2"
+        root_instance_id = (
+            aggregate_or_root["root_instance_id"]
+            if isinstance(aggregate_or_root, dict)
+            else aggregate_or_root
+        )
         expected = hash_value([
-            digest_domain, digest_version, aggregate["root_instance_id"],
+            digest_domain, digest_version, root_instance_id,
             delivery["delivery_mode"], delivery["envelope"],
         ])
         if delivery["envelope_digest"] != expected:
             raise ValidationFailure(f"{location}: delivery envelope digest mismatch")
+
+    def validate_embedded_checkpoint(
+        checkpoint: dict[str, Any], location: str
+    ) -> None:
+        root_record = checkpoint["root_record"]
+        if root_record["status"] == "retained":
+            aggregate = root_record["aggregate_state"]
+            expected_aggregate_digest = hash_value(
+                [
+                    "determa-aggregate-state-digest-2",
+                    {
+                        key: value
+                        for key, value in aggregate.items()
+                        if key != "aggregate_state_digest"
+                    },
+                ]
+            )
+            if aggregate["aggregate_state_digest"] != expected_aggregate_digest:
+                raise ValidationFailure(
+                    f"{location}: embedded aggregate digest mismatch"
+                )
+        expected_checkpoint_digest = hash_value(
+            [
+                "determa-execution-checkpoint-digest-2",
+                {
+                    key: value
+                    for key, value in checkpoint.items()
+                    if key != "execution_checkpoint_digest"
+                },
+            ]
+        )
+        if checkpoint["execution_checkpoint_digest"] != expected_checkpoint_digest:
+            raise ValidationFailure(
+                f"{location}: embedded checkpoint digest mismatch"
+            )
+        validate_execution_checkpoint_v2_semantics(checkpoint)
 
     operation_signatures: dict[tuple[str, str | None, str], str] = {}
 
@@ -3598,10 +3729,30 @@ def validate_version2_vectors(
                 prior_aggregate, case / vector["bundle"]
             )
         if "deliveries" in selected:
-            if prior_aggregate is None:
+            delivery_identity: dict[str, Any] | str | None = prior_aggregate
+            if (
+                delivery_identity is None
+                and operation == "checkpoint_admit_v2"
+                and checkpoint_before["root_record"]["status"] == "tombstone"
+            ):
+                delivery_identity = checkpoint_before["root_instance_id"]
+            if delivery_identity is None:
                 raise ValidationFailure(f"{location}: delivery operation lacks a retained aggregate")
             for delivery in selected["deliveries"]:
-                validate_delivery(delivery, prior_aggregate, location)
+                validate_delivery(delivery, delivery_identity, location)
+                if (
+                    operation == "checkpoint_admit_v2"
+                    and checkpoint_before["root_record"]["status"] == "tombstone"
+                ):
+                    target = delivery["envelope"]["target"].get("root")
+                    tombstone = checkpoint_before["root_record"]
+                    if target != {
+                        "root_instance_id": checkpoint_before["root_instance_id"],
+                        "root_runtime_id": tombstone["root_runtime_id"],
+                    }:
+                        raise ValidationFailure(
+                            f"{location}: tombstoned replay target identity mismatch"
+                        )
             event_ids = [delivery["envelope"]["event_id"] for delivery in selected["deliveries"]]
             if len(event_ids) != len(set(event_ids)) and expectation.get("code") != "duplicate_event_id_in_batch":
                 raise ValidationFailure(f"{location}: duplicate input identity lacks exact rejection")
@@ -3812,6 +3963,197 @@ def validate_version2_vectors(
             )
             if manifests[result_file]["kind"] not in expected_kinds:
                 raise ValidationFailure(f"{location}: result artifact kind is not closed for {operation}")
+            if operation == "admit_v2":
+                assert prior_aggregate is not None
+                deliveries = selected["deliveries"]
+                result_state = result_document["state"]
+                validate_aggregate_v2_semantics(result_state)
+                validate_aggregate_against_bundle(
+                    result_state, case / vector["bundle"]
+                )
+                expected_digest = hash_value(
+                    [
+                        "determa-aggregate-state-digest-2",
+                        {
+                            key: value
+                            for key, value in result_state.items()
+                            if key != "aggregate_state_digest"
+                        },
+                    ]
+                )
+                if result_state["aggregate_state_digest"] != expected_digest:
+                    raise ValidationFailure(
+                        f"{location}: admit result aggregate digest mismatch"
+                    )
+                root = next(
+                    runtime
+                    for runtime in result_state["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                if (
+                    result_document["status"] != root["status"]
+                    or result_document["rejection"] is not None
+                ):
+                    raise ValidationFailure(
+                        f"{location}: admit result status or rejection is not exact"
+                    )
+                if result_document["result"] == "replay":
+                    if len(deliveries) != 1 or result_state != prior_aggregate:
+                        raise ValidationFailure(
+                            f"{location}: core replay mutated aggregate or batch shape"
+                        )
+                    delivery = deliveries[0]
+                    matches = [
+                        (mailbox_name, entry)
+                        for runtime in prior_aggregate["runtimes"]
+                        for mailbox_name, mailbox in (
+                            ("ready", runtime["ready_mailbox"]),
+                            ("deferred", runtime["deferred_mailbox"]),
+                        )
+                        for entry in mailbox
+                        if entry["envelope"] == delivery["envelope"]
+                        and entry["envelope_digest"]
+                        == delivery["envelope_digest"]
+                    ]
+                    if len(matches) != 1:
+                        raise ValidationFailure(
+                            f"{location}: replay is not backed by one retained request"
+                        )
+                    mailbox_name, entry = matches[0]
+                    expected_replay = {
+                        "result": "replay",
+                        "status": root["status"],
+                        "event_id": delivery["envelope"]["event_id"],
+                        "acceptance_sequence": entry["acceptance_sequence"],
+                        "location": mailbox_name,
+                        "state": prior_aggregate,
+                        "rejection": None,
+                    }
+                    if result_document != expected_replay:
+                        raise ValidationFailure(
+                            f"{location}: core replay evidence is not request-bound"
+                        )
+                else:
+                    accepted = result_document["accepted"]
+                    if len(accepted) != len(deliveries):
+                        raise ValidationFailure(
+                            f"{location}: admission result count differs from request"
+                        )
+                    before_runtimes = {
+                        runtime["runtime_id"]: runtime
+                        for runtime in prior_aggregate["runtimes"]
+                    }
+                    after_runtimes = {
+                        runtime["runtime_id"]: runtime
+                        for runtime in result_state["runtimes"]
+                    }
+                    if before_runtimes.keys() != after_runtimes.keys():
+                        raise ValidationFailure(
+                            f"{location}: admission changed runtime identities"
+                        )
+                    admitted_entries: dict[str, dict[str, Any]] = {}
+                    for runtime_id, before_runtime in before_runtimes.items():
+                        after_runtime = after_runtimes[runtime_id]
+                        requested = [
+                            delivery
+                            for delivery in deliveries
+                            if delivery["envelope"]["target"]
+                            == before_runtime["target_identity"]
+                        ]
+                        before_ready = before_runtime["ready_mailbox"]
+                        appended = after_runtime["ready_mailbox"][len(before_ready) :]
+                        if (
+                            after_runtime["ready_mailbox"][: len(before_ready)]
+                            != before_ready
+                            or after_runtime["deferred_mailbox"]
+                            != before_runtime["deferred_mailbox"]
+                            or len(appended) != len(requested)
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: admission mailbox delta is not exact"
+                            )
+                        for delivery, entry in zip(requested, appended, strict=True):
+                            if (
+                                entry["envelope"] != delivery["envelope"]
+                                or entry["envelope_digest"]
+                                != delivery["envelope_digest"]
+                                or entry["delivery_mode"]
+                                != delivery["delivery_mode"]
+                                or entry["deferral_count"] != "0"
+                            ):
+                                raise ValidationFailure(
+                                    f"{location}: admitted mailbox entry metadata differs from request"
+                                )
+                            admitted_entries[entry["envelope"]["event_id"]] = entry
+                        before_projection = copy.deepcopy(before_runtime)
+                        after_projection = copy.deepcopy(after_runtime)
+                        for projection in (before_projection, after_projection):
+                            projection.pop("ready_mailbox")
+                            projection.pop("deferred_mailbox")
+                        if before_projection != after_projection:
+                            raise ValidationFailure(
+                                f"{location}: admission changed non-mailbox runtime state"
+                            )
+                    if set(admitted_entries) != {
+                        delivery["envelope"]["event_id"] for delivery in deliveries
+                    }:
+                        raise ValidationFailure(
+                            f"{location}: admission result contains an event not in request"
+                        )
+                    before_projection = copy.deepcopy(prior_aggregate)
+                    after_projection = copy.deepcopy(result_state)
+                    for projection in (before_projection, after_projection):
+                        projection.pop("aggregate_state_digest")
+                        projection.pop("next_acceptance_sequence")
+                        projection.pop("next_queue_sequence")
+                        for runtime in projection["runtimes"]:
+                            runtime.pop("ready_mailbox")
+                            runtime.pop("deferred_mailbox")
+                    if before_projection != after_projection:
+                        raise ValidationFailure(
+                            f"{location}: admission changed unrelated aggregate state"
+                        )
+                    expected_accepted = []
+                    for offset, delivery in enumerate(deliveries):
+                        event_id = delivery["envelope"]["event_id"]
+                        entry = admitted_entries[event_id]
+                        expected_acceptance = str(
+                            int(prior_aggregate["next_acceptance_sequence"])
+                            + offset
+                        )
+                        expected_queue = str(
+                            int(prior_aggregate["next_queue_sequence"]) + offset
+                        )
+                        if (
+                            entry["acceptance_sequence"] != expected_acceptance
+                            or entry["queue_sequence"] != expected_queue
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: admission allocation is not contiguous"
+                            )
+                        expected_accepted.append(
+                            {
+                                "event_id": event_id,
+                                "acceptance_sequence": expected_acceptance,
+                                "queue_sequence": expected_queue,
+                            }
+                        )
+                    if (
+                        accepted != expected_accepted
+                        or result_state["next_acceptance_sequence"]
+                        != str(
+                            int(prior_aggregate["next_acceptance_sequence"])
+                            + len(deliveries)
+                        )
+                        or result_state["next_queue_sequence"]
+                        != str(
+                            int(prior_aggregate["next_queue_sequence"])
+                            + len(deliveries)
+                        )
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: admission reply is not relationally bound"
+                        )
             if operation == "step_v2":
                 assert prior_aggregate is not None
                 target_id = selected["target_runtime_id"]
@@ -4139,6 +4481,32 @@ def validate_version2_vectors(
                     checkpoint_replay_result(checkpoint_before, delivery)
                     for delivery in deliveries
                 ]
+                if "compacted_legacy_terminal_replay" in covers:
+                    event_id = deliveries[0]["envelope"]["event_id"]
+                    if any(
+                        receipt["operation_kind"] == "legacy_v1_operation"
+                        and receipt["legacy_receipt"].get("event_id") == event_id
+                        for receipt in checkpoint_before["operation_receipts"]
+                    ) or not any(
+                        item["event_id"] == event_id
+                        and item["request_digest_domain"]
+                        == "determa-inbox-envelope-digest-1"
+                        for item in checkpoint_before["event_identity_tombstones"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: compacted legacy replay retained its wrapper or lacks tombstone evidence"
+                        )
+                if covers & {
+                    "tombstoned_root_single_replay",
+                    "tombstoned_root_batch_replay",
+                } and (
+                    checkpoint_before["root_record"]["status"] != "tombstone"
+                    or not replay_evidence
+                    or any(evidence is None for evidence in replay_evidence)
+                ):
+                    raise ValidationFailure(
+                        f"{location}: tombstoned replay lacks retained exact evidence"
+                    )
                 new_deliveries = [
                     delivery
                     for delivery, evidence in zip(
@@ -4182,6 +4550,7 @@ def validate_version2_vectors(
                         or receipt["request_digest"] != delivery["envelope_digest"]
                         or receipt["acceptance_sequence"]
                         != entry["acceptance_sequence"]
+                        or entry["deferral_count"] != "0"
                     ):
                         raise ValidationFailure(
                             f"{location}: checkpoint admission result is not bound to delivery"
@@ -4344,7 +4713,17 @@ def validate_version2_vectors(
                 elif result_document["result"] == "batch":
                     members = result_document["members"]
                     result_checkpoint = result_document["checkpoint"]
-                    validate_admission_checkpoint(result_checkpoint)
+                    validate_embedded_checkpoint(result_checkpoint, location)
+                    if checkpoint_before["root_record"]["status"] == "tombstone":
+                        if (
+                            new_deliveries
+                            or result_checkpoint != checkpoint_before
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: tombstoned all-replay batch mutated checkpoint"
+                            )
+                    else:
+                        validate_admission_checkpoint(result_checkpoint)
                     if len(members) != len(deliveries) or [
                         member["event_id"] for member in members
                     ] != [delivery["envelope"]["event_id"] for delivery in deliveries]:
@@ -4569,6 +4948,50 @@ def validate_version2_vectors(
         mutated_inputs = copy.deepcopy(artifact("operation-inputs.json").document)
         mutated_inputs["invalid_runtime_step"]["target_runtime_id"] = artifact("empty-aggregate-v2.json").document["root_runtime_id"]
         probes["fabricated runtime classification"] = {"operation-inputs.json": mutated_inputs}
+        admission = artifact("admission-success.json").document
+        admission_unknown = copy.deepcopy(admission)
+        admission_unknown["accepted"][0]["event_id"] = "not-in-request"
+        probes["admission event not in request"] = {
+            "admission-success.json": admission_unknown
+        }
+        admission_sequence = copy.deepcopy(admission)
+        admission_sequence["accepted"][0]["acceptance_sequence"] = "999"
+        probes["admission acceptance sequence 999"] = {
+            "admission-success.json": admission_sequence
+        }
+        admission_digest = copy.deepcopy(admission)
+        admission_digest["state"]["aggregate_state_digest"] = "sha256:" + "0" * 64
+        probes["admission all-zero aggregate digest"] = {
+            "admission-success.json": admission_digest
+        }
+        admission_deferral = copy.deepcopy(admission)
+        admitted_event_ids = {
+            item["event_id"] for item in admission_deferral["accepted"]
+        }
+        next(
+            entry
+            for runtime in admission_deferral["state"]["runtimes"]
+            for entry in runtime["ready_mailbox"]
+            if entry["envelope"]["event_id"] in admitted_event_ids
+        )["deferral_count"] = "99"
+        admission_deferral["state"].pop("aggregate_state_digest")
+        admission_deferral["state"]["aggregate_state_digest"] = hash_value(
+            ["determa-aggregate-state-digest-2", admission_deferral["state"]]
+        )
+        probes["admission nonzero initial deferral count"] = {
+            "admission-success.json": admission_deferral
+        }
+        replay = artifact("replay-success.json").document
+        replay_unknown = copy.deepcopy(replay)
+        replay_unknown["event_id"] = "not-in-request"
+        probes["core replay event not in request"] = {
+            "replay-success.json": replay_unknown
+        }
+        replay_sequence = copy.deepcopy(replay)
+        replay_sequence["acceptance_sequence"] = "999"
+        probes["core replay acceptance sequence 999"] = {
+            "replay-success.json": replay_sequence
+        }
         for probe_name, overrides in probes.items():
             try:
                 validate_version2_vectors(
@@ -4620,6 +5043,12 @@ def validate_version2_vectors(
         tombstone_result = artifact("tombstone-replay-result.json").document
         all_replay_result = artifact("all-replay-batch-result.json").document
         mixed_result = artifact("mixed-replay-new-batch-result.json").document
+        compacted_legacy_result = artifact(
+            "compacted-legacy-replay-result.json"
+        ).document
+        tombstoned_batch_result = artifact(
+            "tombstoned-batch-replay-result.json"
+        ).document
         probes = {}
         for field, sequence in (
             ("acceptance_receipt_sequence", "999"),
@@ -4655,6 +5084,34 @@ def validate_version2_vectors(
         probes["mixed queue sequence 999"] = {
             "mixed-replay-new-batch-result.json": fabricated_queue_sequence
         }
+        mixed_zero_digest = copy.deepcopy(mixed_result)
+        mixed_zero_digest["checkpoint"]["execution_checkpoint_digest"] = (
+            "sha256:" + "0" * 64
+        )
+        probes["mixed embedded all-zero checkpoint digest"] = {
+            "mixed-replay-new-batch-result.json": mixed_zero_digest
+        }
+        mixed_deferral = copy.deepcopy(mixed_result)
+        mixed_checkpoint = mixed_deferral["checkpoint"]
+        mixed_aggregate = mixed_checkpoint["root_record"]["aggregate_state"]
+        mixed_event_id = mixed_deferral["members"][1]["event_id"]
+        next(
+            entry
+            for runtime in mixed_aggregate["runtimes"]
+            for entry in runtime["ready_mailbox"]
+            if entry["envelope"]["event_id"] == mixed_event_id
+        )["deferral_count"] = "99"
+        mixed_aggregate.pop("aggregate_state_digest")
+        mixed_aggregate["aggregate_state_digest"] = hash_value(
+            ["determa-aggregate-state-digest-2", mixed_aggregate]
+        )
+        mixed_checkpoint.pop("execution_checkpoint_digest")
+        mixed_checkpoint["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-2", mixed_checkpoint]
+        )
+        probes["mixed new member deferral count 99"] = {
+            "mixed-replay-new-batch-result.json": mixed_deferral
+        }
         mutated_legacy_inputs = copy.deepcopy(
             artifact("operation-inputs.json").document
         )
@@ -4663,6 +5120,25 @@ def validate_version2_vectors(
         ] = "determa-inbox-envelope-digest-2"
         probes["legacy replay digest domain substitution"] = {
             "operation-inputs.json": mutated_legacy_inputs
+        }
+        compacted_legacy_sequence = copy.deepcopy(compacted_legacy_result)
+        compacted_legacy_sequence["acceptance_sequence"] = "999"
+        probes["compacted legacy replay acceptance sequence 999"] = {
+            "compacted-legacy-replay-result.json": compacted_legacy_sequence
+        }
+        tombstoned_batch_sequence = copy.deepcopy(tombstoned_batch_result)
+        tombstoned_batch_sequence["members"][1]["evidence"][
+            "acceptance_sequence"
+        ] = "999"
+        probes["tombstoned batch replay acceptance sequence 999"] = {
+            "tombstoned-batch-replay-result.json": tombstoned_batch_sequence
+        }
+        tombstoned_batch_digest = copy.deepcopy(tombstoned_batch_result)
+        tombstoned_batch_digest["checkpoint"]["execution_checkpoint_digest"] = (
+            "sha256:" + "0" * 64
+        )
+        probes["tombstoned batch embedded checkpoint digest"] = {
+            "tombstoned-batch-replay-result.json": tombstoned_batch_digest
         }
         for probe_name, overrides in probes.items():
             try:

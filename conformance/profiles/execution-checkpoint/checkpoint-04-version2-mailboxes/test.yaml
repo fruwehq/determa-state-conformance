@@ -20,6 +20,8 @@ artifacts:
     - { file: native-internal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: compact-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: compacted-legacy-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: tombstoned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: invalid-duplicate-location-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-acceptance-tombstone-overlap-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-tombstone-counter-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
@@ -30,6 +32,9 @@ artifacts:
     - { file: all-replay-batch-result.json, kind: version2_operation_result, valid: true }
     - { file: mixed-replay-new-batch-result.json, kind: version2_operation_result, valid: true }
     - { file: legacy-terminal-replay-result.json, kind: version2_operation_result, valid: true }
+    - { file: compacted-legacy-replay-result.json, kind: version2_operation_result, valid: true }
+    - { file: tombstoned-single-replay-result.json, kind: version2_operation_result, valid: true }
+    - { file: tombstoned-batch-replay-result.json, kind: version2_operation_result, valid: true }
     - { file: tombstone-replay-result.json, kind: version2_operation_result, valid: true }
 version2_vectors:
   - name: explicit_checkpoint_upgrade
@@ -117,6 +122,27 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /legacy_terminal_replay
     expect: { result: success, exact_result_file: legacy-terminal-replay-result.json }
+  - name: checkpoint_compacted_legacy_terminal_replay
+    covers: [compacted_legacy_terminal_replay]
+    operation: checkpoint_admit_v2
+    checkpoint_before: compacted-legacy-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /compacted_legacy_terminal_replay
+    expect: { result: success, exact_result_file: compacted-legacy-replay-result.json }
+  - name: tombstoned_root_single_event_replay
+    covers: [tombstoned_root_single_replay]
+    operation: checkpoint_admit_v2
+    checkpoint_before: tombstoned-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /tombstoned_single_replay
+    expect: { result: success, exact_result_file: tombstoned-single-replay-result.json }
+  - name: tombstoned_root_batch_replay
+    covers: [tombstoned_root_batch_replay]
+    operation: checkpoint_admit_v2
+    checkpoint_before: tombstoned-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /tombstoned_batch_replay
+    expect: { result: success, exact_result_file: tombstoned-batch-replay-result.json }
   - name: checkpoint_native_internal_processing
     covers: [native_internal_producer_reference]
     operation: checkpoint_step_v2

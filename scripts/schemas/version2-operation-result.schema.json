@@ -4,6 +4,7 @@
   "title": "Determa State version-2 operation result",
   "oneOf": [
     { "$ref": "#/$defs/admission" },
+    { "$ref": "#/$defs/corePendingReplay" },
     { "$ref": "#/$defs/pendingReplay" },
     { "$ref": "#/$defs/terminalReplay" },
     { "$ref": "#/$defs/tombstoneReplay" },
@@ -23,10 +24,11 @@
     },
     "admission": {
       "type": "object",
-      "required": ["result", "accepted"],
+      "required": ["result", "status", "accepted", "state", "rejection"],
       "additionalProperties": false,
       "properties": {
         "result": { "const": "accepted" },
+        "status": { "enum": ["running", "completed", "faulted"] },
         "accepted": {
           "type": "array",
           "minItems": 1,
@@ -40,7 +42,9 @@
               "queue_sequence": { "$ref": "#/$defs/canonicalDecimal" }
             }
           }
-        }
+        },
+        "state": { "$ref": "https://determa.dev/state/schema/aggregate-state-v2.schema.json" },
+        "rejection": { "type": "null" }
       }
     },
     "pendingReplay": {
@@ -52,6 +56,20 @@
         "event_id": { "type": "string", "minLength": 1 },
         "acceptance_sequence": { "$ref": "#/$defs/canonicalDecimal" },
         "location": { "enum": ["ready", "deferred"] }
+      }
+    },
+    "corePendingReplay": {
+      "type": "object",
+      "required": ["result", "status", "event_id", "acceptance_sequence", "location", "state", "rejection"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "replay" },
+        "status": { "enum": ["running", "completed", "faulted"] },
+        "event_id": { "type": "string", "minLength": 1 },
+        "acceptance_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+        "location": { "enum": ["ready", "deferred"] },
+        "state": { "$ref": "https://determa.dev/state/schema/aggregate-state-v2.schema.json" },
+        "rejection": { "type": "null" }
       }
     },
     "terminalReplay": {

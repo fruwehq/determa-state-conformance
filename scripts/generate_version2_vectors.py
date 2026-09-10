@@ -1634,19 +1634,46 @@ def produce_mailbox() -> dict[str, bytes]:
         "faulted_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(faulted_component, component_runtimes(faulted_component)[0], "component_work", "faulted-component-admission")]},
         "disposed_component_admit": {"operation": "admit_v2", "deliveries": [disposed_delivery]},
     }
+    admitted_state = copy.deepcopy(base)
+    admitted_root = root_runtime(admitted_state)
+    admitted_entries = []
+    for offset, delivery in enumerate(operation_inputs["admit_two"]["deliveries"]):
+        entry = {
+            "acceptance_sequence": str(4 + offset),
+            "queue_sequence": str(4 + offset),
+            "deferral_count": "0",
+            "delivery_mode": delivery["delivery_mode"],
+            "envelope": copy.deepcopy(delivery["envelope"]),
+            "envelope_digest": delivery["envelope_digest"],
+        }
+        admitted_root["ready_mailbox"].append(entry)
+        admitted_entries.append(entry)
+    admitted_state["next_acceptance_sequence"] = "6"
+    admitted_state["next_queue_sequence"] = "6"
+    admitted_state = seal_aggregate(admitted_state)
     outputs["operation-inputs.json"] = operation_inputs
     outputs["admission-success.json"] = {
         "result": "accepted",
+        "status": "running",
         "accepted": [
-            {"event_id": "batch-a", "acceptance_sequence": "4", "queue_sequence": "4"},
-            {"event_id": "batch-b", "acceptance_sequence": "5", "queue_sequence": "5"},
+            {
+                "event_id": entry["envelope"]["event_id"],
+                "acceptance_sequence": entry["acceptance_sequence"],
+                "queue_sequence": entry["queue_sequence"],
+            }
+            for entry in admitted_entries
         ],
+        "state": admitted_state,
+        "rejection": None,
     }
     outputs["replay-success.json"] = {
         "result": "replay",
+        "status": "running",
         "event_id": "retry-guarded-recall",
         "acceptance_sequence": "2",
         "location": "deferred",
+        "state": base,
+        "rejection": None,
     }
     outputs["invalid-version2-operation-result.json"] = {
         "result": "replay",
@@ -2304,6 +2331,62 @@ def produce_checkpoint() -> dict[str, bytes]:
     compact["revision"] = str(int(terminal["revision"]) + 1)
     compact = seal_checkpoint(compact)
 
+    compacted_legacy = copy.deepcopy(upgraded)
+    compacted_legacy_receipt = next(
+        receipt
+        for receipt in compacted_legacy["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["legacy_receipt"].get("event_id") == "delivery-increment"
+    )
+    compacted_nested = compacted_legacy_receipt["legacy_receipt"]
+    compacted_legacy["operation_receipts"].remove(compacted_legacy_receipt)
+    compacted_legacy["event_identity_tombstones"] = [
+        {
+            "event_id": compacted_nested["event_id"],
+            "request_digest": compacted_nested["request_digest"],
+            "request_digest_domain": "determa-inbox-envelope-digest-1",
+            "acceptance_sequence": compacted_nested[
+                "accepted_delivery_sequence"
+            ],
+            "terminal_receipt_sequence": compacted_legacy_receipt[
+                "receipt_sequence"
+            ],
+            "terminal_disposition": compacted_nested["outcome"]["disposition"],
+        }
+    ]
+    compacted_legacy["replay_retention"] = {
+        "mode": "bounded",
+        "permanent_replay_eligible": False,
+        "pruned_through_receipt_sequence": compacted_legacy_receipt[
+            "receipt_sequence"
+        ],
+        "policy_identifier": "bounded-legacy-replay-v1",
+    }
+    compacted_legacy["revision"] = str(int(upgraded["revision"]) + 1)
+    compacted_legacy = seal_checkpoint(compacted_legacy)
+
+    faulted_v1 = load(
+        CHECKPOINT.parent
+        / "checkpoint-01-delivery-lifecycle"
+        / "faulted-checkpoint.json"
+    )
+    faulted_upgraded = upgrade_checkpoint(faulted_v1)
+    tombstoned = copy.deepcopy(faulted_upgraded)
+    terminal_aggregate = tombstoned["root_record"]["aggregate_state"]
+    terminal_root = root_runtime(terminal_aggregate)
+    tombstoned["root_record"] = {
+        "status": "tombstone",
+        "root_runtime_id": terminal_root["runtime_id"],
+        "creation_id": terminal_aggregate["creation_id"],
+        "terminal_status": terminal_root["status"],
+        "final_aggregate_state_digest": terminal_aggregate[
+            "aggregate_state_digest"
+        ],
+        "tombstone_operation_id": "checkpoint-v2-faulted-root-tombstone",
+    }
+    tombstoned["revision"] = str(int(faulted_upgraded["revision"]) + 1)
+    tombstoned = seal_checkpoint(tombstoned)
+
     invalid_acceptance_tombstone_overlap = copy.deepcopy(compact)
     overlapping_acceptance = copy.deepcopy(acceptance)
     overlapping_acceptance["receipt_sequence"] = compact["next_operation_receipt_sequence"]
@@ -2395,6 +2478,9 @@ def produce_checkpoint() -> dict[str, bytes]:
     original_v1_input = load(
         CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "inputs.json"
     )["requests"]["accept_increment"]
+    original_v1_inputs = load(
+        CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "inputs.json"
+    )["requests"]
     legacy_replay_delivery = {
         "delivery_mode": original_v1_input["delivery_mode"],
         "envelope": original_v1_input["envelope"],
@@ -2490,6 +2576,72 @@ def produce_checkpoint() -> dict[str, bytes]:
         ],
         "request_digest_domain": "determa-inbox-envelope-digest-1",
     }
+
+    def legacy_delivery(request: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "delivery_mode": request["delivery_mode"],
+            "envelope": request["envelope"],
+            "envelope_digest": request["envelope_digest"],
+            "request_digest_domain": "determa-inbox-envelope-digest-1",
+        }
+
+    def legacy_terminal_evidence(
+        checkpoint: dict[str, Any], delivery: dict[str, Any]
+    ) -> dict[str, Any]:
+        event_id = delivery["envelope"]["event_id"]
+        wrapper = next(
+            (
+                receipt
+                for receipt in checkpoint["operation_receipts"]
+                if receipt["operation_kind"] == "legacy_v1_operation"
+                and receipt["legacy_receipt"].get("event_id") == event_id
+            ),
+            None,
+        )
+        if wrapper is not None:
+            nested = wrapper["legacy_receipt"]
+            return {
+                "result": "replay",
+                "event_id": event_id,
+                "acceptance_sequence": nested["accepted_delivery_sequence"],
+                "terminal_receipt_sequence": wrapper["receipt_sequence"],
+                "terminal_disposition": nested["outcome"]["disposition"],
+                "request_digest_domain": "determa-inbox-envelope-digest-1",
+            }
+        event_tombstone = next(
+            item
+            for item in checkpoint["event_identity_tombstones"]
+            if item["event_id"] == event_id
+            and item["request_digest_domain"]
+            == "determa-inbox-envelope-digest-1"
+        )
+        return {
+            "result": "replay",
+            "event_id": event_id,
+            "acceptance_sequence": event_tombstone["acceptance_sequence"],
+            "terminal_receipt_sequence": event_tombstone[
+                "terminal_receipt_sequence"
+            ],
+            "terminal_disposition": event_tombstone["terminal_disposition"],
+            "request_digest_domain": "determa-inbox-envelope-digest-1",
+        }
+
+    tombstone_replay_deliveries = [
+        legacy_delivery(original_v1_inputs["accept_increment"]),
+        legacy_delivery(original_v1_inputs["unhandled"]),
+    ]
+    tombstone_batch_result = {
+        "result": "batch",
+        "members": [
+            {
+                "event_id": delivery["envelope"]["event_id"],
+                "disposition": "replay",
+                "evidence": legacy_terminal_evidence(tombstoned, delivery),
+            }
+            for delivery in tombstone_replay_deliveries
+        ],
+        "checkpoint": tombstoned,
+    }
     operations = {
         "upgrade": with_checkpoint_cas(
             {"operation": "upgrade_checkpoint_v1_to_v2"}, v1
@@ -2573,6 +2725,27 @@ def produce_checkpoint() -> dict[str, bytes]:
             },
             v1,
         ),
+        "compacted_legacy_terminal_replay": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [legacy_replay_delivery],
+            },
+            compacted_legacy,
+        ),
+        "tombstoned_single_replay": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [tombstone_replay_deliveries[0]],
+            },
+            faulted_upgraded,
+        ),
+        "tombstoned_batch_replay": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": tombstone_replay_deliveries,
+            },
+            faulted_upgraded,
+        ),
         "tombstone_equal_replay": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
             "delivery_mode": entry["delivery_mode"],
             "envelope": entry["envelope"],
@@ -2635,6 +2808,8 @@ def produce_checkpoint() -> dict[str, bytes]:
         "native-internal-checkpoint-v2.json": canonical(native_internal),
         "native-internal-terminal-checkpoint-v2.json": canonical(native_terminal),
         "compact-checkpoint-v2.json": canonical(compact),
+        "compacted-legacy-checkpoint-v2.json": canonical(compacted_legacy),
+        "tombstoned-checkpoint-v2.json": canonical(tombstoned),
         "invalid-duplicate-location-checkpoint-v2.json": canonical(invalid),
         "invalid-acceptance-tombstone-overlap-checkpoint-v2.json": canonical(
             invalid_acceptance_tombstone_overlap
@@ -2660,6 +2835,13 @@ def produce_checkpoint() -> dict[str, bytes]:
         "all-replay-batch-result.json": canonical(all_replay_result),
         "mixed-replay-new-batch-result.json": canonical(mixed_result),
         "legacy-terminal-replay-result.json": canonical(legacy_replay_result),
+        "compacted-legacy-replay-result.json": canonical(
+            legacy_terminal_evidence(compacted_legacy, legacy_replay_delivery)
+        ),
+        "tombstoned-single-replay-result.json": canonical(
+            legacy_terminal_evidence(tombstoned, tombstone_replay_deliveries[0])
+        ),
+        "tombstoned-batch-replay-result.json": canonical(tombstone_batch_result),
         "tombstone-replay-result.json": canonical(
             {"result": "replay", "terminal_receipt_sequence": terminal_sequence, "terminal_disposition": "handled"}
         ),
