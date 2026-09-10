@@ -2,6 +2,10 @@ format: 1
 namespace: example.transaction_server
 
 events:
+  action_sink:
+    direction: internal
+    payload:
+      amount: { type: int, required: true }
   new_request:
     direction: input
     payload:
@@ -31,7 +35,13 @@ machines:
           states:
             receiving:
               on_events:
-                received: { transition_to: busy.authorizing }
+                received:
+                  action:
+                    - send:
+                        event: action_sink
+                        to: { self: true }
+                        payload: { amount: "1 % 0" }
+                  transition_to: busy.authorizing
             authorizing:
               deferred_events: [priority_request, retry]
               on_events:

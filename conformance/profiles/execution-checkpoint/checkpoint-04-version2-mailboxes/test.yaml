@@ -7,15 +7,19 @@ artifacts:
   documents:
     - { file: base-checkpoint.json, kind: execution_checkpoint_v2, valid: true }
     - { file: base-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
+    - { file: base-outbox-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: upgraded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: upgraded-outbox-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: admitted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: native-emit-admitted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: compact-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: invalid-duplicate-location-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-acceptance-tombstone-overlap-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-tombstone-counter-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-pruning-claim-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: operation-inputs.json, kind: version2_operation_inputs, valid: true }
     - { file: terminal-replay-result.json, kind: version2_operation_result, valid: true }
     - { file: tombstone-replay-result.json, kind: version2_operation_result, valid: true }
@@ -36,6 +40,13 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /admit
     expect: { result: success, exact_result_file: admitted-checkpoint-v2.json }
+  - name: explicit_checkpoint_upgrade_preserves_populated_outbox
+    covers: [upgrade_checkpoint_v1_to_v2_populated_outbox]
+    operation: upgrade_checkpoint_v1_to_v2
+    checkpoint_before: base-outbox-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /upgrade_outbox
+    expect: { result: success, exact_result_file: upgraded-outbox-checkpoint-v2.json }
   - name: version1_host_rejects_deferral_bundle
     covers: [checkpoint_v1_requires_upgrade]
     operation: checkpoint_v1_accept
@@ -69,6 +80,20 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /native_internal_step
     expect: { result: success, exact_result_file: native-internal-terminal-checkpoint-v2.json }
+  - name: checkpoint_native_internal_admission
+    covers: [native_internal_handler_admission]
+    operation: checkpoint_admit_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /native_emit_admit
+    expect: { result: success, exact_result_file: native-emit-admitted-checkpoint-v2.json }
+  - name: checkpoint_native_internal_emission
+    covers: [native_internal_handler_provenance]
+    operation: checkpoint_step_v2
+    checkpoint_before: native-emit-admitted-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /native_emit_step
+    expect: { result: success, exact_result_file: native-internal-checkpoint-v2.json }
   - name: checkpoint_terminal_conflict
     covers: [conflicting_terminal_replay]
     operation: checkpoint_admit_v2
@@ -87,10 +112,38 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /bounded_prune
     expect: { result: success, exact_result_file: compact-checkpoint-v2.json }
+  - name: checkpoint_equal_cutoff_is_idempotent
+    covers: [version2_equal_pruning_cutoff]
+    operation: checkpoint_prune_v2
+    checkpoint_before: compact-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /equal_prune
+    expect: { result: success, exact_result_file: compact-checkpoint-v2.json }
+  - name: checkpoint_lower_cutoff_is_rejected
+    covers: [version2_lower_pruning_cutoff_rejected]
+    operation: checkpoint_prune_v2
+    checkpoint_before: compact-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /lower_prune
+    expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: compact-checkpoint-v2.json }
+  - name: checkpoint_producer_dependency_pruning_is_rejected
+    covers: [version2_dependency_pruning_rejected]
+    operation: checkpoint_prune_v2
+    checkpoint_before: native-internal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /dependency_prune
+    expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: native-internal-checkpoint-v2.json }
+  - name: checkpoint_skipped_cutoff_is_rejected
+    covers: [version2_invalid_pruning_cutoff_rejected]
+    operation: checkpoint_prune_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /invalid_high_prune
+    expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: terminal-checkpoint-v2.json }
   - name: checkpoint_tombstone_replay
     covers: [terminal_tombstone_replay]
     operation: checkpoint_admit_v2
     checkpoint_before: compact-checkpoint-v2.json
     request_file: operation-inputs.json
-    request_pointer: /terminal_equal_replay
+    request_pointer: /tombstone_equal_replay
     expect: { result: success, exact_result_file: tombstone-replay-result.json }

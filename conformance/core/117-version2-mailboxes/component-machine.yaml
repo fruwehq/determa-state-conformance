@@ -125,10 +125,8 @@ machines:
               root:
                 variables:
                   count: { type: int, init: 0 }
-                on_events:
-                  component_work:
-                    action:
-                      - assign: { count: "count % 0" }
+                entry:
+                  - assign: { count: "count % 0" }
             - component_id: observer
               root: {}
       on_events:

@@ -28,6 +28,7 @@ artifacts:
     - { file: disposal-before.json, kind: aggregate_state_v2, valid: true }
     - { file: fault-frozen-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
     - { file: migration-preserve-result.json, kind: version2_operation_result, valid: true }
+    - { file: migration-stale-target-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-fault-frozen-preserve-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-dispose-result.json, kind: version2_operation_result, valid: true }
     - { file: downgrade-result.json, kind: version2_operation_result, valid: true }
@@ -81,14 +82,14 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /dispose
     expect: { result: success, exact_result_file: migration-dispose-result.json }
-  - name: migration_rejects_stale_target
-    covers: [migration_stale_target_failure]
+  - name: migration_transforms_stale_target
+    covers: [migration_stale_target_transform]
     operation: migrate_aggregate_v2
     state_before: base-aggregate-v2.json
     descriptor_file: descriptor-stale-v2.json
     request_file: operation-inputs.json
     request_pointer: /stale_target
-    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v2.json }
+    expect: { result: success, exact_result_file: migration-stale-target-result.json }
   - name: migration_rejects_removed_event
     covers: [migration_removed_event_failure]
     operation: migrate_aggregate_v2
