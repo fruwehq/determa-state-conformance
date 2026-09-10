@@ -1,1 +1,1 @@
-{"accepted":[{"acceptance_sequence":"2","event_id":"batch-a","queue_sequence":"4"},{"acceptance_sequence":"3","event_id":"batch-b","queue_sequence":"5"}],"result":"accepted"}
+{"accepted":[{"acceptance_sequence":"4","event_id":"batch-a","queue_sequence":"4"},{"acceptance_sequence":"5","event_id":"batch-b","queue_sequence":"5"}],"result":"accepted"}

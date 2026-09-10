@@ -383,6 +383,10 @@ as required by specification §10.1. When named, `components` and `owned_instanc
 compare collection membership exactly, including an asserted empty collection; fields
 inside each listed member may still be partial.
 
+`state_bytes_unchanged: true` strengthens a version-1 caller-owned `deferred` result:
+the implementation must compare the complete serialized state before and after dispatch
+and require byte-identical state, not only the partial fields named by the fixture.
+
 `variables` is a recursively partial assertion. At each asserted runtime, each named
 variable resolves to the nearest active lexical declaration after normal shadowing and
 its value is compared recursively using the named list/map members in the fixture.

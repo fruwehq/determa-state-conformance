@@ -41,7 +41,7 @@
     },
     "vector": {
       "type": "object",
-      "required": ["name", "covers", "operation", "expect"],
+      "required": ["name", "covers", "operation", "request_file", "request_pointer", "expect"],
       "additionalProperties": false,
       "properties": {
         "name": { "$ref": "#/$defs/name" },
@@ -60,6 +60,7 @@
             "downgrade_aggregate_v2_to_v1",
             "migrate_aggregate_v2",
             "upgrade_checkpoint_v1_to_v2",
+            "downgrade_checkpoint_v2_to_v1",
             "checkpoint_admit_v2",
             "checkpoint_step_v2",
             "checkpoint_prune_v2",
@@ -79,10 +80,6 @@
           "pattern": "^(?:/(?:[^~/]|~[01])*)*$"
         },
         "descriptor_file": { "$ref": "#/$defs/jsonFile" },
-        "target_runtime_id": {
-          "type": "string",
-          "pattern": "^sha256:[0-9a-f]{64}$"
-        },
         "expect": { "oneOf": [{ "$ref": "#/$defs/success" }, { "$ref": "#/$defs/failure" }] }
       }
     }

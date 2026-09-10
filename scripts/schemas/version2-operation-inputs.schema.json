@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/version2-operation-inputs.schema.json",
+  "title": "Determa State version-2 operation inputs",
+  "type": "object",
+  "minProperties": 1,
+  "additionalProperties": { "$ref": "#/$defs/operationInput" },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "canonicalDecimal": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "jsonFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:json|yaml)$" },
+    "bundleBinding": {
+      "type": "object",
+      "required": ["bundle_file", "bundle_source_digest", "validated_bundle_fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "bundle_file": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.yaml$" },
+        "bundle_source_digest": { "$ref": "#/$defs/sha256" },
+        "validated_bundle_fingerprint": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "required": ["delivery_mode", "envelope", "envelope_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "delivery_mode": { "enum": ["input", "internal"] },
+        "envelope": { "$ref": "https://determa.dev/state/schema/aggregate-state-v2.schema.json#/$defs/envelope" },
+        "envelope_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "create": {
+      "type": "object",
+      "required": ["operation", "bundle", "machine_id", "machine_version", "root_instance_id", "creation_id", "bindings"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": { "const": "create_v2" },
+        "bundle": { "$ref": "#/$defs/bundleBinding" },
+        "machine_id": { "$ref": "#/$defs/nonEmptyString" },
+        "machine_version": { "$ref": "#/$defs/canonicalDecimal" },
+        "root_instance_id": { "$ref": "#/$defs/nonEmptyString" },
+        "creation_id": { "$ref": "#/$defs/nonEmptyString" },
+        "bindings": {
+          "type": "object",
+          "required": ["input", "external"],
+          "additionalProperties": false,
+          "properties": {
+            "input": { "type": "object" },
+            "external": { "type": "object" }
+          }
+        }
+      }
+    },
+    "admit": {
+      "type": "object",
+      "required": ["operation", "deliveries"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": { "enum": ["admit_v2", "checkpoint_admit_v2", "checkpoint_v1_accept"] },
+        "deliveries": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/delivery" } }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["operation", "target_runtime_id"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": { "enum": ["step_v2", "checkpoint_step_v2"] },
+        "target_runtime_id": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "migration": {
+      "type": "object",
+      "required": ["operation", "source_bundle", "target_bundle", "migration_descriptor_file", "migration_descriptor_digest_route"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": { "enum": ["migrate_aggregate_v2", "checkpoint_migrate_v2"] },
+        "source_bundle": { "$ref": "#/$defs/bundleBinding" },
+        "target_bundle": { "$ref": "#/$defs/bundleBinding" },
+        "migration_descriptor_file": { "$ref": "#/$defs/jsonFile" },
+        "migration_descriptor_digest_route": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1,
+          "items": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "prune": {
+      "type": "object",
+      "required": ["operation", "retention_mode"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": { "const": "checkpoint_prune_v2" },
+        "retention_mode": { "enum": ["bounded", "permanent"] }
+      }
+    },
+    "conversion": {
+      "type": "object",
+      "required": ["operation"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": {
+          "enum": ["upgrade_aggregate_v1_to_v2", "downgrade_aggregate_v2_to_v1", "upgrade_checkpoint_v1_to_v2", "downgrade_checkpoint_v2_to_v1", "checkpoint_tombstone_v2"]
+        }
+      }
+    },
+    "operationInput": {
+      "oneOf": [
+        { "$ref": "#/$defs/create" },
+        { "$ref": "#/$defs/admit" },
+        { "$ref": "#/$defs/step" },
+        { "$ref": "#/$defs/migration" },
+        { "$ref": "#/$defs/prune" },
+        { "$ref": "#/$defs/conversion" }
+      ]
+    }
+  }
+}

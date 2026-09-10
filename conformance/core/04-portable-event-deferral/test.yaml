@@ -34,6 +34,7 @@ steps:
       status: running
       disposition: deferred
       caller_still_owns_input: true
+      state_bytes_unchanged: true
       config: [busy.deep]
       variables: { handled_count: 1 }
       emissions: []
@@ -48,6 +49,7 @@ steps:
       status: running
       disposition: deferred
       caller_still_owns_input: true
+      state_bytes_unchanged: true
       config: [busy.deep]
       variables: { handled_count: 3 }
       emissions: []
