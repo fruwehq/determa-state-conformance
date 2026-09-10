@@ -1308,6 +1308,10 @@ def produce_mailbox() -> dict[str, bytes]:
         emissions=[internal_disposed_emission(cancellation_entry)],
         lifecycle_dispositions=[cancellation_disposition],
     )
+    outputs["completed-root-aggregate.json"] = cancelled
+    outputs["completed-root-step-result.json"] = step_result(
+        cancelled, "rejected", status="completed", rejection="invalid_instance_target"
+    )
 
     natural_before = copy.deepcopy(lifecycle_before)
     natural_root = root_runtime(natural_before)
@@ -1559,6 +1563,19 @@ def produce_mailbox() -> dict[str, bytes]:
     duplicate_delivery = delivery_input(
         base, base_root, "received", "duplicate"
     )
+    valid_contract_delivery = delivery_input(
+        base, base_root, "received", "contract-valid-first"
+    )
+    undeclared_delivery = delivery_input(
+        base, base_root, "not_declared", "contract-undeclared"
+    )
+    wrong_payload_delivery = delivery_input(
+        base,
+        base_root,
+        "new_request",
+        "contract-wrong-payload",
+        typed_value({"transaction_id": 17}),
+    )
     equal_replay = {
         "delivery_mode": deferred_retry["delivery_mode"],
         "envelope": copy.deepcopy(deferred_retry["envelope"]),
@@ -1605,6 +1622,14 @@ def produce_mailbox() -> dict[str, bytes]:
             "operation": "admit_v2",
             "deliveries": [duplicate_delivery, copy.deepcopy(duplicate_delivery)],
         },
+        "undeclared_event_batch": {
+            "operation": "admit_v2",
+            "deliveries": [valid_contract_delivery, undeclared_delivery],
+        },
+        "wrong_payload_batch": {
+            "operation": "admit_v2",
+            "deliveries": [valid_contract_delivery, wrong_payload_delivery],
+        },
         "equal_replay": {"operation": "admit_v2", "deliveries": [equal_replay]},
         "conflicting_replay": {
             "operation": "admit_v2",
@@ -1619,6 +1644,10 @@ def produce_mailbox() -> dict[str, bytes]:
         "faulted_component_step": {"operation": "step_v2", "target_runtime_id": component_runtimes(faulted_component)[0]["runtime_id"]},
         "disposed_component_step": {"operation": "step_v2", "target_runtime_id": disposed_target_id},
         "invalid_runtime_step": {"operation": "step_v2", "target_runtime_id": "sha256:" + "0" * 64},
+        "completed_root_step": {
+            "operation": "step_v2",
+            "target_runtime_id": cancelled["root_runtime_id"],
+        },
         "overflow_step": {"operation": "step_v2", "target_runtime_id": zero_before["root_runtime_id"]},
         "fanout_step": {"operation": "step_v2", "target_runtime_id": lifecycle_before["root_runtime_id"]},
         "retained_faulted_step": {
@@ -2119,6 +2148,14 @@ def produce_checkpoint() -> dict[str, bytes]:
         / "spawned-child-checkpoint-v1.json"
     )
     spawned_checkpoint_v2 = upgrade_checkpoint(spawned_checkpoint_v1)
+    spawned_terminal_checkpoint_v1 = load(
+        CHECKPOINT.parent
+        / "checkpoint-06-terminal-spawned-host-trace"
+        / "terminal-checkpoint-v1.json"
+    )
+    spawned_terminal_checkpoint_v2 = upgrade_checkpoint(
+        spawned_terminal_checkpoint_v1
+    )
     admitted = copy.deepcopy(operational_base)
     aggregate = admitted["root_record"]["aggregate_state"]
     root = next(r for r in aggregate["runtimes"] if r["relation"]["kind"] == "root")
@@ -2387,6 +2424,24 @@ def produce_checkpoint() -> dict[str, bytes]:
     tombstoned["revision"] = str(int(faulted_upgraded["revision"]) + 1)
     tombstoned = seal_checkpoint(tombstoned)
 
+    spawned_tombstoned = copy.deepcopy(spawned_terminal_checkpoint_v2)
+    spawned_terminal_aggregate = spawned_tombstoned["root_record"]["aggregate_state"]
+    spawned_terminal_root = root_runtime(spawned_terminal_aggregate)
+    spawned_tombstoned["root_record"] = {
+        "status": "tombstone",
+        "root_runtime_id": spawned_terminal_root["runtime_id"],
+        "creation_id": spawned_terminal_aggregate["creation_id"],
+        "terminal_status": spawned_terminal_root["status"],
+        "final_aggregate_state_digest": spawned_terminal_aggregate[
+            "aggregate_state_digest"
+        ],
+        "tombstone_operation_id": "checkpoint-v2-spawned-root-tombstone",
+    }
+    spawned_tombstoned["revision"] = str(
+        int(spawned_terminal_checkpoint_v2["revision"]) + 1
+    )
+    spawned_tombstoned = seal_checkpoint(spawned_tombstoned)
+
     invalid_acceptance_tombstone_overlap = copy.deepcopy(compact)
     overlapping_acceptance = copy.deepcopy(acceptance)
     overlapping_acceptance["receipt_sequence"] = compact["next_operation_receipt_sequence"]
@@ -2409,6 +2464,22 @@ def produce_checkpoint() -> dict[str, bytes]:
         "pruned_through_receipt_sequence"
     ] = "1"
     invalid_pruning_claim = seal_checkpoint(invalid_pruning_claim)
+
+    invalid_creation_identity = copy.deepcopy(tombstoned)
+    invalid_creation_identity["root_record"]["creation_id"] = (
+        "different-creation"
+    )
+    invalid_creation_identity = seal_checkpoint(invalid_creation_identity)
+
+    invalid_future_receipt_revision = copy.deepcopy(admitted)
+    next(
+        receipt
+        for receipt in invalid_future_receipt_revision["operation_receipts"]
+        if receipt["operation_kind"] == "acceptance"
+    )["accepted_revision"] = "999"
+    invalid_future_receipt_revision = seal_checkpoint(
+        invalid_future_receipt_revision
+    )
 
     invalid = copy.deepcopy(admitted)
     invalid_aggregate = invalid["root_record"]["aggregate_state"]
@@ -2630,6 +2701,33 @@ def produce_checkpoint() -> dict[str, bytes]:
         legacy_delivery(original_v1_inputs["accept_increment"]),
         legacy_delivery(original_v1_inputs["unhandled"]),
     ]
+    spawned_trace_inputs = load(
+        CHECKPOINT.parent
+        / "checkpoint-06-terminal-spawned-host-trace"
+        / "inputs.json"
+    )["requests"]
+    spawned_child_replay_delivery = legacy_delivery(
+        spawned_trace_inputs["process_child"]
+    )
+    spawned_root_replay_delivery = legacy_delivery(spawned_trace_inputs["start"])
+    spawned_mixed_replay_deliveries = [
+        spawned_root_replay_delivery,
+        spawned_child_replay_delivery,
+    ]
+    spawned_mixed_replay_result = {
+        "result": "batch",
+        "members": [
+            {
+                "event_id": delivery["envelope"]["event_id"],
+                "disposition": "replay",
+                "evidence": legacy_terminal_evidence(
+                    spawned_tombstoned, delivery
+                ),
+            }
+            for delivery in spawned_mixed_replay_deliveries
+        ],
+        "checkpoint": spawned_tombstoned,
+    }
     tombstone_batch_result = {
         "result": "batch",
         "members": [
@@ -2746,6 +2844,20 @@ def produce_checkpoint() -> dict[str, bytes]:
             },
             faulted_upgraded,
         ),
+        "tombstoned_spawned_child_replay": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [spawned_child_replay_delivery],
+            },
+            spawned_tombstoned,
+        ),
+        "tombstoned_mixed_runtime_batch_replay": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": spawned_mixed_replay_deliveries,
+            },
+            spawned_tombstoned,
+        ),
         "tombstone_equal_replay": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
             "delivery_mode": entry["delivery_mode"],
             "envelope": entry["envelope"],
@@ -2799,6 +2911,13 @@ def produce_checkpoint() -> dict[str, bytes]:
         "base-checkpoint.json": canonical(operational_base),
         "spawned-child-checkpoint-v1.json": canonical(spawned_checkpoint_v1),
         "spawned-child-checkpoint-v2.json": canonical(spawned_checkpoint_v2),
+        "spawned-terminal-checkpoint-v1.json": canonical(
+            spawned_terminal_checkpoint_v1
+        ),
+        "spawned-terminal-checkpoint-v2.json": canonical(
+            spawned_terminal_checkpoint_v2
+        ),
+        "spawned-tombstoned-checkpoint-v2.json": canonical(spawned_tombstoned),
         "upgraded-checkpoint-v2.json": canonical(upgraded),
         "upgraded-outbox-checkpoint-v2.json": canonical(upgraded_outbox),
         "admitted-checkpoint-v2.json": canonical(admitted),
@@ -2819,6 +2938,12 @@ def produce_checkpoint() -> dict[str, bytes]:
         ),
         "invalid-pruning-claim-checkpoint-v2.json": canonical(
             invalid_pruning_claim
+        ),
+        "invalid-creation-identity-checkpoint-v2.json": canonical(
+            invalid_creation_identity
+        ),
+        "invalid-future-receipt-revision-checkpoint-v2.json": canonical(
+            invalid_future_receipt_revision
         ),
         "operation-inputs.json": canonical(operations),
         "terminal-replay-result.json": canonical(
@@ -2842,6 +2967,14 @@ def produce_checkpoint() -> dict[str, bytes]:
             legacy_terminal_evidence(tombstoned, tombstone_replay_deliveries[0])
         ),
         "tombstoned-batch-replay-result.json": canonical(tombstone_batch_result),
+        "tombstoned-spawned-child-replay-result.json": canonical(
+            legacy_terminal_evidence(
+                spawned_tombstoned, spawned_child_replay_delivery
+            )
+        ),
+        "tombstoned-mixed-runtime-batch-replay-result.json": canonical(
+            spawned_mixed_replay_result
+        ),
         "tombstone-replay-result.json": canonical(
             {"result": "replay", "terminal_receipt_sequence": terminal_sequence, "terminal_disposition": "handled"}
         ),

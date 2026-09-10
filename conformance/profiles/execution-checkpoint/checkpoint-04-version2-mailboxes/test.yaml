@@ -4,12 +4,16 @@ static:
     - { file: machine.yaml, valid: true }
     - { file: deferral-machine.yaml, valid: true }
     - { file: spawn-machine.yaml, valid: true }
+    - { file: terminal-spawn-machine.yaml, valid: true }
 artifacts:
   documents:
     - { file: base-checkpoint.json, kind: execution_checkpoint_v2, valid: true }
     - { file: base-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: spawned-child-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: spawned-child-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-terminal-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
+    - { file: spawned-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-tombstoned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: base-outbox-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: upgraded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: upgraded-outbox-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
@@ -26,6 +30,8 @@ artifacts:
     - { file: invalid-acceptance-tombstone-overlap-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-tombstone-counter-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-pruning-claim-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-creation-identity-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-future-receipt-revision-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: operation-inputs.json, kind: version2_operation_inputs, valid: true }
     - { file: pending-replay-result.json, kind: version2_operation_result, valid: true }
     - { file: terminal-replay-result.json, kind: version2_operation_result, valid: true }
@@ -35,6 +41,8 @@ artifacts:
     - { file: compacted-legacy-replay-result.json, kind: version2_operation_result, valid: true }
     - { file: tombstoned-single-replay-result.json, kind: version2_operation_result, valid: true }
     - { file: tombstoned-batch-replay-result.json, kind: version2_operation_result, valid: true }
+    - { file: tombstoned-spawned-child-replay-result.json, kind: version2_operation_result, valid: true }
+    - { file: tombstoned-mixed-runtime-batch-replay-result.json, kind: version2_operation_result, valid: true }
     - { file: tombstone-replay-result.json, kind: version2_operation_result, valid: true }
 version2_vectors:
   - name: explicit_checkpoint_upgrade
@@ -57,6 +65,7 @@ version2_vectors:
   - name: checkpoint_atomic_admission
     covers: [receipt_acceptance_terminal_distinction]
     operation: checkpoint_admit_v2
+    bundle: machine.yaml
     checkpoint_before: base-checkpoint.json
     request_file: operation-inputs.json
     request_pointer: /admit
@@ -111,6 +120,7 @@ version2_vectors:
   - name: checkpoint_mixed_replay_new_batch
     covers: [mixed_replay_new_batch]
     operation: checkpoint_admit_v2
+    bundle: machine.yaml
     checkpoint_before: admitted-checkpoint-v2.json
     request_file: operation-inputs.json
     request_pointer: /mixed_replay_new_batch
@@ -143,6 +153,22 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /tombstoned_batch_replay
     expect: { result: success, exact_result_file: tombstoned-batch-replay-result.json }
+  - name: tombstoned_spawned_child_replay
+    covers: [tombstoned_spawned_child_replay]
+    operation: checkpoint_admit_v2
+    bundle: terminal-spawn-machine.yaml
+    checkpoint_before: spawned-tombstoned-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /tombstoned_spawned_child_replay
+    expect: { result: success, exact_result_file: tombstoned-spawned-child-replay-result.json }
+  - name: tombstoned_mixed_root_and_spawned_child_replay
+    covers: [tombstoned_mixed_runtime_batch_replay]
+    operation: checkpoint_admit_v2
+    bundle: terminal-spawn-machine.yaml
+    checkpoint_before: spawned-tombstoned-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /tombstoned_mixed_runtime_batch_replay
+    expect: { result: success, exact_result_file: tombstoned-mixed-runtime-batch-replay-result.json }
   - name: checkpoint_native_internal_processing
     covers: [native_internal_producer_reference]
     operation: checkpoint_step_v2
@@ -153,6 +179,7 @@ version2_vectors:
   - name: checkpoint_native_internal_admission
     covers: [native_internal_handler_admission]
     operation: checkpoint_admit_v2
+    bundle: machine.yaml
     checkpoint_before: terminal-checkpoint-v2.json
     request_file: operation-inputs.json
     request_pointer: /native_emit_admit

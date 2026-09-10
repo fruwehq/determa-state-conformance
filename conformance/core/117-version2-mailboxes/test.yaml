@@ -29,6 +29,8 @@ artifacts:
     - { file: repeated-deferral-result.json, kind: core_step_result_v2, valid: true }
     - { file: not-runnable-result.json, kind: core_step_result_v2, valid: true }
     - { file: invalid-target-result.json, kind: core_step_result_v2, valid: true }
+    - { file: completed-root-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: completed-root-step-result.json, kind: core_step_result_v2, valid: true }
     - { file: overflow-result.json, kind: core_step_result_v2, valid: true }
     - { file: lifecycle-before.json, kind: aggregate_state_v2, valid: true }
     - { file: retained-faulted-before.json, kind: aggregate_state_v2, valid: true }
@@ -81,6 +83,30 @@ version2_vectors:
     expect:
       result: failure
       code: duplicate_event_id_in_batch
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: undeclared_event_batch_is_atomic
+    covers: [invalid_event_batch_atomic_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /undeclared_event_batch
+    expect:
+      result: failure
+      code: invalid_event
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: wrong_payload_batch_is_atomic
+    covers: [invalid_payload_batch_atomic_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /wrong_payload_batch
+    expect:
+      result: failure
+      code: invalid_payload
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
   - name: pending_identity_replay
@@ -205,6 +231,14 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /invalid_runtime_step
     expect: { result: success, exact_result_file: invalid-target-result.json }
+  - name: completed_root_step_rejection
+    covers: [completed_root_step_rejection]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: completed-root-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /completed_root_step
+    expect: { result: success, exact_result_file: completed-root-step-result.json }
   - name: deterministic_deferral_overflow
     covers:
       - capacity_zero_and_overflow_fault

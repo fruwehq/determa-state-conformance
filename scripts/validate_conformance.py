@@ -126,6 +126,11 @@ REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
         "spawned_trace_creation",
         "spawned_trace_start",
         "spawned_trace_child_acceptance",
+        "terminal_spawn_trace_creation",
+        "terminal_spawn_trace_start",
+        "terminal_spawn_trace_child_acceptance",
+        "terminal_spawn_trace_child_processing",
+        "terminal_spawn_trace_completion_processing",
         "creation_replay",
         "creation_conflict",
         "creation_rejection_without_checkpoint",
@@ -258,6 +263,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "fresh_queue_sequence_on_recall",
         "completed_component_admission_rejection",
         "completed_component_step_rejection",
+        "completed_root_step_rejection",
         "disposed_component_admission_rejection",
         "disposed_component_step_rejection",
         "faulted_component_admission_rejection",
@@ -267,6 +273,8 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "internal_emission_retained_faulted_target",
         "internal_emission_rollback",
         "invalid_machine_runtime_target",
+        "invalid_event_batch_atomic_rejection",
+        "invalid_payload_batch_atomic_rejection",
         "lifecycle_aggregate_completion_disposal",
         "lifecycle_cancellation_disposal",
         "lifecycle_natural_completion_disposal",
@@ -298,6 +306,8 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "terminal_processing_receipt",
         "terminal_tombstone_replay",
         "tombstoned_root_batch_replay",
+        "tombstoned_spawned_child_replay",
+        "tombstoned_mixed_runtime_batch_replay",
         "tombstoned_root_single_replay",
         "upgrade_aggregate_v1_to_v2",
         "upgrade_checkpoint_v1_to_v2_legacy_evidence",
@@ -481,6 +491,11 @@ EXECUTION_CHECKPOINT_COVERAGE_RULES = {
     "spawned_trace_creation": ("create", "committed", None, "created", "create", None, "creation"),
     "spawned_trace_start": ("foreground_process_delivery", "committed", None, "changed", "dispatch", None, "foreground"),
     "spawned_trace_child_acceptance": ("accept_delivery", "pending", None, "changed", "none", None, "pending_acceptance"),
+    "terminal_spawn_trace_creation": ("create", "committed", None, "created", "create", None, "creation"),
+    "terminal_spawn_trace_start": ("foreground_process_delivery", "committed", None, "changed", "dispatch", None, "foreground"),
+    "terminal_spawn_trace_child_acceptance": ("accept_delivery", "pending", None, "changed", "none", None, "pending_acceptance"),
+    "terminal_spawn_trace_child_processing": ("process_pending_delivery", "committed", None, "changed", "dispatch", None, "input_processing"),
+    "terminal_spawn_trace_completion_processing": ("process_pending_delivery", "committed", None, "changed", "dispatch", None, "internal_processing"),
     "creation_replay": ("create", "committed", None, "unchanged", "none", None, "creation"),
     "creation_conflict": ("create", "failure", "creation_id_conflict", "unchanged", "none", None, "creation_conflict"),
     "creation_rejection_without_checkpoint": ("create", "failure", "creation_rejected", "absent", "create", None, "creation_rejection"),
@@ -1809,6 +1824,7 @@ def validate_core_step_v2_semantics(document: dict[str, Any]) -> None:
 
 
 def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None:
+    revision = canonical_decimal(document["revision"], "checkpoint v2 revision")
     root_record = document["root_record"]
     mailbox_entries: dict[str, dict[str, Any]] = {}
     mailbox_acceptance_sequences: set[str] = set()
@@ -1829,9 +1845,35 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
                     mailbox_acceptance_sequences.add(entry["acceptance_sequence"])
 
     receipts = document["operation_receipts"]
+    if not receipts or receipts[0]["receipt_sequence"] != "0":
+        raise ValidationFailure("checkpoint v2: creation receipt must remain first")
+    creation_wrapper = receipts[0]
+    if creation_wrapper["operation_kind"] == "legacy_v1_creation":
+        creation_receipt = creation_wrapper["legacy_receipt"]
+    elif creation_wrapper["operation_kind"] == "creation":
+        creation_receipt = creation_wrapper
+    else:
+        raise ValidationFailure("checkpoint v2: creation receipt must remain first")
+    checkpoint_creation_id = (
+        root_record["aggregate_state"]["creation_id"]
+        if root_record["status"] == "retained"
+        else root_record["creation_id"]
+    )
+    if creation_receipt["creation_id"] != checkpoint_creation_id:
+        raise ValidationFailure("checkpoint v2: creation identity mismatch")
     legacy_terminal_events: dict[str, dict[str, Any]] = {}
     legacy_terminal_acceptance_sequences: set[str] = set()
     for receipt in receipts:
+        receipt_revision = receipt.get("committed_revision")
+        if receipt_revision is not None and canonical_decimal(
+            receipt_revision, "checkpoint v2 receipt revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: receipt revision is in the future")
+        accepted_revision = receipt.get("accepted_revision")
+        if accepted_revision is not None and canonical_decimal(
+            accepted_revision, "checkpoint v2 accepted revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: accepted revision is in the future")
         validate_engine_fault_code(receipt.get("fault"), "checkpoint v2 receipt")
         outcome = receipt.get("outcome")
         if isinstance(outcome, dict):
@@ -1840,6 +1882,20 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
             )
         legacy_receipt = receipt.get("legacy_receipt")
         if isinstance(legacy_receipt, dict):
+            legacy_committed_revision = legacy_receipt.get("committed_revision")
+            if legacy_committed_revision is not None and canonical_decimal(
+                legacy_committed_revision, "checkpoint v2 legacy receipt revision"
+            ) > revision:
+                raise ValidationFailure(
+                    "checkpoint v2: legacy receipt revision is in the future"
+                )
+            legacy_accepted_revision = legacy_receipt.get("accepted_revision")
+            if legacy_accepted_revision is not None and canonical_decimal(
+                legacy_accepted_revision, "checkpoint v2 legacy accepted revision"
+            ) > revision:
+                raise ValidationFailure(
+                    "checkpoint v2: legacy accepted revision is in the future"
+                )
             validate_engine_fault_code(
                 legacy_receipt.get("fault"), "checkpoint v2 legacy receipt"
             )
@@ -1896,6 +1952,10 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
             item["intent"]["payload"],
             f"checkpoint v2 pending outbox intent {index} payload",
         )
+        if canonical_decimal(
+            item["state_revision"], "checkpoint v2 pending outbox revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: outbox revision is in the future")
     if (
         pending_intent_sequences != sorted(pending_intent_sequences)
         or len(pending_intent_sequences) != len(set(pending_intent_sequences))
@@ -1909,6 +1969,15 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
             item["intent"]["payload"],
             f"checkpoint v2 terminal outbox intent {index} payload",
         )
+        if canonical_decimal(
+            item["committed_revision"], "checkpoint v2 terminal outbox revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: outbox revision is in the future")
+    for item in document["outbox_effect_tombstones"]:
+        if canonical_decimal(
+            item["committed_revision"], "checkpoint v2 outbox tombstone revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: outbox revision is in the future")
     tombstone_outbox_sequences = require_sequence_order(
         document["outbox_effect_tombstones"], "terminal_sequence", "outbox tombstone sequence"
     )
@@ -2187,6 +2256,35 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
         case / "upgraded-outbox-checkpoint-v2.json"
     ).document
     probes: dict[str, dict[str, Any]] = {}
+    creation_mismatch = copy.deepcopy(admitted)
+    creation_mismatch["root_record"]["aggregate_state"]["creation_id"] = (
+        "different-creation"
+    )
+    probes["retained root creation identity mismatch"] = reseal(creation_mismatch)
+    tombstoned = analyze_artifact(case / "tombstoned-checkpoint-v2.json").document
+    tombstone_creation_mismatch = copy.deepcopy(tombstoned)
+    tombstone_creation_mismatch["root_record"]["creation_id"] = (
+        "different-creation"
+    )
+    probes["tombstone creation identity mismatch"] = reseal(
+        tombstone_creation_mismatch
+    )
+    future_native_revision = copy.deepcopy(admitted)
+    next(
+        receipt
+        for receipt in future_native_revision["operation_receipts"]
+        if receipt["operation_kind"] == "acceptance"
+    )["accepted_revision"] = "999"
+    probes["native receipt revision beyond checkpoint"] = reseal(
+        future_native_revision
+    )
+    future_legacy_revision = copy.deepcopy(upgraded)
+    future_legacy_revision["operation_receipts"][0]["legacy_receipt"][
+        "committed_revision"
+    ] = "999"
+    probes["legacy receipt revision beyond checkpoint"] = reseal(
+        future_legacy_revision
+    )
     orphan = copy.deepcopy(admitted)
     orphan["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"] = []
     probes["orphan acceptance"] = reseal(orphan)
@@ -2520,7 +2618,7 @@ def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) ->
             checkpoint = analyze_artifact(path).document
             if checkpoint["root_record"]["status"] == "retained":
                 retained_paths.add(path)
-    if len(retained_paths) != 32:
+    if len(retained_paths) != 38:
         raise ValidationFailure(
             "version-1 retained checkpoint upgrade probe set is incomplete"
         )
@@ -3524,6 +3622,109 @@ def validate_version2_vectors(
         if delivery["envelope_digest"] != expected:
             raise ValidationFailure(f"{location}: delivery envelope digest mismatch")
 
+    def delivery_contract_error(
+        delivery: dict[str, Any],
+        aggregate: dict[str, Any],
+        bundle_path: Path,
+    ) -> str | None:
+        envelope = delivery["envelope"]
+        runtime = next(
+            (
+                item
+                for item in aggregate["runtimes"]
+                if item["target_identity"] == envelope["target"]
+            ),
+            None,
+        )
+        if runtime is None:
+            return "invalid_instance_target"
+        if runtime["relation"]["kind"] == "component":
+            if runtime["status"] != "running":
+                return "inactive_component_target"
+            if delivery["delivery_mode"] == "input":
+                return "invalid_instance_target"
+        elif runtime["status"] != "running":
+            return "invalid_instance_target"
+
+        bundle = normalized_bundle_value(bundle_path)
+        machine_identity = runtime["current_definition"]["machine"]
+        machine = next(
+            (
+                item
+                for item in bundle["machines"]
+                if item["machine_id"] == machine_identity["machine_id"]
+                and str(item["version"]) == machine_identity["machine_version"]
+            ),
+            None,
+        )
+        if machine is None:
+            return "invalid_instance_target"
+        def value_matches_type(value: Any, expected_type: str) -> bool:
+            return {
+                "string": isinstance(value, str),
+                "int": isinstance(value, int) and not isinstance(value, bool),
+                "float": isinstance(value, (int, float))
+                and not isinstance(value, bool),
+                "bool": isinstance(value, bool),
+                "map": isinstance(value, dict),
+                "list": isinstance(value, list),
+            }[expected_type]
+
+        declaration = bundle.get("events", {}).get(envelope["event"])
+        if declaration is None:
+            declaration = machine.get("events", {}).get(envelope["event"])
+        if envelope["event"] == "env":
+            if "correlation_id" in envelope:
+                return "invalid_correlation"
+            payload = decode_typed_value(envelope["payload"])
+            changed = payload.get("changed") if isinstance(payload, dict) else None
+            external_variables = {
+                name: field
+                for name, field in machine["root"].get("variables", {}).items()
+                if field.get("external", False)
+            }
+            if (
+                not isinstance(changed, dict)
+                or not changed
+                or set(payload) != {"changed"}
+                or not set(changed) <= set(external_variables)
+                or any(
+                    not value_matches_type(value, external_variables[name]["type"])
+                    for name, value in changed.items()
+                )
+            ):
+                return "invalid_payload"
+            return None
+        if declaration is None:
+            return "invalid_event"
+        direction = declaration.get("direction", "internal")
+        required_direction = (
+            "input" if delivery["delivery_mode"] == "input" else "internal"
+        )
+        if direction != required_direction:
+            return "invalid_event"
+        if declaration.get("correlates_to") is not None and not isinstance(
+            envelope.get("correlation_id"), str
+        ):
+            return "invalid_correlation"
+
+        payload = decode_typed_value(envelope["payload"])
+        if not isinstance(payload, dict):
+            return "invalid_payload"
+        fields = declaration.get("payload", {})
+        if set(payload) - set(fields):
+            return "invalid_payload"
+        for name, field in fields.items():
+            if field.get("required", False) and name not in payload:
+                return "invalid_payload"
+            if name not in payload:
+                continue
+            value = payload[name]
+            expected_type = field["type"]
+            if not value_matches_type(value, expected_type):
+                return "invalid_payload"
+        return None
+
     def validate_embedded_checkpoint(
         checkpoint: dict[str, Any], location: str
     ) -> None:
@@ -3738,20 +3939,50 @@ def validate_version2_vectors(
                 delivery_identity = checkpoint_before["root_instance_id"]
             if delivery_identity is None:
                 raise ValidationFailure(f"{location}: delivery operation lacks a retained aggregate")
-            for delivery in selected["deliveries"]:
+            replay_evidence = (
+                [
+                    checkpoint_replay_result(checkpoint_before, delivery)
+                    for delivery in selected["deliveries"]
+                ]
+                if operation == "checkpoint_admit_v2"
+                else [
+                    next(
+                        (
+                            entry
+                            for runtime in prior_aggregate["runtimes"]
+                            for mailbox in (
+                                runtime["ready_mailbox"],
+                                runtime["deferred_mailbox"],
+                            )
+                            for entry in mailbox
+                            if entry["envelope"]["event_id"]
+                            == delivery["envelope"]["event_id"]
+                            and entry["envelope_digest"]
+                            == delivery["envelope_digest"]
+                        ),
+                        None,
+                    )
+                    for delivery in selected["deliveries"]
+                ]
+                if operation == "admit_v2"
+                else [None for _ in selected["deliveries"]]
+            )
+            for delivery, replay in zip(
+                selected["deliveries"], replay_evidence, strict=True
+            ):
                 validate_delivery(delivery, delivery_identity, location)
                 if (
-                    operation == "checkpoint_admit_v2"
-                    and checkpoint_before["root_record"]["status"] == "tombstone"
+                    replay is None
+                    and prior_aggregate is not None
+                    and "bundle" in vector
+                    and operation in {"admit_v2", "checkpoint_admit_v2"}
                 ):
-                    target = delivery["envelope"]["target"].get("root")
-                    tombstone = checkpoint_before["root_record"]
-                    if target != {
-                        "root_instance_id": checkpoint_before["root_instance_id"],
-                        "root_runtime_id": tombstone["root_runtime_id"],
-                    }:
+                    contract_error = delivery_contract_error(
+                        delivery, prior_aggregate, case / vector["bundle"]
+                    )
+                    if contract_error is not None and expectation.get("code") != contract_error:
                         raise ValidationFailure(
-                            f"{location}: tombstoned replay target identity mismatch"
+                            f"{location}: delivery contract requires {contract_error}"
                         )
             event_ids = [delivery["envelope"]["event_id"] for delivery in selected["deliveries"]]
             if len(event_ids) != len(set(event_ids)) and expectation.get("code") != "duplicate_event_id_in_batch":
@@ -3769,6 +4000,24 @@ def validate_version2_vectors(
                 result_document = artifact(expectation["exact_result_file"]).document if expectation.get("exact_result_file") else None
                 if result_document is None or result_document.get("rejection", {}).get("code") != "inactive_component_target":
                     raise ValidationFailure(f"{location}: inactive component step is not distinguished")
+            if (
+                runtime is not None
+                and runtime["relation"]["kind"] != "component"
+                and runtime["status"] in {"completed", "faulted"}
+            ):
+                result_document = (
+                    artifact(expectation["exact_result_file"]).document
+                    if expectation.get("exact_result_file")
+                    else None
+                )
+                if (
+                    result_document is None
+                    or result_document.get("rejection", {}).get("code")
+                    != "invalid_instance_target"
+                ):
+                    raise ValidationFailure(
+                        f"{location}: terminal machine runtime step is not distinguished"
+                    )
 
         if operation == "create_v2":
             bundle_path = case / selected["bundle"]["bundle_file"]
@@ -4165,8 +4414,18 @@ def validate_version2_vectors(
                 if prior_runtime is None:
                     if result_document["disposition"] != "rejected" or result_document["rejection"]["code"] != "invalid_instance_target" or canonical_json_bytes(result_state) != canonical_json_bytes(prior_aggregate):
                         raise ValidationFailure(f"{location}: fabricated runtime identity did not fail unchanged")
-                elif result_document["disposition"] == "rejected" and result_document["rejection"]["code"] == "invalid_instance_target":
-                    raise ValidationFailure(f"{location}: existing runtime was fabricated as invalid")
+                elif (
+                    result_document["disposition"] == "rejected"
+                    and result_document["rejection"]["code"]
+                    == "invalid_instance_target"
+                    and not (
+                        prior_runtime["relation"]["kind"] != "component"
+                        and prior_runtime["status"] in {"completed", "faulted"}
+                    )
+                ):
+                    raise ValidationFailure(
+                        f"{location}: existing runtime was fabricated as invalid"
+                    )
                 elif result_document["disposition"] == "rejected" and canonical_json_bytes(result_state) != canonical_json_bytes(prior_aggregate):
                     raise ValidationFailure(f"{location}: rejected target did not preserve exact state")
                 elif target_runtime(result_state, target_id) is None and not any(
@@ -4499,6 +4758,8 @@ def validate_version2_vectors(
                 if covers & {
                     "tombstoned_root_single_replay",
                     "tombstoned_root_batch_replay",
+                    "tombstoned_spawned_child_replay",
+                    "tombstoned_mixed_runtime_batch_replay",
                 } and (
                     checkpoint_before["root_record"]["status"] != "tombstone"
                     or not replay_evidence
@@ -4506,6 +4767,21 @@ def validate_version2_vectors(
                 ):
                     raise ValidationFailure(
                         f"{location}: tombstoned replay lacks retained exact evidence"
+                    )
+                if (
+                    "tombstoned_spawned_child_replay" in covers
+                    and set(deliveries[0]["envelope"]["target"])
+                    != {"spawned_instance"}
+                ):
+                    raise ValidationFailure(
+                        f"{location}: historical child replay lacks spawned target"
+                    )
+                if "tombstoned_mixed_runtime_batch_replay" in covers and {
+                    next(iter(delivery["envelope"]["target"]))
+                    for delivery in deliveries
+                } != {"root", "spawned_instance"}:
+                    raise ValidationFailure(
+                        f"{location}: mixed replay lacks root and spawned targets"
                     )
                 new_deliveries = [
                     delivery
@@ -5139,6 +5415,16 @@ def validate_version2_vectors(
         )
         probes["tombstoned batch embedded checkpoint digest"] = {
             "tombstoned-batch-replay-result.json": tombstoned_batch_digest
+        }
+        tombstoned_batch_creation = copy.deepcopy(tombstoned_batch_result)
+        embedded_checkpoint = tombstoned_batch_creation["checkpoint"]
+        embedded_checkpoint["root_record"]["creation_id"] = "different-creation"
+        embedded_checkpoint.pop("execution_checkpoint_digest")
+        embedded_checkpoint["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-2", embedded_checkpoint]
+        )
+        probes["tombstoned batch embedded creation identity"] = {
+            "tombstoned-batch-replay-result.json": tombstoned_batch_creation
         }
         for probe_name, overrides in probes.items():
             try:

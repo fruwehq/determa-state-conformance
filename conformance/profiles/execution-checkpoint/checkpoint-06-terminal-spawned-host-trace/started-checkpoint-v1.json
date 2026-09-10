@@ -1,0 +1,281 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "terminal-spawn-root",
+  "revision": "1",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:c3fd4cacc85cea19a65eb7e775e6d6b3350e4d91c33a89647a813094c0217af1",
+      "namespace": "conformance.terminal_spawn_trace",
+      "root_machine_id": "order",
+      "root_machine_version": "1",
+      "root_instance_id": "terminal-spawn-root",
+      "creation_id": "terminal-spawn-create",
+      "root_runtime_id": "sha256:57580ece21c4d234e3e444ab3bf0be4c8b8b450c398f1e3aa7dc32654041e2f6",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "2",
+      "next_output_sequence": "0",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:266172b43ca491bd0eba6a8beedfb404ef47ae1a338702981c3d1448a5852072",
+          "identity_origin": {
+            "kind": "owned_spawned_instance",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:c3fd4cacc85cea19a65eb7e775e6d6b3350e4d91c33a89647a813094c0217af1",
+              "machine": {
+                "namespace": "conformance.terminal_spawn_trace",
+                "machine_id": "payment",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/1/root"
+              }
+            },
+            "owner_runtime_id": "sha256:57580ece21c4d234e3e444ab3bf0be4c8b8b450c398f1e3aa7dc32654041e2f6",
+            "spawn_action_pointer": "/machines/0/root/states/idle/on_events/start/action/0/spawn",
+            "spawn_sequence": "0"
+          },
+          "target_identity": {
+            "spawned_instance": {
+              "root_instance_id": "terminal-spawn-root",
+              "instance_id": "sha256:266172b43ca491bd0eba6a8beedfb404ef47ae1a338702981c3d1448a5852072",
+              "machine_id": "payment",
+              "machine_version": "1"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:c3fd4cacc85cea19a65eb7e775e6d6b3350e4d91c33a89647a813094c0217af1",
+            "machine": {
+              "namespace": "conformance.terminal_spawn_trace",
+              "machine_id": "payment",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/1/root"
+            }
+          },
+          "relation": {
+            "kind": "owned_spawned_instance",
+            "owner_runtime_id": "sha256:57580ece21c4d234e3e444ab3bf0be4c8b8b450c398f1e3aa7dc32654041e2f6",
+            "current_spawn_action_pointer": "/machines/0/root/states/idle/on_events/start/action/0/spawn",
+            "spawn_sequence": "0",
+            "lifetime_holder": {
+              "holder_runtime_id": "sha256:57580ece21c4d234e3e444ab3bf0be4c8b8b450c398f1e3aa7dc32654041e2f6",
+              "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+              "holder_state_activation_sequence": "0"
+            }
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/1/root/states/awaiting"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/1/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/1/root/states/awaiting",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/1/root/variables/due",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "100"
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/1/root/variables/paid",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "0"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/1/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/1/root/states/awaiting",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null
+        },
+        {
+          "runtime_id": "sha256:57580ece21c4d234e3e444ab3bf0be4c8b8b450c398f1e3aa7dc32654041e2f6",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:c3fd4cacc85cea19a65eb7e775e6d6b3350e4d91c33a89647a813094c0217af1",
+              "machine": {
+                "namespace": "conformance.terminal_spawn_trace",
+                "machine_id": "order",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "terminal-spawn-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "terminal-spawn-root",
+              "root_runtime_id": "sha256:57580ece21c4d234e3e444ab3bf0be4c8b8b450c398f1e3aa7dc32654041e2f6"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:c3fd4cacc85cea19a65eb7e775e6d6b3350e4d91c33a89647a813094c0217af1",
+            "machine": {
+              "namespace": "conformance.terminal_spawn_trace",
+              "machine_id": "order",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root/states/checkout"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/0/root/states/checkout",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "map",
+                [
+                  [
+                    "instance_id",
+                    [
+                      "string",
+                      "sha256:266172b43ca491bd0eba6a8beedfb404ef47ae1a338702981c3d1448a5852072"
+                    ]
+                  ],
+                  [
+                    "machine_id",
+                    [
+                      "string",
+                      "payment"
+                    ]
+                  ],
+                  [
+                    "machine_version",
+                    [
+                      "integer",
+                      "1"
+                    ]
+                  ],
+                  [
+                    "root_instance_id",
+                    [
+                      "string",
+                      "terminal-spawn-root"
+                    ]
+                  ]
+                ]
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/total",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "100"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "1",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/checkout",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/idle",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null
+        }
+      ],
+      "aggregate_state_digest": "sha256:e800c9d9af696035796fb106eed8cb2bfd499855c29538bdb6ee41774a6ed6fa"
+    }
+  },
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "next_delivery_sequence": "1",
+  "pending_deliveries": [],
+  "next_operation_receipt_sequence": "2",
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "terminal-spawn-create",
+      "request_digest": "sha256:da717136f680c02b9c116955f93e9066053f96e3cf8b1a4a758acdc8e3bb4df8",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:5b7f6bf9547a83183a8af2a14ecffb74d813c4abc6bad8e78754561c90047ae0",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "delivery",
+      "receipt_sequence": "1",
+      "event_id": "terminal-spawn-start",
+      "request_digest": "sha256:8e2ae8bc8046d1ed1c41535da54f47b07aa7ea87a910c83107edd744d8f10007",
+      "accepted_delivery_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input",
+      "origin": {
+        "kind": "host_input"
+      },
+      "committed_revision": "1",
+      "resulting_aggregate_state_digest": "sha256:e800c9d9af696035796fb106eed8cb2bfd499855c29538bdb6ee41774a6ed6fa",
+      "outcome": {
+        "status": "running",
+        "disposition": "handled",
+        "fault": null,
+        "rejection": null
+      },
+      "emission_references": []
+    }
+  ],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:c88939873813269e0152a0ae1d47808a5984b7d6cc8945651603e753e5a3594a"
+}

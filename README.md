@@ -45,7 +45,7 @@ and 101 closed-code registry entries across 11 categories. The release metadata 
 change their behavior expectations or unresolved future scope.
 
 The unreleased issue-45 additions retain `VERSION` 0.2.0 while review is in progress:
-core case 04, cases 117–118, and checkpoint cases 04–05 add the version-2 contracts without
+core case 04, cases 117–118, and checkpoint cases 04–06 add the version-2 contracts without
 changing any released version-1 fixture.
 
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
