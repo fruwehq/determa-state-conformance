@@ -14,6 +14,8 @@ events:
     direction: input
   retry:
     direction: input
+  held_request:
+    direction: input
 
 machines:
   - machine_id: transaction_server
@@ -27,7 +29,7 @@ machines:
             new_request: { transition_to: busy.receiving }
         busy:
           type: composite
-          deferred_events: [new_request]
+          deferred_events: [new_request, retry, held_request]
           initial: { transition_to: busy.receiving }
           on_events:
             priority_request: { transition_to: idle }
@@ -36,7 +38,7 @@ machines:
               on_events:
                 received: { transition_to: busy.authorizing }
             authorizing:
-              deferred_events: [priority_request, retry]
+              deferred_events: [priority_request, held_request]
               on_events:
                 new_request: {}
                 retry: { guard: "false" }

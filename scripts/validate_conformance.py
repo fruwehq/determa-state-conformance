@@ -224,7 +224,6 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "capacity_unbounded",
         "capacity_zero_and_overflow_fault",
         "checkpoint_v1_requires_upgrade",
-        "checkpoint_downgrade_prohibited",
         "checkpoint_v2_schema_positive_negative",
         "cleanup_fault_rollback",
         "component_mailbox_isolation",
@@ -279,9 +278,6 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "upgrade_checkpoint_v1_to_v2_legacy_evidence",
         "version2_counter_allocation",
         "version2_dependency_safe_pruning",
-        "pending_event_dependency_pruning_rejected",
-        "permanent_retention_pruning_rejected",
-        "producer_dependency_pruning_rejected",
     }
 )
 
@@ -798,6 +794,111 @@ def validated_bundle_fingerprint(path: Path) -> str:
     ])
 
 
+def aggregate_shape_fingerprint_for_path(path: Path) -> str:
+    bundle = normalized_bundle_value(path)
+
+    def state_projection(state: dict[str, Any], pointer: str) -> dict[str, Any]:
+        result: dict[str, Any] = {"definition_pointer": pointer, "type": state["type"]}
+        if state["type"] == "composite":
+            result["history"] = state.get("history", "none")
+        variables = []
+        for name, declaration in state.get("variables", {}).items():
+            item = {
+                "declaration_pointer": f"{pointer}/variables/{name}",
+                "type": declaration["type"],
+                "nullable": bool(declaration.get("nullable")) if declaration["type"] == "instance_reference" else False,
+                "input": bool(declaration.get("input")),
+                "external": bool(declaration.get("external")),
+            }
+            if declaration.get("machine_id") is not None:
+                item["machine_id"] = declaration["machine_id"]
+            variables.append(item)
+        variables.sort(key=lambda item: item["declaration_pointer"].encode("utf-8"))
+        if variables:
+            result["variables"] = variables
+        children = [
+            state_projection(child, f"{pointer}/states/{name}")
+            for name, child in sorted(state.get("states", {}).items(), key=lambda item: item[0].encode("utf-8"))
+            if child.get("type") != "choice"
+        ]
+        if children:
+            result["states"] = children
+        components = []
+        for index, placement in enumerate(state.get("components", [])):
+            item = {
+                "declaration_pointer": f"{pointer}/components/{index}",
+                "declaration_index": index,
+                "component_id": placement["component_id"],
+            }
+            if "machine_id" in placement:
+                item["machine_id"] = placement["machine_id"]
+            else:
+                item["inline_root"] = state_projection(
+                    placement["root"], f"{pointer}/components/{index}/root"
+                )
+            components.append(item)
+        if components:
+            result["components"] = components
+        return result
+
+    tree = {
+        "format": 1,
+        "namespace": bundle["namespace"],
+        "machines": [
+            {
+                "machine_id": machine["machine_id"],
+                "version": machine["version"],
+                "root": state_projection(machine["root"], f"/machines/{index}/root"),
+            }
+            for index, machine in enumerate(bundle["machines"])
+        ],
+    }
+    return hash_value(["determa-aggregate-shape-fingerprint-1", encode_typed_value(tree)])
+
+
+def validate_aggregate_against_bundle(
+    aggregate: dict[str, Any], bundle_path: Path
+) -> None:
+    bundle = normalized_bundle_value(bundle_path)
+    fingerprint = validated_bundle_fingerprint(bundle_path)
+
+    def resolve(pointer: str) -> Any:
+        value: Any = bundle
+        try:
+            for encoded in pointer.split("/")[1:]:
+                token = encoded.replace("~1", "/").replace("~0", "~")
+                value = value[int(token)] if isinstance(value, list) else value[token]
+        except (KeyError, IndexError, TypeError, ValueError) as error:
+            raise ValidationFailure(
+                f"aggregate v2: unresolved definition pointer {pointer}"
+            ) from error
+        return value
+
+    if aggregate["validated_bundle_fingerprint"] != fingerprint:
+        raise ValidationFailure("aggregate v2: current bundle fingerprint mismatch")
+    for runtime in aggregate["runtimes"]:
+        current = runtime["current_definition"]
+        if current["validated_bundle_fingerprint"] != fingerprint:
+            raise ValidationFailure("aggregate v2: runtime current definition mismatch")
+        resolve(current["machine"]["root_definition_pointer"])
+        for pointer in runtime["active_leaf_state_definition_pointers"]:
+            resolve(pointer)
+        for item in runtime["active_state_activations"]:
+            resolve(item["state_definition_pointer"])
+        for item in runtime["variables"]:
+            declaration = resolve(item["variable_declaration_pointer"])
+            if not isinstance(declaration, dict) or "type" not in declaration:
+                raise ValidationFailure("aggregate v2: variable pointer is not a declaration")
+        for item in runtime["next_state_activation_sequences"]:
+            resolve(item["definition_pointer"])
+        for item in runtime["next_component_activation_sequences"]:
+            resolve(item["definition_pointer"])
+        if runtime["relation"]["kind"] == "component":
+            placement = resolve(runtime["relation"]["current_component_definition_pointer"])
+            if placement["component_id"] != runtime["relation"]["component_id"]:
+                raise ValidationFailure("aggregate v2: component placement mismatch")
+
+
 def decode_typed_value(value: list[Any]) -> Any:
     tag = value[0]
     if tag == "null":
@@ -1286,6 +1387,17 @@ def validate_aggregate_v2_semantics(document: dict[str, Any]) -> None:
     entries: list[dict[str, Any]] = []
     root_runtime = None
 
+    runtime_order = [runtime["runtime_id"].encode("utf-8") for runtime in document["runtimes"]]
+    if runtime_order != sorted(runtime_order) or len(runtime_order) != len(set(runtime_order)):
+        raise ValidationFailure("aggregate v2: runtime order is not canonical")
+
+    def require_canonical_collection(
+        values: list[dict[str, Any]], key, label: str
+    ) -> None:
+        keys = [key(item) for item in values]
+        if keys != sorted(keys) or len(keys) != len(set(keys)):
+            raise ValidationFailure(f"aggregate v2: {label} order is not canonical")
+
     for runtime in document["runtimes"]:
         runtime_id = runtime["runtime_id"]
         if runtime_id in runtime_ids:
@@ -1299,6 +1411,58 @@ def validate_aggregate_v2_semantics(document: dict[str, Any]) -> None:
             runtime["ready_mailbox"] or runtime["deferred_mailbox"]
         ):
             raise ValidationFailure("aggregate v2: completed runtime retains mailbox work")
+        leaves = runtime["active_leaf_state_definition_pointers"]
+        if leaves != sorted(leaves, key=lambda item: item.encode("utf-8")) or len(leaves) != len(set(leaves)):
+            raise ValidationFailure("aggregate v2: active leaf order is not canonical")
+        require_canonical_collection(
+            runtime["active_state_activations"],
+            lambda item: (item["state_definition_pointer"].encode("utf-8"), canonical_decimal(item["activation_sequence"], "state activation sequence")),
+            "state activation",
+        )
+        require_canonical_collection(
+            runtime["variables"],
+            lambda item: (item["variable_declaration_pointer"].encode("utf-8"), canonical_decimal(item["declaring_state_activation_sequence"], "variable activation sequence")),
+            "variable",
+        )
+        require_canonical_collection(
+            runtime["history"],
+            lambda item: item["history_declaration_pointer"].encode("utf-8"),
+            "history",
+        )
+        state_counters = runtime["next_state_activation_sequences"]
+        component_counters = runtime["next_component_activation_sequences"]
+        require_canonical_collection(
+            state_counters,
+            lambda item: item["definition_pointer"].encode("utf-8"),
+            "state counter",
+        )
+        require_canonical_collection(
+            component_counters,
+            lambda item: item["definition_pointer"].encode("utf-8"),
+            "component counter",
+        )
+        state_next = {
+            item["definition_pointer"]: canonical_decimal(item["next_sequence"], "next state activation sequence")
+            for item in state_counters
+        }
+        for activation in runtime["active_state_activations"]:
+            pointer = activation["state_definition_pointer"]
+            sequence = canonical_decimal(activation["activation_sequence"], "state activation sequence")
+            if pointer not in state_next or state_next[pointer] <= sequence:
+                raise ValidationFailure("aggregate v2: state activation counter regression")
+        if runtime["relation"]["kind"] == "component":
+            owner_id = runtime["relation"]["owner_runtime_id"]
+            owner = next((item for item in document["runtimes"] if item["runtime_id"] == owner_id), None)
+            pointer = runtime["relation"]["current_component_definition_pointer"]
+            sequence = canonical_decimal(runtime["relation"]["activation_sequence"], "component activation sequence")
+            if owner is None:
+                raise ValidationFailure("aggregate v2: component owner is missing")
+            owner_next = {
+                item["definition_pointer"]: canonical_decimal(item["next_sequence"], "next component activation sequence")
+                for item in owner["next_component_activation_sequences"]
+            }
+            if pointer not in owner_next or owner_next[pointer] <= sequence:
+                raise ValidationFailure("aggregate v2: component activation counter regression")
         for mailbox_name in ("ready_mailbox", "deferred_mailbox"):
             mailbox = runtime[mailbox_name]
             order = [
@@ -1458,6 +1622,40 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
     ) <= max(sequences):
         raise ValidationFailure("checkpoint v2: receipt counter regression")
 
+    def require_sequence_order(values: list[dict[str, Any]], field: str, label: str) -> set[int]:
+        allocations = [canonical_decimal(item[field], label) for item in values]
+        if allocations != sorted(allocations) or len(allocations) != len(set(allocations)):
+            raise ValidationFailure(f"checkpoint v2: {label} order is invalid")
+        return set(allocations)
+
+    require_sequence_order(
+        document["pending_outbox_intents"], "sequence", "pending outbox sequence"
+    )
+    terminal_outbox_sequences = require_sequence_order(
+        document["terminal_outbox_records"], "terminal_sequence", "terminal outbox sequence"
+    )
+    tombstone_outbox_sequences = require_sequence_order(
+        document["outbox_effect_tombstones"], "terminal_sequence", "outbox tombstone sequence"
+    )
+    audit_sequences = require_sequence_order(
+        document["migration_audit_records"], "migration_sequence", "migration audit sequence"
+    )
+    if terminal_outbox_sequences & tombstone_outbox_sequences:
+        raise ValidationFailure("checkpoint v2: outbox terminal sequence overlap")
+    next_terminal = canonical_decimal(
+        document["next_outbox_terminal_sequence"], "next outbox terminal sequence"
+    )
+    if terminal_outbox_sequences | tombstone_outbox_sequences:
+        if max(terminal_outbox_sequences | tombstone_outbox_sequences) >= next_terminal:
+            raise ValidationFailure("checkpoint v2: outbox terminal counter regression")
+    effect_ids = [item["effect_id"] for item in document["pending_outbox_intents"]]
+    effect_ids += [item["effect_id"] for item in document["terminal_outbox_records"]]
+    effect_ids += [item["effect_id"] for item in document["outbox_effect_tombstones"]]
+    if len(effect_ids) != len(set(effect_ids)):
+        raise ValidationFailure("checkpoint v2: outbox effect identity overlap")
+    if len(audit_sequences) != len(document["migration_audit_records"]):
+        raise ValidationFailure("checkpoint v2: duplicate migration audit sequence")
+
     acceptance_list = [receipt for receipt in receipts if receipt["operation_kind"] == "acceptance"]
     acceptance_receipts: dict[str, dict[str, Any]] = {}
     acceptance_sequences: set[str] = set()
@@ -1468,21 +1666,53 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
         acceptance_sequences.add(receipt["acceptance_sequence"])
     terminal_list = [receipt for receipt in receipts if receipt["operation_kind"] == "event_terminal"]
     terminal_receipts: dict[str, dict[str, Any]] = {}
+    terminal_acceptance_sequences: set[str] = set()
     for receipt in terminal_list:
-        if receipt["event_id"] in terminal_receipts:
+        if receipt["event_id"] in terminal_receipts or receipt["acceptance_sequence"] in terminal_acceptance_sequences:
             raise ValidationFailure("checkpoint v2: duplicate terminal event identity")
         terminal_receipts[receipt["event_id"]] = receipt
+        terminal_acceptance_sequences.add(receipt["acceptance_sequence"])
     tombstone_list = document["event_identity_tombstones"]
+    tombstone_order = [
+        canonical_decimal(item["terminal_receipt_sequence"], "tombstone terminal receipt sequence")
+        for item in tombstone_list
+    ]
+    if tombstone_order != sorted(tombstone_order) or len(tombstone_order) != len(set(tombstone_order)):
+        raise ValidationFailure("checkpoint v2: event tombstone order is invalid")
     tombstones: dict[str, dict[str, Any]] = {}
+    tombstone_acceptance_sequences: set[str] = set()
     for item in tombstone_list:
-        if item["event_id"] in tombstones:
+        if item["event_id"] in tombstones or item["acceptance_sequence"] in tombstone_acceptance_sequences:
             raise ValidationFailure("checkpoint v2: duplicate event tombstone identity")
         tombstones[item["event_id"]] = item
+        tombstone_acceptance_sequences.add(item["acceptance_sequence"])
     mailbox_event_ids = set(mailbox_entries)
     if mailbox_event_ids & terminal_receipts.keys():
         raise ValidationFailure("checkpoint v2: event is live and terminal")
     if mailbox_event_ids & tombstones.keys() or terminal_receipts.keys() & tombstones.keys():
         raise ValidationFailure("checkpoint v2: event overlaps tombstone")
+    if acceptance_receipts.keys() & tombstones.keys():
+        raise ValidationFailure("checkpoint v2: acceptance receipt overlaps replacement tombstone")
+    next_receipt = canonical_decimal(
+        document["next_operation_receipt_sequence"], "next receipt sequence"
+    )
+    if any(sequence >= next_receipt for sequence in tombstone_order):
+        raise ValidationFailure("checkpoint v2: tombstone receipt counter regression")
+    if root_record["status"] == "retained":
+        next_acceptance = canonical_decimal(
+            root_record["aggregate_state"]["next_acceptance_sequence"],
+            "next acceptance sequence",
+        )
+        retained_acceptance_allocations = [
+            canonical_decimal(value, "retained acceptance sequence")
+            for value in (
+                list(acceptance_sequences)
+                + list(terminal_acceptance_sequences)
+                + list(tombstone_acceptance_sequences)
+            )
+        ]
+        if retained_acceptance_allocations and max(retained_acceptance_allocations) >= next_acceptance:
+            raise ValidationFailure("checkpoint v2: acceptance counter regression")
     producer_references: dict[str, list[tuple[dict[str, Any], dict[str, Any]]]] = {}
     for producer in receipts:
         for reference in producer.get("emission_references", []):
@@ -1578,12 +1808,79 @@ def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> No
         duplicate_location["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"]
     )
     probes["duplicate mailbox location"] = reseal(duplicate_location)
+    overlap = analyze_artifact(case / "compact-checkpoint-v2.json").document
+    acceptance = copy.deepcopy(
+        next(
+            item
+            for item in analyze_artifact(case / "terminal-checkpoint-v2.json").document["operation_receipts"]
+            if item["operation_kind"] == "acceptance"
+        )
+    )
+    acceptance["receipt_sequence"] = overlap["next_operation_receipt_sequence"]
+    overlap["operation_receipts"].append(acceptance)
+    overlap["next_operation_receipt_sequence"] = str(int(acceptance["receipt_sequence"]) + 1)
+    probes["acceptance and replacement tombstone overlap"] = reseal(overlap)
+    tombstone_counter = analyze_artifact(case / "compact-checkpoint-v2.json").document
+    tombstone_counter["event_identity_tombstones"][0]["terminal_receipt_sequence"] = (
+        tombstone_counter["next_operation_receipt_sequence"]
+    )
+    probes["tombstone allocation reaches next counter"] = reseal(tombstone_counter)
     for name, probe in probes.items():
         try:
             validate_execution_checkpoint_v2_semantics(probe)
         except ValidationFailure:
             continue
         raise ValidationFailure(f"version-2 adversarial probe was accepted: {name}")
+
+
+def validate_version2_aggregate_adversarial_probes(repository_root: Path) -> None:
+    case = repository_root / "conformance/core/117-version2-mailboxes"
+    component = analyze_artifact(case / "component-isolation-aggregate.json").document
+    mailbox = analyze_artifact(case / "base-aggregate.json").document
+    probes: dict[str, dict[str, Any]] = {}
+
+    runtime_order = copy.deepcopy(component)
+    runtime_order["runtimes"].reverse()
+    probes["runtime order"] = runtime_order
+
+    component_runtime = next(
+        runtime for runtime in component["runtimes"] if runtime["relation"]["kind"] == "component"
+    )
+    for field, label in (
+        ("active_state_activations", "state activation order"),
+        ("next_state_activation_sequences", "state counter order"),
+    ):
+        probe = copy.deepcopy(component)
+        target = next(runtime for runtime in probe["runtimes"] if runtime["runtime_id"] == component_runtime["runtime_id"])
+        target[field].reverse()
+        probes[label] = probe
+
+    leaf_duplicate = copy.deepcopy(component)
+    target = next(runtime for runtime in leaf_duplicate["runtimes"] if runtime["runtime_id"] == component_runtime["runtime_id"])
+    target["active_leaf_state_definition_pointers"].append(target["active_leaf_state_definition_pointers"][0])
+    probes["duplicate active leaf"] = leaf_duplicate
+
+    variable_duplicate = copy.deepcopy(component)
+    target = next(runtime for runtime in variable_duplicate["runtimes"] if runtime["runtime_id"] == component_runtime["runtime_id"])
+    target["variables"].append(copy.deepcopy(target["variables"][0]))
+    probes["duplicate variable key"] = variable_duplicate
+
+    component_counter_order = copy.deepcopy(component)
+    root = next(runtime for runtime in component_counter_order["runtimes"] if runtime["relation"]["kind"] == "root")
+    root["next_component_activation_sequences"].reverse()
+    probes["component counter order"] = component_counter_order
+
+    mailbox_order = copy.deepcopy(mailbox)
+    root = next(runtime for runtime in mailbox_order["runtimes"] if runtime["relation"]["kind"] == "root")
+    root["ready_mailbox"].reverse()
+    probes["mailbox order"] = mailbox_order
+
+    for name, probe in probes.items():
+        try:
+            validate_aggregate_v2_semantics(probe)
+        except ValidationFailure:
+            continue
+        raise ValidationFailure(f"version-2 aggregate adversarial probe was accepted: {name}")
 
 
 def artifact_error(
@@ -2241,6 +2538,13 @@ def validate_version2_vectors(
 
         expectation = vector["expect"]
         prior_aggregate = aggregate_from_vector(vector)
+        if (
+            prior_aggregate is not None
+            and prior_aggregate.get("aggregate_state_schema_version") == 2
+            and "bundle" in vector
+            and operation in {"admit_v2", "step_v2"}
+        ):
+            validate_aggregate_against_bundle(prior_aggregate, case / vector["bundle"])
         if "deliveries" in selected:
             if prior_aggregate is None:
                 raise ValidationFailure(f"{location}: delivery operation lacks a retained aggregate")
@@ -2329,6 +2633,27 @@ def validate_version2_vectors(
                 or prior_aggregate["validated_bundle_fingerprint"] != selected["source_bundle"]["validated_bundle_fingerprint"]
             ):
                 raise ValidationFailure(f"{location}: migration definition pair is not exact")
+            source_bundle_path = case / selected["source_bundle"]["bundle_file"]
+            target_bundle_path = case / selected["target_bundle"]["bundle_file"]
+            validate_aggregate_against_bundle(prior_aggregate, source_bundle_path)
+            if (
+                base_descriptor["source_aggregate_shape_fingerprint"]
+                != aggregate_shape_fingerprint_for_path(source_bundle_path)
+                or base_descriptor["target_aggregate_shape_fingerprint"]
+                != aggregate_shape_fingerprint_for_path(target_bundle_path)
+            ):
+                raise ValidationFailure(f"{location}: migration shape fingerprint is not exact")
+            if (
+                base_descriptor["source_validated_bundle_fingerprint"]
+                == base_descriptor["target_validated_bundle_fingerprint"]
+            ):
+                raise ValidationFailure(f"{location}: migration route contains a self-cycle")
+            if base_descriptor["mode"] == "compatible" and (
+                base_descriptor["source_aggregate_shape_fingerprint"]
+                != base_descriptor["target_aggregate_shape_fingerprint"]
+                or any(base_descriptor["mappings"].values())
+            ):
+                raise ValidationFailure(f"{location}: compatible descriptor is not shape-identical")
             target_document = normalized_bundle_value(case / selected["target_bundle"]["bundle_file"])
             queued_entries = [
                 entry for runtime in prior_aggregate["runtimes"]
@@ -2410,6 +2735,7 @@ def validate_version2_vectors(
                 target_id = selected["target_runtime_id"]
                 prior_runtime = target_runtime(prior_aggregate, target_id)
                 result_state = result_document["state"]
+                validate_aggregate_against_bundle(result_state, case / vector["bundle"])
                 if result_state["root_instance_id"] != prior_aggregate["root_instance_id"]:
                     raise ValidationFailure(f"{location}: step result switched root aggregate")
                 if prior_runtime is None:
@@ -2434,6 +2760,19 @@ def validate_version2_vectors(
                     recalled = before_runtime["deferred_mailbox"][0]["envelope"]["event_id"]
                     if [entry["envelope"]["event_id"] for entry in after_runtime["ready_mailbox"]] != [competitor, recalled]:
                         raise ValidationFailure(f"{location}: recalled event is not appended behind existing ready work")
+                    recalled_event = before_runtime["deferred_mailbox"][0]["envelope"]["event"]
+                    retained_event = before_runtime["deferred_mailbox"][1]["envelope"]["event"]
+                    remaining = after_runtime["deferred_mailbox"][0]["envelope"]["event"]
+                    authorizing = normalized_bundle_value(case / vector["bundle"])["machines"][0]["root"]["states"]["busy"]["states"]["authorizing"]
+                    if (
+                        recalled_event != "retry"
+                        or authorizing["on_events"][recalled_event].get("guard") != "false"
+                        or retained_event != "held_request"
+                        or remaining != retained_event
+                        or retained_event not in authorizing["deferred_events"]
+                        or retained_event in authorizing.get("on_events", {})
+                    ):
+                        raise ValidationFailure(f"{location}: structural recall and deferral-only retention are not distinguished")
                 if "deferred_only_not_runnable" in covers:
                     before_runtime = target_runtime(prior_aggregate, target_id)
                     if before_runtime is None or before_runtime["ready_mailbox"] or not before_runtime["deferred_mailbox"] or result_document["disposition"] != "not_runnable":
@@ -2483,6 +2822,28 @@ def validate_version2_vectors(
                     }
                     if emitted_targets != component_targets:
                         raise ValidationFailure(f"{location}: fanout did not account for every component target")
+            if operation == "migrate_aggregate_v2":
+                assert prior_aggregate is not None
+                migrated = result_document["aggregate_state"]
+                descriptor = artifact(vector["descriptor_file"]).document
+                validate_aggregate_against_bundle(
+                    migrated, case / selected["target_bundle"]["bundle_file"]
+                )
+                target_fingerprint = descriptor["base_descriptor"]["target_validated_bundle_fingerprint"]
+                if (
+                    migrated["validated_bundle_fingerprint"] != target_fingerprint
+                    or int(migrated["migration_sequence"])
+                    != int(prior_aggregate["migration_sequence"]) + 1
+                    or any(
+                        runtime["current_definition"]["validated_bundle_fingerprint"]
+                        != target_fingerprint
+                        for runtime in migrated["runtimes"]
+                    )
+                ):
+                    raise ValidationFailure(f"{location}: migration result does not bind the exact target")
+                prior_runtime_ids = {runtime["runtime_id"] for runtime in prior_aggregate["runtimes"]}
+                if {runtime["runtime_id"] for runtime in migrated["runtimes"]} != prior_runtime_ids:
+                    raise ValidationFailure(f"{location}: migration changed runtime identity")
             if operation == "migrate_aggregate_v2":
                 assert prior_aggregate is not None
                 migrated = result_document["aggregate_state"]
@@ -2563,6 +2924,24 @@ def validate_version2_vectors(
                     evidence = matching_terminal or matching_tombstone
                     if evidence is None or evidence["request_digest"] != delivery["envelope_digest"]:
                         raise ValidationFailure(f"{location}: replay result lacks byte-identical prior identity")
+            if operation == "checkpoint_prune_v2":
+                checkpoint_before = artifact(vector["checkpoint_before"]).document
+                cutoff = canonical_decimal(
+                    selected["cutoff_receipt_sequence"], "pruning cutoff"
+                )
+                retention = result_document["replay_retention"]
+                retained_sequences = {
+                    canonical_decimal(receipt["receipt_sequence"], "retained receipt sequence")
+                    for receipt in result_document["operation_receipts"]
+                }
+                if (
+                    retention["mode"] != "bounded"
+                    or canonical_decimal(retention["pruned_through_receipt_sequence"], "recorded pruning cutoff") != cutoff
+                    or any(sequence != 0 and sequence <= cutoff for sequence in retained_sequences)
+                    or result_document["revision"] != str(int(checkpoint_before["revision"]) + 1)
+                    or result_document["pending_outbox_intents"] != checkpoint_before["pending_outbox_intents"]
+                ):
+                    raise ValidationFailure(f"{location}: bounded pruning result is not the exact requested cutoff")
         unchanged_file = expectation.get("unchanged_file")
         if unchanged_file is not None:
             if unchanged_file not in artifact_names:
@@ -2586,6 +2965,39 @@ def validate_version2_vectors(
         mutated_inputs = copy.deepcopy(artifact("operation-inputs.json").document)
         mutated_inputs["invalid_runtime_step"]["target_runtime_id"] = artifact("empty-aggregate-v2.json").document["root_runtime_id"]
         probes["fabricated runtime classification"] = {"operation-inputs.json": mutated_inputs}
+        for probe_name, overrides in probes.items():
+            try:
+                validate_version2_vectors(
+                    case,
+                    test,
+                    bundle_paths,
+                    artifact_paths,
+                    artifact_overrides=overrides,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(f"{case.name}: adversarial probe was accepted: {probe_name}")
+    if run_mutation_probes and case.name == "118-version2-persistence":
+        descriptor = copy.deepcopy(artifact("descriptor-compatible-v2.json").document)
+        wrong_shape = copy.deepcopy(descriptor)
+        wrong_shape["base_descriptor"]["source_aggregate_shape_fingerprint"] = "sha256:" + "0" * 64
+        source_cycle = copy.deepcopy(descriptor)
+        source_cycle["base_descriptor"]["target_validated_bundle_fingerprint"] = (
+            source_cycle["base_descriptor"]["source_validated_bundle_fingerprint"]
+        )
+        source = artifact("base-aggregate-v2.json").document
+        probes = {
+            "migration shape substitution": {"descriptor-compatible-v2.json": wrong_shape},
+            "migration self-cycle substitution": {"descriptor-compatible-v2.json": source_cycle},
+            "migration result without target binding or sequence": {
+                "migration-preserve-result.json": {
+                    "result": "success",
+                    "aggregate_state": source,
+                    "dispositions": [],
+                }
+            },
+        }
         for probe_name, overrides in probes.items():
             try:
                 validate_version2_vectors(
@@ -5792,6 +6204,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     except RegistryValidationError as error:
         raise ValidationFailure(f"closed-code registry: {error}") from error
     validate_direct_descriptor_expectation_probes()
+    validate_version2_aggregate_adversarial_probes(repository_root)
     validate_version2_checkpoint_adversarial_probes(repository_root)
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",

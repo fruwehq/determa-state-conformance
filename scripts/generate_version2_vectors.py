@@ -156,6 +156,68 @@ def bundle_fingerprint(path: Path) -> str:
     )
 
 
+def aggregate_shape_fingerprint_document(document: dict[str, Any]) -> str:
+    bundle = normalize_bundle_document(document)
+
+    def state_projection(state: dict[str, Any], pointer: str) -> dict[str, Any]:
+        result: dict[str, Any] = {"definition_pointer": pointer, "type": state["type"]}
+        if state["type"] == "composite":
+            result["history"] = state.get("history", "none")
+        variables = []
+        for name, declaration in state.get("variables", {}).items():
+            item = {
+                "declaration_pointer": f"{pointer}/variables/{name}",
+                "type": declaration["type"],
+                "nullable": bool(declaration.get("nullable")) if declaration["type"] == "instance_reference" else False,
+                "input": bool(declaration.get("input")),
+                "external": bool(declaration.get("external")),
+            }
+            if declaration.get("machine_id") is not None:
+                item["machine_id"] = declaration["machine_id"]
+            variables.append(item)
+        variables.sort(key=lambda item: item["declaration_pointer"].encode("utf-8"))
+        if variables:
+            result["variables"] = variables
+        children = [
+            state_projection(child, f"{pointer}/states/{name}")
+            for name, child in sorted(state.get("states", {}).items(), key=lambda item: item[0].encode("utf-8"))
+            if child.get("type") != "choice"
+        ]
+        if children:
+            result["states"] = children
+        components = []
+        for index, placement in enumerate(state.get("components", [])):
+            item = {
+                "declaration_pointer": f"{pointer}/components/{index}",
+                "declaration_index": index,
+                "component_id": placement["component_id"],
+            }
+            if "machine_id" in placement:
+                item["machine_id"] = placement["machine_id"]
+            else:
+                item["inline_root"] = state_projection(
+                    placement["root"], f"{pointer}/components/{index}/root"
+                )
+            components.append(item)
+        if components:
+            result["components"] = components
+        return result
+
+    tree = {
+        "format": 1,
+        "namespace": bundle["namespace"],
+        "machines": [
+            {
+                "machine_id": machine["machine_id"],
+                "version": machine["version"],
+                "root": state_projection(machine["root"], f"/machines/{index}/root"),
+            }
+            for index, machine in enumerate(bundle["machines"])
+        ],
+    }
+    return digest(["determa-aggregate-shape-fingerprint-1", typed_value(tree)])
+
+
 def bundle_binding(path: Path) -> dict[str, str]:
     return {
         "bundle_file": path.name,
@@ -288,6 +350,45 @@ def create_v2_root(bundle_path: Path, request: dict[str, Any]) -> dict[str, Any]
 
 
 def seal_aggregate(value: dict[str, Any]) -> dict[str, Any]:
+    value = copy.deepcopy(value)
+    for runtime in value.get("runtimes", []):
+        runtime["active_leaf_state_definition_pointers"] = sorted(
+            runtime["active_leaf_state_definition_pointers"], key=lambda item: item.encode("utf-8")
+        )
+        runtime["active_state_activations"] = sorted(
+            runtime["active_state_activations"],
+            key=lambda item: (
+                item["state_definition_pointer"].encode("utf-8"),
+                int(item["activation_sequence"]),
+            ),
+        )
+        runtime["variables"] = sorted(
+            runtime["variables"],
+            key=lambda item: (
+                item["variable_declaration_pointer"].encode("utf-8"),
+                int(item["declaring_state_activation_sequence"]),
+            ),
+        )
+        runtime["history"] = sorted(
+            runtime["history"], key=lambda item: item["history_declaration_pointer"].encode("utf-8")
+        )
+        for field in ("next_state_activation_sequences", "next_component_activation_sequences"):
+            runtime[field] = sorted(
+                runtime[field], key=lambda item: item["definition_pointer"].encode("utf-8")
+            )
+        for field in ("ready_mailbox", "deferred_mailbox"):
+            runtime[field] = sorted(runtime[field], key=lambda item: int(item["queue_sequence"]))
+    value["runtimes"] = sorted(
+        value.get("runtimes", []), key=lambda item: item["runtime_id"].encode("utf-8")
+    )
+    value.pop("aggregate_state_digest", None)
+    value["aggregate_state_digest"] = digest(
+        ["determa-aggregate-state-digest-2", value]
+    )
+    return value
+
+
+def reseal_aggregate_without_normalizing(value: dict[str, Any]) -> dict[str, Any]:
     value = copy.deepcopy(value)
     value.pop("aggregate_state_digest", None)
     value["aggregate_state_digest"] = digest(
@@ -475,10 +576,13 @@ def step_result(
     emissions: list[Any] | None = None,
     lifecycle_dispositions: list[Any] | None = None,
 ) -> dict[str, Any]:
+    root_runtime = next(
+        runtime for runtime in state["runtimes"] if runtime["relation"]["kind"] == "root"
+    )
     return {
         "core_step_result_format": "determa.core_step_result",
         "core_step_result_schema_version": 2,
-        "status": state["runtimes"][-1]["status"] if status is None else status,
+        "status": root_runtime["status"] if status is None else status,
         "disposition": disposition,
         "state": state,
         "emissions": [] if emissions is None else emissions,
@@ -511,6 +615,36 @@ def internal_disposed_emission(entry: dict[str, Any]) -> dict[str, Any]:
         "acceptance_sequence": entry["acceptance_sequence"],
         "lifecycle_disposition_index": "0",
     }
+
+
+def root_runtime(aggregate: dict[str, Any]) -> dict[str, Any]:
+    return next(
+        runtime
+        for runtime in aggregate["runtimes"]
+        if runtime["relation"]["kind"] == "root"
+    )
+
+
+def component_runtimes(aggregate: dict[str, Any]) -> list[dict[str, Any]]:
+    return sorted(
+        (
+            runtime
+            for runtime in aggregate["runtimes"]
+            if runtime["relation"]["kind"] == "component"
+        ),
+        key=lambda runtime: int(runtime["relation"]["declaration_index"]),
+    )
+
+
+def spawned_runtimes(aggregate: dict[str, Any]) -> list[dict[str, Any]]:
+    return sorted(
+        (
+            runtime
+            for runtime in aggregate["runtimes"]
+            if runtime["relation"]["kind"] == "owned_spawned_instance"
+        ),
+        key=lambda runtime: int(runtime["relation"]["spawn_sequence"]),
+    )
 
 
 def produce_mailbox() -> dict[str, bytes]:
@@ -562,27 +696,26 @@ def produce_mailbox() -> dict[str, bytes]:
         acceptance_sequence=1,
         queue_sequence=1,
     )
-    deferred_request = envelope_entry(
-        base,
-        base_root,
-        event="new_request",
-        event_id="request-2",
-        acceptance_sequence=2,
-        queue_sequence=2,
-        payload=["map", [["transaction_id", ["string", "transaction-2"]]]],
-        deferral_count=1,
-    )
     deferred_retry = envelope_entry(
         base,
         base_root,
         event="retry",
-        event_id="retry-stays-deferred",
+        event_id="retry-guarded-recall",
+        acceptance_sequence=2,
+        queue_sequence=2,
+        deferral_count=1,
+    )
+    deferred_held = envelope_entry(
+        base,
+        base_root,
+        event="held_request",
+        event_id="held-stays-deferred",
         acceptance_sequence=3,
         queue_sequence=3,
         deferral_count=1,
     )
     base_root["ready_mailbox"] = [received, authorized]
-    base_root["deferred_mailbox"] = [deferred_request, deferred_retry]
+    base_root["deferred_mailbox"] = [deferred_retry, deferred_held]
     base["next_acceptance_sequence"] = "4"
     base["next_queue_sequence"] = "4"
     base = seal_aggregate(base)
@@ -662,6 +795,7 @@ def produce_mailbox() -> dict[str, bytes]:
     component = rebind_component_aggregate(
         component, MAILBOX / "component-machine.yaml"
     )
+    component_root = root_runtime(component)
     for index, runtime in enumerate(component["runtimes"]):
         runtime["ready_mailbox"] = [
             envelope_entry(
@@ -675,7 +809,7 @@ def produce_mailbox() -> dict[str, bytes]:
                     "internal" if runtime["relation"]["kind"] == "component" else "input"
                 ),
                 source=(
-                    {"runtime": copy.deepcopy(component["runtimes"][-1]["target_identity"])}
+                    {"runtime": copy.deepcopy(component_root["target_identity"])}
                     if runtime["relation"]["kind"] == "component"
                     else {"host": True}
                 ),
@@ -685,8 +819,13 @@ def produce_mailbox() -> dict[str, bytes]:
     component["next_queue_sequence"] = "3"
     component = seal_aggregate(component)
     outputs["component-isolation-aggregate.json"] = component
+    invalid_runtime_order = copy.deepcopy(component)
+    invalid_runtime_order["runtimes"].reverse()
+    outputs["invalid-canonical-order-aggregate-v2.json"] = (
+        reseal_aggregate_without_normalizing(invalid_runtime_order)
+    )
     component_after = copy.deepcopy(component)
-    left = component_after["runtimes"][0]
+    left = component_runtimes(component_after)[0]
     left["ready_mailbox"].pop(0)
     left["variables"][0]["value"] = ["list", [["string", "left"]]]
     component_after["next_logical_step_sequence"] = str(
@@ -698,7 +837,7 @@ def produce_mailbox() -> dict[str, bytes]:
     )
 
     completed_component = copy.deepcopy(component)
-    completed_target = completed_component["runtimes"][0]
+    completed_target = component_runtimes(completed_component)[0]
     completed_target["status"] = "completed"
     completed_target["active_leaf_state_definition_pointers"] = []
     completed_target["active_state_activations"] = []
@@ -712,7 +851,7 @@ def produce_mailbox() -> dict[str, bytes]:
     )
 
     faulted_component = copy.deepcopy(component)
-    faulted_target = faulted_component["runtimes"][0]
+    faulted_target = component_runtimes(faulted_component)[0]
     faulted_target["ready_mailbox"] = []
     faulted_target["deferred_mailbox"] = []
     faulted_target["status"] = "faulted"
@@ -722,7 +861,7 @@ def produce_mailbox() -> dict[str, bytes]:
         "cause_id": "retained-fault-cause",
         "code": "action_evaluation_failed",
         "step_sequence": faulted_component["next_logical_step_sequence"],
-        "source_locator": "/machines/0/root/states/processing/components/0/root/entry/0",
+        "source_locator": "/machines/0/root/states/processing/components/0/root/states/running/on_events/component_work/action/0/assign/trace",
     }
     faulted_component = seal_aggregate(faulted_component)
     outputs["faulted-component-aggregate.json"] = faulted_component
@@ -731,8 +870,11 @@ def produce_mailbox() -> dict[str, bytes]:
     )
 
     disposed_component = copy.deepcopy(component)
-    disposed_target_id = disposed_component["runtimes"][0]["runtime_id"]
-    disposed_component["runtimes"].pop(0)
+    disposed_target = component_runtimes(disposed_component)[0]
+    disposed_target_id = disposed_target["runtime_id"]
+    disposed_component["runtimes"] = [
+        runtime for runtime in disposed_component["runtimes"] if runtime["runtime_id"] != disposed_target_id
+    ]
     disposed_component = seal_aggregate(disposed_component)
     outputs["disposed-component-aggregate.json"] = disposed_component
     outputs["disposed-component-step-result.json"] = step_result(
@@ -765,7 +907,7 @@ def produce_mailbox() -> dict[str, bytes]:
     spawned = seal_aggregate(spawned)
     outputs["spawn-isolation-aggregate.json"] = spawned
     spawned_after = copy.deepcopy(spawned)
-    spawned_after["runtimes"][0]["ready_mailbox"].pop(0)
+    spawned_runtimes(spawned_after)[0]["ready_mailbox"].pop(0)
     spawned_after["next_logical_step_sequence"] = str(
         int(spawned_after["next_logical_step_sequence"]) + 1
     )
@@ -809,14 +951,14 @@ def produce_mailbox() -> dict[str, bytes]:
     )
 
     lifecycle_before = copy.deepcopy(component)
-    for runtime in lifecycle_before["runtimes"][:-1]:
+    for runtime in component_runtimes(lifecycle_before):
         runtime["ready_mailbox"] = []
         runtime["deferred_mailbox"] = []
     lifecycle_before = seal_aggregate(lifecycle_before)
     outputs["lifecycle-before.json"] = lifecycle_before
 
-    source_runtime = lifecycle_before["runtimes"][-1]
-    target_runtimes = lifecycle_before["runtimes"][:2]
+    source_runtime = root_runtime(lifecycle_before)
+    target_runtimes = component_runtimes(lifecycle_before)
     source_entry = source_runtime["ready_mailbox"][0]
     emitted_entries = []
     mailbox_emissions = []
@@ -855,9 +997,9 @@ def produce_mailbox() -> dict[str, bytes]:
             }
         )
     active = copy.deepcopy(lifecycle_before)
-    active["runtimes"][-1]["ready_mailbox"] = []
+    root_runtime(active)["ready_mailbox"] = []
     for runtime, emitted_entry in zip(
-        active["runtimes"][:2], emitted_entries, strict=True
+        component_runtimes(active), emitted_entries, strict=True
     ):
         runtime["ready_mailbox"] = [emitted_entry]
     active["next_acceptance_sequence"] = str(
@@ -876,7 +1018,7 @@ def produce_mailbox() -> dict[str, bytes]:
 
     def root_event_before(event: str, event_id: str) -> dict[str, Any]:
         before = copy.deepcopy(lifecycle_before)
-        before_root = before["runtimes"][-1]
+        before_root = root_runtime(before)
         entry = before_root["ready_mailbox"][0]
         entry["envelope"]["event"] = event
         entry["envelope"]["event_id"] = event_id
@@ -893,8 +1035,8 @@ def produce_mailbox() -> dict[str, bytes]:
         return seal_aggregate(before)
 
     retained_before = root_event_before("enter_faulty", "enter-faulty-1")
-    retained_root = retained_before["runtimes"][-1]
-    retained_source = retained_root["ready_mailbox"][0]
+    retained_root = root_runtime(retained_before)
+    retained_source = retained_root["ready_mailbox"].pop(0)
     faulty_pointer = "/machines/0/root/states/faulty_processing/components/0"
     faulty_runtime_id = digest(
         [
@@ -961,37 +1103,25 @@ def produce_mailbox() -> dict[str, bytes]:
         "declaration_index": "0",
         "activation_sequence": "0",
     }
-    initialization_cause = digest(
-        [
-            "determa-cause-identity-1",
-            "1",
-            "component_initialization",
-            retained_before["root_instance_id"],
-            retained_root["runtime_id"],
-            faulty_runtime_id,
-            retained_source["envelope"]["cause_id"],
-            retained_before["next_logical_step_sequence"],
-            faulty_pointer,
-            "0",
-        ]
-    )
-    faulty_fault = {
-        "definition_fingerprint": retained_before["validated_bundle_fingerprint"],
-        "runtime_id": faulty_runtime_id,
-        "cause_id": initialization_cause,
-        "code": "action_evaluation_failed",
-        "step_sequence": retained_before["next_logical_step_sequence"],
-        "source_locator": f"{faulty_pointer}/root/entry/0/assign/count",
-    }
-    faulty_template["status"] = "faulted"
-    faulty_template["active_leaf_state_definition_pointers"] = []
-    faulty_template["active_state_activations"] = []
-    faulty_template["variables"] = []
+    faulty_template["status"] = "running"
+    faulty_template["active_leaf_state_definition_pointers"] = [f"{faulty_pointer}/root"]
+    faulty_template["active_state_activations"] = [
+        {"state_definition_pointer": f"{faulty_pointer}/root", "activation_sequence": "0"}
+    ]
+    faulty_template["variables"] = [
+        {
+            "variable_declaration_pointer": f"{faulty_pointer}/root/variables/count",
+            "declaring_state_activation_sequence": "0",
+            "value": ["integer", "0"],
+        }
+    ]
     faulty_template["history"] = []
     faulty_template["next_spawn_sequence"] = "0"
-    faulty_template["next_state_activation_sequences"] = []
+    faulty_template["next_state_activation_sequences"] = [
+        {"definition_pointer": f"{faulty_pointer}/root", "next_sequence": "1"}
+    ]
     faulty_template["next_component_activation_sequences"] = []
-    faulty_template["fault"] = faulty_fault
+    faulty_template["fault"] = None
     pending_entry = envelope_entry(
         retained_before,
         faulty_template,
@@ -1004,44 +1134,62 @@ def produce_mailbox() -> dict[str, bytes]:
     )
     faulty_template["ready_mailbox"] = [pending_entry]
     faulty_template["deferred_mailbox"] = []
-    pending_faulty = copy.deepcopy(faulty_template)
-    pending_faulty["status"] = "running"
-    pending_faulty["fault"] = None
     observer_pointer = "/machines/0/root/states/faulty_processing/components/1"
     observer_runtime_id = digest([
         "determa-component-runtime-identity-1", "1", retained_before["root_instance_id"],
         retained_root["runtime_id"], observer_pointer, "0", retained_before["namespace"],
         retained_before["root_machine_id"], retained_before["root_machine_version"],
     ])
-    observer = copy.deepcopy(pending_faulty)
+    observer = copy.deepcopy(faulty_template)
     observer_text = json.dumps(observer).replace(faulty_runtime_id, observer_runtime_id).replace(faulty_pointer, observer_pointer)
     observer = json.loads(observer_text)
     observer["identity_origin"]["declaration_index"] = "1"
     observer["relation"]["declaration_index"] = "1"
     observer["relation"]["component_id"] = "observer"
     observer["target_identity"]["component"]["component_id"] = "observer"
+    observer["active_leaf_state_definition_pointers"] = [f"{observer_pointer}/root"]
+    observer["active_state_activations"] = [
+        {"state_definition_pointer": f"{observer_pointer}/root", "activation_sequence": "0"}
+    ]
+    observer["variables"] = []
+    observer["next_state_activation_sequences"] = [
+        {"definition_pointer": f"{observer_pointer}/root", "next_sequence": "1"}
+    ]
     observer["ready_mailbox"] = []
-    pending_root = copy.deepcopy(retained_root)
-    pending_root["ready_mailbox"] = []
-    pending_root["active_leaf_state_definition_pointers"] = ["/machines/0/root/states/faulty_processing"]
-    pending_root["active_state_activations"] = [
+    retained_root["active_leaf_state_definition_pointers"] = ["/machines/0/root/states/faulty_processing"]
+    retained_root["active_state_activations"] = [
         {"state_definition_pointer": "/machines/0/root", "activation_sequence": "0"},
         {"state_definition_pointer": "/machines/0/root/states/faulty_processing", "activation_sequence": "0"},
     ]
-    pending_root["next_state_activation_sequences"].append(
+    retained_root["next_state_activation_sequences"].append(
         {"definition_pointer": "/machines/0/root/states/faulty_processing", "next_sequence": "1"}
     )
-    pending_root["next_component_activation_sequences"].extend([
+    retained_root["next_component_activation_sequences"].extend([
         {"definition_pointer": faulty_pointer, "next_sequence": "1"},
         {"definition_pointer": observer_pointer, "next_sequence": "1"},
     ])
-    retained_before["runtimes"] = [pending_faulty, observer, pending_root]
+    retained_before["runtimes"] = [faulty_template, observer, retained_root]
     retained_before["next_acceptance_sequence"] = str(int(retained_before["next_acceptance_sequence"]) + 1)
     retained_before["next_queue_sequence"] = str(int(retained_before["next_queue_sequence"]) + 1)
     retained_before["next_logical_step_sequence"] = str(int(retained_before["next_logical_step_sequence"]) + 1)
     retained_before = seal_aggregate(retained_before)
     outputs["retained-faulted-before.json"] = retained_before
-    faulty_template["fault"]["step_sequence"] = retained_before["next_logical_step_sequence"]
+    retained_faulted = copy.deepcopy(retained_before)
+    faulted_runtime = next(
+        runtime for runtime in component_runtimes(retained_faulted)
+        if runtime["relation"]["component_id"] == "faulty"
+    )
+    faulted_cause = faulted_runtime["ready_mailbox"].pop(0)
+    faulty_fault = {
+        "definition_fingerprint": retained_faulted["validated_bundle_fingerprint"],
+        "runtime_id": faulty_runtime_id,
+        "cause_id": faulted_cause["envelope"]["cause_id"],
+        "code": "action_evaluation_failed",
+        "step_sequence": retained_faulted["next_logical_step_sequence"],
+        "source_locator": f"{faulty_pointer}/root/on_events/component_work/action/0/assign/count",
+    }
+    faulted_runtime["status"] = "faulted"
+    faulted_runtime["fault"] = faulty_fault
     failure_event_id = digest(
         [
             "determa-event-identity-1",
@@ -1049,52 +1197,37 @@ def produce_mailbox() -> dict[str, bytes]:
             retained_before["root_instance_id"],
             faulty_runtime_id,
             retained_root["runtime_id"],
-            initialization_cause,
+            faulted_cause["envelope"]["cause_id"],
             retained_before["next_logical_step_sequence"],
             "system:component_failure",
             "0",
         ]
     )
     failure_entry = envelope_entry(
-        retained_before,
-        retained_root,
+        retained_faulted,
+        root_runtime(retained_faulted),
         event="determa.component_failed",
         event_id=failure_event_id,
         acceptance_sequence=int(retained_before["next_acceptance_sequence"]),
         queue_sequence=int(retained_before["next_queue_sequence"]),
         delivery_mode="internal",
-        source={"runtime": copy.deepcopy(faulty_target)},
+        source={"runtime": copy.deepcopy(faulted_runtime["target_identity"])},
         payload=typed_value(
             {
                 "component_id": "faulty",
                 "component_runtime_id": faulty_runtime_id,
                 "fault": {
                     "runtime_id": faulty_runtime_id,
-                    "cause_id": initialization_cause,
+                    "cause_id": faulted_cause["envelope"]["cause_id"],
                     "code": "action_evaluation_failed",
-                    "step_sequence": faulty_template["fault"]["step_sequence"],
+                    "step_sequence": faulty_fault["step_sequence"],
                     "source_locator": faulty_fault["source_locator"],
                 },
             }
         ),
     )
-    retained_faulted = copy.deepcopy(retained_before)
-    retained_result_root = retained_faulted["runtimes"][-1]
+    retained_result_root = root_runtime(retained_faulted)
     retained_result_root["ready_mailbox"] = [failure_entry]
-    retained_result_root["active_leaf_state_definition_pointers"] = [
-        "/machines/0/root/states/faulty_processing"
-    ]
-    retained_result_root["active_state_activations"] = [
-        {"state_definition_pointer": "/machines/0/root", "activation_sequence": "0"},
-        {"state_definition_pointer": "/machines/0/root/states/faulty_processing", "activation_sequence": "0"},
-    ]
-    retained_result_root["next_state_activation_sequences"].append(
-        {"definition_pointer": "/machines/0/root/states/faulty_processing", "next_sequence": "1"}
-    )
-    retained_result_root["next_component_activation_sequences"].append(
-        {"definition_pointer": faulty_pointer, "next_sequence": "1"}
-    )
-    retained_faulted["runtimes"] = [faulty_template, observer, retained_result_root]
     retained_faulted["next_acceptance_sequence"] = str(
         int(retained_faulted["next_acceptance_sequence"]) + 1
     )
@@ -1108,7 +1241,7 @@ def produce_mailbox() -> dict[str, bytes]:
     outputs["internal-emission-retained-faulted-result.json"] = step_result(
         retained_faulted,
         "faulted",
-        fault=faulty_template["fault"],
+        fault=faulty_fault,
         emissions=[
             {
                 "kind": "internal_mailbox",
@@ -1119,13 +1252,18 @@ def produce_mailbox() -> dict[str, bytes]:
             },
         ],
     )
+    faulted_component = copy.deepcopy(retained_faulted)
+    outputs["faulted-component-aggregate.json"] = faulted_component
+    outputs["faulted-component-step-result.json"] = step_result(
+        faulted_component, "rejected", rejection="inactive_component_target"
+    )
 
     cancellation_before = root_event_before(
         "cancel_after_send", "cancel-after-send-1"
     )
     outputs["cancellation-before.json"] = cancellation_before
-    cancellation_root = cancellation_before["runtimes"][-1]
-    cancellation_target = cancellation_before["runtimes"][0]
+    cancellation_root = root_runtime(cancellation_before)
+    cancellation_target = component_runtimes(cancellation_before)[0]
     cancellation_source = cancellation_root["ready_mailbox"][0]
     cancellation_event_id = digest(
         [
@@ -1144,7 +1282,7 @@ def produce_mailbox() -> dict[str, bytes]:
         source={"runtime": copy.deepcopy(cancellation_root["target_identity"])},
     )
     cancelled = copy.deepcopy(cancellation_before)
-    cancelled_root = cancelled["runtimes"][-1]
+    cancelled_root = root_runtime(cancelled)
     cancelled_root["ready_mailbox"] = []
     cancelled_root["status"] = "completed"
     cancelled_root["active_leaf_state_definition_pointers"] = []
@@ -1165,8 +1303,8 @@ def produce_mailbox() -> dict[str, bytes]:
     )
 
     natural_before = copy.deepcopy(lifecycle_before)
-    natural_root = natural_before["runtimes"][-1]
-    natural_target = natural_before["runtimes"][0]
+    natural_root = root_runtime(natural_before)
+    natural_target = component_runtimes(natural_before)[0]
     natural_root["ready_mailbox"] = []
     natural_cause = envelope_entry(
         natural_before, natural_target, event="component_finish",
@@ -1202,13 +1340,16 @@ def produce_mailbox() -> dict[str, bytes]:
         payload=typed_value({"component_id": "left", "component_runtime_id": natural_target["runtime_id"]}),
     )
     naturally_completed = copy.deepcopy(natural_before)
-    completed_target = naturally_completed["runtimes"][0]
+    completed_target = next(
+        runtime for runtime in component_runtimes(naturally_completed)
+        if runtime["runtime_id"] == natural_target["runtime_id"]
+    )
     completed_target["status"] = "completed"
     completed_target["active_leaf_state_definition_pointers"] = []
     completed_target["active_state_activations"] = []
     completed_target["variables"] = []
     completed_target["ready_mailbox"] = []
-    naturally_completed["runtimes"][-1]["ready_mailbox"] = [completion_entry]
+    root_runtime(naturally_completed)["ready_mailbox"] = [completion_entry]
     naturally_completed["next_acceptance_sequence"] = "5"
     naturally_completed["next_queue_sequence"] = "5"
     naturally_completed["next_logical_step_sequence"] = str(int(naturally_completed["next_logical_step_sequence"]) + 1)
@@ -1223,10 +1364,15 @@ def produce_mailbox() -> dict[str, bytes]:
         ],
         lifecycle_dispositions=[natural_disposition],
     )
+    completed_component = copy.deepcopy(naturally_completed)
+    outputs["completed-component-aggregate.json"] = completed_component
+    outputs["completed-component-step-result.json"] = step_result(
+        completed_component, "rejected", rejection="inactive_component_target"
+    )
     reserved_before = copy.deepcopy(naturally_completed)
     outputs["reserved-event-before.json"] = reserved_before
     reserved_after = copy.deepcopy(reserved_before)
-    reserved_after["runtimes"][-1]["ready_mailbox"].pop(0)
+    root_runtime(reserved_after)["ready_mailbox"].pop(0)
     reserved_after["next_logical_step_sequence"] = str(
         int(reserved_after["next_logical_step_sequence"]) + 1
     )
@@ -1237,7 +1383,7 @@ def produce_mailbox() -> dict[str, bytes]:
 
     aggregate_before = root_event_before("aggregate_finish", "aggregate-finish-1")
     outputs["aggregate-completion-before.json"] = aggregate_before
-    aggregate_root = aggregate_before["runtimes"][-1]
+    aggregate_root = root_runtime(aggregate_before)
     aggregate_cause = aggregate_root["ready_mailbox"][0]
     aggregate_event_id = digest(
         ["determa-event-identity-1", "1", aggregate_before["root_instance_id"],
@@ -1251,7 +1397,7 @@ def produce_mailbox() -> dict[str, bytes]:
         source={"runtime": copy.deepcopy(aggregate_root["target_identity"])},
     )
     aggregate_completed = copy.deepcopy(aggregate_before)
-    result_root = aggregate_completed["runtimes"][-1]
+    result_root = root_runtime(aggregate_completed)
     result_root["status"] = "completed"
     result_root["active_leaf_state_definition_pointers"] = []
     result_root["active_state_activations"] = []
@@ -1268,10 +1414,16 @@ def produce_mailbox() -> dict[str, bytes]:
         emissions=[internal_disposed_emission(aggregate_entry)],
         lifecycle_dispositions=[aggregate_disposition],
     )
+    disposed_target_id = component_runtimes(component)[0]["runtime_id"]
+    disposed_component = copy.deepcopy(aggregate_completed)
+    outputs["disposed-component-aggregate.json"] = disposed_component
+    outputs["disposed-component-step-result.json"] = step_result(
+        disposed_component, "rejected", rejection="invalid_instance_target"
+    )
 
     rollback_before = root_event_before("cleanup_rollback", "cleanup-rollback-1")
-    rollback_root = rollback_before["runtimes"][-1]
-    retained_component = rollback_before["runtimes"][0]
+    rollback_root = root_runtime(rollback_before)
+    retained_component = component_runtimes(rollback_before)[0]
     cleanup_pointer = "/machines/0/root/states/cleanup_failed/components/0"
     cleanup_runtime_id = digest(
         ["determa-component-runtime-identity-1", "1", rollback_before["root_instance_id"],
@@ -1285,6 +1437,14 @@ def produce_mailbox() -> dict[str, bytes]:
     retained_component = json.loads(encoded)
     retained_component["relation"]["component_id"] = "retained"
     retained_component["target_identity"]["component"]["component_id"] = "retained"
+    retained_component["active_leaf_state_definition_pointers"] = [f"{cleanup_pointer}/root"]
+    retained_component["active_state_activations"] = [
+        {"state_definition_pointer": f"{cleanup_pointer}/root", "activation_sequence": "0"}
+    ]
+    retained_component["variables"] = []
+    retained_component["next_state_activation_sequences"] = [
+        {"definition_pointer": f"{cleanup_pointer}/root", "next_sequence": "1"}
+    ]
     peer_pointer = "/machines/0/root/states/cleanup_failed/components/1"
     peer_runtime_id = digest(
         ["determa-component-runtime-identity-1", "1", rollback_before["root_instance_id"],
@@ -1298,10 +1458,24 @@ def produce_mailbox() -> dict[str, bytes]:
     retained_peer["relation"]["declaration_index"] = "1"
     retained_peer["relation"]["component_id"] = "retained_peer"
     retained_peer["target_identity"]["component"]["component_id"] = "retained_peer"
+    retained_peer["active_leaf_state_definition_pointers"] = [f"{peer_pointer}/root"]
+    retained_peer["active_state_activations"] = [
+        {"state_definition_pointer": f"{peer_pointer}/root", "activation_sequence": "0"}
+    ]
+    retained_peer["next_state_activation_sequences"] = [
+        {"definition_pointer": f"{peer_pointer}/root", "next_sequence": "1"}
+    ]
     rollback_root["active_leaf_state_definition_pointers"] = ["/machines/0/root/states/cleanup_failed"]
     rollback_root["active_state_activations"] = [
         {"state_definition_pointer": "/machines/0/root", "activation_sequence": "0"},
         {"state_definition_pointer": "/machines/0/root/states/cleanup_failed", "activation_sequence": "0"},
+    ]
+    rollback_root["variables"] = [
+        {
+            "variable_declaration_pointer": "/machines/0/root/states/cleanup_failed/variables/cleanup_marker",
+            "declaring_state_activation_sequence": "0",
+            "value": ["integer", "0"],
+        }
     ]
     rollback_root["next_state_activation_sequences"].append(
         {"definition_pointer": "/machines/0/root/states/cleanup_failed", "next_sequence": "1"}
@@ -1313,10 +1487,13 @@ def produce_mailbox() -> dict[str, bytes]:
         {"definition_pointer": peer_pointer, "next_sequence": "1"}
     )
     rollback_before["runtimes"] = [retained_component, retained_peer, rollback_root]
+    rollback_before["next_logical_step_sequence"] = str(
+        int(rollback_before["next_logical_step_sequence"]) + 1
+    )
     rollback_before = seal_aggregate(rollback_before)
     outputs["cleanup-rollback-before.json"] = rollback_before
     rollback = copy.deepcopy(rollback_before)
-    rollback_root = rollback["runtimes"][-1]
+    rollback_root = root_runtime(rollback)
     rollback_source = rollback_root["ready_mailbox"].pop(0)
     rollback_fault = {
         "definition_fingerprint": rollback["validated_bundle_fingerprint"],
@@ -1368,14 +1545,12 @@ def produce_mailbox() -> dict[str, bytes]:
         base, base_root, "received", "duplicate"
     )
     equal_replay = {
-        "delivery_mode": deferred_request["delivery_mode"],
-        "envelope": copy.deepcopy(deferred_request["envelope"]),
-        "envelope_digest": deferred_request["envelope_digest"],
+        "delivery_mode": deferred_retry["delivery_mode"],
+        "envelope": copy.deepcopy(deferred_retry["envelope"]),
+        "envelope_digest": deferred_retry["envelope_digest"],
     }
     conflicting_replay = copy.deepcopy(equal_replay)
-    conflicting_replay["envelope"]["payload"] = typed_value(
-        {"transaction_id": "different"}
-    )
+    conflicting_replay["envelope"]["event"] = "held_request"
     conflicting_replay["envelope_digest"] = digest(
         [
             "determa-inbox-envelope-digest-2",
@@ -1385,10 +1560,10 @@ def produce_mailbox() -> dict[str, bytes]:
             conflicting_replay["envelope"],
         ]
     )
-    completed_identity = component["runtimes"][0]["target_identity"]
+    completed_identity = component_runtimes(component)[0]["target_identity"]
     disposed_delivery = delivery_input(
         component,
-        component["runtimes"][0],
+        component_runtimes(component)[0],
         "component_work",
         "disposed-component-admission",
     )
@@ -1423,10 +1598,10 @@ def produce_mailbox() -> dict[str, bytes]:
         "recall_step": {"operation": "step_v2", "target_runtime_id": base["root_runtime_id"]},
         "repeated_step": {"operation": "step_v2", "target_runtime_id": repeated_before["root_runtime_id"]},
         "deferred_only_step": {"operation": "step_v2", "target_runtime_id": deferred_only["root_runtime_id"]},
-        "component_step": {"operation": "step_v2", "target_runtime_id": component["runtimes"][0]["runtime_id"]},
-        "spawn_step": {"operation": "step_v2", "target_runtime_id": spawned["runtimes"][0]["runtime_id"]},
-        "completed_component_step": {"operation": "step_v2", "target_runtime_id": completed_component["runtimes"][0]["runtime_id"]},
-        "faulted_component_step": {"operation": "step_v2", "target_runtime_id": faulted_component["runtimes"][0]["runtime_id"]},
+        "component_step": {"operation": "step_v2", "target_runtime_id": component_runtimes(component)[0]["runtime_id"]},
+        "spawn_step": {"operation": "step_v2", "target_runtime_id": spawned_runtimes(spawned)[0]["runtime_id"]},
+        "completed_component_step": {"operation": "step_v2", "target_runtime_id": component_runtimes(completed_component)[0]["runtime_id"]},
+        "faulted_component_step": {"operation": "step_v2", "target_runtime_id": component_runtimes(faulted_component)[0]["runtime_id"]},
         "disposed_component_step": {"operation": "step_v2", "target_runtime_id": disposed_target_id},
         "invalid_runtime_step": {"operation": "step_v2", "target_runtime_id": "sha256:" + "0" * 64},
         "overflow_step": {"operation": "step_v2", "target_runtime_id": zero_before["root_runtime_id"]},
@@ -1437,8 +1612,8 @@ def produce_mailbox() -> dict[str, bytes]:
         "aggregate_completion_step": {"operation": "step_v2", "target_runtime_id": aggregate_before["root_runtime_id"]},
         "cleanup_rollback_step": {"operation": "step_v2", "target_runtime_id": rollback_before["root_runtime_id"]},
         "reserved_event_step": {"operation": "step_v2", "target_runtime_id": reserved_before["root_runtime_id"]},
-        "completed_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(completed_component, completed_component["runtimes"][0], "component_work", "completed-component-admission")]},
-        "faulted_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(faulted_component, faulted_component["runtimes"][0], "component_work", "faulted-component-admission")]},
+        "completed_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(completed_component, component_runtimes(completed_component)[0], "component_work", "completed-component-admission")]},
+        "faulted_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(faulted_component, component_runtimes(faulted_component)[0], "component_work", "faulted-component-admission")]},
         "disposed_component_admit": {"operation": "admit_v2", "deliveries": [disposed_delivery]},
     }
     outputs["operation-inputs.json"] = operation_inputs
@@ -1451,13 +1626,13 @@ def produce_mailbox() -> dict[str, bytes]:
     }
     outputs["replay-success.json"] = {
         "result": "replay",
-        "event_id": "request-2",
+        "event_id": "retry-guarded-recall",
         "acceptance_sequence": "2",
         "location": "deferred",
     }
     outputs["invalid-version2-operation-result.json"] = {
         "result": "replay",
-        "event_id": "request-2",
+        "event_id": "retry-guarded-recall",
         "acceptance_sequence": "0",
         "location": "deferred",
         "language_specific": True,
@@ -1476,10 +1651,17 @@ def produce_persistence() -> dict[str, bytes]:
 
     target_documents: dict[str, dict[str, Any]] = {}
     target_documents["target-compatible.yaml"] = copy.deepcopy(source_document)
+    target_documents["target-compatible.yaml"]["machines"][0]["root"]["states"]["busy"]["states"]["authorizing"]["on_events"]["retry"]["guard"] = "false || false"
     removed_event = copy.deepcopy(source_document)
     del removed_event["events"]["new_request"]
-    removed_event["machines"][0]["root"]["states"]["idle"].pop("on_events")
-    removed_event["machines"][0]["root"]["states"]["busy"]["deferred_events"] = ["retired_event"]
+    removed_event["events"]["replacement_request"] = {
+        "direction": "input",
+        "payload": {"transaction_id": {"type": "string", "required": True}},
+    }
+    removed_event["machines"][0]["root"]["states"]["idle"]["on_events"] = {
+        "replacement_request": {"transition_to": "busy.receiving", "lang": "cel"}
+    }
+    removed_event["machines"][0]["root"]["states"]["busy"].pop("deferred_events")
     removed_event["machines"][0]["root"]["states"]["busy"]["states"]["authorizing"]["on_events"].pop("new_request")
     target_documents["target-removed-event.yaml"] = removed_event
     payload_incompatible = copy.deepcopy(source_document)
@@ -1504,6 +1686,25 @@ def produce_persistence() -> dict[str, bytes]:
         descriptor_v1 = copy.deepcopy(base_descriptor_template)
         descriptor_v1["source_validated_bundle_fingerprint"] = source_fingerprint
         descriptor_v1["target_validated_bundle_fingerprint"] = bundle_fingerprint_document(target_documents[target_name])
+        descriptor_v1["source_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(source_document)
+        descriptor_v1["target_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(target_documents[target_name])
+        if descriptor_v1["source_aggregate_shape_fingerprint"] != descriptor_v1["target_aggregate_shape_fingerprint"]:
+            descriptor_v1["mode"] = "transform"
+            descriptor_v1["mappings"]["machines"] = [{
+                "source_definition_pointer": "/machines/0/root",
+                "target_definition_pointer": "/machines/0/root",
+            }]
+            descriptor_v1["mappings"]["active_states"] = [{
+                "source_leaf_state_definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                "target_leaf_state_definition_pointers": [
+                    "/machines/0/root/states/busy/states/receiving_replacement"
+                ],
+            }]
+            descriptor_v1["mappings"]["counters"] = [
+                {"operation": "map", "source_definition_pointer": "/machines/0/root", "target_definition_pointer": "/machines/0/root"},
+                {"operation": "map", "source_definition_pointer": "/machines/0/root/states/busy", "target_definition_pointer": "/machines/0/root/states/busy"},
+                {"operation": "map", "source_definition_pointer": "/machines/0/root/states/busy/states/receiving", "target_definition_pointer": "/machines/0/root/states/busy/states/receiving_replacement"},
+            ]
         descriptor_v1.pop("migration_descriptor_digest", None)
         descriptor_v1["migration_descriptor_digest"] = digest(
             ["determa-migration-descriptor-1", descriptor_v1]
@@ -1528,7 +1729,7 @@ def produce_persistence() -> dict[str, bytes]:
 
     descriptors = {
         "descriptor-compatible-v2.json": make_descriptor("target-compatible.yaml"),
-        "descriptor-dispose-v2.json": make_descriptor("target-compatible.yaml", dispose_retired=True),
+        "descriptor-dispose-v2.json": make_descriptor("target-removed-event.yaml", dispose_retired=True),
         "descriptor-removed-event-v2.json": make_descriptor("target-removed-event.yaml"),
         "descriptor-payload-v2.json": make_descriptor("target-payload-incompatible.yaml"),
         "descriptor-correlation-v2.json": make_descriptor("target-correlation-incompatible.yaml"),
@@ -1540,10 +1741,16 @@ def produce_persistence() -> dict[str, bytes]:
         "aggregate_state_package_format": "determa.aggregate_state_package",
         "aggregate_state_package_schema_version": 2,
         "aggregate_state": aggregate_v2,
-        "normalized_definitions": [{
-            "validated_bundle_fingerprint": source_fingerprint,
-            "normalized_bundle": typed_value(source_document),
-        }],
+        "normalized_definitions": [
+            {
+                "validated_bundle_fingerprint": source_fingerprint,
+                "normalized_bundle": typed_value(source_document),
+            },
+            {
+                "validated_bundle_fingerprint": descriptor_v2["base_descriptor"]["target_validated_bundle_fingerprint"],
+                "normalized_bundle": typed_value(target_documents["target-compatible.yaml"]),
+            },
+        ],
         "migration_descriptors": [descriptor_v2],
         "migration_route": [descriptor_v2["migration_descriptor_digest"]],
     }
@@ -1576,6 +1783,17 @@ def produce_persistence() -> dict[str, bytes]:
     disposal_after["migration_sequence"] = str(int(disposal_after["migration_sequence"]) + 1)
     disposal_after = seal_aggregate(disposal_after)
 
+    def migrated_to(source: dict[str, Any], descriptor: dict[str, Any]) -> dict[str, Any]:
+        result = copy.deepcopy(source)
+        target_fingerprint = descriptor["base_descriptor"]["target_validated_bundle_fingerprint"]
+        result["validated_bundle_fingerprint"] = target_fingerprint
+        result["migration_sequence"] = str(int(result["migration_sequence"]) + 1)
+        for runtime in result["runtimes"]:
+            runtime["current_definition"]["validated_bundle_fingerprint"] = target_fingerprint
+        return seal_aggregate(result)
+
+    preserved = migrated_to(aggregate_v2, descriptors["descriptor-compatible-v2.json"])
+
     fault_frozen = copy.deepcopy(aggregate_v2)
     fault_runtime = fault_frozen["runtimes"][0]
     fault_record = {
@@ -1589,6 +1807,9 @@ def produce_persistence() -> dict[str, bytes]:
     fault_runtime["status"] = "faulted"
     fault_runtime["fault"] = fault_record
     fault_frozen = seal_aggregate(fault_frozen)
+    preserved_fault_frozen = migrated_to(
+        fault_frozen, descriptors["descriptor-compatible-v2.json"]
+    )
     outputs: dict[str, Any] = {
         "upgraded-aggregate-v2.json": canonical(upgraded_aggregate_v2),
         "base-aggregate-v2.json": canonical(aggregate_v2),
@@ -1600,10 +1821,10 @@ def produce_persistence() -> dict[str, bytes]:
         "disposal-before.json": canonical(disposal_before),
         "fault-frozen-aggregate-v2.json": canonical(fault_frozen),
         "migration-preserve-result.json": canonical(
-            {"result": "success", "aggregate_state": aggregate_v2, "dispositions": []}
+            {"result": "success", "aggregate_state": preserved, "dispositions": []}
         ),
         "migration-fault-frozen-preserve-result.json": canonical(
-            {"result": "success", "aggregate_state": fault_frozen, "dispositions": []}
+            {"result": "success", "aggregate_state": preserved_fault_frozen, "dispositions": []}
         ),
         "migration-dispose-result.json": canonical(
             {
@@ -1635,7 +1856,7 @@ def produce_persistence() -> dict[str, bytes]:
     migration_targets = {
         "preserve": ("target-compatible.yaml", "descriptor-compatible-v2.json"),
         "preserve_fault": ("target-compatible.yaml", "descriptor-compatible-v2.json"),
-        "dispose": ("target-compatible.yaml", "descriptor-dispose-v2.json"),
+        "dispose": ("target-removed-event.yaml", "descriptor-dispose-v2.json"),
         "stale_target": ("target-stale-state.yaml", "descriptor-stale-v2.json"),
         "event_removed": ("target-removed-event.yaml", "descriptor-removed-event-v2.json"),
         "payload_incompatible": ("target-payload-incompatible.yaml", "descriptor-payload-v2.json"),
@@ -1744,18 +1965,10 @@ def upgrade_checkpoint(value: dict[str, Any]) -> dict[str, Any]:
 def produce_checkpoint() -> dict[str, bytes]:
     v1 = load(CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "internal-pending-checkpoint.json")
     upgraded = upgrade_checkpoint(v1)
-    operational_base = copy.deepcopy(upgraded)
-    operational_aggregate = operational_base["root_record"]["aggregate_state"]
-    for runtime in operational_aggregate["runtimes"]:
-        runtime["ready_mailbox"] = []
-        runtime["deferred_mailbox"] = []
-    operational_aggregate["next_queue_sequence"] = "0"
-    operational_base["root_record"]["aggregate_state"] = seal_aggregate(operational_aggregate)
-    operational_base["operation_receipts"] = [
-        receipt for receipt in operational_base["operation_receipts"]
-        if receipt["operation_kind"] != "acceptance"
-    ]
-    operational_base["next_operation_receipt_sequence"] = v1["next_operation_receipt_sequence"]
+    operational_v1 = load(
+        CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "created-checkpoint.json"
+    )
+    operational_base = upgrade_checkpoint(operational_v1)
     operational_base["replay_retention"] = {
         "mode": "bounded",
         "permanent_replay_eligible": False,
@@ -1899,8 +2112,26 @@ def produce_checkpoint() -> dict[str, bytes]:
             "terminal_disposition": "handled",
         }
     ]
+    compact["replay_retention"]["pruned_through_receipt_sequence"] = event_terminal["receipt_sequence"]
     compact["revision"] = str(int(terminal["revision"]) + 1)
     compact = seal_checkpoint(compact)
+
+    invalid_acceptance_tombstone_overlap = copy.deepcopy(compact)
+    overlapping_acceptance = copy.deepcopy(acceptance)
+    overlapping_acceptance["receipt_sequence"] = compact["next_operation_receipt_sequence"]
+    invalid_acceptance_tombstone_overlap["operation_receipts"].append(overlapping_acceptance)
+    invalid_acceptance_tombstone_overlap["next_operation_receipt_sequence"] = str(
+        int(overlapping_acceptance["receipt_sequence"]) + 1
+    )
+    invalid_acceptance_tombstone_overlap = seal_checkpoint(
+        invalid_acceptance_tombstone_overlap
+    )
+
+    invalid_tombstone_counter = copy.deepcopy(compact)
+    invalid_tombstone_counter["event_identity_tombstones"][0][
+        "terminal_receipt_sequence"
+    ] = invalid_tombstone_counter["next_operation_receipt_sequence"]
+    invalid_tombstone_counter = seal_checkpoint(invalid_tombstone_counter)
 
     invalid = copy.deepcopy(admitted)
     invalid_aggregate = invalid["root_record"]["aggregate_state"]
@@ -1909,14 +2140,6 @@ def produce_checkpoint() -> dict[str, bytes]:
     )
     invalid["root_record"]["aggregate_state"] = seal_aggregate(invalid_aggregate)
     invalid = seal_checkpoint(invalid)
-    permanent = copy.deepcopy(terminal)
-    permanent["replay_retention"] = {
-        "mode": "permanent",
-        "permanent_replay_eligible": True,
-        "pruned_through_receipt_sequence": None,
-        "policy_identifier": None,
-    }
-    permanent = seal_checkpoint(permanent)
     operations = {
         "upgrade": {"operation": "upgrade_checkpoint_v1_to_v2"},
         "admit": {"operation": "checkpoint_admit_v2", "deliveries": [{
@@ -1941,12 +2164,11 @@ def produce_checkpoint() -> dict[str, bytes]:
             "envelope": {**entry["envelope"], "payload": typed_value({"amount": 2})},
             "envelope_digest": digest(["determa-inbox-envelope-digest-2", "2", aggregate["root_instance_id"], entry["delivery_mode"], {**entry["envelope"], "payload": typed_value({"amount": 2})}]),
         }]},
-        "bounded_prune": {"operation": "checkpoint_prune_v2", "retention_mode": "bounded"},
-        "permanent_prune": {"operation": "checkpoint_prune_v2", "retention_mode": "permanent"},
-        "pending_prune": {"operation": "checkpoint_prune_v2", "retention_mode": "bounded"},
-        "producer_prune": {"operation": "checkpoint_prune_v2", "retention_mode": "bounded"},
+        "bounded_prune": {
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": event_terminal["receipt_sequence"],
+        },
         "tombstone": {"operation": "checkpoint_tombstone_v2"},
-        "downgrade": {"operation": "downgrade_checkpoint_v2_to_v1"},
     }
     return {
         "base-checkpoint-v1.json": canonical(v1),
@@ -1958,7 +2180,12 @@ def produce_checkpoint() -> dict[str, bytes]:
         "native-internal-terminal-checkpoint-v2.json": canonical(native_terminal),
         "compact-checkpoint-v2.json": canonical(compact),
         "invalid-duplicate-location-checkpoint-v2.json": canonical(invalid),
-        "permanent-checkpoint-v2.json": canonical(permanent),
+        "invalid-acceptance-tombstone-overlap-checkpoint-v2.json": canonical(
+            invalid_acceptance_tombstone_overlap
+        ),
+        "invalid-tombstone-counter-checkpoint-v2.json": canonical(
+            invalid_tombstone_counter
+        ),
         "operation-inputs.json": canonical(operations),
         "terminal-replay-result.json": canonical(
             {"result": "replay", "acceptance_receipt_sequence": receipt_sequence, "terminal_receipt_sequence": terminal_sequence}

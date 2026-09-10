@@ -13,6 +13,8 @@ events:
     direction: input
   cleanup_rollback:
     direction: input
+  enter_cleanup:
+    direction: input
   aggregate_finish:
     direction: input
   component_work:
@@ -123,12 +125,15 @@ machines:
               root:
                 variables:
                   count: { type: int, init: 0 }
-                entry:
-                  - assign: { count: "'invalid'" }
+                on_events:
+                  component_work:
+                    action:
+                      - assign: { count: "count % 0" }
             - component_id: observer
               root: {}
       on_events:
         enter_faulty: { transition_to: faulty_processing }
+        enter_cleanup: { transition_to: cleanup_failed }
         aggregate_finish:
           action:
             - send:

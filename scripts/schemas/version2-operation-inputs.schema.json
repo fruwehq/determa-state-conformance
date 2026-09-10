@@ -89,11 +89,11 @@
     },
     "prune": {
       "type": "object",
-      "required": ["operation", "retention_mode"],
+      "required": ["operation", "cutoff_receipt_sequence"],
       "additionalProperties": false,
       "properties": {
         "operation": { "const": "checkpoint_prune_v2" },
-        "retention_mode": { "enum": ["bounded", "permanent"] }
+        "cutoff_receipt_sequence": { "$ref": "#/$defs/canonicalDecimal" }
       }
     },
     "conversion": {

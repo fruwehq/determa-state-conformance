@@ -24,6 +24,7 @@ artifacts:
     - { file: spawn-isolation-aggregate.json, kind: aggregate_state_v2, valid: true }
     - { file: spawn-isolation-result.json, kind: core_step_result_v2, valid: true }
     - { file: invalid-aggregate-v2.json, kind: aggregate_state_v2, valid: false, error: invalid_aggregate_state }
+    - { file: invalid-canonical-order-aggregate-v2.json, kind: aggregate_state_v2, valid: false, error: invalid_aggregate_state }
     - { file: handled-recall-result.json, kind: core_step_result_v2, valid: true }
     - { file: repeated-deferral-result.json, kind: core_step_result_v2, valid: true }
     - { file: not-runnable-result.json, kind: core_step_result_v2, valid: true }
