@@ -67,7 +67,7 @@ version2_vectors:
     request_pointer: /terminal_step
     expect: { result: success, exact_result_file: terminal-checkpoint-v2.json }
   - name: checkpoint_terminal_replay
-    covers: [equal_terminal_replay, terminal_receipt_replay]
+    covers: [equal_terminal_replay, terminal_receipt_replay, terminal_replay_precedes_stale_cas]
     operation: checkpoint_admit_v2
     checkpoint_before: terminal-checkpoint-v2.json
     request_file: operation-inputs.json
@@ -103,6 +103,17 @@ version2_vectors:
     expect:
       result: failure
       code: event_id_conflict
+      unchanged_file: terminal-checkpoint-v2.json
+      caller_still_owns_input: true
+  - name: checkpoint_distinct_stale_writer
+    covers: [distinct_stale_checkpoint_writer_rejected]
+    operation: checkpoint_admit_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /stale_admit
+    expect:
+      result: failure
+      code: checkpoint_revision_conflict
       unchanged_file: terminal-checkpoint-v2.json
       caller_still_owns_input: true
   - name: checkpoint_dependency_closed_compaction

@@ -30,6 +30,7 @@ artifacts:
     - { file: migration-preserve-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-stale-target-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-fault-frozen-preserve-result.json, kind: version2_operation_result, valid: true }
+    - { file: migration-historical-fault-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-dispose-result.json, kind: version2_operation_result, valid: true }
     - { file: downgrade-result.json, kind: version2_operation_result, valid: true }
     - { file: operation-inputs.json, kind: version2_operation_inputs, valid: true }
@@ -74,6 +75,14 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /preserve_fault
     expect: { result: success, exact_result_file: migration-fault-frozen-preserve-result.json }
+  - name: migration_preserves_historical_fault_locator
+    covers: [migration_historical_fault_locator_preservation]
+    operation: migrate_aggregate_v2
+    state_before: fault-frozen-aggregate-v2.json
+    descriptor_file: descriptor-stale-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /preserve_historical_fault
+    expect: { result: success, exact_result_file: migration-historical-fault-result.json }
   - name: migration_explicitly_disposes_removed_work
     covers: [migration_preserve_dispose_default]
     operation: migrate_aggregate_v2

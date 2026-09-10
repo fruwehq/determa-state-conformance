@@ -1855,6 +1855,21 @@ def produce_persistence() -> dict[str, bytes]:
     preserved_fault_frozen = migrated_to(
         fault_frozen, descriptors["descriptor-compatible-v2.json"]
     )
+    historical_fault_migrated = migrated_to(
+        fault_frozen, descriptors["descriptor-stale-v2.json"]
+    )
+    for runtime in historical_fault_migrated["runtimes"]:
+        runtime["active_leaf_state_definition_pointers"] = [
+            stale_target_pointer if pointer == stale_source_pointer else pointer
+            for pointer in runtime["active_leaf_state_definition_pointers"]
+        ]
+        for activation in runtime["active_state_activations"]:
+            if activation["state_definition_pointer"] == stale_source_pointer:
+                activation["state_definition_pointer"] = stale_target_pointer
+        for counter in runtime["next_state_activation_sequences"]:
+            if counter["definition_pointer"] == stale_source_pointer:
+                counter["definition_pointer"] = stale_target_pointer
+    historical_fault_migrated = seal_aggregate(historical_fault_migrated)
     outputs: dict[str, Any] = {
         "upgraded-aggregate-v2.json": canonical(upgraded_aggregate_v2),
         "base-aggregate-v2.json": canonical(aggregate_v2),
@@ -1877,6 +1892,13 @@ def produce_persistence() -> dict[str, bytes]:
         ),
         "migration-fault-frozen-preserve-result.json": canonical(
             {"result": "success", "aggregate_state": preserved_fault_frozen, "dispositions": []}
+        ),
+        "migration-historical-fault-result.json": canonical(
+            {
+                "result": "success",
+                "aggregate_state": historical_fault_migrated,
+                "dispositions": [],
+            }
         ),
         "migration-dispose-result.json": canonical(
             {
@@ -1908,6 +1930,10 @@ def produce_persistence() -> dict[str, bytes]:
     migration_targets = {
         "preserve": ("target-compatible.yaml", "descriptor-compatible-v2.json"),
         "preserve_fault": ("target-compatible.yaml", "descriptor-compatible-v2.json"),
+        "preserve_historical_fault": (
+            "target-stale-state.yaml",
+            "descriptor-stale-v2.json",
+        ),
         "dispose": ("target-removed-event.yaml", "descriptor-dispose-v2.json"),
         "stale_target": ("target-stale-state.yaml", "descriptor-stale-v2.json"),
         "event_removed": ("target-removed-event.yaml", "descriptor-removed-event-v2.json"),
@@ -2288,6 +2314,21 @@ def produce_checkpoint() -> dict[str, bytes]:
     )
     invalid["root_record"]["aggregate_state"] = seal_aggregate(invalid_aggregate)
     invalid = seal_checkpoint(invalid)
+    stale_writer_entry = envelope_entry(
+        operational_base["root_record"]["aggregate_state"],
+        next(
+            runtime
+            for runtime in operational_base["root_record"]["aggregate_state"][
+                "runtimes"
+            ]
+            if runtime["relation"]["kind"] == "root"
+        ),
+        event="increment",
+        event_id="checkpoint-v2-distinct-stale-writer",
+        acceptance_sequence=0,
+        queue_sequence=0,
+        payload=typed_value({"amount": 1}),
+    )
     operations = {
         "upgrade": with_checkpoint_cas(
             {"operation": "upgrade_checkpoint_v1_to_v2"}, v1
@@ -2329,12 +2370,25 @@ def produce_checkpoint() -> dict[str, bytes]:
             "delivery_mode": entry["delivery_mode"],
             "envelope": entry["envelope"],
             "envelope_digest": entry["envelope_digest"],
-        }]}, terminal),
+        }]}, operational_base),
         "tombstone_equal_replay": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
             "delivery_mode": entry["delivery_mode"],
             "envelope": entry["envelope"],
             "envelope_digest": entry["envelope_digest"],
-        }]}, compact),
+        }]}, operational_base),
+        "stale_admit": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [
+                    {
+                        "delivery_mode": stale_writer_entry["delivery_mode"],
+                        "envelope": stale_writer_entry["envelope"],
+                        "envelope_digest": stale_writer_entry["envelope_digest"],
+                    }
+                ],
+            },
+            operational_base,
+        ),
         "terminal_conflict": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
             "delivery_mode": entry["delivery_mode"],
             "envelope": {**entry["envelope"], "payload": typed_value({"amount": 2})},
