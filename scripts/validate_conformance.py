@@ -3031,7 +3031,7 @@ def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) ->
             checkpoint = analyze_artifact(path).document
             if checkpoint["root_record"]["status"] == "retained":
                 retained_paths.add(path)
-    if len(retained_paths) != 40:
+    if len(retained_paths) != 42:
         raise ValidationFailure(
             "version-1 retained checkpoint upgrade probe set is incomplete"
         )
@@ -3976,6 +3976,8 @@ def validate_version2_vectors(
     run_mutation_probes: bool = True,
 ) -> set[str]:
     """Validate the closed language-neutral version-2 operation table."""
+    from generate_version2_vectors import upgrade_checkpoint
+
     bundle_names = {path.name for path in bundle_paths}
     artifact_names = {path.name for path in artifact_paths}
     manifests = {
@@ -4637,12 +4639,22 @@ def validate_version2_vectors(
         for field in (
             "state_before",
             "checkpoint_before",
+            "source_checkpoint_v1",
             "request_file",
             "descriptor_file",
         ):
             filename = vector.get(field)
             if filename is not None and filename not in artifact_names:
                 raise ValidationFailure(f"{location}: undeclared artifact {filename}")
+        if "source_checkpoint_v1" in vector:
+            source_manifest = manifests[vector["source_checkpoint_v1"]]
+            if (
+                source_manifest["kind"] != "execution_checkpoint"
+                or not source_manifest["valid"]
+            ):
+                raise ValidationFailure(
+                    f"{location}: source checkpoint must be a valid version-1 checkpoint"
+                )
         request_manifest = manifests.get(vector["request_file"])
         if request_manifest is None or request_manifest["kind"] != "version2_operation_inputs" or not request_manifest["valid"]:
             raise ValidationFailure(f"{location}: request must use the closed operation-input artifact")
@@ -6605,6 +6617,18 @@ def validate_version2_vectors(
                     "version2_creation_internal_dependency_retained",
                     "version2_creation_external_dependency_retained",
                 }:
+                    if "source_checkpoint_v1" not in vector:
+                        raise ValidationFailure(
+                            f"{location}: creation-owned work lacks its version-1 source trace"
+                        )
+                    source_checkpoint = artifact(
+                        vector["source_checkpoint_v1"]
+                    ).document
+                    if upgrade_checkpoint(source_checkpoint) != checkpoint_before:
+                        raise ValidationFailure(
+                            f"{location}: version-2 checkpoint is not the exact upgrade "
+                            "of its bound version-1 host trace"
+                        )
                     creation = checkpoint_before["operation_receipts"][0][
                         "legacy_receipt"
                     ]
@@ -6633,6 +6657,157 @@ def validate_version2_vectors(
                             f"{location}: creation-owned work trace has an "
                             "invalid creation request digest"
                         )
+                    source_aggregate = source_checkpoint["root_record"][
+                        "aggregate_state"
+                    ]
+                    source_receipts = source_checkpoint["operation_receipts"]
+                    if (
+                        len(source_receipts) != 2
+                        or source_receipts[0]["operation_kind"] != "creation"
+                        or source_receipts[1]["operation_kind"] != "delivery"
+                        or source_receipts[1]["event_id"]
+                        != "creation-unrelated"
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: source trace is not a complete create/delivery history"
+                        )
+                    root_runtime = next(
+                        runtime
+                        for runtime in source_aggregate["runtimes"]
+                        if runtime["relation"]["kind"] == "root"
+                    )
+                    expected_root_runtime_id = hash_value(
+                        [
+                            "determa-root-runtime-identity-2",
+                            "1",
+                            source_aggregate["validated_bundle_fingerprint"],
+                            source_aggregate["namespace"],
+                            source_aggregate["root_machine_id"],
+                            source_aggregate["root_machine_version"],
+                            source_aggregate["root_instance_id"],
+                        ]
+                    )
+                    if root_runtime["runtime_id"] != expected_root_runtime_id:
+                        raise ValidationFailure(
+                            f"{location}: source root identity does not use the normative operands"
+                        )
+                    root_index = (
+                        "0"
+                        if source_aggregate["root_machine_id"]
+                        == "internal_creator"
+                        else "1"
+                    )
+                    root_pointer = f"/machines/{root_index}/root"
+                    initialization_cause_id = hash_value(
+                        [
+                            "determa-cause-identity-1",
+                            "1",
+                            "root_initialization",
+                            source_aggregate["root_instance_id"],
+                            root_runtime["runtime_id"],
+                            root_runtime["runtime_id"],
+                            source_aggregate["creation_id"],
+                            "0",
+                            root_pointer,
+                            "0",
+                        ]
+                    )
+                    created_aggregate = copy.deepcopy(source_aggregate)
+                    created_aggregate.pop("aggregate_state_digest")
+                    created_aggregate["next_logical_step_sequence"] = "1"
+                    root_variable = created_aggregate["runtimes"][0][
+                        "variables"
+                    ][0]
+                    root_variable["value"] = ["integer", "0"]
+                    created_digest = hash_value(
+                        ["determa-aggregate-state-digest-1", created_aggregate]
+                    )
+                    if (
+                        source_receipts[0]["resulting_aggregate_state_digest"]
+                        != created_digest
+                        or source_receipts[1]["resulting_aggregate_state_digest"]
+                        != source_aggregate["aggregate_state_digest"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: legacy receipts do not retain exact version-1 "
+                            "before/after aggregate digests"
+                        )
+                    presented_envelope = {
+                        "event": "increment",
+                        "event_id": "creation-unrelated",
+                        "target": copy.deepcopy(root_runtime["target_identity"]),
+                        "payload": ["map", []],
+                    }
+                    expected_delivery_digest = hash_value(
+                        [
+                            "determa-inbox-envelope-digest-1",
+                            "1",
+                            source_aggregate["root_instance_id"],
+                            "input",
+                            presented_envelope,
+                        ]
+                    )
+                    if source_receipts[1]["request_digest"] != expected_delivery_digest:
+                        raise ValidationFailure(
+                            f"{location}: legacy delivery receipt does not hash the complete envelope"
+                        )
+                    creation_reference = source_receipts[0][
+                        "emission_references"
+                    ][0]
+                    if source_aggregate["root_machine_id"] == "internal_creator":
+                        expected_event_id = hash_value(
+                            [
+                                "determa-event-identity-1",
+                                "1",
+                                source_aggregate["root_instance_id"],
+                                root_runtime["runtime_id"],
+                                root_runtime["runtime_id"],
+                                initialization_cause_id,
+                                "0",
+                                f"{root_pointer}/entry/0/send",
+                                "0",
+                            ]
+                        )
+                        pending = source_checkpoint["pending_deliveries"]
+                        if (
+                            len(pending) != 1
+                            or pending[0]["envelope"]["event_id"]
+                            != expected_event_id
+                            or creation_reference.get("event_id")
+                            != expected_event_id
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: internal creation identity/reference is not normative"
+                            )
+                    else:
+                        expected_effect_id = hash_value(
+                            [
+                                "determa-effect-identity-1",
+                                "1",
+                                [
+                                    source_aggregate["namespace"],
+                                    source_aggregate["root_machine_id"],
+                                    source_aggregate["root_machine_version"],
+                                ],
+                                source_aggregate["root_instance_id"],
+                                root_runtime["runtime_id"],
+                                initialization_cause_id,
+                                "0",
+                                f"{root_pointer}/entry/0/send",
+                                "0",
+                            ]
+                        )
+                        pending = source_checkpoint["pending_outbox_intents"]
+                        if (
+                            len(pending) != 1
+                            or pending[0]["intent"]["effect_id"]
+                            != expected_effect_id
+                            or creation_reference.get("effect_id")
+                            != expected_effect_id
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: external creation identity/reference is not normative"
+                            )
         if operation == "checkpoint_prune_v2" and expectation["result"] == "failure":
             checkpoint_before = artifact(vector["checkpoint_before"]).document
             cutoff = canonical_decimal(
@@ -6920,6 +7095,109 @@ def validate_version2_vectors(
                 f"{case.name}: successful pruning vector was relabeled as "
                 "invalid_execution_checkpoint"
             )
+        if case.name == "checkpoint-04-version2-mailboxes":
+            for index, original_vector in enumerate(test["version2_vectors"]):
+                if not set(original_vector["covers"]) & {
+                    "version2_creation_internal_dependency_retained",
+                    "version2_creation_external_dependency_retained",
+                }:
+                    continue
+                source_name = original_vector["source_checkpoint_v1"]
+                before_name = original_vector["checkpoint_before"]
+                result_name = original_vector["expect"]["exact_result_file"]
+                source = copy.deepcopy(artifact(source_name).document)
+                source["operation_receipts"][1]["request_digest"] = hash_value(
+                    [
+                        "determa-inbox-envelope-digest-1",
+                        "1",
+                        source["root_instance_id"],
+                        "input",
+                        "creation-unrelated",
+                    ]
+                )
+                source.pop("execution_checkpoint_digest")
+                source["execution_checkpoint_digest"] = hash_value(
+                    ["determa-execution-checkpoint-digest-1", source]
+                )
+                before = upgrade_checkpoint(source)
+                result = project_bounded_prune(before, 1)
+                mutated = dict(artifact_overrides)
+                mutated.update(
+                    {
+                        source_name: source,
+                        before_name: before,
+                        result_name: result,
+                    }
+                )
+                try:
+                    validate_version2_vectors(
+                        case,
+                        test,
+                        bundle_paths,
+                        artifact_paths,
+                        artifact_overrides=mutated,
+                        run_mutation_probes=False,
+                    )
+                except ValidationFailure:
+                    pass
+                else:
+                    raise ValidationFailure(
+                        f"{case.name}: self-consistent abbreviated legacy request "
+                        f"history was accepted for {original_vector['name']}"
+                    )
+
+                source = copy.deepcopy(artifact(source_name).document)
+                replacement_id = "sha256:" + "0" * 64
+                creation_reference = source["operation_receipts"][0][
+                    "emission_references"
+                ][0]
+                if creation_reference["kind"] == "internal_delivery":
+                    creation_reference["event_id"] = replacement_id
+                    pending = source["pending_deliveries"][0]
+                    pending["envelope"]["event_id"] = replacement_id
+                    pending["envelope_digest"] = hash_value(
+                        [
+                            "determa-inbox-envelope-digest-1",
+                            "1",
+                            source["root_instance_id"],
+                            "internal",
+                            pending["envelope"],
+                        ]
+                    )
+                else:
+                    creation_reference["effect_id"] = replacement_id
+                    source["pending_outbox_intents"][0]["intent"][
+                        "effect_id"
+                    ] = replacement_id
+                source.pop("execution_checkpoint_digest")
+                source["execution_checkpoint_digest"] = hash_value(
+                    ["determa-execution-checkpoint-digest-1", source]
+                )
+                before = upgrade_checkpoint(source)
+                result = project_bounded_prune(before, 1)
+                mutated = dict(artifact_overrides)
+                mutated.update(
+                    {
+                        source_name: source,
+                        before_name: before,
+                        result_name: result,
+                    }
+                )
+                try:
+                    validate_version2_vectors(
+                        case,
+                        test,
+                        bundle_paths,
+                        artifact_paths,
+                        artifact_overrides=mutated,
+                        run_mutation_probes=False,
+                    )
+                except ValidationFailure:
+                    continue
+                raise ValidationFailure(
+                    f"{case.name}: self-consistent non-normative creation identity "
+                    f"was accepted for {original_vector['name']}"
+                )
     if run_mutation_probes and case.name == "117-version2-mailboxes":
         probes: dict[str, dict[str, Any]] = {
             "creation expectation substitution": {

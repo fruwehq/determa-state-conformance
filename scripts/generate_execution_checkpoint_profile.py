@@ -2065,6 +2065,93 @@ def generate_store_scope() -> None:
     )
 
 
+def verify_creation_owned_work_host_traces() -> None:
+    from generate_version2_vectors import upgrade_checkpoint
+
+    case = PROFILE / "checkpoint-04-version2-mailboxes"
+    bundle_file = "creation-owned-work-machine.yaml"
+    bundle = load_bundle((case / bundle_file).read_text(encoding="utf-8"))
+    bindings = {"input": {}, "external": {}}
+    for machine_id, kind in (
+        ("internal_creator", "internal"),
+        ("external_creator", "external"),
+    ):
+        root_instance_id = f"{kind}-creation-root"
+        creation_id = f"{kind}-creation"
+        created_raw = create(
+            bundle,
+            machine_id,
+            root_instance_id,
+            creation_id,
+            bindings,
+        )
+        created = project_core_result(bundle, created_raw)
+        checkpoint = empty_checkpoint(
+            created["aggregate_state"],
+            creation_digest(
+                bundle,
+                machine_id,
+                1,
+                root_instance_id,
+                creation_id,
+                bindings,
+            ),
+            created,
+        )
+        checkpoint["replay_retention"] = {
+            "mode": "bounded",
+            "permanent_replay_eligible": False,
+            "pruned_through_receipt_sequence": None,
+            "policy_identifier": "bounded-test-v1",
+        }
+        checkpoint = seal(checkpoint)
+        target = {
+            "root": {
+                "root_instance_id": root_instance_id,
+                "root_runtime_id": created["aggregate_state"]["root_runtime_id"],
+            }
+        }
+        request = delivery_request(
+            case=case,
+            bundle=bundle,
+            bundle_file=bundle_file,
+            root_instance_id=root_instance_id,
+            delivery_mode="input",
+            origin={"kind": "host_input"},
+            event="increment",
+            event_id="creation-unrelated",
+            target=target,
+            payload={},
+        )
+        dispatched_raw = dispatch(
+            bundle,
+            created_raw["state"],
+            request["dispatch_input"]["delivery"],
+        )
+        dispatched = project_core_result(
+            bundle, dispatched_raw, created_raw["state"]
+        )
+        checkpoint = commit_delivery(
+            checkpoint, request, dispatched, foreground=True
+        )
+        source_path = (
+            case / f"creation-{kind}-host-history-checkpoint-v1.json"
+        )
+        source = json.loads(source_path.read_text(encoding="utf-8"))
+        if source != checkpoint:
+            raise SystemExit(
+                f"creation-owned {kind} version-1 host trace differs from "
+                "pinned engine execution"
+            )
+        upgraded_path = case / f"creation-{kind}-before-prune-checkpoint-v2.json"
+        upgraded = json.loads(upgraded_path.read_text(encoding="utf-8"))
+        if upgraded != upgrade_checkpoint(source):
+            raise SystemExit(
+                f"creation-owned {kind} version-2 checkpoint is not the exact "
+                "upgrade of the pinned engine trace"
+            )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -2087,6 +2174,7 @@ def main() -> None:
     generate_retention(delivery)
     generate_store_scope()
     if args.check:
+        verify_creation_owned_work_host_traces()
         changed = [
             str(path.relative_to(ROOT))
             for path in sorted(before)

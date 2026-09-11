@@ -74,6 +74,7 @@
         "checkpoint_before": {
           "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
         },
+        "source_checkpoint_v1": { "$ref": "#/$defs/jsonFile" },
         "request_file": { "$ref": "#/$defs/jsonFile" },
         "request_pointer": {
           "type": "string",

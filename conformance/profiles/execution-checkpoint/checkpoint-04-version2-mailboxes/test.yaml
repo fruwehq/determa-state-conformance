@@ -38,8 +38,10 @@ artifacts:
     - { file: native-internal-producer-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-terminal-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-sequentially-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: creation-internal-host-history-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: creation-internal-before-prune-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: creation-internal-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: creation-external-host-history-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: creation-external-before-prune-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: creation-external-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: compact-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
@@ -448,6 +450,7 @@ version2_vectors:
     operation: checkpoint_prune_v2
     bundle: creation-owned-work-machine.yaml
     checkpoint_before: creation-internal-before-prune-checkpoint-v2.json
+    source_checkpoint_v1: creation-internal-host-history-checkpoint-v1.json
     request_file: operation-inputs.json
     request_pointer: /creation_internal_unrelated_prune
     expect: { result: success, exact_result_file: creation-internal-pruned-checkpoint-v2.json }
@@ -456,6 +459,7 @@ version2_vectors:
     operation: checkpoint_prune_v2
     bundle: creation-owned-work-machine.yaml
     checkpoint_before: creation-external-before-prune-checkpoint-v2.json
+    source_checkpoint_v1: creation-external-host-history-checkpoint-v1.json
     request_file: operation-inputs.json
     request_pointer: /creation_external_unrelated_prune
     expect: { result: success, exact_result_file: creation-external-pruned-checkpoint-v2.json }
