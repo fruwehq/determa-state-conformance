@@ -302,10 +302,12 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "migration_audit_exact_order_content",
         "migration_capacity_totality",
         "migration_descriptor_v2_schema_positive_negative",
+        "migration_empty_route_audit",
         "migration_fault_frozen_preservation",
         "migration_historical_fault_locator_preservation",
         "migration_package_v2_schema_positive_negative",
         "mailbox_payload_matches_event_declaration",
+        "migration_multiple_audit_order",
         "migration_preserve_dispose_default",
         "migration_stale_target_transform",
         "mixed_replay_new_batch",
@@ -4707,6 +4709,11 @@ def validate_version2_vectors(
         covers = set(vector["covers"])
 
         operation = vector["operation"]
+        descriptor_names = (
+            list(vector.get("descriptor_files", []))
+            if "descriptor_files" in vector
+            else ([vector["descriptor_file"]] if "descriptor_file" in vector else [])
+        )
         if operation == "create_v2" and "bundle" not in vector:
             raise ValidationFailure(f"{location}: create_v2 requires bundle")
         if operation in state_operations and "state_before" not in vector:
@@ -4717,8 +4724,12 @@ def validate_version2_vectors(
             raise ValidationFailure(f"{location}: {operation} requires checkpoint_before")
         if operation == "upgrade_checkpoint_v1_to_v2" and "checkpoint_before" not in vector:
             raise ValidationFailure(f"{location}: checkpoint upgrade requires checkpoint_before")
-        if operation in descriptor_operations and "descriptor_file" not in vector:
-            raise ValidationFailure(f"{location}: {operation} requires descriptor_file")
+        if operation in descriptor_operations and (
+            ("descriptor_file" in vector) == ("descriptor_files" in vector)
+        ):
+            raise ValidationFailure(
+                f"{location}: {operation} requires exactly one descriptor-file form"
+            )
         if "request_file" not in vector or "request_pointer" not in vector:
             raise ValidationFailure(f"{location}: operation requires a closed request")
 
@@ -4733,6 +4744,9 @@ def validate_version2_vectors(
         ):
             filename = vector.get(field)
             if filename is not None and filename not in artifact_names:
+                raise ValidationFailure(f"{location}: undeclared artifact {filename}")
+        for filename in vector.get("descriptor_files", []):
+            if filename not in artifact_names:
                 raise ValidationFailure(f"{location}: undeclared artifact {filename}")
         if "source_checkpoint_v1" in vector:
             source_manifest = manifests[vector["source_checkpoint_v1"]]
@@ -4776,8 +4790,12 @@ def validate_version2_vectors(
         operation_signatures[signature] = name
 
         invalid_input_error = None
-        for field in ("state_before", "checkpoint_before", "descriptor_file"):
-            filename = vector.get(field)
+        invalid_candidates = [
+            ("state_before", vector.get("state_before")),
+            ("checkpoint_before", vector.get("checkpoint_before")),
+            *[("descriptor_file", filename) for filename in descriptor_names],
+        ]
+        for field, filename in invalid_candidates:
             if filename is None or manifests[filename]["valid"]:
                 continue
             manifest_error = manifests[filename]["error"]
@@ -5314,40 +5332,94 @@ def validate_version2_vectors(
                 bundle_path = case / binding["bundle_file"]
                 if binding["bundle_source_digest"] != hash_bytes(bundle_path.read_bytes()) or binding["validated_bundle_fingerprint"] != validated_bundle_fingerprint(bundle_path):
                     raise ValidationFailure(f"{location}: {key} binding mismatch")
-            descriptor_name = selected["migration_descriptor_file"]
-            if descriptor_name != vector["descriptor_file"]:
+            selected_descriptor_names = (
+                list(selected.get("migration_descriptor_files", []))
+                if "migration_descriptor_files" in selected
+                else (
+                    [selected["migration_descriptor_file"]]
+                    if "migration_descriptor_file" in selected
+                    else []
+                )
+            )
+            if selected_descriptor_names != descriptor_names:
                 raise ValidationFailure(f"{location}: descriptor request and vector differ")
-            descriptor = artifact(descriptor_name).document
-            if selected["migration_descriptor_digest_route"] != [descriptor["migration_descriptor_digest"]]:
+            descriptors = [artifact(name).document for name in descriptor_names]
+            route = selected["migration_descriptor_digest_route"]
+            if route != [item["migration_descriptor_digest"] for item in descriptors]:
                 raise ValidationFailure(f"{location}: migration descriptor route mismatch")
-            base_descriptor = descriptor["base_descriptor"]
-            if (
-                base_descriptor["source_validated_bundle_fingerprint"] != selected["source_bundle"]["validated_bundle_fingerprint"]
-                or base_descriptor["target_validated_bundle_fingerprint"] != selected["target_bundle"]["validated_bundle_fingerprint"]
-                or prior_aggregate["validated_bundle_fingerprint"] != selected["source_bundle"]["validated_bundle_fingerprint"]
-            ):
-                raise ValidationFailure(f"{location}: migration definition pair is not exact")
             source_bundle_path = case / selected["source_bundle"]["bundle_file"]
             target_bundle_path = case / selected["target_bundle"]["bundle_file"]
             validate_aggregate_against_bundle(prior_aggregate, source_bundle_path)
-            if (
-                base_descriptor["source_aggregate_shape_fingerprint"]
-                != aggregate_shape_fingerprint_for_path(source_bundle_path)
-                or base_descriptor["target_aggregate_shape_fingerprint"]
-                != aggregate_shape_fingerprint_for_path(target_bundle_path)
-            ):
-                raise ValidationFailure(f"{location}: migration shape fingerprint is not exact")
-            if (
-                base_descriptor["source_validated_bundle_fingerprint"]
-                == base_descriptor["target_validated_bundle_fingerprint"]
-            ):
-                raise ValidationFailure(f"{location}: migration route contains a self-cycle")
-            if base_descriptor["mode"] == "compatible" and (
-                base_descriptor["source_aggregate_shape_fingerprint"]
-                != base_descriptor["target_aggregate_shape_fingerprint"]
-                or any(base_descriptor["mappings"].values())
-            ):
-                raise ValidationFailure(f"{location}: compatible descriptor is not shape-identical")
+            source_fingerprint = selected["source_bundle"][
+                "validated_bundle_fingerprint"
+            ]
+            target_fingerprint = selected["target_bundle"][
+                "validated_bundle_fingerprint"
+            ]
+            if prior_aggregate["validated_bundle_fingerprint"] != source_fingerprint:
+                raise ValidationFailure(f"{location}: migration source is not exact")
+            bundle_by_fingerprint = {
+                validated_bundle_fingerprint(path): path for path in bundle_paths
+            }
+            if not descriptors:
+                if source_fingerprint != target_fingerprint:
+                    raise ValidationFailure(
+                        f"{location}: empty migration route changes definition"
+                    )
+            else:
+                expected_source_fingerprint = source_fingerprint
+                for descriptor in descriptors:
+                    base_descriptor = descriptor["base_descriptor"]
+                    if (
+                        base_descriptor["source_validated_bundle_fingerprint"]
+                        != expected_source_fingerprint
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: migration descriptor chain is discontinuous"
+                        )
+                    descriptor_source_path = bundle_by_fingerprint.get(
+                        expected_source_fingerprint
+                    )
+                    descriptor_target_fingerprint = base_descriptor[
+                        "target_validated_bundle_fingerprint"
+                    ]
+                    descriptor_target_path = bundle_by_fingerprint.get(
+                        descriptor_target_fingerprint
+                    )
+                    if descriptor_source_path is None or descriptor_target_path is None:
+                        raise ValidationFailure(
+                            f"{location}: migration descriptor definition is unavailable"
+                        )
+                    if (
+                        base_descriptor["source_aggregate_shape_fingerprint"]
+                        != aggregate_shape_fingerprint_for_path(
+                            descriptor_source_path
+                        )
+                        or base_descriptor["target_aggregate_shape_fingerprint"]
+                        != aggregate_shape_fingerprint_for_path(
+                            descriptor_target_path
+                        )
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: migration shape fingerprint is not exact"
+                        )
+                    if expected_source_fingerprint == descriptor_target_fingerprint:
+                        raise ValidationFailure(
+                            f"{location}: migration route contains a self-cycle"
+                        )
+                    if base_descriptor["mode"] == "compatible" and (
+                        base_descriptor["source_aggregate_shape_fingerprint"]
+                        != base_descriptor["target_aggregate_shape_fingerprint"]
+                        or any(base_descriptor["mappings"].values())
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: compatible descriptor is not shape-identical"
+                        )
+                    expected_source_fingerprint = descriptor_target_fingerprint
+                if expected_source_fingerprint != target_fingerprint:
+                    raise ValidationFailure(
+                        f"{location}: migration route does not reach exact target"
+                    )
             target_document = normalized_bundle_value(case / selected["target_bundle"]["bundle_file"])
             queued_entries = [
                 entry for runtime in prior_aggregate["runtimes"]
@@ -6281,43 +6353,83 @@ def validate_version2_vectors(
             if operation == "migrate_aggregate_v2":
                 assert prior_aggregate is not None
                 migrated = result_document["aggregate_state"]
-                descriptor = artifact(vector["descriptor_file"]).document
-                expected_audit_record = {
-                    "migration_audit_record_schema_version": 1,
-                    "root_instance_id": prior_aggregate["root_instance_id"],
-                    "root_runtime_id": prior_aggregate["root_runtime_id"],
-                    "migration_sequence": migrated["migration_sequence"],
-                    "source_validated_bundle_fingerprint": prior_aggregate[
-                        "validated_bundle_fingerprint"
-                    ],
-                    "target_validated_bundle_fingerprint": migrated[
-                        "validated_bundle_fingerprint"
-                    ],
-                    "migration_descriptor_digest": descriptor[
-                        "migration_descriptor_digest"
-                    ],
-                    "source_aggregate_state_digest": prior_aggregate[
-                        "aggregate_state_digest"
-                    ],
-                    "target_aggregate_state_digest": migrated[
-                        "aggregate_state_digest"
-                    ],
-                    "result_code": "migration_applied",
-                }
-                if result_document.get("audit_records") != [expected_audit_record]:
+                expected_audit_records = []
+                audit_source = prior_aggregate
+                for descriptor_index, descriptor in enumerate(descriptors):
+                    if descriptor_index == len(descriptors) - 1:
+                        audit_target = migrated
+                    else:
+                        base_descriptor = descriptor["base_descriptor"]
+                        if base_descriptor["mode"] != "compatible":
+                            raise ValidationFailure(
+                                f"{location}: intermediate transform lacks exact candidate"
+                            )
+                        audit_target = copy.deepcopy(audit_source)
+                        next_fingerprint = base_descriptor[
+                            "target_validated_bundle_fingerprint"
+                        ]
+                        audit_target["validated_bundle_fingerprint"] = next_fingerprint
+                        audit_target["migration_sequence"] = str(
+                            int(audit_target["migration_sequence"]) + 1
+                        )
+                        for runtime in audit_target["runtimes"]:
+                            runtime["current_definition"][
+                                "validated_bundle_fingerprint"
+                            ] = next_fingerprint
+                        audit_target.pop("aggregate_state_digest", None)
+                        audit_target["aggregate_state_digest"] = hash_value(
+                            ["determa-aggregate-state-digest-2", audit_target]
+                        )
+                    expected_audit_records.append(
+                        {
+                            "migration_audit_record_schema_version": 1,
+                            "root_instance_id": prior_aggregate["root_instance_id"],
+                            "root_runtime_id": prior_aggregate["root_runtime_id"],
+                            "migration_sequence": audit_target[
+                                "migration_sequence"
+                            ],
+                            "source_validated_bundle_fingerprint": audit_source[
+                                "validated_bundle_fingerprint"
+                            ],
+                            "target_validated_bundle_fingerprint": audit_target[
+                                "validated_bundle_fingerprint"
+                            ],
+                            "migration_descriptor_digest": descriptor[
+                                "migration_descriptor_digest"
+                            ],
+                            "source_aggregate_state_digest": audit_source[
+                                "aggregate_state_digest"
+                            ],
+                            "target_aggregate_state_digest": audit_target[
+                                "aggregate_state_digest"
+                            ],
+                            "result_code": "migration_applied",
+                        }
+                    )
+                    audit_source = audit_target
+                if result_document.get("audit_records") != expected_audit_records:
                     raise ValidationFailure(
                         f"{location}: migration audit omission, order, or content mismatch"
+                    )
+                if not descriptors and (
+                    migrated != prior_aggregate or result_document["dispositions"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: empty migration route is not an exact no-op"
                     )
                 validate_aggregate_against_bundle(
                     migrated,
                     case / selected["target_bundle"]["bundle_file"],
                     case / selected["source_bundle"]["bundle_file"],
                 )
-                target_fingerprint = descriptor["base_descriptor"]["target_validated_bundle_fingerprint"]
+                target_fingerprint = selected["target_bundle"][
+                    "validated_bundle_fingerprint"
+                ]
                 if (
                     migrated["validated_bundle_fingerprint"] != target_fingerprint
                     or int(migrated["migration_sequence"])
-                    != int(prior_aggregate["migration_sequence"]) + 1
+                    != int(prior_aggregate["migration_sequence"])
+                    + len(descriptors)
                     or any(
                         runtime["current_definition"]["validated_bundle_fingerprint"]
                         != target_fingerprint
@@ -8110,16 +8222,10 @@ def validate_version2_vectors(
         wrong_audit_content["audit_records"][0][
             "migration_descriptor_digest"
         ] = "sha256:" + "0" * 64
-        wrong_audit_order = copy.deepcopy(preserve_result)
-        stale_audit = copy.deepcopy(
-            artifact("migration-stale-target-result.json").document[
-                "audit_records"
-            ][0]
+        wrong_audit_order = copy.deepcopy(
+            artifact("migration-two-hop-result.json").document
         )
-        wrong_audit_order["audit_records"] = [
-            stale_audit,
-            copy.deepcopy(preserve_result["audit_records"][0]),
-        ]
+        wrong_audit_order["audit_records"].reverse()
         probes = {
             "migration shape substitution": {"descriptor-compatible-v2.json": wrong_shape},
             "migration self-cycle substitution": {"descriptor-compatible-v2.json": source_cycle},
@@ -8129,8 +8235,8 @@ def validate_version2_vectors(
             "migration audit content substitution": {
                 "migration-preserve-result.json": wrong_audit_content,
             },
-            "migration audit order or cardinality substitution": {
-                "migration-preserve-result.json": wrong_audit_order,
+            "migration audit order substitution": {
+                "migration-two-hop-result.json": wrong_audit_order,
             },
             "migration result without target binding or sequence": {
                 "migration-preserve-result.json": {

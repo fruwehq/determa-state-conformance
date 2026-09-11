@@ -2073,6 +2073,10 @@ def produce_persistence() -> dict[str, bytes]:
     target_documents: dict[str, dict[str, Any]] = {}
     target_documents["target-compatible.yaml"] = copy.deepcopy(source_document)
     target_documents["target-compatible.yaml"]["machines"][0]["root"]["states"]["busy"]["states"]["authorizing"]["on_events"]["retry"]["guard"] = "false || false"
+    target_documents["target-compatible-second.yaml"] = copy.deepcopy(
+        target_documents["target-compatible.yaml"]
+    )
+    target_documents["target-compatible-second.yaml"]["machines"][0]["root"]["states"]["busy"]["states"]["authorizing"]["on_events"]["retry"]["guard"] = "false || false || false"
     removed_event = copy.deepcopy(source_document)
     del removed_event["events"]["new_request"]
     removed_event["events"]["replacement_request"] = {
@@ -2103,11 +2107,21 @@ def produce_persistence() -> dict[str, bytes]:
 
     base_descriptor_template = load(PERSISTENCE / "base-descriptor-v1.json")
 
-    def make_descriptor(target_name: str, *, dispose_retired: bool = False) -> dict[str, Any]:
+    def make_descriptor(
+        target_name: str,
+        *,
+        source_name: str | None = None,
+        dispose_retired: bool = False,
+    ) -> dict[str, Any]:
+        descriptor_source = (
+            source_document if source_name is None else target_documents[source_name]
+        )
         descriptor_v1 = copy.deepcopy(base_descriptor_template)
-        descriptor_v1["source_validated_bundle_fingerprint"] = source_fingerprint
+        descriptor_v1["source_validated_bundle_fingerprint"] = (
+            bundle_fingerprint_document(descriptor_source)
+        )
         descriptor_v1["target_validated_bundle_fingerprint"] = bundle_fingerprint_document(target_documents[target_name])
-        descriptor_v1["source_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(source_document)
+        descriptor_v1["source_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(descriptor_source)
         descriptor_v1["target_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(target_documents[target_name])
         if descriptor_v1["source_aggregate_shape_fingerprint"] != descriptor_v1["target_aggregate_shape_fingerprint"]:
             descriptor_v1["mode"] = "transform"
@@ -2150,6 +2164,9 @@ def produce_persistence() -> dict[str, bytes]:
 
     descriptors = {
         "descriptor-compatible-v2.json": make_descriptor("target-compatible.yaml"),
+        "descriptor-compatible-second-v2.json": make_descriptor(
+            "target-compatible-second.yaml", source_name="target-compatible.yaml"
+        ),
         "descriptor-dispose-v2.json": make_descriptor("target-removed-event.yaml", dispose_retired=True),
         "descriptor-removed-event-v2.json": make_descriptor("target-removed-event.yaml"),
         "descriptor-payload-v2.json": make_descriptor("target-payload-incompatible.yaml"),
@@ -2239,6 +2256,9 @@ def produce_persistence() -> dict[str, bytes]:
         }
 
     preserved = migrated_to(aggregate_v2, descriptors["descriptor-compatible-v2.json"])
+    two_hop_migrated = migrated_to(
+        preserved, descriptors["descriptor-compatible-second-v2.json"]
+    )
 
     stale_target_migrated = migrated_to(
         aggregate_v2, descriptors["descriptor-stale-v2.json"]
@@ -2319,6 +2339,33 @@ def produce_persistence() -> dict[str, bytes]:
                         preserved,
                         descriptors["descriptor-compatible-v2.json"],
                     )
+                ],
+            }
+        ),
+        "migration-empty-route-result.json": canonical(
+            {
+                "result": "success",
+                "aggregate_state": aggregate_v2,
+                "dispositions": [],
+                "audit_records": [],
+            }
+        ),
+        "migration-two-hop-result.json": canonical(
+            {
+                "result": "success",
+                "aggregate_state": two_hop_migrated,
+                "dispositions": [],
+                "audit_records": [
+                    migration_audit_record(
+                        aggregate_v2,
+                        preserved,
+                        descriptors["descriptor-compatible-v2.json"],
+                    ),
+                    migration_audit_record(
+                        preserved,
+                        two_hop_migrated,
+                        descriptors["descriptor-compatible-second-v2.json"],
+                    ),
                 ],
             }
         ),
@@ -2422,6 +2469,35 @@ def produce_persistence() -> dict[str, bytes]:
             "migration_descriptor_file": descriptor_name,
             "migration_descriptor_digest_route": [descriptor["migration_descriptor_digest"]],
         }
+    operations["empty_route"] = {
+        "operation": "migrate_aggregate_v2",
+        "maintenance_mode": True,
+        "source_bundle": bundle_binding(PERSISTENCE / "machine.yaml"),
+        "target_bundle": bundle_binding(PERSISTENCE / "machine.yaml"),
+        "migration_descriptor_files": [],
+        "migration_descriptor_digest_route": [],
+    }
+    operations["two_hop"] = {
+        "operation": "migrate_aggregate_v2",
+        "maintenance_mode": True,
+        "source_bundle": bundle_binding(PERSISTENCE / "machine.yaml"),
+        "target_bundle": generated_bundle_binding(
+            "target-compatible-second.yaml",
+            target_documents["target-compatible-second.yaml"],
+        ),
+        "migration_descriptor_files": [
+            "descriptor-compatible-v2.json",
+            "descriptor-compatible-second-v2.json",
+        ],
+        "migration_descriptor_digest_route": [
+            descriptors["descriptor-compatible-v2.json"][
+                "migration_descriptor_digest"
+            ],
+            descriptors["descriptor-compatible-second-v2.json"][
+                "migration_descriptor_digest"
+            ],
+        ],
+    }
     outputs["operation-inputs.json"] = canonical(operations)
     return {name: data if isinstance(data, bytes) else canonical(data) for name, data in outputs.items()}
 
