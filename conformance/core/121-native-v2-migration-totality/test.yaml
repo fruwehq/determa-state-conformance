@@ -1,0 +1,283 @@
+title: 121 native v2 migration totality
+static:
+  documents:
+    - file: active-source.yaml
+      valid: true
+    - file: active-target.yaml
+      valid: true
+    - file: component-source.yaml
+      valid: true
+    - file: component-target.yaml
+      valid: true
+    - file: counter-source.yaml
+      valid: true
+    - file: counter-target.yaml
+      valid: true
+    - file: deleted-target.yaml
+      valid: true
+    - file: history-source.yaml
+      valid: true
+    - file: history-target.yaml
+      valid: true
+    - file: owned-source.yaml
+      valid: true
+    - file: owned-target.yaml
+      valid: true
+    - file: shallow-history-source.yaml
+      valid: true
+    - file: shallow-history-target.yaml
+      valid: true
+    - file: variable-source.yaml
+      valid: true
+    - file: variable-target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: active-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: active-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: active-explicit_leaf_remap-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: active-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: components-component_placement_mapping-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: components-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: components-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: components-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: counters-counter_and_identity_preservation-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: counters-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: counters-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: counters-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: deleted-ambiguous-active-state-mapping.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: deleted-guessed-reset.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: deleted-missing-active-state-mapping.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: deleted-partial-variable-mapping.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: deleted-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: history-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: history-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: history-null_history_pointer_mapping-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: history-recorded-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: history-recorded-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: history-recorded_deep_history_pointer_mapping-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: history-recorded_shallow_history_pointer_mapping-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: history-shallow-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: history-shallow-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: history-shallow-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: history-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: operation-inputs.json
+      kind: version2_operation_inputs
+      valid: true
+    - file: owned-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: owned-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: owned-owned_runtime_binding_mapping-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: owned-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: variables-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: variables-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: variables-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: variables-total_variable_transform-result.json
+      kind: version2_operation_result
+      valid: true
+version2_vectors:
+  - name: explicit_leaf_remap
+    covers:
+      - explicit_leaf_remap
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /explicit_leaf_remap
+    state_before: active-source-aggregate-v2.json
+    descriptor_file: active-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: active-explicit_leaf_remap-result.json
+  - name: missing_active_state_mapping
+    covers:
+      - missing_active_state_mapping
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /missing_active_state_mapping
+    state_before: deleted-source-aggregate-v2.json
+    descriptor_file: deleted-missing-active-state-mapping.json
+    expect:
+      result: failure
+      code: migration_totality_failure
+      unchanged_file: deleted-source-aggregate-v2.json
+  - name: ambiguous_active_state_mapping
+    covers:
+      - ambiguous_active_state_mapping
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /ambiguous_active_state_mapping
+    state_before: deleted-source-aggregate-v2.json
+    descriptor_file: deleted-ambiguous-active-state-mapping.json
+    expect:
+      result: failure
+      code: invalid_migration_descriptor
+      unchanged_file: deleted-source-aggregate-v2.json
+  - name: partial_variable_mapping
+    covers:
+      - partial_variable_mapping
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /partial_variable_mapping
+    state_before: deleted-source-aggregate-v2.json
+    descriptor_file: deleted-partial-variable-mapping.json
+    expect:
+      result: failure
+      code: migration_totality_failure
+      unchanged_file: deleted-source-aggregate-v2.json
+  - name: guessed_reset
+    covers:
+      - guessed_reset
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /guessed_reset
+    state_before: deleted-source-aggregate-v2.json
+    descriptor_file: deleted-guessed-reset.json
+    expect:
+      result: failure
+      code: migration_totality_failure
+      unchanged_file: deleted-source-aggregate-v2.json
+  - name: total_variable_transform
+    covers:
+      - total_variable_transform
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /total_variable_transform
+    state_before: variables-source-aggregate-v2.json
+    descriptor_file: variables-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: variables-total_variable_transform-result.json
+  - name: null_history_pointer_mapping
+    covers:
+      - null_history_pointer_mapping
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /null_history_pointer_mapping
+    state_before: history-source-aggregate-v2.json
+    descriptor_file: history-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: history-null_history_pointer_mapping-result.json
+  - name: recorded_deep_history_pointer_mapping
+    covers:
+      - recorded_deep_history_pointer_mapping
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /recorded_deep_history_pointer_mapping
+    state_before: history-recorded-source-aggregate-v2.json
+    descriptor_file: history-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: history-recorded_deep_history_pointer_mapping-result.json
+  - name: recorded_shallow_history_pointer_mapping
+    covers:
+      - recorded_shallow_history_pointer_mapping
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /recorded_shallow_history_pointer_mapping
+    state_before: history-shallow-source-aggregate-v2.json
+    descriptor_file: history-shallow-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: history-recorded_shallow_history_pointer_mapping-result.json
+  - name: component_placement_mapping
+    covers:
+      - component_placement_mapping
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_placement_mapping
+    state_before: components-source-aggregate-v2.json
+    descriptor_file: components-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: components-component_placement_mapping-result.json
+  - name: owned_runtime_binding_mapping
+    covers:
+      - owned_runtime_binding_mapping
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /owned_runtime_binding_mapping
+    state_before: owned-source-aggregate-v2.json
+    descriptor_file: owned-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: owned-owned_runtime_binding_mapping-result.json
+  - name: counter_and_identity_preservation
+    covers:
+      - counter_and_identity_preservation
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /counter_and_identity_preservation
+    state_before: counters-source-aggregate-v2.json
+    descriptor_file: counters-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: counters-counter_and_identity_preservation-result.json

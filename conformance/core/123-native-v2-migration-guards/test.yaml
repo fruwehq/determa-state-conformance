@@ -1,0 +1,344 @@
+title: 123 native v2 migration guards
+static:
+  documents:
+    - file: failure-source.yaml
+      valid: true
+    - file: failure-target.yaml
+      valid: true
+    - file: limits-occurrence-source.yaml
+      valid: true
+    - file: limits-occurrence-target.yaml
+      valid: true
+    - file: limits-source.yaml
+      valid: true
+    - file: limits-target.yaml
+      valid: true
+    - file: transform-source.yaml
+      valid: true
+    - file: transform-target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: failures-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: failures-missing_maintenance_mode_is_invalid_request-request.json
+      kind: version2_operation_inputs
+      valid: false
+      error: invalid_version2_operation_inputs
+      covers:
+        - missing_maintenance_mode_is_invalid_request
+    - file: failures-non_boolean_maintenance_mode_is_invalid_request-request.json
+      kind: version2_operation_inputs
+      valid: false
+      error: invalid_version2_operation_inputs
+      covers:
+        - non_boolean_maintenance_mode_is_invalid_request
+    - file: failures-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: failures-transform-fault-descriptor.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: failures-transform-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: failures-unsupported-descriptor-format.json
+      kind: migration_descriptor_v2
+      valid: false
+      error: unsupported_migration_descriptor_format
+    - file: failures-unsupported-descriptor-schema-version.json
+      kind: migration_descriptor_v2
+      valid: false
+      error: unsupported_migration_descriptor_schema_version
+    - file: limits-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: limits-minimum_supported_floors_accept_all_listed_dimensions-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: limits-occurrence-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: limits-occurrence-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: limits-occurrence-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: limits-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: limits-understated-evaluation-descriptor.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: limits-understated-output-descriptor.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: operation-inputs.json
+      kind: version2_operation_inputs
+      valid: true
+version2_vectors:
+  - name: untrusted_descriptor
+    covers:
+      - untrusted_descriptor
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /untrusted_descriptor
+    state_before: limits-source-aggregate-v2.json
+    descriptor_file: limits-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_descriptor_untrusted
+      unchanged_file: limits-source-aggregate-v2.json
+  - name: chain_limit_exceeded
+    covers:
+      - chain_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /chain_limit_exceeded
+    state_before: limits-source-aggregate-v2.json
+    descriptor_file: limits-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-source-aggregate-v2.json
+  - name: aggregate_byte_limit_exceeded
+    covers:
+      - aggregate_byte_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /aggregate_byte_limit_exceeded
+    state_before: limits-source-aggregate-v2.json
+    descriptor_file: limits-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-source-aggregate-v2.json
+  - name: descriptor_byte_limit_exceeded
+    covers:
+      - descriptor_byte_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /descriptor_byte_limit_exceeded
+    state_before: limits-source-aggregate-v2.json
+    descriptor_file: limits-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-source-aggregate-v2.json
+  - name: descriptor_understates_actual_transformed_output
+    covers:
+      - descriptor_understates_actual_transformed_output
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /descriptor_understates_actual_transformed_output
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-understated-output-descriptor.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: descriptor_understates_actual_cel_evaluation
+    covers:
+      - descriptor_understates_actual_cel_evaluation
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /descriptor_understates_actual_cel_evaluation
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-understated-evaluation-descriptor.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: minimum_supported_floors_accept_all_listed_dimensions
+    covers:
+      - minimum_supported_floors_accept_all_listed_dimensions
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /minimum_supported_floors_accept_all_listed_dimensions
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: limits-minimum_supported_floors_accept_all_listed_dimensions-result.json
+  - name: configured_definition_bytes_limit_exceeded
+    covers:
+      - configured_definition_bytes_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_definition_bytes_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_json_nesting_depth_limit_exceeded
+    covers:
+      - configured_json_nesting_depth_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_json_nesting_depth_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_runtimes_limit_exceeded
+    covers:
+      - configured_runtimes_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_runtimes_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_active_states_limit_exceeded
+    covers:
+      - configured_active_states_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_active_states_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_variables_limit_exceeded
+    covers:
+      - configured_variables_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_variables_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_map_members_limit_exceeded
+    covers:
+      - configured_map_members_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_map_members_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_list_members_limit_exceeded
+    covers:
+      - configured_list_members_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_list_members_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_string_utf8_bytes_limit_exceeded
+    covers:
+      - configured_string_utf8_bytes_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_string_utf8_bytes_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_descriptor_rules_limit_exceeded
+    covers:
+      - configured_descriptor_rules_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_descriptor_rules_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_cel_expression_length_limit_exceeded
+    covers:
+      - configured_cel_expression_length_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_cel_expression_length_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: configured_cel_ast_nodes_limit_exceeded
+    covers:
+      - configured_cel_ast_nodes_limit_exceeded
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /configured_cel_ast_nodes_limit_exceeded
+    state_before: limits-occurrence-source-aggregate-v2.json
+    descriptor_file: limits-occurrence-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_resource_limit_exceeded
+      unchanged_file: limits-occurrence-source-aggregate-v2.json
+  - name: target_definition_is_unavailable
+    covers:
+      - target_definition_is_unavailable
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /target_definition_is_unavailable
+    state_before: failures-source-aggregate-v2.json
+    descriptor_file: failures-descriptor-v2.json
+    expect:
+      result: failure
+      code: target_definition_unavailable
+      unchanged_file: failures-source-aggregate-v2.json
+  - name: runtime_transform_fault
+    covers:
+      - runtime_transform_fault
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /runtime_transform_fault
+    state_before: failures-transform-source-aggregate-v2.json
+    descriptor_file: failures-transform-fault-descriptor.json
+    expect:
+      result: failure
+      code: migration_transform_fault
+      unchanged_file: failures-transform-source-aggregate-v2.json
+  - name: unsupported_descriptor_discriminator
+    covers:
+      - unsupported_descriptor_discriminator
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /unsupported_descriptor_discriminator
+    state_before: failures-source-aggregate-v2.json
+    descriptor_file: failures-unsupported-descriptor-format.json
+    expect:
+      result: failure
+      code: unsupported_migration_descriptor_format
+      unchanged_file: failures-source-aggregate-v2.json
+  - name: unsupported_descriptor_schema_version
+    covers:
+      - unsupported_descriptor_schema_version
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /unsupported_descriptor_schema_version
+    state_before: failures-source-aggregate-v2.json
+    descriptor_file: failures-unsupported-descriptor-schema-version.json
+    expect:
+      result: failure
+      code: unsupported_migration_descriptor_schema_version
+      unchanged_file: failures-source-aggregate-v2.json

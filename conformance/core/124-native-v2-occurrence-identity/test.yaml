@@ -1,0 +1,201 @@
+title: 124 native v2 occurrence identity
+static:
+  documents:
+    - file: decimal-component-machine.yaml
+      valid: true
+    - file: occurrence-source.yaml
+      valid: true
+    - file: occurrence-target.yaml
+      valid: true
+    - file: spawn-maximum-machine.yaml
+      valid: true
+    - file: spawn-rounding-machine.yaml
+      valid: true
+    - file: spawn-safe-machine.yaml
+      valid: true
+    - file: spawn-unsafe-machine.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: decimal-component-first-javascript-unsafe.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: decimal-component-javascript-safe-maximum.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: decimal-component-numeric-activation.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: decimal-component-unbounded.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: decimal-spawned-first-javascript-unsafe.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: decimal-spawned-javascript-rounding-gap.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: decimal-spawned-javascript-safe-maximum.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: decimal-spawned-machine-version-above-signed64.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: decimal-spawned-numeric-machine-version.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: decimal-spawned-signed64-maximum.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: occurrences-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: occurrences-repeated-activation-expected.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: occurrences-repeated-activation-source.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: occurrences-repeated-runtime-expected.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: occurrences-repeated-runtime-source.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: occurrences-repeated_activation_values_are_occurrence_local-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: occurrences-repeated_runtime_values_are_occurrence_local-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: operation-inputs.json
+      kind: version2_operation_inputs
+      valid: true
+version2_vectors:
+  - name: repeated_runtime_values_are_occurrence_local
+    covers:
+      - repeated_runtime_values_are_occurrence_local
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /repeated_runtime_values_are_occurrence_local
+    state_before: occurrences-repeated-runtime-source.json
+    descriptor_file: occurrences-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: occurrences-repeated_runtime_values_are_occurrence_local-result.json
+  - name: repeated_activation_values_are_occurrence_local
+    covers:
+      - repeated_activation_values_are_occurrence_local
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /repeated_activation_values_are_occurrence_local
+    state_before: occurrences-repeated-activation-source.json
+    descriptor_file: occurrences-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: occurrences-repeated_activation_values_are_occurrence_local-result.json
+  - name: spawned_machine_version_javascript_safe_maximum
+    covers:
+      - spawned_machine_version_javascript_safe_maximum
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_machine_version_javascript_safe_maximum
+    state_before: decimal-spawned-javascript-safe-maximum.json
+    expect:
+      result: success
+      exact_result_file: decimal-spawned-javascript-safe-maximum.json
+  - name: spawned_machine_version_first_javascript_unsafe
+    covers:
+      - spawned_machine_version_first_javascript_unsafe
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_machine_version_first_javascript_unsafe
+    state_before: decimal-spawned-first-javascript-unsafe.json
+    expect:
+      result: success
+      exact_result_file: decimal-spawned-first-javascript-unsafe.json
+  - name: spawned_machine_version_javascript_rounding_gap
+    covers:
+      - spawned_machine_version_javascript_rounding_gap
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_machine_version_javascript_rounding_gap
+    state_before: decimal-spawned-javascript-rounding-gap.json
+    expect:
+      result: success
+      exact_result_file: decimal-spawned-javascript-rounding-gap.json
+  - name: spawned_machine_version_signed64_maximum
+    covers:
+      - spawned_machine_version_signed64_maximum
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_machine_version_signed64_maximum
+    state_before: decimal-spawned-signed64-maximum.json
+    expect:
+      result: success
+      exact_result_file: decimal-spawned-signed64-maximum.json
+  - name: spawned_numeric_machine_version_rejected
+    covers:
+      - spawned_numeric_machine_version_rejected
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_numeric_machine_version_rejected
+    state_before: decimal-spawned-numeric-machine-version.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: decimal-spawned-numeric-machine-version.json
+  - name: spawned_machine_version_above_signed64_rejected
+    covers:
+      - spawned_machine_version_above_signed64_rejected
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_machine_version_above_signed64_rejected
+    state_before: decimal-spawned-machine-version-above-signed64.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: decimal-spawned-machine-version-above-signed64.json
+  - name: component_activation_javascript_safe_maximum
+    covers:
+      - component_activation_javascript_safe_maximum
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_activation_javascript_safe_maximum
+    state_before: decimal-component-javascript-safe-maximum.json
+    expect:
+      result: success
+      exact_result_file: decimal-component-javascript-safe-maximum.json
+  - name: component_activation_first_javascript_unsafe
+    covers:
+      - component_activation_first_javascript_unsafe
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_activation_first_javascript_unsafe
+    state_before: decimal-component-first-javascript-unsafe.json
+    expect:
+      result: success
+      exact_result_file: decimal-component-first-javascript-unsafe.json
+  - name: component_activation_unbounded
+    covers:
+      - component_activation_unbounded
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_activation_unbounded
+    state_before: decimal-component-unbounded.json
+    expect:
+      result: success
+      exact_result_file: decimal-component-unbounded.json
+  - name: component_numeric_activation_rejected
+    covers:
+      - component_numeric_activation_rejected
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_numeric_activation_rejected
+    state_before: decimal-component-numeric-activation.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: decimal-component-numeric-activation.json

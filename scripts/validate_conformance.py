@@ -166,6 +166,111 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "root_mailbox_isolation",
         "spawned_mailbox_isolation",
         "version2_counter_allocation",
+        "aggregate_byte_limit_exceeded",
+        "aggregate_digest_mismatch",
+        "all_typed_values_round_trip",
+        "ambiguous_active_state_mapping",
+        "attachment_never_overrides_existing_key",
+        "attachments_seed_empty_resolver_and_drive_route",
+        "chain_limit_exceeded",
+        "compatible_definition_migration",
+        "completed_preserved",
+        "component_activation_first_javascript_unsafe",
+        "component_activation_javascript_safe_maximum",
+        "component_activation_unbounded",
+        "component_numeric_activation_rejected",
+        "component_placement_mapping",
+        "component_target_extra_component_definition_pointer",
+        "component_target_extra_field",
+        "component_target_missing_activation_sequence",
+        "component_target_missing_component_id",
+        "component_target_missing_component_runtime_id",
+        "component_target_missing_owner_runtime_id",
+        "component_target_missing_root_instance_id",
+        "configured_active_states_limit_exceeded",
+        "configured_cel_ast_nodes_limit_exceeded",
+        "configured_cel_expression_length_limit_exceeded",
+        "configured_definition_bytes_limit_exceeded",
+        "configured_descriptor_rules_limit_exceeded",
+        "configured_json_nesting_depth_limit_exceeded",
+        "configured_list_members_limit_exceeded",
+        "configured_map_members_limit_exceeded",
+        "configured_runtimes_limit_exceeded",
+        "configured_string_utf8_bytes_limit_exceeded",
+        "configured_variables_limit_exceeded",
+        "counter_and_identity_preservation",
+        "definition_is_present_but_untrusted",
+        "definition_key_collision",
+        "descriptor_byte_limit_exceeded",
+        "descriptor_understates_actual_cel_evaluation",
+        "descriptor_understates_actual_transformed_output",
+        "duplicate_attachment",
+        "empty_route_canonical_input_preserves_canonical_bytes",
+        "empty_route_changed_definition_is_missing",
+        "empty_route_same_definition_is_exact_noop",
+        "exact_component_target_shape",
+        "exact_root_target_shape",
+        "exact_spawned_instance_target_shape",
+        "exact_two_hop_route",
+        "explicit_leaf_remap",
+        "faulted_aggregate_round_trip",
+        "faulted_diagnostic_tree_preserved",
+        "guessed_reset",
+        "identical_failed_retry",
+        "identical_retry",
+        "maintenance_required",
+        "matching_definition",
+        "migration_then_processing_faulted",
+        "migration_then_processing_handled",
+        "migration_then_processing_rejected",
+        "migration_then_processing_unhandled",
+        "minimum_supported_floors_accept_all_listed_dimensions",
+        "missing_active_state_mapping",
+        "missing_definition",
+        "missing_maintenance_mode_is_invalid_request",
+        "native_created_aggregate_matches_canonical_artifact",
+        "non_boolean_maintenance_mode_is_invalid_request",
+        "null_history_pointer_mapping",
+        "owned_runtime_binding_mapping",
+        "partial_variable_mapping",
+        "put_if_absent_is_idempotent",
+        "recorded_deep_history_pointer_mapping",
+        "recorded_shallow_history_pointer_mapping",
+        "repeated_activation_values_are_occurrence_local",
+        "repeated_descriptor_cycle",
+        "repeated_runtime_values_are_occurrence_local",
+        "root_target_extra_field",
+        "root_target_missing_root_instance_id",
+        "root_target_missing_root_runtime_id",
+        "runtime_transform_fault",
+        "semantic_relation_mismatch",
+        "spawned_instance_target_extra_field",
+        "spawned_instance_target_extra_namespace",
+        "spawned_instance_target_extra_owner_runtime_id",
+        "spawned_instance_target_extra_spawn_sequence",
+        "spawned_instance_target_missing_instance_id",
+        "spawned_instance_target_missing_machine_id",
+        "spawned_instance_target_missing_machine_version",
+        "spawned_instance_target_missing_root_instance_id",
+        "spawned_machine_version_above_signed64_rejected",
+        "spawned_machine_version_first_javascript_unsafe",
+        "spawned_machine_version_javascript_rounding_gap",
+        "spawned_machine_version_javascript_safe_maximum",
+        "spawned_machine_version_signed64_maximum",
+        "spawned_numeric_machine_version_rejected",
+        "target_definition_is_unavailable",
+        "terminal_policy_rejects",
+        "total_variable_transform",
+        "unchanged_definition_resume",
+        "unsupported_aggregate_discriminator",
+        "unsupported_aggregate_schema_version",
+        "unsupported_descriptor_discriminator",
+        "unsupported_descriptor_schema_version",
+        "unsupported_package_discriminator",
+        "unsupported_package_schema_version",
+        "untrusted_descriptor",
+        "valid_self_contained_package",
+        "wrong_descriptor_order",
     }
 )
 
@@ -303,6 +408,8 @@ def encode_typed_value(value: Any) -> list[Any]:
     if isinstance(value, int):
         return ["integer", str(value)]
     if isinstance(value, float):
+        if value == 0.0:
+            value = 0.0
         return ["float", struct.pack(">d", value).hex()]
     if isinstance(value, list):
         return ["list", [encode_typed_value(item) for item in value]]
@@ -385,7 +492,11 @@ def validated_bundle_fingerprint(path: Path) -> str:
 def aggregate_shape_fingerprint_for_path(path: Path) -> str:
     bundle = normalized_bundle_value(path)
 
-    def state_projection(state: dict[str, Any], pointer: str) -> dict[str, Any]:
+    def state_projection(
+        state: dict[str, Any],
+        pointer: str,
+        parent_scopes: tuple[tuple[str, dict[str, Any]], ...] = (),
+    ) -> dict[str, Any]:
         result: dict[str, Any] = {"definition_pointer": pointer, "type": state["type"]}
         if state["type"] == "composite":
             result["history"] = state.get("history", "none")
@@ -404,8 +515,9 @@ def aggregate_shape_fingerprint_for_path(path: Path) -> str:
         variables.sort(key=lambda item: item["declaration_pointer"].encode("utf-8"))
         if variables:
             result["variables"] = variables
+        scopes = parent_scopes + ((pointer, state.get("variables", {})),)
         children = [
-            state_projection(child, f"{pointer}/states/{name}")
+            state_projection(child, f"{pointer}/states/{name}", scopes)
             for name, child in sorted(state.get("states", {}).items(), key=lambda item: item[0].encode("utf-8"))
             if child.get("type") != "choice"
         ]
@@ -427,6 +539,52 @@ def aggregate_shape_fingerprint_for_path(path: Path) -> str:
             components.append(item)
         if components:
             result["components"] = components
+        spawn_sites: list[dict[str, Any]] = []
+
+        def scan(value: Any, action_pointer: str) -> None:
+            if isinstance(value, list):
+                for index, item in enumerate(value):
+                    scan(item, f"{action_pointer}/{index}")
+                return
+            if not isinstance(value, dict):
+                return
+            spawn = value.get("spawn")
+            if isinstance(spawn, dict):
+                holder_pointer = None
+                holder = spawn.get("bind_to")
+                if holder is not None:
+                    for scope_pointer, declarations in reversed(scopes):
+                        if holder in declarations:
+                            holder_pointer = f"{scope_pointer}/variables/{holder}"
+                            break
+                spawn_sites.append(
+                    {
+                        "action_pointer": f"{action_pointer}/spawn",
+                        "machine_id": spawn["machine_id"],
+                        "holder_variable_declaration_pointer": holder_pointer,
+                    }
+                )
+            for key, item in value.items():
+                if key != "spawn":
+                    scan(item, f"{action_pointer}/{key}")
+
+        for action_name in ("entry", "exit"):
+            scan(state.get(action_name, []), f"{pointer}/{action_name}")
+        if "initial" in state:
+            scan(state["initial"].get("action", []), f"{pointer}/initial/action")
+        for event_name, transitions in state.get("on_events", {}).items():
+            for transition_index, transition in enumerate(
+                transitions if isinstance(transitions, list) else [transitions]
+            ):
+                suffix = f"/{transition_index}" if isinstance(transitions, list) else ""
+                scan(
+                    transition.get("action", []),
+                    f"{pointer}/on_events/{event_name}{suffix}/action",
+                )
+        if spawn_sites:
+            result["spawn_sites"] = sorted(
+                spawn_sites, key=lambda item: item["action_pointer"].encode("utf-8")
+            )
         return result
 
     tree = {
@@ -1885,6 +2043,7 @@ def artifact_entries(
             "semantic_expected",
             "semantic_input_file",
             "semantic_input_pointer",
+            "covers",
         }
         if unknown:
             raise ValidationFailure(
@@ -1899,6 +2058,24 @@ def artifact_entries(
             raise ValidationFailure(f"{case.name}: invalid artifact kind {kind!r}")
         if not isinstance(entry.get("valid"), bool):
             raise ValidationFailure(f"{case.name}: artifact needs Boolean valid")
+        entry_coverage = entry.get("covers", [])
+        if "covers" in entry:
+            if (
+                not isinstance(entry_coverage, list)
+                or not entry_coverage
+                or len(set(entry_coverage)) != len(entry_coverage)
+                or any(
+                    not isinstance(item, str) or not item
+                    for item in entry_coverage
+                )
+            ):
+                raise ValidationFailure(
+                    f"{case.name}: artifact has malformed coverage"
+                )
+        if entry_coverage and (entry["valid"] or kind not in DRIVER_ARTIFACT_KINDS):
+            raise ValidationFailure(
+                f"{case.name}: artifact coverage requires an invalid driver artifact"
+            )
         expected_error = entry.get("error")
         if entry["valid"] and expected_error is not None:
             raise ValidationFailure(f"{case.name}: valid artifact cannot declare error")
@@ -2052,6 +2229,14 @@ def validate_version2_vectors(
         entry["file"]: entry for entry in test["artifacts"]["documents"]
     }
     coverage: set[str] = set()
+    for manifest in manifests.values():
+        artifact_coverage = set(manifest.get("covers", []))
+        duplicate = coverage & artifact_coverage
+        if duplicate:
+            raise ValidationFailure(
+                f"{case.name}: duplicate artifact coverage {sorted(duplicate)}"
+            )
+        coverage.update(artifact_coverage)
     names: set[str] = set()
     artifact_overrides = artifact_overrides or {}
 
@@ -2062,14 +2247,21 @@ def validate_version2_vectors(
         return ArtifactAnalysis(None, document, canonical_json_bytes(document))
 
     state_operations = {
+        "round_trip_aggregate_v2",
         "admit_v2",
         "step_v2",
         "migrate_aggregate_v2",
+        "migrate_then_process_v2",
     }
+    package_operations = {"restore_package_v2"}
     checkpoint_operations = {
         "checkpoint_migrate_v2",
     }
-    descriptor_operations = {"migrate_aggregate_v2", "checkpoint_migrate_v2"}
+    descriptor_operations = {
+        "migrate_aggregate_v2",
+        "migrate_then_process_v2",
+        "checkpoint_migrate_v2",
+    }
     core_admission_rejection_codes = {
         "malformed_delivery",
         "duplicate_event_id_in_batch",
@@ -2123,10 +2315,24 @@ def validate_version2_vectors(
             "invalid_machine_target",
             "invalid_binding",
         },
+        "round_trip_aggregate_v2": aggregate_artifact_failure_codes
+        | {
+            "source_definition_unavailable",
+            "definition_fingerprint_mismatch",
+            "definition_untrusted",
+        },
+        "restore_package_v2": migration_failure_codes
+        | {
+            "aggregate_state_digest_mismatch",
+            "unsupported_aggregate_state_package_format",
+            "unsupported_aggregate_state_package_schema_version",
+        },
         "admit_v2": core_admission_rejection_codes
         | aggregate_artifact_failure_codes,
         "step_v2": aggregate_artifact_failure_codes,
         "migrate_aggregate_v2": migration_failure_codes,
+        "migrate_then_process_v2": migration_failure_codes
+        | core_admission_rejection_codes,
         "checkpoint_migrate_v2": checkpoint_artifact_failure_codes
         | migration_failure_codes
         | {"checkpoint_revision_conflict", "operation_id_conflict"},
@@ -2463,6 +2669,8 @@ def validate_version2_vectors(
             raise ValidationFailure(f"{location}: {operation} requires state_before")
         if operation in checkpoint_operations and "checkpoint_before" not in vector:
             raise ValidationFailure(f"{location}: {operation} requires checkpoint_before")
+        if operation in package_operations and "package_file" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires package_file")
         if operation in descriptor_operations and (
             ("descriptor_file" in vector) == ("descriptor_files" in vector)
         ):
@@ -2478,6 +2686,8 @@ def validate_version2_vectors(
             "state_before",
             "checkpoint_before",
             "checkpoint_after",
+            "migration_state_after",
+            "package_file",
             "request_file",
             "descriptor_file",
         ):
@@ -2503,6 +2713,59 @@ def validate_version2_vectors(
         if not isinstance(selected, dict) or selected.get("operation") != operation:
             raise ValidationFailure(f"{location}: selected request operation mismatch")
 
+        def resolver_evidence(
+            resolver: dict[str, Any],
+            required_definitions: set[str],
+            required_descriptors: set[str],
+        ) -> set[str]:
+            evidence: set[str] = set()
+            definitions = {
+                entry["validated_bundle_fingerprint"]: entry
+                for entry in resolver["definitions"]
+            }
+            descriptors_by_digest = {
+                entry["migration_descriptor_digest"]: entry
+                for entry in resolver["migration_descriptors"]
+            }
+            for fingerprint in required_definitions:
+                entry = definitions.get(fingerprint)
+                if entry is None:
+                    evidence.add(
+                        "source_definition_unavailable"
+                        if fingerprint
+                        == (prior_aggregate or {}).get(
+                            "validated_bundle_fingerprint"
+                        )
+                        else "target_definition_unavailable"
+                    )
+                    continue
+                actual = validated_bundle_fingerprint(case / entry["bundle_file"])
+                if actual != fingerprint:
+                    evidence.add("definition_fingerprint_mismatch")
+                elif not entry["trusted"]:
+                    evidence.add("definition_untrusted")
+            for descriptor_digest in required_descriptors:
+                entry = descriptors_by_digest.get(descriptor_digest)
+                if entry is None:
+                    evidence.add("migration_route_missing")
+                    continue
+                descriptor_document = artifact(entry["descriptor_file"]).document
+                actual = hash_value(
+                    [
+                        "determa-migration-descriptor-2",
+                        {
+                            key: value
+                            for key, value in descriptor_document.items()
+                            if key != "migration_descriptor_digest"
+                        },
+                    ]
+                )
+                if actual != descriptor_digest:
+                    evidence.add("invalid_migration_descriptor")
+                elif not entry["trusted"]:
+                    evidence.add("migration_descriptor_untrusted")
+            return evidence
+
         expectation = vector["expect"]
         failure_evidence: set[str] = set()
         maintenance_replay = False
@@ -2524,6 +2787,7 @@ def validate_version2_vectors(
         invalid_candidates = [
             ("state_before", vector.get("state_before")),
             ("checkpoint_before", vector.get("checkpoint_before")),
+            ("package_file", vector.get("package_file")),
             *[("descriptor_file", filename) for filename in descriptor_names],
         ]
         for field, filename in invalid_candidates:
@@ -2534,6 +2798,7 @@ def validate_version2_vectors(
                 manifest_error = {
                     "state_before": "invalid_aggregate_state",
                     "checkpoint_before": "invalid_execution_checkpoint",
+                    "package_file": "invalid_aggregate_state_package",
                     "descriptor_file": "invalid_migration_descriptor",
                 }[field]
             invalid_input_error = manifest_error
@@ -2545,7 +2810,8 @@ def validate_version2_vectors(
                     "result": "failure",
                     "code": invalid_input_error,
                     "unchanged_file": vector.get(
-                        "state_before", vector.get("checkpoint_before")
+                        "state_before",
+                        vector.get("checkpoint_before", vector.get("package_file")),
                     ),
                 }
             ):
@@ -2639,11 +2905,101 @@ def validate_version2_vectors(
         if operation in descriptor_operations and not isinstance(
             selected.get("maintenance_mode"), bool
         ):
-            raise ValidationFailure(
-                f"{location}: migration request lacks mandatory maintenance mode"
-            )
+            if expectation.get("code") != "invalid_migration_request":
+                raise ValidationFailure(
+                    f"{location}: migration request lacks mandatory maintenance mode"
+                )
+            failure_evidence.add("invalid_migration_request")
 
         prior_aggregate = aggregate_from_vector(vector)
+        if operation in descriptor_operations and prior_aggregate is not None:
+            root_status = next(
+                runtime["status"]
+                for runtime in prior_aggregate["runtimes"]
+                if runtime["relation"]["kind"] == "root"
+            )
+            if descriptor_names and root_status in {"completed", "faulted"}:
+                if selected.get("maintenance_mode") is False:
+                    failure_evidence.add(
+                        "terminal_migration_requires_maintenance"
+                    )
+                elif any(
+                    artifact(name).document["terminal_policy"][root_status]
+                    == "reject"
+                    for name in descriptor_names
+                ):
+                    failure_evidence.add("terminal_migration_rejected")
+        if operation == "round_trip_aggregate_v2":
+            assert prior_aggregate is not None
+            resolver = selected["definition_resolver"]
+            resolver_failures = resolver_evidence(
+                resolver,
+                {prior_aggregate["validated_bundle_fingerprint"]},
+                set(),
+            )
+            failure_evidence.update(resolver_failures)
+            if expectation.get("code") == "invalid_aggregate_state" and any(
+                int(runtime["target_identity"]["spawned_instance"]["machine_version"])
+                > MAXIMUM_INTEGER
+                for runtime in prior_aggregate["runtimes"]
+                if "spawned_instance" in runtime["target_identity"]
+            ):
+                failure_evidence.add("invalid_aggregate_state")
+            if expectation["result"] == "success":
+                if resolver_failures:
+                    raise ValidationFailure(
+                        f"{location}: successful round trip has unresolved definition"
+                    )
+                entry = next(
+                    item
+                    for item in resolver["definitions"]
+                    if item["validated_bundle_fingerprint"]
+                    == prior_aggregate["validated_bundle_fingerprint"]
+                )
+                validate_aggregate_against_bundle(
+                    prior_aggregate, case / entry["bundle_file"]
+                )
+        if operation == "restore_package_v2":
+            package = artifact(vector["package_file"]).document
+            embedded = package.get("aggregate_state", {})
+            supplied_digest = embedded.get("aggregate_state_digest")
+            if supplied_digest is not None:
+                expected_digest = hash_value(
+                    [
+                        "determa-aggregate-state-digest-2",
+                        {
+                            key: value
+                            for key, value in embedded.items()
+                            if key != "aggregate_state_digest"
+                        },
+                    ]
+                )
+                if supplied_digest != expected_digest:
+                    failure_evidence.add("aggregate_state_digest_mismatch")
+            definition_keys = [
+                item["validated_bundle_fingerprint"]
+                for item in package.get("normalized_definitions", [])
+            ]
+            descriptor_keys = [
+                item["migration_descriptor_digest"]
+                for item in package.get("migration_descriptors", [])
+            ]
+            if (
+                len(definition_keys) != len(set(definition_keys))
+                or len(descriptor_keys) != len(set(descriptor_keys))
+            ):
+                failure_evidence.add("invalid_aggregate_state_package")
+            package_resolver_failures = resolver_evidence(
+                selected["artifact_resolver"], set(), set()
+            )
+            failure_evidence.update(package_resolver_failures)
+            for entry in selected["artifact_resolver"]["definitions"]:
+                if (
+                    entry["validated_bundle_fingerprint"] in definition_keys
+                    and validated_bundle_fingerprint(case / entry["bundle_file"])
+                    != entry["validated_bundle_fingerprint"]
+                ):
+                    failure_evidence.add("definition_fingerprint_mismatch")
         if (
             prior_aggregate is not None
             and prior_aggregate.get("aggregate_state_schema_version") == 2
@@ -2930,6 +3286,238 @@ def validate_version2_vectors(
             if selected_descriptor_names != descriptor_names:
                 raise ValidationFailure(f"{location}: descriptor request and vector differ")
             descriptors = [artifact(name).document for name in descriptor_names]
+            resolver_failures = resolver_evidence(
+                selected.get(
+                    "artifact_resolver",
+                    {"definitions": [], "migration_descriptors": []},
+                ),
+                {
+                    selected["source_bundle"]["validated_bundle_fingerprint"],
+                    selected["target_bundle"]["validated_bundle_fingerprint"],
+                    *{
+                        fingerprint
+                        for descriptor in descriptors
+                        for fingerprint in (
+                            descriptor["source_validated_bundle_fingerprint"],
+                            descriptor["target_validated_bundle_fingerprint"],
+                        )
+                    },
+                },
+                set(selected["migration_descriptor_digest_route"]),
+            )
+            failure_evidence.update(resolver_failures)
+            if expectation.get("code") == "invalid_migration_descriptor":
+                duplicate_mapping_key = any(
+                    len(keys) != len(set(keys))
+                    for descriptor in descriptors
+                    for keys in (
+                        [
+                            item["source_leaf_state_definition_pointer"]
+                            for item in descriptor["mappings"]["active_states"]
+                        ],
+                        [
+                            item.get("target_declaration_pointer")
+                            for item in descriptor["mappings"]["variables"]
+                            if "target_declaration_pointer" in item
+                        ],
+                    )
+                )
+                if duplicate_mapping_key:
+                    failure_evidence.add("invalid_migration_descriptor")
+            if expectation.get("code") == "migration_totality_failure":
+                for descriptor in descriptors:
+                    active_sources = {
+                        item["source_leaf_state_definition_pointer"]
+                        for item in descriptor["mappings"]["active_states"]
+                    }
+                    live_sources = {
+                        pointer
+                        for runtime in prior_aggregate["runtimes"]
+                        for pointer in runtime[
+                            "active_leaf_state_definition_pointers"
+                        ]
+                    }
+                    active_targets = {
+                        pointer
+                        for item in descriptor["mappings"]["active_states"]
+                        for pointer in item[
+                            "target_leaf_state_definition_pointers"
+                        ]
+                    }
+                    counter_targets = {
+                        item.get("target_definition_pointer")
+                        for item in descriptor["mappings"]["counters"]
+                    }
+                    produced_variables = {
+                        item.get("target_declaration_pointer")
+                        for item in descriptor["mappings"]["variables"]
+                    }
+                    target_bundle = normalized_bundle_value(
+                        case / selected["target_bundle"]["bundle_file"]
+                    )
+                    target_variables: set[str] = set()
+
+                    def collect_variables(state: dict[str, Any], pointer: str) -> None:
+                        target_variables.update(
+                            f"{pointer}/variables/{name}"
+                            for name in state.get("variables", {})
+                        )
+                        for child_name, child in state.get("states", {}).items():
+                            if child.get("type") != "choice":
+                                collect_variables(
+                                    child, f"{pointer}/states/{child_name}"
+                                )
+
+                    for machine_index, machine in enumerate(
+                        target_bundle["machines"]
+                    ):
+                        collect_variables(
+                            machine["root"], f"/machines/{machine_index}/root"
+                        )
+                    if (
+                        not live_sources <= active_sources
+                        or not active_targets <= counter_targets
+                        or target_variables - produced_variables
+                    ):
+                        failure_evidence.add("migration_totality_failure")
+            if expectation.get("code") == "migration_resource_limit_exceeded":
+                exceeded = False
+                limits = selected.get("resource_limits")
+                if limits is not None:
+                    candidates: list[Any] = [prior_aggregate]
+                    candidates.extend(
+                        normalized_bundle_value(
+                            case / selected[key]["bundle_file"]
+                        )
+                        for key in ("source_bundle", "target_bundle")
+                    )
+                    candidates.extend(descriptors)
+
+                    def maximum_depth(value: Any) -> int:
+                        if isinstance(value, dict):
+                            return 1 + max(
+                                (maximum_depth(item) for item in value.values()),
+                                default=0,
+                            )
+                        if isinstance(value, list):
+                            return 1 + max(
+                                (maximum_depth(item) for item in value),
+                                default=0,
+                            )
+                        return 1
+
+                    def walk(value: Any) -> tuple[int, int, int]:
+                        map_members = list_members = string_bytes = 0
+                        if isinstance(value, dict):
+                            map_members = len(value)
+                            string_bytes += max(
+                                (len(key.encode("utf-8")) for key in value),
+                                default=0,
+                            )
+                            children = value.values()
+                        elif isinstance(value, list):
+                            list_members = len(value)
+                            children = value
+                        elif isinstance(value, str):
+                            return 0, 0, len(value.encode("utf-8"))
+                        else:
+                            return 0, 0, 0
+                        for child in children:
+                            child_map, child_list, child_string = walk(child)
+                            map_members = max(map_members, child_map)
+                            list_members = max(list_members, child_list)
+                            string_bytes = max(string_bytes, child_string)
+                        return map_members, list_members, string_bytes
+
+                    maximum_map, maximum_list, maximum_string = (0, 0, 0)
+                    for candidate in candidates:
+                        item_map, item_list, item_string = walk(candidate)
+                        maximum_map = max(maximum_map, item_map)
+                        maximum_list = max(maximum_list, item_list)
+                        maximum_string = max(maximum_string, item_string)
+                    expression_bytes = sum(
+                        len(rule["expression"].encode("utf-8"))
+                        for descriptor in descriptors
+                        for rule in descriptor["mappings"]["variables"]
+                        if "expression" in rule
+                    )
+                    descriptor_rules = max(
+                        (
+                            sum(len(items) for items in descriptor["mappings"].values())
+                            for descriptor in descriptors
+                        ),
+                        default=0,
+                    )
+                    exceeded = any(
+                        (
+                            len(descriptors) > int(limits["maximum_chain_length"]),
+                            len(canonical_json_bytes(prior_aggregate))
+                            > int(limits["maximum_aggregate_bytes"]),
+                            max(
+                                len(canonical_json_bytes(candidates[1])),
+                                len(canonical_json_bytes(candidates[2])),
+                            )
+                            > int(limits["maximum_definition_bytes"]),
+                            max(
+                                (
+                                    len(canonical_json_bytes(descriptor))
+                                    for descriptor in descriptors
+                                ),
+                                default=0,
+                            )
+                            > int(limits["maximum_descriptor_bytes"]),
+                            maximum_depth(candidates)
+                            > int(limits["maximum_json_nesting_depth"]),
+                            len(prior_aggregate["runtimes"])
+                            > int(limits["maximum_runtimes"]),
+                            max(
+                                len(runtime["active_state_activations"])
+                                for runtime in prior_aggregate["runtimes"]
+                            )
+                            > int(limits["maximum_active_states_per_runtime"]),
+                            max(
+                                len(runtime["variables"])
+                                for runtime in prior_aggregate["runtimes"]
+                            )
+                            > int(limits["maximum_variables_per_runtime"]),
+                            maximum_map > int(limits["maximum_map_members"]),
+                            maximum_list > int(limits["maximum_list_members"]),
+                            maximum_string
+                            > int(limits["maximum_string_utf8_bytes"]),
+                            descriptor_rules
+                            > int(limits["maximum_descriptor_rules"]),
+                            expression_bytes
+                            > int(limits["maximum_cel_expression_length"]),
+                            expression_bytes > 0
+                            and int(limits["maximum_cel_ast_nodes"]) == 0,
+                        )
+                    )
+                if not exceeded:
+                    transform_occurrences = sum(
+                        1
+                        for runtime in prior_aggregate["runtimes"]
+                        for descriptor in descriptors
+                        for rule in descriptor["mappings"]["variables"]
+                        if rule.get("operation") in {"transform", "initialize"}
+                        and runtime["variables"]
+                    )
+                    exceeded = any(
+                        int(descriptor["resource_requirements"][field])
+                        < transform_occurrences
+                        for descriptor in descriptors
+                        for field in (
+                            "maximum_transformed_output_bytes",
+                            "maximum_cel_evaluation_steps",
+                        )
+                    )
+                if exceeded:
+                    failure_evidence.add("migration_resource_limit_exceeded")
+            if expectation.get("code") == "migration_transform_fault" and any(
+                "/ 0" in rule.get("expression", "")
+                for descriptor in descriptors
+                for rule in descriptor["mappings"]["variables"]
+            ):
+                failure_evidence.add("migration_transform_fault")
             route = selected["migration_descriptor_digest_route"]
             if route != [item["migration_descriptor_digest"] for item in descriptors]:
                 raise ValidationFailure(f"{location}: migration descriptor route mismatch")
@@ -2948,21 +3536,23 @@ def validate_version2_vectors(
             }
             if not descriptors:
                 if source_fingerprint != target_fingerprint:
-                    raise ValidationFailure(
-                        f"{location}: empty migration route changes definition"
-                    )
+                    if expectation.get("code") != "migration_route_missing":
+                        raise ValidationFailure(
+                            f"{location}: empty migration route changes definition"
+                        )
+                    failure_evidence.add("migration_route_missing")
             else:
                 expected_source_fingerprint = source_fingerprint
+                visited_fingerprints = {source_fingerprint}
+                route_mismatch = False
                 for descriptor in descriptors:
                     if (
                         descriptor["source_validated_bundle_fingerprint"]
                         != expected_source_fingerprint
                     ):
-                        raise ValidationFailure(
-                            f"{location}: migration descriptor chain is discontinuous"
-                        )
+                        route_mismatch = True
                     descriptor_source_path = bundle_by_fingerprint.get(
-                        expected_source_fingerprint
+                        descriptor["source_validated_bundle_fingerprint"]
                     )
                     descriptor_target_fingerprint = descriptor[
                         "target_validated_bundle_fingerprint"
@@ -2988,9 +3578,9 @@ def validate_version2_vectors(
                             f"{location}: migration shape fingerprint is not exact"
                         )
                     if expected_source_fingerprint == descriptor_target_fingerprint:
-                        raise ValidationFailure(
-                            f"{location}: migration route contains a self-cycle"
-                        )
+                        route_mismatch = True
+                    if descriptor_target_fingerprint in visited_fingerprints:
+                        route_mismatch = True
                     if descriptor["mode"] == "compatible" and (
                         descriptor["source_aggregate_shape_fingerprint"]
                         != descriptor["target_aggregate_shape_fingerprint"]
@@ -3000,10 +3590,15 @@ def validate_version2_vectors(
                             f"{location}: compatible descriptor is not shape-identical"
                         )
                     expected_source_fingerprint = descriptor_target_fingerprint
+                    visited_fingerprints.add(descriptor_target_fingerprint)
                 if expected_source_fingerprint != target_fingerprint:
-                    raise ValidationFailure(
-                        f"{location}: migration route does not reach exact target"
-                    )
+                    route_mismatch = True
+                if route_mismatch:
+                    if expectation.get("code") != "migration_route_mismatch":
+                        raise ValidationFailure(
+                            f"{location}: migration route is not exact and acyclic"
+                        )
+                    failure_evidence.add("migration_route_mismatch")
             target_document = normalized_bundle_value(case / selected["target_bundle"]["bundle_file"])
             queued_entries = [
                 entry for runtime in prior_aggregate["runtimes"]
@@ -3111,12 +3706,111 @@ def validate_version2_vectors(
                 )
             result_document = analysis.document
             expected_kinds = (
-                {"aggregate_state_v2"} if operation == "create_v2"
+                {"aggregate_state_v2"}
+                if operation in {"create_v2", "round_trip_aggregate_v2"}
+                else {"aggregate_state_v2", "version2_operation_result"}
+                if operation == "restore_package_v2"
                 else {"core_step_result_v2"} if operation == "step_v2"
                 else {"version2_operation_result"}
             )
             if manifests[result_file]["kind"] not in expected_kinds:
                 raise ValidationFailure(f"{location}: result artifact kind is not closed for {operation}")
+            if operation == "migrate_then_process_v2":
+                assert prior_aggregate is not None
+                migration_state_name = vector.get("migration_state_after")
+                migration_manifest = manifests.get(migration_state_name)
+                if (
+                    migration_state_name is None
+                    or migration_manifest is None
+                    or migration_manifest["kind"] != "aggregate_state_v2"
+                    or not migration_manifest["valid"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: combined operation lacks its exact migration state"
+                    )
+                migration_state = artifact(migration_state_name).document
+                validate_aggregate_against_bundle(
+                    migration_state,
+                    case / selected["target_bundle"]["bundle_file"],
+                    case / selected["source_bundle"]["bundle_file"],
+                )
+                expected_audits: list[dict[str, Any]] = []
+                audit_source = prior_aggregate
+                for descriptor_index, descriptor in enumerate(descriptors):
+                    if descriptor_index == len(descriptors) - 1:
+                        audit_target = migration_state
+                    else:
+                        if descriptor["mode"] != "compatible":
+                            raise ValidationFailure(
+                                f"{location}: intermediate transform lacks exact candidate"
+                            )
+                        audit_target = copy.deepcopy(audit_source)
+                        target_fingerprint = descriptor[
+                            "target_validated_bundle_fingerprint"
+                        ]
+                        audit_target["validated_bundle_fingerprint"] = target_fingerprint
+                        audit_target["migration_sequence"] = str(
+                            int(audit_target["migration_sequence"]) + 1
+                        )
+                        for runtime in audit_target["runtimes"]:
+                            runtime["current_definition"][
+                                "validated_bundle_fingerprint"
+                            ] = target_fingerprint
+                        audit_target.pop("aggregate_state_digest", None)
+                        audit_target["aggregate_state_digest"] = hash_value(
+                            ["determa-aggregate-state-digest-2", audit_target]
+                        )
+                    expected_audits.append(
+                        {
+                            "migration_audit_record_schema_version": 2,
+                            "root_instance_id": prior_aggregate["root_instance_id"],
+                            "root_runtime_id": prior_aggregate["root_runtime_id"],
+                            "migration_sequence": audit_target["migration_sequence"],
+                            "source_validated_bundle_fingerprint": audit_source[
+                                "validated_bundle_fingerprint"
+                            ],
+                            "target_validated_bundle_fingerprint": audit_target[
+                                "validated_bundle_fingerprint"
+                            ],
+                            "migration_descriptor_digest": descriptor[
+                                "migration_descriptor_digest"
+                            ],
+                            "source_aggregate_state_digest": audit_source[
+                                "aggregate_state_digest"
+                            ],
+                            "target_aggregate_state_digest": audit_target[
+                                "aggregate_state_digest"
+                            ],
+                            "result_code": "migration_applied",
+                        }
+                    )
+                    audit_source = audit_target
+                if result_document["migration_audit_records"] != expected_audits:
+                    raise ValidationFailure(
+                        f"{location}: combined operation audits do not close the migration commit"
+                    )
+                processing = result_document["processing"]
+                processing_state = processing["state"]
+                validate_aggregate_against_bundle(
+                    processing_state,
+                    case / selected["target_bundle"]["bundle_file"],
+                    case / selected["source_bundle"]["bundle_file"],
+                )
+                if processing["disposition"] == "rejected":
+                    if processing_state != migration_state or processing["rejection"] is None:
+                        raise ValidationFailure(
+                            f"{location}: rejected delivery changed the migration commit"
+                        )
+                elif (
+                    int(processing_state["next_acceptance_sequence"])
+                    != int(migration_state["next_acceptance_sequence"]) + 1
+                    or int(processing_state["next_queue_sequence"])
+                    != int(migration_state["next_queue_sequence"]) + 1
+                    or processing["rejection"] is not None
+                ):
+                    raise ValidationFailure(
+                        f"{location}: admitted delivery did not follow the migration commit"
+                    )
             if operation == "checkpoint_migrate_v2":
                 checkpoint_after_name = vector.get("checkpoint_after")
                 if checkpoint_after_name is None:

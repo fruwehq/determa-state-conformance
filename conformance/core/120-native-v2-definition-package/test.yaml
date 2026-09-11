@@ -1,0 +1,182 @@
+title: 120 native v2 definition package
+static:
+  documents:
+    - file: package-source.yaml
+      valid: true
+    - file: package-target.yaml
+      valid: true
+    - file: registry-collision.yaml
+      valid: true
+    - file: registry-source.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: definition-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: operation-inputs.json
+      kind: version2_operation_inputs
+      valid: true
+    - file: package-attachments_seed_empty_resolver_and_drive_route-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: package-collision-package-v2.json
+      kind: aggregate_state_package_v2
+      valid: true
+      verify_digest: false
+    - file: package-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: package-digest-mismatch-package-v2.json
+      kind: aggregate_state_package_v2
+      valid: true
+      verify_digest: false
+    - file: package-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: package-put_if_absent_is_idempotent-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: package-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: package-unsupported-package-v2-format.json
+      kind: aggregate_state_package_v2
+      valid: false
+      error: unsupported_aggregate_state_package_format
+    - file: package-unsupported-package-v2-schema-version.json
+      kind: aggregate_state_package_v2
+      valid: false
+      error: unsupported_aggregate_state_package_schema_version
+    - file: package-valid-package-v2.json
+      kind: aggregate_state_package_v2
+      valid: true
+version2_vectors:
+  - name: matching_definition
+    covers:
+      - matching_definition
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /matching_definition
+    state_before: definition-source-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: definition-source-aggregate-v2.json
+  - name: missing_definition
+    covers:
+      - missing_definition
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /missing_definition
+    state_before: definition-source-aggregate-v2.json
+    expect:
+      result: failure
+      code: source_definition_unavailable
+      unchanged_file: definition-source-aggregate-v2.json
+  - name: definition_key_collision
+    covers:
+      - definition_key_collision
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /definition_key_collision
+    state_before: definition-source-aggregate-v2.json
+    expect:
+      result: failure
+      code: definition_fingerprint_mismatch
+      unchanged_file: definition-source-aggregate-v2.json
+  - name: definition_is_present_but_untrusted
+    covers:
+      - definition_is_present_but_untrusted
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /definition_is_present_but_untrusted
+    state_before: definition-source-aggregate-v2.json
+    expect:
+      result: failure
+      code: definition_untrusted
+      unchanged_file: definition-source-aggregate-v2.json
+  - name: valid_self_contained_package
+    covers:
+      - valid_self_contained_package
+    operation: restore_package_v2
+    request_file: operation-inputs.json
+    request_pointer: /valid_self_contained_package
+    package_file: package-valid-package-v2.json
+    expect:
+      result: success
+      exact_result_file: package-source-aggregate-v2.json
+  - name: aggregate_digest_mismatch
+    covers:
+      - aggregate_digest_mismatch
+    operation: restore_package_v2
+    request_file: operation-inputs.json
+    request_pointer: /aggregate_digest_mismatch
+    package_file: package-digest-mismatch-package-v2.json
+    expect:
+      result: failure
+      code: aggregate_state_digest_mismatch
+      unchanged_file: package-digest-mismatch-package-v2.json
+  - name: duplicate_attachment
+    covers:
+      - duplicate_attachment
+    operation: restore_package_v2
+    request_file: operation-inputs.json
+    request_pointer: /duplicate_attachment
+    package_file: package-collision-package-v2.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state_package
+      unchanged_file: package-collision-package-v2.json
+  - name: unsupported_package_discriminator
+    covers:
+      - unsupported_package_discriminator
+    operation: restore_package_v2
+    request_file: operation-inputs.json
+    request_pointer: /unsupported_package_discriminator
+    package_file: package-unsupported-package-v2-format.json
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_package_format
+      unchanged_file: package-unsupported-package-v2-format.json
+  - name: unsupported_package_schema_version
+    covers:
+      - unsupported_package_schema_version
+    operation: restore_package_v2
+    request_file: operation-inputs.json
+    request_pointer: /unsupported_package_schema_version
+    package_file: package-unsupported-package-v2-schema-version.json
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_package_schema_version
+      unchanged_file: package-unsupported-package-v2-schema-version.json
+  - name: attachments_seed_empty_resolver_and_drive_route
+    covers:
+      - attachments_seed_empty_resolver_and_drive_route
+    operation: restore_package_v2
+    request_file: operation-inputs.json
+    request_pointer: /attachments_seed_empty_resolver_and_drive_route
+    package_file: package-valid-package-v2.json
+    expect:
+      result: success
+      exact_result_file: package-attachments_seed_empty_resolver_and_drive_route-result.json
+  - name: put_if_absent_is_idempotent
+    covers:
+      - put_if_absent_is_idempotent
+    operation: restore_package_v2
+    request_file: operation-inputs.json
+    request_pointer: /put_if_absent_is_idempotent
+    package_file: package-valid-package-v2.json
+    expect:
+      result: success
+      exact_result_file: package-put_if_absent_is_idempotent-result.json
+  - name: attachment_never_overrides_existing_key
+    covers:
+      - attachment_never_overrides_existing_key
+    operation: restore_package_v2
+    request_file: operation-inputs.json
+    request_pointer: /attachment_never_overrides_existing_key
+    package_file: package-valid-package-v2.json
+    expect:
+      result: failure
+      code: definition_fingerprint_mismatch
+      unchanged_file: package-valid-package-v2.json

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic queue-bearing conformance artifacts."""
+"""Generate deterministic artifact and checkpoint schema-version-2 fixtures."""
 
 from __future__ import annotations
 
@@ -23,6 +23,17 @@ CHECKPOINT = (
     / "profiles"
     / "execution-checkpoint"
     / "checkpoint-04-version2-mailboxes"
+)
+NATIVE_CORE_CASES = tuple(
+    ROOT / "conformance" / "core" / name
+    for name in (
+        "119-native-v2-aggregate-integrity",
+        "120-native-v2-definition-package",
+        "121-native-v2-migration-totality",
+        "122-native-v2-migration-execution",
+        "123-native-v2-migration-guards",
+        "124-native-v2-occurrence-identity",
+    )
 )
 
 
@@ -157,7 +168,11 @@ def bundle_fingerprint(path: Path) -> str:
 def aggregate_shape_fingerprint_document(document: dict[str, Any]) -> str:
     bundle = normalize_bundle_document(document)
 
-    def state_projection(state: dict[str, Any], pointer: str) -> dict[str, Any]:
+    def state_projection(
+        state: dict[str, Any],
+        pointer: str,
+        parent_scopes: tuple[tuple[str, dict[str, Any]], ...] = (),
+    ) -> dict[str, Any]:
         result: dict[str, Any] = {"definition_pointer": pointer, "type": state["type"]}
         if state["type"] == "composite":
             result["history"] = state.get("history", "none")
@@ -176,8 +191,9 @@ def aggregate_shape_fingerprint_document(document: dict[str, Any]) -> str:
         variables.sort(key=lambda item: item["declaration_pointer"].encode("utf-8"))
         if variables:
             result["variables"] = variables
+        scopes = parent_scopes + ((pointer, state.get("variables", {})),)
         children = [
-            state_projection(child, f"{pointer}/states/{name}")
+            state_projection(child, f"{pointer}/states/{name}", scopes)
             for name, child in sorted(state.get("states", {}).items(), key=lambda item: item[0].encode("utf-8"))
             if child.get("type") != "choice"
         ]
@@ -199,6 +215,54 @@ def aggregate_shape_fingerprint_document(document: dict[str, Any]) -> str:
             components.append(item)
         if components:
             result["components"] = components
+        spawn_sites: list[dict[str, Any]] = []
+
+        def scan(value: Any, action_pointer: str) -> None:
+            if isinstance(value, list):
+                for index, item in enumerate(value):
+                    scan(item, f"{action_pointer}/{index}")
+                return
+            if not isinstance(value, dict):
+                return
+            spawn = value.get("spawn")
+            if isinstance(spawn, dict):
+                holder_pointer = None
+                holder = spawn.get("bind_to")
+                if holder is not None:
+                    for scope_pointer, declarations in reversed(scopes):
+                        if holder in declarations:
+                            holder_pointer = (
+                                f"{scope_pointer}/variables/{holder}"
+                            )
+                            break
+                spawn_sites.append(
+                    {
+                        "action_pointer": f"{action_pointer}/spawn",
+                        "machine_id": spawn["machine_id"],
+                        "holder_variable_declaration_pointer": holder_pointer,
+                    }
+                )
+            for key, item in value.items():
+                if key != "spawn":
+                    scan(item, f"{action_pointer}/{key}")
+
+        for action_name in ("entry", "exit"):
+            scan(state.get(action_name, []), f"{pointer}/{action_name}")
+        if "initial" in state:
+            scan(state["initial"].get("action", []), f"{pointer}/initial/action")
+        for event_name, transitions in state.get("on_events", {}).items():
+            for transition_index, transition in enumerate(
+                transitions if isinstance(transitions, list) else [transitions]
+            ):
+                suffix = f"/{transition_index}" if isinstance(transitions, list) else ""
+                scan(
+                    transition.get("action", []),
+                    f"{pointer}/on_events/{event_name}{suffix}/action",
+                )
+        if spawn_sites:
+            result["spawn_sites"] = sorted(
+                spawn_sites, key=lambda item: item["action_pointer"].encode("utf-8")
+            )
         return result
 
     tree = {
@@ -1341,11 +1405,32 @@ def produce_checkpoint() -> dict[str, bytes]:
     return {name: canonical(value) for name, value in artifacts.items()}
 
 
+def produce_native_core(directory: Path) -> dict[str, bytes]:
+    produced = {
+        path.name: canonical(load(path))
+        for path in sorted(directory.glob("*.json"))
+        if path.name
+        not in {"rejection-duplicate-key.json", "rejection-invalid-unicode.json"}
+    }
+    if directory.name == "119-native-v2-aggregate-integrity":
+        aggregate = canonical(load(directory / "aggregate-source-aggregate-v2.json"))
+        marker = b'"aggregate_state_schema_version":2'
+        produced["rejection-duplicate-key.json"] = aggregate.replace(
+            marker, marker + b"," + marker, 1
+        )
+        produced["rejection-invalid-unicode.json"] = (
+            b'{"aggregate_state_format":"determa.aggregate_state",'
+            b'"aggregate_state_schema_version":2,"invalid":"\\ud800"}'
+        )
+    return produced
+
+
 def outputs() -> dict[Path, bytes]:
     result: dict[Path, bytes] = {}
     for directory, produced in (
         (PERSISTENCE, produce_persistence()),
         (CHECKPOINT, produce_checkpoint()),
+        *((directory, produce_native_core(directory)) for directory in NATIVE_CORE_CASES),
     ):
         for name, data in produced.items():
             result[directory / name] = data

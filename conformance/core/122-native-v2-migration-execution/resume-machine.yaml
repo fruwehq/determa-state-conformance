@@ -1,0 +1,15 @@
+format: 1
+namespace: conformance.persistence_resume
+events:
+  increment: { direction: input }
+machines:
+  - machine_id: counter
+    version: 1
+    root:
+      type: simple
+      variables:
+        count: { type: int, init: 0 }
+      on_events:
+        increment:
+          action:
+            - assign: { count: "count + 1" }

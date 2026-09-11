@@ -195,6 +195,17 @@ mailbox ownership and retained receipt relations, rejects repeated coverage clai
 requires the closed coverage set. The checkpoint profile is intentionally limited to
 maintenance migration.
 
+The required native core coverage is grouped as follows:
+
+| Case | Required coverage labels |
+|---|---|
+| `119-native-v2-aggregate-integrity` | aggregate round trips; typed values; exact root, component, and spawned targets; relation and discriminator rejection |
+| `120-native-v2-definition-package` | definition resolution; package attachment digest, uniqueness, resolver seeding, trust, and put-if-absent behavior |
+| `121-native-v2-migration-totality` | active and historical state, variables, components, owned runtimes, counters, identities, and total mapping rejection |
+| `122-native-v2-migration-execution` | unchanged-definition resume; route adjacency, order, cycle, and absence; retry; all migration-then-processing outcomes; terminal migration |
+| `123-native-v2-migration-guards` | trust, resource and security limits, request validation, transform faults, and failure/discriminator precedence |
+| `124-native-v2-occurrence-identity` | occurrence-local bindings plus exact decimal target identity boundaries for spawn and component activation sequences |
+
 Generate or independently verify the canonical fixtures with:
 
 ```sh

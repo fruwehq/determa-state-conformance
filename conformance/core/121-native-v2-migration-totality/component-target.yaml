@@ -1,0 +1,72 @@
+format: 1
+meta: { release: next }
+namespace: conformance.case_09_parallel_components
+events:
+  fanout:
+    direction: input
+  finish_left:
+    direction: input
+  finish_right:
+    direction: input
+  component_work:
+    direction: internal
+  component_finish:
+    direction: internal
+machines:
+  - machine_id: parallel_components
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: processing }
+      states:
+        processing:
+          type: parallel
+          on_events:
+            fanout:
+              action:
+                - send:
+                    event: component_work
+                    targets:
+                      - { component: left }
+                      - { component: right }
+            finish_left:
+              action:
+                - send:
+                    event: component_finish
+                    to: { component: left }
+            finish_right:
+              action:
+                - send:
+                    event: component_finish
+                    to: { component: right }
+            done: { transition_to: finished }
+          components:
+            - component_id: primary
+              root:
+                type: composite
+                variables:
+                  trace: { type: list, init: [] }
+                initial: { transition_to: running }
+                states:
+                  running:
+                    on_events:
+                      component_work:
+                        action:
+                          - assign: { trace: "trace + ['left']" }
+                      component_finish: { transition_to: complete }
+                  complete: { type: final }
+            - component_id: right
+              root:
+                type: composite
+                variables:
+                  trace: { type: list, init: [] }
+                initial: { transition_to: running }
+                states:
+                  running:
+                    on_events:
+                      component_work:
+                        action:
+                          - assign: { trace: "trace + ['right']" }
+                      component_finish: { transition_to: complete }
+                  complete: { type: final }
+        finished: { type: final }
