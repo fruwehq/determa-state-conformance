@@ -2350,6 +2350,10 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
         if pruning_cutoff is not None
         else None
     )
+    if cutoff is not None and cutoff >= next_receipt_sequence:
+        raise ValidationFailure(
+            "checkpoint v2: pruning cutoff covers an unallocated receipt"
+        )
     if document["replay_retention"]["mode"] == "permanent" or cutoff is None:
         expected_receipt_sequences = list(range(next_receipt_sequence))
     else:

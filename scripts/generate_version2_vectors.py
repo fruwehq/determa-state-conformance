@@ -3905,6 +3905,14 @@ def produce_checkpoint() -> dict[str, bytes]:
     ] = "1"
     invalid_pruning_claim = seal_checkpoint(invalid_pruning_claim)
 
+    invalid_bounded_receipt_cutoff = copy.deepcopy(compact)
+    invalid_bounded_receipt_cutoff["replay_retention"][
+        "pruned_through_receipt_sequence"
+    ] = invalid_bounded_receipt_cutoff["next_operation_receipt_sequence"]
+    invalid_bounded_receipt_cutoff = seal_checkpoint(
+        invalid_bounded_receipt_cutoff
+    )
+
     invalid_creation_identity = copy.deepcopy(tombstoned)
     invalid_creation_identity["root_record"]["creation_id"] = (
         "different-creation"
@@ -4725,6 +4733,9 @@ def produce_checkpoint() -> dict[str, bytes]:
         ),
         "invalid-pruning-claim-checkpoint-v2.json": canonical(
             invalid_pruning_claim
+        ),
+        "invalid-bounded-receipt-cutoff-checkpoint-v2.json": canonical(
+            invalid_bounded_receipt_cutoff
         ),
         "invalid-creation-identity-checkpoint-v2.json": canonical(
             invalid_creation_identity
