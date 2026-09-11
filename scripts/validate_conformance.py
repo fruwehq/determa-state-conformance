@@ -627,8 +627,11 @@ def _json_object(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 
 def analyze_artifact(path: Path) -> ArtifactAnalysis:
+    return analyze_json_artifact_source(path.read_bytes())
+
+
+def analyze_json_artifact_source(source: bytes) -> ArtifactAnalysis:
     try:
-        source = path.read_bytes()
         text = source.decode("utf-8")
     except UnicodeDecodeError:
         return ArtifactAnalysis("invalid_unicode", None, source)
@@ -5438,7 +5441,7 @@ def retained_admission_precedes_cas(
 def normalize_raw_admission_request(
     raw_request: dict[str, Any],
     location: str,
-    input_validator: Draft202012Validator | None = None,
+    input_validator: Draft202012Validator,
 ) -> tuple[dict[str, Any], bool]:
     operation_input = {
         key: copy.deepcopy(value)
@@ -5450,22 +5453,25 @@ def normalize_raw_admission_request(
     for source in raw_request["ordered_member_sources"]:
         if "utf8_json" in source:
             try:
-                member = json.loads(source["utf8_json"])
-            except json.JSONDecodeError:
+                raw_member = source["utf8_json"].encode("utf-8")
+            except UnicodeEncodeError:
                 malformed = True
                 continue
-            if input_validator is None:
-                normalized_shape = raw_admission_member_has_normalized_shape(member)
-            else:
-                candidate = {
-                    "durable_host_input_schema_version": 2,
-                    "requests": {
-                        "raw_member": {**operation_input, "envelopes": [member]}
-                    },
-                }
-                normalized_shape = next(
-                    input_validator.iter_errors(candidate), None
-                ) is None
+            analysis = analyze_json_artifact_source(raw_member)
+            if analysis.error is not None:
+                malformed = True
+                continue
+            member = analysis.document
+            candidate = {
+                "durable_host_inputs_format": "determa.durable_host.inputs",
+                "durable_host_inputs_schema_version": 2,
+                "requests": {
+                    "raw_member": {**operation_input, "envelopes": [member]}
+                },
+            }
+            normalized_shape = next(
+                input_validator.iter_errors(candidate), None
+            ) is None
             if not normalized_shape:
                 malformed = True
                 continue
@@ -5476,43 +5482,6 @@ def normalize_raw_admission_request(
     if not normalized and not malformed:
         raise ValidationFailure(f"{location}: raw admission request has no members")
     return operation_input, malformed
-
-
-def raw_admission_member_has_normalized_shape(member: Any) -> bool:
-    if not isinstance(member, dict) or set(member) != {
-        "delivery_mode",
-        "envelope",
-        "envelope_digest",
-    }:
-        return False
-    envelope = member["envelope"]
-    required_envelope = {
-        "event",
-        "event_id",
-        "cause_id",
-        "source",
-        "target",
-        "payload",
-    }
-    if (
-        not isinstance(member["delivery_mode"], str)
-        or not member["delivery_mode"]
-        or not isinstance(member["envelope_digest"], str)
-        or re.fullmatch(r"sha256:[0-9a-f]{64}", member["envelope_digest"])
-        is None
-        or not isinstance(envelope, dict)
-        or not required_envelope <= set(envelope)
-        or set(envelope) - (required_envelope | {"correlation_id"})
-        or not all(
-            isinstance(envelope[field], str) and envelope[field]
-            for field in ("event", "event_id", "cause_id")
-        )
-        or not isinstance(envelope["source"], dict)
-        or not isinstance(envelope["target"], dict)
-        or not isinstance(envelope["payload"], list)
-    ):
-        return False
-    return True
 
 
 def durable_admission_contract_error(
@@ -6164,7 +6133,7 @@ def validate_durable_host_vectors(
     case: Path,
     test: dict[str, Any],
     artifact_paths: set[Path],
-    input_validator: Draft202012Validator | None = None,
+    input_validator: Draft202012Validator,
 ) -> set[str]:
     """Validate the closed schema-v2 durable host profile table."""
     manifests = {entry["file"]: entry for entry in test["artifacts"]["documents"]}

@@ -72,7 +72,8 @@ The durable-host request schema is a closed operation-tagged union. The validato
 cross-binds request semantics to exact result and after-state artifacts, enforces exact
 revision equations, and rejects schema-valid goldens belonging to another request.
 Malformed batch members are represented by exact driver-owned UTF-8 JSON sources or
-JSON values; the harness parses and normalizes each ordered member before admission.
+JSON values; the harness applies the repository's strict JSON source checks and the
+durable-host input schema to each ordered member before admission.
 Scoped operations receive exactly the selected authorized record, or no records when
 scope authorization fails; equality across scopes is checked relationally between
 separate vectors.
