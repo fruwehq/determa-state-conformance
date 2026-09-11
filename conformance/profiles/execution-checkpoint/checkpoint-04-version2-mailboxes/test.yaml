@@ -11,6 +11,7 @@ artifacts:
     - { file: base-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: multi-pending-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: multi-pending-upgraded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: multi-pending-upgraded-with-metadata-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-child-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: spawned-child-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-terminal-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
@@ -212,6 +213,42 @@ version2_vectors:
       code: event_id_conflict
       unchanged_file: terminal-checkpoint-v2.json
       caller_still_owns_input: true
+  - name: checkpoint_terminal_changed_payload_uses_canonical_candidate_digest
+    covers: [terminal_changed_payload_stale_digest_conflict]
+    operation: checkpoint_admit_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /terminal_changed_payload_stale_digest
+    expect:
+      result: failure
+      code: event_id_conflict
+      unchanged_file: terminal-checkpoint-v2.json
+      caller_still_owns_input: true
+  - name: checkpoint_terminal_replay_precedes_supplied_digest_validation
+    covers: [terminal_replay_precedes_supplied_digest_validation]
+    operation: checkpoint_admit_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /terminal_unchanged_bad_digest
+    expect: { result: success, exact_result_file: terminal-replay-result.json }
+  - name: checkpoint_event_tombstone_changed_payload_uses_canonical_candidate_digest
+    covers: [event_tombstone_changed_payload_stale_digest_conflict]
+    operation: checkpoint_admit_v2
+    checkpoint_before: compact-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /event_tombstone_changed_payload_stale_digest
+    expect:
+      result: failure
+      code: event_id_conflict
+      unchanged_file: compact-checkpoint-v2.json
+      caller_still_owns_input: true
+  - name: checkpoint_event_tombstone_replay_precedes_supplied_digest_validation
+    covers: [event_tombstone_replay_precedes_supplied_digest_validation]
+    operation: checkpoint_admit_v2
+    checkpoint_before: compact-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /event_tombstone_unchanged_bad_digest
+    expect: { result: success, exact_result_file: tombstone-replay-result.json }
   - name: checkpoint_terminal_root_precedes_digest_validation
     covers: [terminal_root_precedes_delivery_validation]
     operation: checkpoint_admit_v2

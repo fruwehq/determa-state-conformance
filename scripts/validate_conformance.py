@@ -257,6 +257,12 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "conflicting_terminal_replay",
         "equal_pending_replay",
         "equal_terminal_replay",
+        "pending_changed_payload_stale_digest_conflict",
+        "pending_replay_precedes_supplied_digest_validation",
+        "terminal_changed_payload_stale_digest_conflict",
+        "terminal_replay_precedes_supplied_digest_validation",
+        "event_tombstone_changed_payload_stale_digest_conflict",
+        "event_tombstone_replay_precedes_supplied_digest_validation",
         "explicit_target_single_step",
         "fault_frozen_mailbox_retention",
         "fifo_recall_to_ready_tail",
@@ -1955,14 +1961,102 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
     ]
     if sequences != sorted(sequences) or len(sequences) != len(set(sequences)):
         raise ValidationFailure("checkpoint v2: receipt order is invalid")
+
+    def verify_legacy_acceptance_evidence(
+        receipt: dict[str, Any], entry: dict[str, Any]
+    ) -> None:
+        evidence = receipt.get("legacy_v1_delivery")
+        if evidence is None:
+            return
+        source = entry["envelope"]["source"]
+        legacy_envelope = copy.deepcopy(entry["envelope"])
+        legacy_envelope.pop("cause_id")
+        legacy_envelope.pop("source")
+        expected_legacy_digest = hash_value(
+            [
+                "determa-inbox-envelope-digest-1",
+                "1",
+                document["root_instance_id"],
+                entry["delivery_mode"],
+                legacy_envelope,
+            ]
+        )
+        origin = evidence["origin"]
+        valid_origin = (
+            "host" in source and origin == {"kind": "host_input"}
+        ) or (
+            "legacy_v1_internal" in source
+            and origin
+            == {
+                "kind": "internal_emission",
+                **source["legacy_v1_internal"],
+            }
+        )
+        if (
+            evidence["delivery_sequence"] != entry["acceptance_sequence"]
+            or evidence["envelope_digest"] != expected_legacy_digest
+            or not valid_origin
+        ):
+            raise ValidationFailure(
+                "checkpoint v2: legacy acceptance provenance mismatch"
+            )
+
+    upgrade_acceptance_sequences: set[int] = set()
+    legacy_wrappers = [
+        receipt
+        for receipt in receipts
+        if receipt["operation_kind"]
+        in {"legacy_v1_creation", "legacy_v1_operation"}
+    ]
+    if legacy_wrappers:
+        if receipts[: len(legacy_wrappers)] != legacy_wrappers:
+            raise ValidationFailure("checkpoint v2: legacy receipt prefix is invalid")
+        source_revision = max(
+            canonical_decimal(
+                receipt["legacy_receipt"]["committed_revision"],
+                "legacy source committed revision",
+            )
+            for receipt in legacy_wrappers
+        )
+        next_upgrade_sequence = None
+        for receipt in receipts[len(legacy_wrappers) :]:
+            receipt_sequence = canonical_decimal(
+                receipt["receipt_sequence"], "upgrade acceptance sequence"
+            )
+            if (
+                receipt["operation_kind"] != "acceptance"
+                or (
+                    next_upgrade_sequence is not None
+                    and receipt_sequence != next_upgrade_sequence
+                )
+                or canonical_decimal(
+                    receipt["accepted_revision"],
+                    "upgrade preserved accepted revision",
+                )
+                > source_revision
+            ):
+                break
+            entry = mailbox_entries.get(receipt["event_id"])
+            if entry is None or (
+                receipt["request_digest"] != entry["envelope_digest"]
+                or receipt["acceptance_sequence"] != entry["acceptance_sequence"]
+                or receipt["delivery_mode"] != entry["delivery_mode"]
+            ):
+                break
+            verify_legacy_acceptance_evidence(receipt, entry)
+            if (
+                "legacy_v1_internal" in entry["envelope"]["source"]
+                and "legacy_v1_delivery" not in receipt
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: converted internal acceptance lacks legacy evidence"
+                )
+            upgrade_acceptance_sequences.add(receipt_sequence)
+            next_upgrade_sequence = receipt_sequence + 1
+
     receipt_chronology: list[tuple[int, int]] = []
     for receipt, receipt_sequence in zip(receipts, sequences, strict=True):
-        if (
-            receipt.get("operation_kind") == "acceptance"
-            and "legacy_v1_delivery" in receipt
-        ):
-            # This wrapper is appended by the upgrade, but accepted_revision is
-            # preserved from the original version-1 host transaction.
+        if receipt_sequence in upgrade_acceptance_sequences:
             continue
         if "committed_revision" in receipt:
             effective_revision = receipt["committed_revision"]
@@ -2250,21 +2344,7 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
                 raise ValidationFailure("checkpoint v2: mailbox acceptance identity mismatch")
             legacy_evidence = receipt.get("legacy_v1_delivery")
             if legacy_evidence is not None:
-                if (
-                    legacy_evidence["delivery_sequence"]
-                    != entry["acceptance_sequence"]
-                    or not any(
-                        item["operation_kind"] == "legacy_v1_creation"
-                        for item in receipts
-                    )
-                    or (
-                        "host" in source
-                        and legacy_evidence["origin"] != {"kind": "host_input"}
-                    )
-                ):
-                    raise ValidationFailure(
-                        "checkpoint v2: legacy acceptance history mismatch"
-                    )
+                verify_legacy_acceptance_evidence(receipt, entry)
             if "legacy_v1_internal" in source:
                 evidence = legacy_evidence
                 origin = source["legacy_v1_internal"]
@@ -3600,9 +3680,18 @@ def checkpoint_replay_result(
 ) -> dict[str, Any] | None:
     """Return the exact replay response justified by retained v2 evidence."""
     event_id = delivery["envelope"]["event_id"]
-    request_digest = delivery["envelope_digest"]
     digest_domain = delivery.get(
         "request_digest_domain", "determa-inbox-envelope-digest-2"
+    )
+    digest_version = "1" if digest_domain.endswith("-1") else "2"
+    request_digest = hash_value(
+        [
+            digest_domain,
+            digest_version,
+            checkpoint["root_instance_id"],
+            delivery["delivery_mode"],
+            delivery["envelope"],
+        ]
     )
     if digest_domain == "determa-inbox-envelope-digest-1":
         legacy = next(
@@ -3752,6 +3841,25 @@ def validate_version2_vectors(
         "downgrade_checkpoint_v2_to_v1",
     }
     descriptor_operations = {"migrate_aggregate_v2", "checkpoint_migrate_v2"}
+    core_admission_rejection_codes = {
+        "malformed_delivery",
+        "duplicate_event_id_in_batch",
+        "event_id_conflict",
+        "invalid_delivery_mode",
+        "invalid_delivery_source",
+        "invalid_instance_target",
+        "inactive_component_target",
+        "invalid_event",
+        "invalid_payload",
+        "invalid_correlation",
+        "delivery_digest_mismatch",
+    }
+    checkpoint_admission_rejection_codes = core_admission_rejection_codes | {
+        "wrong_root",
+        "terminal_root",
+        "tombstoned_root",
+        "checkpoint_revision_conflict",
+    }
 
     def aggregate_from_vector(vector: dict[str, Any]) -> dict[str, Any] | None:
         filename = vector.get("state_before")
@@ -3800,7 +3908,15 @@ def validate_version2_vectors(
         aggregate: dict[str, Any], delivery: dict[str, Any]
     ) -> bool:
         event_id = delivery["envelope"]["event_id"]
-        digest = delivery["envelope_digest"]
+        digest = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                aggregate["root_instance_id"],
+                delivery["delivery_mode"],
+                delivery["envelope"],
+            ]
+        )
         return any(
             entry["envelope"]["event_id"] == event_id
             and entry["envelope_digest"] != digest
@@ -3813,9 +3929,18 @@ def validate_version2_vectors(
         checkpoint: dict[str, Any], delivery: dict[str, Any]
     ) -> bool:
         event_id = delivery["envelope"]["event_id"]
-        digest = delivery["envelope_digest"]
         digest_domain = delivery.get(
             "request_digest_domain", "determa-inbox-envelope-digest-2"
+        )
+        digest_version = "1" if digest_domain.endswith("-1") else "2"
+        digest = hash_value(
+            [
+                digest_domain,
+                digest_version,
+                checkpoint["root_instance_id"],
+                delivery["delivery_mode"],
+                delivery["envelope"],
+            ]
         )
         retained_digests: list[str] = []
         if digest_domain == "determa-inbox-envelope-digest-1":
@@ -4138,6 +4263,19 @@ def validate_version2_vectors(
             raise ValidationFailure(f"{location}: selected request operation mismatch")
 
         expectation = vector["expect"]
+        if expectation["result"] == "failure" and operation in {
+            "admit_v2",
+            "checkpoint_admit_v2",
+        }:
+            allowed_codes = (
+                checkpoint_admission_rejection_codes
+                if operation == "checkpoint_admit_v2"
+                else core_admission_rejection_codes
+            )
+            if expectation.get("code") not in allowed_codes:
+                raise ValidationFailure(
+                    f"{location}: rejection code is not allowed for {operation}"
+                )
         if operation.startswith("checkpoint_") or operation in {
             "upgrade_checkpoint_v1_to_v2",
             "downgrade_checkpoint_v2_to_v1",
@@ -4366,7 +4504,15 @@ def validate_version2_vectors(
                             if entry["envelope"]["event_id"]
                             == delivery["envelope"]["event_id"]
                             and entry["envelope_digest"]
-                            == delivery["envelope_digest"]
+                            == hash_value(
+                                [
+                                    "determa-inbox-envelope-digest-2",
+                                    "2",
+                                    prior_aggregate["root_instance_id"],
+                                    delivery["delivery_mode"],
+                                    delivery["envelope"],
+                                ]
+                            )
                         ),
                         None,
                     )
@@ -4427,6 +4573,8 @@ def validate_version2_vectors(
                     or liveness_error is not None
                 ):
                     continue
+                if replay is not None:
+                    continue
                 delivery_error = delivery_validation_error(
                     delivery, delivery_identity, location
                 )
@@ -4473,7 +4621,7 @@ def validate_version2_vectors(
                 raise ValidationFailure(
                     f"{location}: contract rejection lacks its declared violation"
                 )
-            if operation == "checkpoint_admit_v2" and expectation["result"] == "failure":
+            if operation in {"admit_v2", "checkpoint_admit_v2"} and expectation["result"] == "failure":
                 evidenced_rejections = (
                     {"malformed_delivery"}
                     if malformed_deliveries
@@ -4487,7 +4635,10 @@ def validate_version2_vectors(
                     if liveness_error is not None
                     else set(delivery_errors) | set(contract_errors)
                 )
-                if expectation.get("code") == "checkpoint_revision_conflict":
+                if (
+                    operation == "checkpoint_admit_v2"
+                    and expectation.get("code") == "checkpoint_revision_conflict"
+                ):
                     evidenced_rejections.add("checkpoint_revision_conflict")
                 if expectation.get("code") not in evidenced_rejections:
                     raise ValidationFailure(
@@ -4777,6 +4928,15 @@ def validate_version2_vectors(
                             f"{location}: core replay mutated aggregate or batch shape"
                         )
                     delivery = deliveries[0]
+                    candidate_digest = hash_value(
+                        [
+                            "determa-inbox-envelope-digest-2",
+                            "2",
+                            prior_aggregate["root_instance_id"],
+                            delivery["delivery_mode"],
+                            delivery["envelope"],
+                        ]
+                    )
                     matches = [
                         (mailbox_name, entry)
                         for runtime in prior_aggregate["runtimes"]
@@ -4787,7 +4947,7 @@ def validate_version2_vectors(
                         for entry in mailbox
                         if entry["envelope"] == delivery["envelope"]
                         and entry["envelope_digest"]
-                        == delivery["envelope_digest"]
+                        == candidate_digest
                     ]
                     if len(matches) != 1:
                         raise ValidationFailure(
@@ -5246,7 +5406,6 @@ def validate_version2_vectors(
                         receipt
                         for receipt in result_document["operation_receipts"]
                         if receipt["operation_kind"] == "acceptance"
-                        and "legacy_v1_delivery" in receipt
                     ]
                     if (
                         source["revision"] != "3"
@@ -5262,6 +5421,29 @@ def validate_version2_vectors(
                     ):
                         raise ValidationFailure(
                             f"{location}: multi-pending upgrade lacks the A1/B2/A3 host history"
+                        )
+                    optional_metadata_result = artifact(
+                        "multi-pending-upgraded-with-metadata-checkpoint-v2.json"
+                    ).document
+                    optional_acceptance = next(
+                        receipt
+                        for receipt in optional_metadata_result[
+                            "operation_receipts"
+                        ]
+                        if receipt["operation_kind"] == "acceptance"
+                    )
+                    if (
+                        "legacy_v1_delivery" in upgraded_acceptances[0]
+                        or optional_acceptance.get("legacy_v1_delivery")
+                        != {
+                            "delivery_sequence": pending[0]["delivery_sequence"],
+                            "envelope_digest": pending[0]["envelope_digest"],
+                            "origin": pending[0]["origin"],
+                        }
+                        or optional_acceptance["accepted_revision"] != "2"
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: optional host upgrade metadata changed acceptance history"
                         )
                 converted = {
                     entry["envelope"]["event_id"]: entry
@@ -5284,17 +5466,25 @@ def validate_version2_vectors(
                         "envelope_digest": pending["envelope_digest"],
                         "origin": pending["origin"],
                     }
+                    if acceptance is None:
+                        raise ValidationFailure(
+                            f"{location}: converted delivery acceptance was lost"
+                        )
                     if (
-                        acceptance is None
-                        or acceptance.get("legacy_v1_delivery")
+                        "legacy_v1_delivery" in acceptance
+                        and acceptance["legacy_v1_delivery"]
                         != expected_legacy_evidence
                     ):
                         raise ValidationFailure(
-                            f"{location}: complete legacy pending delivery evidence was lost"
+                            f"{location}: optional legacy pending evidence is invalid"
                         )
                     if (
                         pending["delivery_mode"] == "internal"
-                        and "legacy_v1_internal" not in entry["envelope"]["source"]
+                        and (
+                            "legacy_v1_delivery" not in acceptance
+                            or "legacy_v1_internal"
+                            not in entry["envelope"]["source"]
+                        )
                     ):
                         raise ValidationFailure(
                             f"{location}: legacy internal delivery source was lost"
@@ -5945,6 +6135,33 @@ def validate_version2_vectors(
             except ValidationFailure:
                 continue
             raise ValidationFailure(f"{case.name}: adversarial probe was accepted: {probe_name}")
+        for relabeled_code in ("checkpoint_revision_conflict", "invalid_event"):
+            reserved_relabel = copy.deepcopy(test)
+            reserved_vector = next(
+                vector
+                for vector in reserved_relabel["version2_vectors"]
+                if vector["name"] == "reserved_component_completion_is_admitted"
+            )
+            reserved_vector["expect"] = {
+                "result": "failure",
+                "code": relabeled_code,
+                "unchanged_file": "reserved-admission-before.json",
+                "caller_still_owns_input": True,
+            }
+            try:
+                validate_version2_vectors(
+                    case,
+                    reserved_relabel,
+                    bundle_paths,
+                    artifact_paths,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                f"{case.name}: reserved component admission accepted "
+                f"unsupported rejection relabel {relabeled_code}"
+            )
     if run_mutation_probes and case.name == "118-version2-persistence":
         descriptor = copy.deepcopy(artifact("descriptor-compatible-v2.json").document)
         wrong_shape = copy.deepcopy(descriptor)
@@ -6115,6 +6332,25 @@ def validate_version2_vectors(
         )
         probes["tombstoned batch embedded creation identity"] = {
             "tombstoned-batch-replay-result.json": tombstoned_batch_creation
+        }
+        fabricated_legacy_metadata = copy.deepcopy(
+            artifact(
+                "multi-pending-upgraded-with-metadata-checkpoint-v2.json"
+            ).document
+        )
+        next(
+            receipt
+            for receipt in fabricated_legacy_metadata["operation_receipts"]
+            if receipt["operation_kind"] == "acceptance"
+        )["legacy_v1_delivery"]["envelope_digest"] = "sha256:" + ("0" * 64)
+        fabricated_legacy_metadata.pop("execution_checkpoint_digest")
+        fabricated_legacy_metadata["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-2", fabricated_legacy_metadata]
+        )
+        probes["fabricated legacy host acceptance metadata"] = {
+            "multi-pending-upgraded-with-metadata-checkpoint-v2.json": (
+                fabricated_legacy_metadata
+            )
         }
         for probe_name, overrides in probes.items():
             try:

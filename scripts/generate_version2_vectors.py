@@ -1634,6 +1634,12 @@ def produce_mailbox() -> dict[str, bytes]:
             conflicting_replay["envelope"],
         ]
     )
+    pending_changed_payload_stale_digest = copy.deepcopy(equal_replay)
+    pending_changed_payload_stale_digest["envelope"]["payload"] = typed_value(
+        {"changed": "payload"}
+    )
+    pending_unchanged_bad_digest = copy.deepcopy(equal_replay)
+    pending_unchanged_bad_digest["envelope_digest"] = "sha256:" + ("0" * 64)
     completed_identity = component_runtimes(component)[0]["target_identity"]
     disposed_delivery = delivery_input(
         component,
@@ -1760,6 +1766,14 @@ def produce_mailbox() -> dict[str, bytes]:
         "conflicting_replay": {
             "operation": "admit_v2",
             "deliveries": [conflicting_replay],
+        },
+        "pending_changed_payload_stale_digest": {
+            "operation": "admit_v2",
+            "deliveries": [pending_changed_payload_stale_digest],
+        },
+        "pending_unchanged_bad_digest": {
+            "operation": "admit_v2",
+            "deliveries": [pending_unchanged_bad_digest],
         },
         "recall_step": {"operation": "step_v2", "target_runtime_id": base["root_runtime_id"]},
         "repeated_step": {"operation": "step_v2", "target_runtime_id": repeated_before["root_runtime_id"]},
@@ -2229,12 +2243,13 @@ def upgrade_checkpoint(value: dict[str, Any]) -> dict[str, Any]:
             "acceptance_sequence": pending["delivery_sequence"],
             "accepted_revision": pending["accepted_revision"],
             "delivery_mode": pending["delivery_mode"],
-            "legacy_v1_delivery": {
+        }
+        if pending["delivery_mode"] == "internal":
+            receipt["legacy_v1_delivery"] = {
                 "delivery_sequence": pending["delivery_sequence"],
                 "envelope_digest": pending["envelope_digest"],
                 "origin": origin,
-            },
-        }
+            }
         receipts.append(receipt)
         next_receipt_sequence += 1
         next_queue_sequence += 1
@@ -2331,6 +2346,24 @@ def produce_checkpoint() -> dict[str, bytes]:
     )
     multi_pending_v1 = seal_checkpoint_v1(multi_pending_v1)
     multi_pending_upgraded = upgrade_checkpoint(multi_pending_v1)
+    multi_pending_upgraded_with_metadata = copy.deepcopy(multi_pending_upgraded)
+    multi_pending_acceptance = next(
+        receipt
+        for receipt in multi_pending_upgraded_with_metadata["operation_receipts"]
+        if receipt["operation_kind"] == "acceptance"
+    )
+    multi_pending_acceptance["legacy_v1_delivery"] = {
+        "delivery_sequence": multi_pending_v1["pending_deliveries"][0][
+            "delivery_sequence"
+        ],
+        "envelope_digest": multi_pending_v1["pending_deliveries"][0][
+            "envelope_digest"
+        ],
+        "origin": copy.deepcopy(multi_pending_v1["pending_deliveries"][0]["origin"]),
+    }
+    multi_pending_upgraded_with_metadata = seal_checkpoint(
+        multi_pending_upgraded_with_metadata
+    )
     outbox_v1 = load(
         CHECKPOINT.parent
         / "checkpoint-02-outbox-lifecycle"
@@ -2668,6 +2701,17 @@ def produce_checkpoint() -> dict[str, bytes]:
             ]
         ),
     }
+    retained_native_delivery = {
+        "delivery_mode": entry["delivery_mode"],
+        "envelope": copy.deepcopy(entry["envelope"]),
+        "envelope_digest": entry["envelope_digest"],
+    }
+    changed_payload_stale_digest = copy.deepcopy(retained_native_delivery)
+    changed_payload_stale_digest["envelope"]["payload"] = typed_value(
+        {"amount": 2}
+    )
+    unchanged_envelope_bad_digest = copy.deepcopy(retained_native_delivery)
+    unchanged_envelope_bad_digest["envelope_digest"] = "sha256:" + ("0" * 64)
 
     spawned_tombstoned = copy.deepcopy(spawned_terminal_checkpoint_v2)
     spawned_terminal_aggregate = spawned_tombstoned["root_record"]["aggregate_state"]
@@ -3148,6 +3192,34 @@ def produce_checkpoint() -> dict[str, bytes]:
             "envelope": {**entry["envelope"], "payload": typed_value({"amount": 2})},
             "envelope_digest": digest(["determa-inbox-envelope-digest-2", "2", aggregate["root_instance_id"], entry["delivery_mode"], {**entry["envelope"], "payload": typed_value({"amount": 2})}]),
         }]}, terminal),
+        "terminal_changed_payload_stale_digest": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [changed_payload_stale_digest],
+            },
+            terminal,
+        ),
+        "terminal_unchanged_bad_digest": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [unchanged_envelope_bad_digest],
+            },
+            terminal,
+        ),
+        "event_tombstone_changed_payload_stale_digest": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [changed_payload_stale_digest],
+            },
+            compact,
+        ),
+        "event_tombstone_unchanged_bad_digest": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [unchanged_envelope_bad_digest],
+            },
+            compact,
+        ),
         "terminal_precedes_digest": with_checkpoint_cas(
             {
                 "operation": "checkpoint_admit_v2",
@@ -3212,6 +3284,9 @@ def produce_checkpoint() -> dict[str, bytes]:
         "multi-pending-checkpoint-v1.json": canonical(multi_pending_v1),
         "multi-pending-upgraded-checkpoint-v2.json": canonical(
             multi_pending_upgraded
+        ),
+        "multi-pending-upgraded-with-metadata-checkpoint-v2.json": canonical(
+            multi_pending_upgraded_with_metadata
         ),
         "base-outbox-checkpoint-v1.json": canonical(outbox_v1),
         "base-checkpoint.json": canonical(operational_base),

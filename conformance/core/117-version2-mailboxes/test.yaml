@@ -159,6 +159,26 @@ version2_vectors:
       code: event_id_conflict
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
+  - name: pending_changed_payload_uses_canonical_candidate_digest
+    covers: [pending_changed_payload_stale_digest_conflict]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /pending_changed_payload_stale_digest
+    expect:
+      result: failure
+      code: event_id_conflict
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: pending_unchanged_envelope_replays_before_supplied_digest_validation
+    covers: [pending_replay_precedes_supplied_digest_validation]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /pending_unchanged_bad_digest
+    expect: { result: success, exact_result_file: replay-success.json }
   - name: explicit_step_recall
     covers:
       - automatic_selective_recall
