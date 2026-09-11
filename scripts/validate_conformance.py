@@ -194,6 +194,7 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "checkpoint_root_no_reuse",
         "checkpoint_root_tombstone",
         "checkpoint_root_tombstone_replay",
+        "checkpoint_running_root_tombstone_rejected",
         "checkpoint_scope_fail_closed",
         "checkpoint_scope_isolation",
         "checkpoint_stale_pruning_rejected",
@@ -349,16 +350,23 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "spawned_host_start",
         "spawned_host_start_admission",
         "spawned_child_processing",
+        "spawned_completion_reports_aggregate_status",
         "spawned_root_mailbox_isolation",
+        "spawned_owner_done_processing",
+        "spawned_owner_queue_order",
         "spawned_target_identity",
+        "spawned_unhandled_allocates_no_logical_step",
         "terminal_receipt_native_v2",
         "terminal_spawned_child_admission",
         "terminal_spawned_child_processing",
+        "terminal_spawned_completion_reports_aggregate_status",
         "terminal_spawned_creation",
+        "terminal_spawned_done_processing",
         "terminal_spawned_root_admission",
         "terminal_spawned_root_processing",
         "terminal_spawned_start",
         "terminal_spawned_start_admission",
+        "terminal_spawned_unhandled_allocates_no_logical_step",
     }
 )
 REQUIRED_VERSION2_COVERAGE = frozenset(
@@ -5335,6 +5343,16 @@ def validate_request_checkpoint_binding(
         operation_input, checkpoint_before, historical_checkpoint
     ):
         return
+    elif (
+        operation_input.get("operation") == "checkpoint_prune_v2"
+        and historical_checkpoint is not None
+        and expected == checkpoint_identity(historical_checkpoint)
+        and historical_checkpoint["root_instance_id"]
+        == checkpoint_before["root_instance_id"]
+        and int(historical_checkpoint["revision"])
+        < int(checkpoint_before["revision"])
+    ):
+        return
     if historical_checkpoint is not None or expected != checkpoint_identity(
         checkpoint_before
     ):
@@ -5586,18 +5604,9 @@ def durable_admission_contract_error(
         if correlates_to is None:
             return None
         correlation_id = envelope.get("correlation_id")
-        correlated_effects = {
-            record["intent"]["effect_id"]
-            for record in checkpoint["pending_outbox_intents"]
-            if record["intent"]["event"] == correlates_to
-        } | {
-            record["intent"]["effect_id"]
-            for record in checkpoint["terminal_outbox_records"]
-            if record["intent"]["event"] == correlates_to
-        }
         return (
             None
-            if isinstance(correlation_id, str) and correlation_id in correlated_effects
+            if isinstance(correlation_id, str) and correlation_id
             else "invalid_correlation"
         )
 
@@ -5795,6 +5804,21 @@ def validate_checkpoint_derivation(
                         f"{location}: ordered admission result is not request-derived"
                     )
     elif operation == "checkpoint_step_v2" and mutates:
+        before_aggregate = checkpoint_aggregate(checkpoint_before)
+        after_aggregate = checkpoint_aggregate(checkpoint_after)
+        if before_aggregate is None or after_aggregate is None:
+            raise ValidationFailure(f"{location}: processing did not retain an aggregate")
+        if (
+            before_aggregate["root_instance_id"]
+            != after_aggregate["root_instance_id"]
+            or before_aggregate["root_runtime_id"]
+            != after_aggregate["root_runtime_id"]
+            or before_aggregate["validated_bundle_fingerprint"]
+            != after_aggregate["validated_bundle_fingerprint"]
+        ):
+            raise ValidationFailure(
+                f"{location}: ordinary processing changed aggregate identity"
+            )
         before_entries = [
             entry
             for entry in checkpoint_mailbox_entries(checkpoint_before)
@@ -5813,6 +5837,51 @@ def validate_checkpoint_derivation(
         ]
         if len(before_entries) != 1 or len(receipts) != 1:
             raise ValidationFailure(f"{location}: processing result is not request-derived")
+        receipt = receipts[0]
+        before_logical_step = int(before_aggregate["next_logical_step_sequence"])
+        after_logical_step = int(after_aggregate["next_logical_step_sequence"])
+        disposition = receipt["outcome"]["disposition"]
+        expected_increment = 0 if disposition == "unhandled" else 1
+        if after_logical_step != before_logical_step + expected_increment:
+            raise ValidationFailure(
+                f"{location}: {disposition} processing allocated the wrong logical step count"
+            )
+        if disposition == "faulted":
+            fault = receipt["outcome"]["fault"]
+            target_runtime = next(
+                (
+                    runtime
+                    for runtime in after_aggregate["runtimes"]
+                    if runtime["target_identity"] == operation_input["target"]
+                ),
+                None,
+            )
+            if (
+                fault is None
+                or target_runtime is None
+                or target_runtime["status"] != "faulted"
+                or target_runtime["fault"] != fault
+                or fault["runtime_id"] != target_runtime["runtime_id"]
+                or fault["cause_id"] != operation_input["event_id"]
+                or fault["definition_fingerprint"]
+                != after_aggregate["validated_bundle_fingerprint"]
+            ):
+                raise ValidationFailure(
+                    f"{location}: fault outcome is not runtime-derived"
+                )
+            source: Any = normalized_bundle_value(bundle_path)
+            try:
+                for encoded in fault["source_locator"].split("/")[1:]:
+                    token = encoded.replace("~1", "/").replace("~0", "~")
+                    source = source[int(token)] if isinstance(source, list) else source[token]
+            except (KeyError, IndexError, TypeError, ValueError) as error:
+                raise ValidationFailure(
+                    f"{location}: fault source locator does not resolve"
+                ) from error
+            if not isinstance(source, str):
+                raise ValidationFailure(
+                    f"{location}: fault source locator does not identify the failing expression"
+                )
     elif operation in {"checkpoint_update_outbox_v2", "checkpoint_terminalize_outbox_v2"}:
         effect_id = operation_input["effect_id"]
         before_matches = [
@@ -5943,6 +6012,20 @@ def validate_checkpoint_derivation(
             or operation_input["expected_checkpoint"] != checkpoint_identity(checkpoint_before)
         ):
             raise ValidationFailure(f"{location}: rejected pruning has no request-derived conflict")
+        if operation_result.get("code") == "checkpoint_revision_conflict":
+            retained_cutoff = checkpoint_before["replay_retention"].get(
+                "pruned_through_receipt_sequence"
+            )
+            if (
+                operation_input["expected_checkpoint"]
+                == checkpoint_identity(checkpoint_before)
+                or retained_cutoff is None
+                or int(operation_input["cutoff_receipt_sequence"])
+                <= int(retained_cutoff)
+            ):
+                raise ValidationFailure(
+                    f"{location}: stale pruning does not represent a newer mutation"
+                )
     elif operation == "checkpoint_tombstone_v2" and mutates:
         root_record = checkpoint_after["root_record"]
         if (
@@ -5961,6 +6044,20 @@ def validate_checkpoint_derivation(
             != operation_input["tombstone_operation_id"]
         ):
             raise ValidationFailure(f"{location}: tombstone replay is not request-derived")
+    elif operation == "checkpoint_tombstone_v2" and operation_result["result"] == "rejected":
+        aggregate = checkpoint_aggregate(checkpoint_before)
+        if operation_result.get("code") == "invalid_execution_checkpoint":
+            if aggregate is None:
+                return
+            root = next(
+                runtime
+                for runtime in aggregate["runtimes"]
+                if runtime["relation"]["kind"] == "root"
+            )
+            if root["status"] != "running":
+                raise ValidationFailure(
+                    f"{location}: tombstone rejection does not exercise a running root"
+                )
     elif operation == "checkpoint_register_adapter_v2":
         identifier = operation_input["registration"]["adapter_identifier"]
         duplicate = any(
@@ -6041,6 +6138,7 @@ def validate_persistence_derivation(
     store_before: dict[str, Any],
     store_after: dict[str, Any],
     location: str,
+    artifacts: dict[str, Any],
 ) -> None:
     checkpoint_before = store_before["checkpoint"]
     if operation_input["expected_checkpoint"] != checkpoint_identity(checkpoint_before):
@@ -6071,12 +6169,16 @@ def validate_persistence_derivation(
     )
     transaction_inputs = operation_input["transaction_inputs"]
     aggregate = checkpoint_aggregate(checkpoint_before)
+    descriptor_route = transaction_inputs["migration_descriptor_digest_route"]
+    target_fingerprint = transaction_inputs[
+        "target_validated_bundle_fingerprint"
+    ]
     if (
         operation_input["envelope_digest"] != expected_digest
         or aggregate is None
-        or transaction_inputs["target_validated_bundle_fingerprint"]
-        != aggregate["validated_bundle_fingerprint"]
     ):
+        raise ValidationFailure(f"{location}: persistence request is not definition-bound")
+    if not descriptor_route and target_fingerprint != aggregate["validated_bundle_fingerprint"]:
         raise ValidationFailure(f"{location}: persistence request is not definition-bound")
     if operation_result["mutation"] == "atomic":
         inbox = [
@@ -6091,10 +6193,59 @@ def validate_persistence_derivation(
             raise ValidationFailure(f"{location}: application writes are not request-derived")
         if operation_result["result"] in {"committed", "crashed"} and (
             int(store_after["checkpoint"]["revision"])
-            != int(checkpoint_before["revision"]) + 2
+            != int(checkpoint_before["revision"]) + 1
         ):
             raise ValidationFailure(
-                f"{location}: admitted-and-processed transaction must advance revision exactly twice"
+                f"{location}: combined persistence transaction must advance revision exactly once"
+            )
+        after_aggregate = checkpoint_aggregate(store_after["checkpoint"])
+        if after_aggregate is None:
+            raise ValidationFailure(f"{location}: persistence result lost the aggregate")
+        if (
+            after_aggregate["root_instance_id"] != aggregate["root_instance_id"]
+            or after_aggregate["root_runtime_id"] != aggregate["root_runtime_id"]
+        ):
+            raise ValidationFailure(f"{location}: persistence changed root identity")
+        before_audits = checkpoint_before["migration_audit_records"]
+        after_audits = store_after["checkpoint"]["migration_audit_records"]
+        if descriptor_route:
+            descriptors = {
+                document["migration_descriptor_digest"]: document
+                for document in artifacts.values()
+                if isinstance(document, dict)
+                and document.get("migration_descriptor_format")
+                == "determa.aggregate_migration"
+            }
+            if any(digest not in descriptors for digest in descriptor_route):
+                raise ValidationFailure(
+                    f"{location}: persistence migration route references an unknown descriptor"
+                )
+            if len(after_audits) != len(before_audits) + len(descriptor_route):
+                raise ValidationFailure(
+                    f"{location}: persistence migration audit count differs from the route"
+                )
+            appended = after_audits[len(before_audits) :]
+            if (
+                aggregate["validated_bundle_fingerprint"]
+                != descriptors[descriptor_route[0]][
+                    "source_validated_bundle_fingerprint"
+                ]
+                or after_aggregate["validated_bundle_fingerprint"]
+                != target_fingerprint
+                or [item["migration_descriptor_digest"] for item in appended]
+                != descriptor_route
+                or appended[-1]["target_validated_bundle_fingerprint"]
+                != target_fingerprint
+            ):
+                raise ValidationFailure(
+                    f"{location}: persistence migration is not descriptor-derived"
+                )
+        elif (
+            after_aggregate["validated_bundle_fingerprint"] != target_fingerprint
+            or after_audits != before_audits
+        ):
+            raise ValidationFailure(
+                f"{location}: persistence without migration changed definition identity"
             )
 
 
@@ -6237,15 +6388,26 @@ def validate_durable_host_vectors(
                     )
                     if checkpoint_before != checkpoint_after and not stale_conflict:
                         raise ValidationFailure(f"{location}: non-mutating result changed checkpoint")
-                    if stale_conflict and (
-                        checkpoint_before["root_instance_id"]
-                        != checkpoint_after["root_instance_id"]
-                        or int(checkpoint_after["revision"])
-                        <= int(checkpoint_before["revision"])
-                    ):
-                        raise ValidationFailure(
-                            f"{location}: stale conflict lacks a newer committed checkpoint"
+                    if stale_conflict:
+                        historical_conflict = (
+                            historical_checkpoint is not None
+                            and checkpoint_before == checkpoint_after
+                            and historical_checkpoint["root_instance_id"]
+                            == checkpoint_before["root_instance_id"]
+                            and int(historical_checkpoint["revision"])
+                            < int(checkpoint_before["revision"])
                         )
+                        direct_conflict = (
+                            historical_checkpoint is None
+                            and checkpoint_before["root_instance_id"]
+                            == checkpoint_after["root_instance_id"]
+                            and int(checkpoint_after["revision"])
+                            > int(checkpoint_before["revision"])
+                        )
+                        if not (historical_conflict or direct_conflict):
+                            raise ValidationFailure(
+                                f"{location}: stale conflict lacks a newer committed checkpoint"
+                            )
             validate_checkpoint_derivation(
                 operation_input,
                 operation_result,
@@ -6255,6 +6417,118 @@ def validate_durable_host_vectors(
                 case / "machine.yaml",
                 raw_member_malformed,
             )
+            vector_coverage = set(vector["covers"])
+            spawned_coverage = {
+                cover
+                for cover in vector_coverage
+                if cover.startswith("spawned_")
+                or cover.startswith("terminal_spawned_")
+            }
+            if spawned_coverage:
+                after_aggregate = checkpoint_aggregate(checkpoint_after)
+                if after_aggregate is not None:
+                    validate_aggregate_against_bundle(
+                        after_aggregate, case / "machine.yaml"
+                    )
+            if "spawned_child_processing" in vector_coverage or (
+                "terminal_spawned_child_processing" in vector_coverage
+            ):
+                before_aggregate = checkpoint_aggregate(checkpoint_before)
+                after_aggregate = checkpoint_aggregate(checkpoint_after)
+                if before_aggregate is None or after_aggregate is None:
+                    raise ValidationFailure(
+                        f"{location}: spawned completion lost the aggregate"
+                    )
+                before_children = [
+                    runtime
+                    for runtime in before_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "owned_spawned_instance"
+                ]
+                after_children = [
+                    runtime
+                    for runtime in after_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "owned_spawned_instance"
+                ]
+                owner = next(
+                    runtime
+                    for runtime in after_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                owner_events = [
+                    entry["envelope"]["event"] for entry in owner["ready_mailbox"]
+                ]
+                receipt = checkpoint_after["operation_receipts"][-1]
+                if (
+                    len(before_children) != 1
+                    or after_children
+                    or owner_events != ["start", "done"]
+                    or receipt["outcome"]["status"] != owner["status"]
+                    or len(receipt["emission_references"]) != 1
+                    or receipt["emission_references"][0]["kind"]
+                    != "internal_mailbox"
+                ):
+                    raise ValidationFailure(
+                        f"{location}: spawned completion disposal, queue order, or status is not exact"
+                    )
+            if {
+                "spawned_owner_queue_order",
+                "terminal_spawned_unhandled_allocates_no_logical_step",
+            } & vector_coverage:
+                before_aggregate = checkpoint_aggregate(checkpoint_before)
+                after_aggregate = checkpoint_aggregate(checkpoint_after)
+                if before_aggregate is None or after_aggregate is None:
+                    raise ValidationFailure(
+                        f"{location}: owner queue processing lost the aggregate"
+                    )
+                before_owner = next(
+                    runtime
+                    for runtime in before_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                after_owner = next(
+                    runtime
+                    for runtime in after_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                if (
+                    [entry["envelope"]["event"] for entry in before_owner["ready_mailbox"]]
+                    != ["start", "done"]
+                    or [entry["envelope"]["event"] for entry in after_owner["ready_mailbox"]]
+                    != ["done"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: owner queue did not process the older event first"
+                    )
+            if {
+                "spawned_owner_done_processing",
+                "terminal_spawned_done_processing",
+            } & vector_coverage:
+                before_aggregate = checkpoint_aggregate(checkpoint_before)
+                after_aggregate = checkpoint_aggregate(checkpoint_after)
+                if before_aggregate is None or after_aggregate is None:
+                    raise ValidationFailure(
+                        f"{location}: done processing lost the aggregate"
+                    )
+                before_owner = next(
+                    runtime
+                    for runtime in before_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                after_owner = next(
+                    runtime
+                    for runtime in after_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                receipt = checkpoint_after["operation_receipts"][-1]
+                if (
+                    [entry["envelope"]["event"] for entry in before_owner["ready_mailbox"]]
+                    != ["done"]
+                    or after_owner["ready_mailbox"]
+                    or receipt["outcome"]["status"] != after_owner["status"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: spawned done processing or aggregate status is not exact"
+                    )
         elif vector["operation"] == "checkpoint_create_v2":
             if (
                 before_name is not None
@@ -6293,6 +6567,7 @@ def validate_durable_host_vectors(
                 store_before,
                 store_after,
                 location,
+                artifacts,
             )
 
         call_log_name = vector.get("call_log")

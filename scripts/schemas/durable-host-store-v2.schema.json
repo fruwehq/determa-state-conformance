@@ -9,8 +9,7 @@
     "checkpoint",
     "inbox",
     "application_rows",
-    "quarantine",
-    "broker_acknowledged"
+    "quarantine"
   ],
   "additionalProperties": false,
   "properties": {
@@ -45,7 +44,6 @@
           }
         }
       ]
-    },
-    "broker_acknowledged": { "type": "boolean" }
+    }
   }
 }

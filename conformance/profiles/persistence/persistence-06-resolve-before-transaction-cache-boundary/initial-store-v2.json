@@ -125,6 +125,5 @@
   },
   "inbox": [],
   "application_rows": {},
-  "quarantine": null,
-  "broker_acknowledged": false
+  "quarantine": null
 }

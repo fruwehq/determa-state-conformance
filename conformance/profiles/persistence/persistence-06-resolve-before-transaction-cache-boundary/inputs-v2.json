@@ -323,8 +323,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "persistence-6-root",
-        "revision": "2",
-        "digest": "sha256:86c9cdf6368d2a0fc7fe26e0e29b8e056cf89ef6fa37c0460852956f5f3c604c"
+        "revision": "1",
+        "digest": "sha256:32ad69186f4342f6cc2f098a2d5e27c659bccca14532c96e277ccfae957b51a4"
       },
       "presented_envelope": {
         "event": "increment",

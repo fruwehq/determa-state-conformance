@@ -13,7 +13,7 @@
       },
       "bundle": {
         "file": "machine.yaml",
-        "validated_bundle_fingerprint": "sha256:0220d281a519af24f180206a551c5e57fcd4f45d3b4ea98f26ab31f3e336a2bc"
+        "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d"
       },
       "machine": {
         "namespace": "conformance.execution_checkpoint_complete_host_contract",
@@ -46,7 +46,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
+        "digest": "sha256:5f671cf8193dc3ed22a9eccfeecc16ebf9b3fc9c44bf1183c79d6935ec1938ab"
       },
       "envelopes": [
         {
@@ -61,7 +61,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -77,7 +77,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+          "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a"
         }
       ]
     },
@@ -93,14 +93,14 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
+        "digest": "sha256:5f671cf8193dc3ed22a9eccfeecc16ebf9b3fc9c44bf1183c79d6935ec1938ab"
       },
       "event_id": "complete-increment",
-      "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc",
+      "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a",
       "target": {
         "root": {
           "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+          "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
         }
       },
       "processing_mode": "delayed",
@@ -119,14 +119,14 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
+        "digest": "sha256:5f671cf8193dc3ed22a9eccfeecc16ebf9b3fc9c44bf1183c79d6935ec1938ab"
       },
       "event_id": "complete-increment",
-      "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc",
+      "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a",
       "target": {
         "root": {
           "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+          "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
         }
       },
       "processing_mode": "foreground",
@@ -145,14 +145,14 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:8adb16b896308f8f0433480b532cc60b1661eefbad8ba8d239a794b84814a53c"
+        "digest": "sha256:0f80bed0676f18e77df12d304f15409d65adab0882fb280d2a32fb75087247c3"
       },
       "event_id": "complete-unhandled",
-      "envelope_digest": "sha256:29265d3f208e111ebc1e50d385437770863bd5c79a9bb5d70c447c7dbdff2c77",
+      "envelope_digest": "sha256:f5c77541618397a732588f0f2667641102661a169a07c9bca4a5bdf9489b0381",
       "target": {
         "root": {
           "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+          "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
         }
       },
       "processing_mode": "delayed",
@@ -171,7 +171,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -186,7 +186,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -194,7 +194,7 @@
               []
             ]
           },
-          "envelope_digest": "sha256:5bd3f5e8fd9165380f443bea67203c535641c523af9e73f9a467d41c0bf5ae80"
+          "envelope_digest": "sha256:5739f13afd1d095f727f0150557d245263511d9bcb19bb0f6842862ece7b47b9"
         }
       ]
     },
@@ -210,14 +210,14 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:64b0bf79331499bc599fb5b6dd4b7173bf1c7c5d7ff4d6a1b1a16461691c32d7"
+        "digest": "sha256:2bd9da5756b31dcd53306b28edfe53f1aef06c9aaa3ac6c99f9076b437d3d90e"
       },
       "event_id": "complete-faulted",
-      "envelope_digest": "sha256:ce5e5d5d2220c3149fd2f47bcb605e150b39b3de9ea6c13aeb6d92564d132702",
+      "envelope_digest": "sha256:32c1163f3edb083921eec0259ded1433510975ceb9d06c20e5b038017754793d",
       "target": {
         "root": {
           "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+          "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
         }
       },
       "processing_mode": "delayed",
@@ -236,7 +236,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
+        "digest": "sha256:2cf16364f87f178d3e1b3bcf4aaa82b95dbdd98403d3712064a372fe2622f684"
       },
       "envelopes": [
         {
@@ -249,14 +249,14 @@
               "runtime": {
                 "root": {
                   "root_instance_id": "complete-host-root",
-                  "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                  "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
                 }
               }
             },
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -272,7 +272,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:eae72faf1372f0b5d2b6264e8a165217b33ab456b7ee68867712cbb93cef1a17"
+          "envelope_digest": "sha256:2ea17842b1146bae7e6e668a7d27dbd8a2c82c1f34b9249b12bea6192d9ca747"
         }
       ]
     },
@@ -288,7 +288,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
+        "digest": "sha256:2cf16364f87f178d3e1b3bcf4aaa82b95dbdd98403d3712064a372fe2622f684"
       },
       "envelopes": [
         {
@@ -303,7 +303,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -335,7 +335,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:e8c7a6f41017c5d0f2a6bc6934450da3125645e44d819207323588e4bdadebc8"
+        "digest": "sha256:1ed6156b472b6ca20296881174c2717076e14d74ce1d3e4260f05b95a8644ab0"
       },
       "envelopes": [
         {
@@ -350,7 +350,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -366,7 +366,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:58a62a2d516856409bf21e8e03cc41c6233288685851b76a821850b84517d0b1"
+          "envelope_digest": "sha256:392f07b0b97f1f7d73a37c6f3cc4a7674d009c33a96d418596776c6adb356af4"
         }
       ]
     },
@@ -382,7 +382,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -397,7 +397,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -413,7 +413,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+          "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a"
         }
       ]
     },
@@ -429,7 +429,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -444,7 +444,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -460,7 +460,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:24c01daaaeab88aae88ad9941bcbeb2c4a79eba5a6c9472dda8d3860ea7b678c"
+          "envelope_digest": "sha256:1f2567163658a4bd6d058b9c740f41bc97a53f30b281e3ac731920ee2a962ba5"
         }
       ]
     },
@@ -476,7 +476,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -491,7 +491,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -507,7 +507,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:164f3f3a828459d44ecbb52f7de3afee00aea995e09808b3fd11d23e5e573cbc"
+          "envelope_digest": "sha256:33254b57c926c57b3941642d4ccdc0dc5f1704072997dfb958dbdf399ba81c3c"
         },
         {
           "delivery_mode": "input",
@@ -521,7 +521,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -537,7 +537,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:b36e18e76bb74a7629ae0b8b4d3545984033e9955e91bdfbd65d1c595d79bf64"
+          "envelope_digest": "sha256:c7afce676187cf7bf5cbdfa71f0861a07960e40dd20c93843133117bb45bef37"
         }
       ]
     },
@@ -553,7 +553,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:575a539d6980ab83cb81acde8976afc866c882e89fb94e05a09769a0abf54bdc"
+        "digest": "sha256:55f4c4ea97844931aa8be0cd1cc872fde9a80de4911b0fbbe9bd7ec72ad8771e"
       },
       "envelopes": [
         {
@@ -568,7 +568,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -584,7 +584,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:164f3f3a828459d44ecbb52f7de3afee00aea995e09808b3fd11d23e5e573cbc"
+          "envelope_digest": "sha256:33254b57c926c57b3941642d4ccdc0dc5f1704072997dfb958dbdf399ba81c3c"
         },
         {
           "delivery_mode": "input",
@@ -598,7 +598,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -614,7 +614,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:b36e18e76bb74a7629ae0b8b4d3545984033e9955e91bdfbd65d1c595d79bf64"
+          "envelope_digest": "sha256:c7afce676187cf7bf5cbdfa71f0861a07960e40dd20c93843133117bb45bef37"
         }
       ]
     },
@@ -630,7 +630,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
+        "digest": "sha256:5f671cf8193dc3ed22a9eccfeecc16ebf9b3fc9c44bf1183c79d6935ec1938ab"
       },
       "envelopes": [
         {
@@ -645,7 +645,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -661,7 +661,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+          "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a"
         },
         {
           "delivery_mode": "input",
@@ -675,7 +675,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -691,7 +691,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:2d1183648f27ac654b48f77f0e3f2c26438bdd8d72d86e28653324453f3ff1d8"
+          "envelope_digest": "sha256:69f644ea14b7f758828d5348d01296396d5281ed786bba7153f7647cfd6a4070"
         }
       ]
     },
@@ -707,7 +707,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -722,7 +722,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -738,7 +738,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:4a397e1dc2d2b21af9a6479a012f85593ce5e0d43550ccb812ff5fc270a64782"
+          "envelope_digest": "sha256:3dad7599270dad6b1c6eba7f827530b1a963d135b8c0e3c83776799a4005d2ff"
         },
         {
           "delivery_mode": "unsupported",
@@ -752,7 +752,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -768,7 +768,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:5ddbd771be6a8aed5b9bd3b4bd9dc15255970214031aa2d18ad72c1b6f42c3e7"
+          "envelope_digest": "sha256:ed0c1b4e18b204784d0fe8e49d6a1a107114917a355b8d0b90e8992a3995427d"
         }
       ]
     },
@@ -784,7 +784,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
+        "digest": "sha256:2cf16364f87f178d3e1b3bcf4aaa82b95dbdd98403d3712064a372fe2622f684"
       },
       "envelopes": [
         {
@@ -799,7 +799,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -815,7 +815,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+          "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a"
         },
         {
           "delivery_mode": "input",
@@ -829,7 +829,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -845,7 +845,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:24c01daaaeab88aae88ad9941bcbeb2c4a79eba5a6c9472dda8d3860ea7b678c"
+          "envelope_digest": "sha256:1f2567163658a4bd6d058b9c740f41bc97a53f30b281e3ac731920ee2a962ba5"
         }
       ]
     },
@@ -861,7 +861,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:e8c7a6f41017c5d0f2a6bc6934450da3125645e44d819207323588e4bdadebc8"
+        "digest": "sha256:1ed6156b472b6ca20296881174c2717076e14d74ce1d3e4260f05b95a8644ab0"
       },
       "envelopes": [
         {
@@ -876,7 +876,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -892,7 +892,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:f12620b2314fd4e27bdaa28a4e4de71b2f9bf3147209712a79170190a501f3ec"
+          "envelope_digest": "sha256:932dee28d014b051c394aaaa767370bd611e76eeeb2b60e3f5ca0ca366f919de"
         }
       ]
     },
@@ -908,7 +908,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:e8c7a6f41017c5d0f2a6bc6934450da3125645e44d819207323588e4bdadebc8"
+        "digest": "sha256:1ed6156b472b6ca20296881174c2717076e14d74ce1d3e4260f05b95a8644ab0"
       },
       "envelopes": [
         {
@@ -923,7 +923,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -931,7 +931,7 @@
               []
             ]
           },
-          "envelope_digest": "sha256:ce5e5d5d2220c3149fd2f47bcb605e150b39b3de9ea6c13aeb6d92564d132702"
+          "envelope_digest": "sha256:32c1163f3edb083921eec0259ded1433510975ceb9d06c20e5b038017754793d"
         }
       ]
     },
@@ -947,7 +947,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -960,7 +960,7 @@
               "runtime": {
                 "root": {
                   "root_instance_id": "complete-host-root",
-                  "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                  "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
                 }
               }
             },
@@ -983,7 +983,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:4532e29f8c5685217f08fa39892cd32ba94341c4ab98432ab55abd257a99162e"
+          "envelope_digest": "sha256:5edc73939f8f5c3b6b86098afdb46f06cbf5404a5c5987f05cd4e7eb9fbda58a"
         }
       ]
     },
@@ -999,7 +999,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -1088,7 +1088,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -1103,7 +1103,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -1119,7 +1119,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:eec2605add36372056056114ac74848cdeca00c9060d8b9a8cf80ddeee701caf"
+          "envelope_digest": "sha256:f080033cafd6f21a1d32e9c0d65c7ea9997904f1f33f5c96d1314f59c38f2fdf"
         }
       ]
     },
@@ -1135,7 +1135,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -1150,14 +1150,13 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
               "map",
               []
-            ],
-            "correlation_id": "missing-output-effect"
+            ]
           },
           "envelope_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         }
@@ -1175,7 +1174,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -1190,7 +1189,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -1206,7 +1205,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+          "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a"
         }
       ]
     },
@@ -1222,7 +1221,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "digest": "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       },
       "envelopes": [
         {
@@ -1237,7 +1236,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -1253,7 +1252,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:9c763b626e06b30540462851914a9c02ab7435e3a67327100bc40fb3f08c53c8"
+          "envelope_digest": "sha256:862f549183982013a4b85a7cc4a47e9932545b6cf6c14b0a735d36b2892dc3b6"
         }
       ]
     },
@@ -1269,7 +1268,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
+        "digest": "sha256:5f671cf8193dc3ed22a9eccfeecc16ebf9b3fc9c44bf1183c79d6935ec1938ab"
       },
       "cutoff_receipt_sequence": "1",
       "target_mode": "bounded",
@@ -1291,7 +1290,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
+        "digest": "sha256:2cf16364f87f178d3e1b3bcf4aaa82b95dbdd98403d3712064a372fe2622f684"
       },
       "cutoff_receipt_sequence": "1",
       "target_mode": "bounded",
@@ -1313,7 +1312,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
+        "digest": "sha256:2cf16364f87f178d3e1b3bcf4aaa82b95dbdd98403d3712064a372fe2622f684"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "bounded",
@@ -1333,7 +1332,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "3",
-        "digest": "sha256:85d9861d5bc316f4545fade7c9e0ff6806abfa8f5f802a10ff786f0d99844802"
+        "digest": "sha256:5c279d5d656aa3430492f6f16c34beaa9475bbe79988c4b885adaf40fcc07424"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "permanent",
@@ -1353,7 +1352,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
+        "digest": "sha256:2cf16364f87f178d3e1b3bcf4aaa82b95dbdd98403d3712064a372fe2622f684"
       },
       "tombstone_operation_id": "stale-tombstone",
       "terminal_status": "completed",
@@ -1370,8 +1369,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
-        "revision": "4",
-        "digest": "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
+        "revision": "6",
+        "digest": "sha256:15f4ee76e97a472db1091ba853a9cc44bcc7f3ab811b41b03455b28bb00e342c"
       },
       "envelopes": [
         {
@@ -1386,7 +1385,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -1402,7 +1401,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:27c7e189a56fc31ba8956a77dc9684ddcc3d3123e9565b8d1797dff97eabf7e0"
+          "envelope_digest": "sha256:9b8450032489e838115265ef969757ff64f6f91d638346b795033c47d9af7394"
         }
       ]
     },
@@ -1417,8 +1416,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
-        "revision": "4",
-        "digest": "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
+        "revision": "6",
+        "digest": "sha256:15f4ee76e97a472db1091ba853a9cc44bcc7f3ab811b41b03455b28bb00e342c"
       },
       "envelopes": [
         {
@@ -1433,7 +1432,7 @@
             "target": {
               "root": {
                 "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               }
             },
             "payload": [
@@ -1449,7 +1448,7 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+          "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a"
         }
       ]
     },
@@ -1464,7 +1463,7 @@
       },
       "action": "backup",
       "checkpoint_digests": [
-        "sha256:3a1802a652df554e976ee91cb4d1291b9a7039dbe10d3e5d9591cb2bb874df5a"
+        "sha256:3f77e6529f1cc0185507e9654fed679ce4a3ef4a5f5bbc94074846be4e52f4c0"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -1481,7 +1480,7 @@
       },
       "action": "restore",
       "checkpoint_digests": [
-        "sha256:3a1802a652df554e976ee91cb4d1291b9a7039dbe10d3e5d9591cb2bb874df5a"
+        "sha256:3f77e6529f1cc0185507e9654fed679ce4a3ef4a5f5bbc94074846be4e52f4c0"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -1498,7 +1497,7 @@
       },
       "action": "backup",
       "checkpoint_digests": [
-        "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
+        "sha256:15f4ee76e97a472db1091ba853a9cc44bcc7f3ab811b41b03455b28bb00e342c"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -1515,7 +1514,7 @@
       },
       "action": "restore",
       "checkpoint_digests": [
-        "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
+        "sha256:15f4ee76e97a472db1091ba853a9cc44bcc7f3ab811b41b03455b28bb00e342c"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -1532,7 +1531,7 @@
       },
       "action": "restore",
       "checkpoint_digests": [
-        "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+        "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",

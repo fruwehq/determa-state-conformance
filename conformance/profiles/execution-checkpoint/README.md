@@ -45,7 +45,8 @@ receipts, effects,
 disposition, retention transition, store inbox, and application writes to the named
 before/after artifacts. Creation commits revision `0`; each admission, processing,
 outbox, pruning, or tombstone mutation advances exactly one revision; the combined
-persistence admission-and-processing transaction advances exactly two. A golden from
+persistence migration, admission, processing, inbox, outbox, audit, and application
+write transaction advances exactly one revision. A golden from
 another request is therefore not interchangeable even when it is schema-valid.
 
 The complete host-contract case additionally covers creation rejection, pending and

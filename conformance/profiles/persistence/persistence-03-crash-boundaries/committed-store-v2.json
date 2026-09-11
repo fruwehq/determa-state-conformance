@@ -5,7 +5,7 @@
     "execution_checkpoint_format": "determa.execution_checkpoint",
     "execution_checkpoint_schema_version": 2,
     "root_instance_id": "persistence-3-root",
-    "revision": "2",
+    "revision": "1",
     "root_record": {
       "status": "retained",
       "aggregate_state": {
@@ -123,7 +123,7 @@
         "request_digest": "sha256:fa7d9ef15862b8ec49a3f2e8d22b817728d35e163afede8bf58feaef59346356",
         "acceptance_sequence": "0",
         "final_queue_sequence": "0",
-        "committed_revision": "2",
+        "committed_revision": "1",
         "resulting_aggregate_state_digest": "sha256:152450230b3010095329c6a7ce1444ecd0650b7327c746b7bf15f411e4d16794",
         "outcome": {
           "disposition": "handled",
@@ -147,7 +147,7 @@
     "terminal_outbox_records": [],
     "outbox_effect_tombstones": [],
     "migration_audit_records": [],
-    "execution_checkpoint_digest": "sha256:fcd375c15440e37b8de78577283bc3eaf8c481e6915eb8a06114e4f0e53be1b1"
+    "execution_checkpoint_digest": "sha256:237f38db4f3822ab3c03b456b48a9d9b19a0707c38ab5513513329cf07b10181"
   },
   "inbox": [
     {
@@ -159,6 +159,5 @@
   "application_rows": {
     "aggregate_version": 1
   },
-  "quarantine": null,
-  "broker_acknowledged": false
+  "quarantine": null
 }

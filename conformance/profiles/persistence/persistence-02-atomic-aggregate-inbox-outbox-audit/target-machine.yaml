@@ -1,5 +1,6 @@
 format: 1
 namespace: conformance.persistence_atomic_v2
+meta: { release: next }
 events:
   host_commit: { direction: input }
   output_record:

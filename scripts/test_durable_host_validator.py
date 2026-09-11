@@ -19,13 +19,16 @@ from validate_conformance import (
     host_profile_failure_code,
     load_fixture_document,
     normalize_raw_admission_request,
+    validate_checkpoint_derivation,
     validate_cross_scope_pair,
     validate_durable_host_vectors,
+    validate_persistence_derivation,
     validate_request_checkpoint_binding,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance" / "profiles" / "execution-checkpoint"
+PERSISTENCE_PROFILE = ROOT / "conformance" / "profiles" / "persistence"
 
 
 def load(path: Path) -> dict:
@@ -133,6 +136,107 @@ class DurableHostValidatorTests(unittest.TestCase):
                 delivery_mode="input"
             ),
             "admission failure is not request-derived",
+        )
+
+    def test_correlation_requires_presence_not_retained_effect_lookup(self) -> None:
+        self._assert_complete_case_mutation_fails(
+            lambda requests: requests["invalid_correlation"]["envelopes"][0][
+                "envelope"
+            ].update(correlation_id="caller-owned-correlation"),
+            "admission failure is not request-derived",
+        )
+
+    def test_unhandled_delivery_allocates_no_logical_step(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        request = load(case / "inputs-v2.json")["requests"]["unhandled"]
+        result = load(case / "results-v2.json")["results"]["committed"]
+        before = load(case / "unhandled-accepted-checkpoint-v2.json")
+        after = load(case / "unhandled-checkpoint-v2.json")
+        after["root_record"]["aggregate_state"]["next_logical_step_sequence"] = "2"
+        with self.assertRaisesRegex(ValidationFailure, "logical step count"):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                before,
+                after,
+                "unhandled mutation",
+                case / "machine.yaml",
+            )
+
+    def test_stale_pruning_must_have_a_newer_cutoff(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["prune_stale"]
+        request["cutoff_receipt_sequence"] = "2"
+        result = load(case / "results-v2.json")["results"]["stale"]
+        current = load(case / "completed-checkpoint-v2.json")
+        with self.assertRaisesRegex(ValidationFailure, "newer mutation"):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                current,
+                current,
+                "stale prune mutation",
+                case / "machine.yaml",
+            )
+
+    def test_running_root_is_required_for_tombstone_rejection(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["tombstone_running"]
+        result = load(case / "results-v2.json")["results"]["running_root"]
+        completed = load(case / "completed-checkpoint-v2.json")
+        with self.assertRaisesRegex(ValidationFailure, "running root"):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                completed,
+                completed,
+                "terminal tombstone mutation",
+                case / "machine.yaml",
+            )
+
+    def test_combined_persistence_transaction_uses_one_revision(self) -> None:
+        case = (
+            PERSISTENCE_PROFILE
+            / "persistence-02-atomic-aggregate-inbox-outbox-audit"
+        )
+        request = load(case / "inputs-v2.json")["requests"]["process"]
+        result = load(case / "results-v2.json")["results"]["committed"]
+        before = load(case / "initial-store-v2.json")
+        after = load(case / "committed-store-v2.json")
+        after["checkpoint"]["revision"] = "2"
+        descriptor = load(case / "migration-descriptor-v2.json")
+        with self.assertRaisesRegex(ValidationFailure, "exactly once"):
+            validate_persistence_derivation(
+                request,
+                result,
+                before,
+                after,
+                "combined persistence mutation",
+                {"migration-descriptor-v2.json": descriptor},
+            )
+
+    def test_spawned_completion_disposes_the_child(self) -> None:
+        case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
+
+        def retain_completed_child(document: dict) -> None:
+            before = load(case / "spawned-root-pending-checkpoint-v2.json")
+            child = next(
+                copy.deepcopy(runtime)
+                for runtime in before["root_record"]["aggregate_state"]["runtimes"]
+                if runtime["relation"]["kind"] == "owned_spawned_instance"
+            )
+            child["status"] = "completed"
+            child["active_leaf_state_definition_pointers"] = []
+            child["active_state_activations"] = []
+            child["variables"] = []
+            child["ready_mailbox"] = []
+            document["root_record"]["aggregate_state"]["runtimes"].append(child)
+
+        self._assert_case_artifact_mutation_fails(
+            case,
+            "spawned-child-terminal-checkpoint-v2.json",
+            retain_completed_child,
+            "spawned completion disposal",
         )
 
     def test_raw_malformed_member_precedes_normalized_members(self) -> None:
@@ -266,6 +370,28 @@ class DurableHostValidatorTests(unittest.TestCase):
             mutate(inputs["requests"])
             inputs_path.write_text(
                 json.dumps(inputs, indent=2, ensure_ascii=True) + "\n",
+                encoding="utf-8",
+            )
+            test = load_fixture_document(mutated_case / "test.yaml")
+            with self.assertRaisesRegex(ValidationFailure, pattern):
+                validate_durable_host_vectors(
+                    mutated_case,
+                    test,
+                    set(mutated_case.glob("*.json")),
+                    self.input_validator,
+                )
+
+    def _assert_case_artifact_mutation_fails(
+        self, case: Path, filename: str, mutate, pattern: str
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            artifact_path = mutated_case / filename
+            document = load(artifact_path)
+            mutate(document)
+            artifact_path.write_text(
+                json.dumps(document, indent=2, ensure_ascii=True) + "\n",
                 encoding="utf-8",
             )
             test = load_fixture_document(mutated_case / "test.yaml")

@@ -5,14 +5,20 @@ events:
     direction: input
     payload:
       amount: { type: int, required: true }
+  complete: { direction: input }
 machines:
   - machine_id: counter
     version: 1
     root:
-      type: simple
+      type: composite
       variables:
         count: { type: int, init: 0 }
+      initial: { transition_to: active }
       on_events:
         increment:
           action:
             - assign: { count: "count + event.payload.amount" }
+        complete: { transition_to: finished }
+      states:
+        active: {}
+        finished: { type: final }

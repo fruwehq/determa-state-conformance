@@ -2,13 +2,13 @@
   "execution_checkpoint_format": "determa.execution_checkpoint",
   "execution_checkpoint_schema_version": 2,
   "root_instance_id": "complete-host-root",
-  "revision": "4",
+  "revision": "6",
   "root_record": {
     "status": "tombstone",
-    "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620",
+    "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e",
     "creation_id": "complete-host-create",
-    "terminal_status": "completed",
-    "final_aggregate_state_digest": "sha256:a0f49ac358078631585f178934b9b29cdb5e31a4d241e21eae6f6e09e4bd6d45",
+    "terminal_status": "faulted",
+    "final_aggregate_state_digest": "sha256:cf615949a5d8d41513c6753a85096521b62e631e3a3613b1f97128460ab857ff",
     "tombstone_operation_id": "bounded-tombstone"
   },
   "operation_receipts": [
@@ -16,15 +16,48 @@
       "operation_kind": "creation",
       "receipt_sequence": "0",
       "creation_id": "complete-host-create",
-      "request_digest": "sha256:85a72748e7eb9f10658dff76be4090e74daedc5f71512d5452a32f66b9c84863",
+      "request_digest": "sha256:0ecdfba3037b55b8ebf2898e04d617a5d434095dc48a36b250de416ceb9f3762",
       "committed_revision": "0",
-      "resulting_aggregate_state_digest": "sha256:4848e17fb23b240c737da4b4f3d07dac7602c36e1566860edd95c59a55f98c27",
+      "resulting_aggregate_state_digest": "sha256:790dcce1d676e3f08b13bed5ac2d60fe3983007332a8c07e46f39d4f2682fce4",
       "status": "running",
       "fault": null,
       "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "3",
+      "event_id": "complete-after-handled-fault",
+      "request_digest": "sha256:aa5b14c04f778cecc93d60f500e7668ea0a5750abc5f1490bc9ab6276056484c",
+      "acceptance_sequence": "1",
+      "accepted_revision": "3",
+      "delivery_mode": "input"
+    },
+    {
+      "operation_kind": "event_terminal",
+      "receipt_sequence": "4",
+      "event_id": "complete-after-handled-fault",
+      "request_digest": "sha256:aa5b14c04f778cecc93d60f500e7668ea0a5750abc5f1490bc9ab6276056484c",
+      "acceptance_sequence": "1",
+      "final_queue_sequence": "1",
+      "committed_revision": "4",
+      "resulting_aggregate_state_digest": "sha256:cf615949a5d8d41513c6753a85096521b62e631e3a3613b1f97128460ab857ff",
+      "outcome": {
+        "disposition": "faulted",
+        "status": "faulted",
+        "fault": {
+          "definition_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+          "runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e",
+          "cause_id": "complete-after-handled-fault",
+          "code": "action_fault",
+          "step_sequence": "2",
+          "source_locator": "/machines/0/root/on_events/fail/action/0/assign/count"
+        },
+        "rejection": null
+      },
+      "emission_references": []
     }
   ],
-  "next_operation_receipt_sequence": "3",
+  "next_operation_receipt_sequence": "5",
   "replay_retention": {
     "mode": "bounded",
     "permanent_replay_eligible": false,
@@ -34,7 +67,7 @@
   "event_identity_tombstones": [
     {
       "event_id": "complete-increment",
-      "request_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc",
+      "request_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a",
       "request_digest_domain": "determa-inbox-envelope-digest-2",
       "acceptance_sequence": "0",
       "terminal_receipt_sequence": "2",
@@ -46,5 +79,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
+  "execution_checkpoint_digest": "sha256:15f4ee76e97a472db1091ba853a9cc44bcc7f3ab811b41b03455b28bb00e342c"
 }

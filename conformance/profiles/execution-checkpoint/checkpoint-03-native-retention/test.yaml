@@ -7,6 +7,7 @@ artifacts:
     - { file: created-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: processed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: bounded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: completed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: root-tombstone-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
     - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
@@ -38,19 +39,28 @@ durable_host_vectors:
   - name: checkpoint_stale_pruning_rejected
     covers: [checkpoint_stale_pruning_rejected]
     operation: checkpoint_prune_v2
-    checkpoint_before: processed-checkpoint-v2.json
-    checkpoint_after: bounded-checkpoint-v2.json
+    checkpoint_before: completed-checkpoint-v2.json
+    checkpoint_after: completed-checkpoint-v2.json
+    historical_checkpoint: bounded-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/prune_stale }
     result: { file: results-v2.json, pointer: /results/stale }
     expect: { result: rejected, code: checkpoint_revision_conflict, mutation: none, core_calls: 0 }
   - name: checkpoint_root_tombstone
     covers: [checkpoint_root_tombstone, checkpoint_root_identity_retention, exact_tombstone_revision_equation]
     operation: checkpoint_tombstone_v2
-    checkpoint_before: bounded-checkpoint-v2.json
+    checkpoint_before: completed-checkpoint-v2.json
     checkpoint_after: root-tombstone-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/tombstone }
     result: { file: results-v2.json, pointer: /results/committed }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: checkpoint_running_root_tombstone_rejected
+    covers: [checkpoint_running_root_tombstone_rejected]
+    operation: checkpoint_tombstone_v2
+    checkpoint_before: bounded-checkpoint-v2.json
+    checkpoint_after: bounded-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/tombstone_running }
+    result: { file: results-v2.json, pointer: /results/running_root }
+    expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
   - name: checkpoint_root_tombstone_replay
     covers: [checkpoint_root_tombstone_replay]
     operation: checkpoint_tombstone_v2

@@ -2,157 +2,131 @@
   "durable_host_store_format": "determa.durable_host.store",
   "durable_host_store_schema_version": 2,
   "checkpoint": {
-    "event_identity_tombstones": [],
-    "execution_checkpoint_digest": "sha256:62f63d2b9315b3704f9f32b9ac2efa85dafef3bf7efd06d42c1b5e6a99554731",
     "execution_checkpoint_format": "determa.execution_checkpoint",
     "execution_checkpoint_schema_version": 2,
-    "migration_audit_records": [
-      {
-        "migration_audit_record_schema_version": 2,
-        "migration_descriptor_digest": "sha256:48e62dc1d066711cc07265cc948939da3fa1b26895654727b1183536343b6fb0",
-        "migration_sequence": "1",
-        "result_code": "migration_applied",
-        "root_instance_id": "maintenance-v2-root",
-        "root_runtime_id": "sha256:6c915160117efed1e414319ba9a4a2577caa8cb25a2b250b38779d190a97c8d8",
-        "source_aggregate_state_digest": "sha256:0f86fe31a45ce75b4c592dbc1ecbe24054654e7a86446dcd896734730cf810f5",
-        "source_validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0",
-        "target_aggregate_state_digest": "sha256:26fba30febee786ba96164e515e27cf1e06ee4e66f98960418da89f7c1eda01a",
-        "target_validated_bundle_fingerprint": "sha256:41b244b4d1f8f12e7d096fcc8c3f607d1ccfa07364560dccd20b416decfecd18"
-      }
-    ],
-    "next_operation_receipt_sequence": "2",
-    "next_outbox_terminal_sequence": "0",
-    "operation_receipts": [
-      {
-        "committed_revision": "0",
-        "creation_id": "maintenance-v2-create",
-        "emission_references": [],
-        "fault": null,
-        "operation_kind": "creation",
-        "receipt_sequence": "0",
-        "request_digest": "sha256:d28c7750d383b25721975736c02a8763356f9ba5ca114164e2893661c1250621",
-        "resulting_aggregate_state_digest": "sha256:0f86fe31a45ce75b4c592dbc1ecbe24054654e7a86446dcd896734730cf810f5",
-        "status": "running"
-      },
-      {
-        "committed_revision": "1",
-        "migration_sequences": [
-          "1"
-        ],
-        "operation_id": "maintenance-v2-one-hop",
-        "operation_kind": "maintenance_migration",
-        "receipt_sequence": "1",
-        "request_digest": "sha256:2cbc3325672bd9053d37f5a8364e7bf4adf38bee5dbc046fe8f6ff90436de1e0",
-        "result_code": "migration_applied",
-        "resulting_aggregate_state_digest": "sha256:26fba30febee786ba96164e515e27cf1e06ee4e66f98960418da89f7c1eda01a",
-        "source_aggregate_state_digest": "sha256:0f86fe31a45ce75b4c592dbc1ecbe24054654e7a86446dcd896734730cf810f5",
-        "target_validated_bundle_fingerprint": "sha256:41b244b4d1f8f12e7d096fcc8c3f607d1ccfa07364560dccd20b416decfecd18"
-      }
-    ],
-    "outbox_effect_tombstones": [],
-    "pending_outbox_intents": [],
-    "replay_retention": {
-      "mode": "permanent",
-      "permanent_replay_eligible": true,
-      "policy_identifier": null,
-      "pruned_through_receipt_sequence": null
-    },
-    "revision": "1",
-    "root_instance_id": "maintenance-v2-root",
+    "root_instance_id": "persistence-2-root",
+    "revision": "0",
     "root_record": {
+      "status": "retained",
       "aggregate_state": {
-        "aggregate_state_digest": "sha256:26fba30febee786ba96164e515e27cf1e06ee4e66f98960418da89f7c1eda01a",
         "aggregate_state_format": "determa.aggregate_state",
         "aggregate_state_schema_version": 2,
-        "creation_id": "maintenance-v2-create",
         "machine_format": 1,
-        "migration_sequence": "1",
-        "namespace": "example.transaction_server",
-        "next_acceptance_sequence": "0",
+        "validated_bundle_fingerprint": "sha256:87b1f23a34f45f200fb90768b4246aa9e89b1ecf205b246525c443043e67cd0f",
+        "namespace": "conformance.persistence_atomic_v2",
+        "root_machine_id": "counter",
+        "root_machine_version": "1",
+        "root_instance_id": "persistence-2-root",
+        "creation_id": "persistence-2-create",
+        "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b",
+        "migration_sequence": "0",
         "next_logical_step_sequence": "1",
         "next_output_sequence": "0",
+        "next_acceptance_sequence": "0",
         "next_queue_sequence": "0",
-        "root_instance_id": "maintenance-v2-root",
-        "root_machine_id": "transaction_server",
-        "root_machine_version": "1",
-        "root_runtime_id": "sha256:6c915160117efed1e414319ba9a4a2577caa8cb25a2b250b38779d190a97c8d8",
         "runtimes": [
           {
+            "runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:87b1f23a34f45f200fb90768b4246aa9e89b1ecf205b246525c443043e67cd0f",
+                "machine": {
+                  "namespace": "conformance.persistence_atomic_v2",
+                  "machine_id": "counter",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "persistence-2-root"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "persistence-2-root",
+                "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:87b1f23a34f45f200fb90768b4246aa9e89b1ecf205b246525c443043e67cd0f",
+              "machine": {
+                "namespace": "conformance.persistence_atomic_v2",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "running",
             "active_leaf_state_definition_pointers": [
-              "/machines/0/root/states/idle"
+              "/machines/0/root"
             ],
             "active_state_activations": [
               {
-                "activation_sequence": "0",
-                "state_definition_pointer": "/machines/0/root"
-              },
-              {
-                "activation_sequence": "0",
-                "state_definition_pointer": "/machines/0/root/states/idle"
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
               }
             ],
-            "current_definition": {
-              "machine": {
-                "machine_id": "transaction_server",
-                "machine_version": "1",
-                "namespace": "example.transaction_server",
-                "root_definition_pointer": "/machines/0/root"
-              },
-              "validated_bundle_fingerprint": "sha256:41b244b4d1f8f12e7d096fcc8c3f607d1ccfa07364560dccd20b416decfecd18"
-            },
-            "deferred_mailbox": [],
-            "fault": null,
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "0"
+                ]
+              }
+            ],
             "history": [],
-            "identity_origin": {
-              "definition": {
-                "machine": {
-                  "machine_id": "transaction_server",
-                  "machine_version": "1",
-                  "namespace": "example.transaction_server",
-                  "root_definition_pointer": "/machines/0/root"
-                },
-                "validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0"
-              },
-              "kind": "root",
-              "root_instance_id": "maintenance-v2-root"
-            },
-            "next_component_activation_sequences": [],
             "next_spawn_sequence": "0",
             "next_state_activation_sequences": [
               {
                 "definition_pointer": "/machines/0/root",
                 "next_sequence": "1"
-              },
-              {
-                "definition_pointer": "/machines/0/root/states/idle",
-                "next_sequence": "1"
               }
             ],
+            "next_component_activation_sequences": [],
+            "fault": null,
             "ready_mailbox": [],
-            "relation": {
-              "kind": "root"
-            },
-            "runtime_id": "sha256:6c915160117efed1e414319ba9a4a2577caa8cb25a2b250b38779d190a97c8d8",
-            "status": "running",
-            "target_identity": {
-              "root": {
-                "root_instance_id": "maintenance-v2-root",
-                "root_runtime_id": "sha256:6c915160117efed1e414319ba9a4a2577caa8cb25a2b250b38779d190a97c8d8"
-              }
-            },
-            "variables": []
+            "deferred_mailbox": []
           }
         ],
-        "validated_bundle_fingerprint": "sha256:41b244b4d1f8f12e7d096fcc8c3f607d1ccfa07364560dccd20b416decfecd18"
-      },
-      "status": "retained"
+        "aggregate_state_digest": "sha256:6d595429c8be43f2076efa450ea23bb6176c594c4b871c5718e965bd0c1a70d3"
+      }
     },
-    "terminal_outbox_records": []
+    "operation_receipts": [
+      {
+        "operation_kind": "creation",
+        "receipt_sequence": "0",
+        "creation_id": "persistence-2-create",
+        "request_digest": "sha256:222f8fe99950086c3c3cea34c19ad17e0ba1768e73b7686939e545665c25f25f",
+        "committed_revision": "0",
+        "resulting_aggregate_state_digest": "sha256:6d595429c8be43f2076efa450ea23bb6176c594c4b871c5718e965bd0c1a70d3",
+        "status": "running",
+        "fault": null,
+        "emission_references": []
+      }
+    ],
+    "next_operation_receipt_sequence": "1",
+    "replay_retention": {
+      "mode": "permanent",
+      "permanent_replay_eligible": true,
+      "pruned_through_receipt_sequence": null,
+      "policy_identifier": null
+    },
+    "event_identity_tombstones": [],
+    "pending_outbox_intents": [],
+    "next_outbox_terminal_sequence": "0",
+    "terminal_outbox_records": [],
+    "outbox_effect_tombstones": [],
+    "migration_audit_records": [],
+    "execution_checkpoint_digest": "sha256:2bd4d08c94774b05b2c5306951a59a24de9a89ba6ac75818b9b04e448bb9cdd9"
   },
   "inbox": [
     {
       "event_id": "persistence-2-event",
-      "request_digest": "sha256:cdcb4ce5f6076de19b165ec76c8007ca6c7de6c92813c86dba02d2a4218bf5bc",
+      "request_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
       "disposition": "quarantined"
     }
   ],
@@ -161,6 +135,5 @@
     "event_id": "persistence-2-event",
     "reason_code": "permanent_processing_failure",
     "released": true
-  },
-  "broker_acknowledged": false
+  }
 }

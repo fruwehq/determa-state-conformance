@@ -257,7 +257,13 @@
         },
         {
           "if": { "required": ["historical_checkpoint"] },
-          "then": { "properties": { "operation": { "const": "checkpoint_admit_v2" } } }
+          "then": {
+            "properties": {
+              "operation": {
+                "enum": ["checkpoint_admit_v2", "checkpoint_prune_v2"]
+              }
+            }
+          }
         }
       ]
     }
