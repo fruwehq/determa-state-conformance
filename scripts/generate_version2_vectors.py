@@ -2214,6 +2214,30 @@ def produce_persistence() -> dict[str, bytes]:
             runtime["current_definition"]["validated_bundle_fingerprint"] = target_fingerprint
         return seal_aggregate(result)
 
+    def migration_audit_record(
+        source: dict[str, Any],
+        target: dict[str, Any],
+        descriptor: dict[str, Any],
+    ) -> dict[str, Any]:
+        return {
+            "migration_audit_record_schema_version": 1,
+            "root_instance_id": source["root_instance_id"],
+            "root_runtime_id": source["root_runtime_id"],
+            "migration_sequence": target["migration_sequence"],
+            "source_validated_bundle_fingerprint": source[
+                "validated_bundle_fingerprint"
+            ],
+            "target_validated_bundle_fingerprint": target[
+                "validated_bundle_fingerprint"
+            ],
+            "migration_descriptor_digest": descriptor[
+                "migration_descriptor_digest"
+            ],
+            "source_aggregate_state_digest": source["aggregate_state_digest"],
+            "target_aggregate_state_digest": target["aggregate_state_digest"],
+            "result_code": "migration_applied",
+        }
+
     preserved = migrated_to(aggregate_v2, descriptors["descriptor-compatible-v2.json"])
 
     stale_target_migrated = migrated_to(
@@ -2285,23 +2309,59 @@ def produce_persistence() -> dict[str, bytes]:
         "disposal-before.json": canonical(disposal_before),
         "fault-frozen-aggregate-v2.json": canonical(fault_frozen),
         "migration-preserve-result.json": canonical(
-            {"result": "success", "aggregate_state": preserved, "dispositions": []}
+            {
+                "result": "success",
+                "aggregate_state": preserved,
+                "dispositions": [],
+                "audit_records": [
+                    migration_audit_record(
+                        aggregate_v2,
+                        preserved,
+                        descriptors["descriptor-compatible-v2.json"],
+                    )
+                ],
+            }
         ),
         "migration-stale-target-result.json": canonical(
             {
                 "result": "success",
                 "aggregate_state": stale_target_migrated,
                 "dispositions": [],
+                "audit_records": [
+                    migration_audit_record(
+                        aggregate_v2,
+                        stale_target_migrated,
+                        descriptors["descriptor-stale-v2.json"],
+                    )
+                ],
             }
         ),
         "migration-fault-frozen-preserve-result.json": canonical(
-            {"result": "success", "aggregate_state": preserved_fault_frozen, "dispositions": []}
+            {
+                "result": "success",
+                "aggregate_state": preserved_fault_frozen,
+                "dispositions": [],
+                "audit_records": [
+                    migration_audit_record(
+                        fault_frozen,
+                        preserved_fault_frozen,
+                        descriptors["descriptor-compatible-v2.json"],
+                    )
+                ],
+            }
         ),
         "migration-historical-fault-result.json": canonical(
             {
                 "result": "success",
                 "aggregate_state": historical_fault_migrated,
                 "dispositions": [],
+                "audit_records": [
+                    migration_audit_record(
+                        fault_frozen,
+                        historical_fault_migrated,
+                        descriptors["descriptor-stale-v2.json"],
+                    )
+                ],
             }
         ),
         "migration-dispose-result.json": canonical(
@@ -2314,6 +2374,13 @@ def produce_persistence() -> dict[str, bytes]:
                         "reason": "event removed by version migration",
                         "migration_descriptor_digest": descriptors["descriptor-dispose-v2.json"]["migration_descriptor_digest"],
                     }
+                ],
+                "audit_records": [
+                    migration_audit_record(
+                        disposal_before,
+                        disposal_after,
+                        descriptors["descriptor-dispose-v2.json"],
+                    )
                 ],
             }
         ),

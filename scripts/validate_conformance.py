@@ -299,6 +299,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "native_internal_handler_provenance",
         "native_internal_handler_admission",
         "migration_backlog_independent_descriptor",
+        "migration_audit_exact_order_content",
         "migration_capacity_totality",
         "migration_descriptor_v2_schema_positive_negative",
         "migration_fault_frozen_preservation",
@@ -6281,6 +6282,32 @@ def validate_version2_vectors(
                 assert prior_aggregate is not None
                 migrated = result_document["aggregate_state"]
                 descriptor = artifact(vector["descriptor_file"]).document
+                expected_audit_record = {
+                    "migration_audit_record_schema_version": 1,
+                    "root_instance_id": prior_aggregate["root_instance_id"],
+                    "root_runtime_id": prior_aggregate["root_runtime_id"],
+                    "migration_sequence": migrated["migration_sequence"],
+                    "source_validated_bundle_fingerprint": prior_aggregate[
+                        "validated_bundle_fingerprint"
+                    ],
+                    "target_validated_bundle_fingerprint": migrated[
+                        "validated_bundle_fingerprint"
+                    ],
+                    "migration_descriptor_digest": descriptor[
+                        "migration_descriptor_digest"
+                    ],
+                    "source_aggregate_state_digest": prior_aggregate[
+                        "aggregate_state_digest"
+                    ],
+                    "target_aggregate_state_digest": migrated[
+                        "aggregate_state_digest"
+                    ],
+                    "result_code": "migration_applied",
+                }
+                if result_document.get("audit_records") != [expected_audit_record]:
+                    raise ValidationFailure(
+                        f"{location}: migration audit omission, order, or content mismatch"
+                    )
                 validate_aggregate_against_bundle(
                     migrated,
                     case / selected["target_bundle"]["bundle_file"],
@@ -8076,14 +8103,43 @@ def validate_version2_vectors(
             source_cycle["base_descriptor"]["source_validated_bundle_fingerprint"]
         )
         source = artifact("base-aggregate-v2.json").document
+        preserve_result = artifact("migration-preserve-result.json").document
+        missing_audit = copy.deepcopy(preserve_result)
+        missing_audit.pop("audit_records")
+        wrong_audit_content = copy.deepcopy(preserve_result)
+        wrong_audit_content["audit_records"][0][
+            "migration_descriptor_digest"
+        ] = "sha256:" + "0" * 64
+        wrong_audit_order = copy.deepcopy(preserve_result)
+        stale_audit = copy.deepcopy(
+            artifact("migration-stale-target-result.json").document[
+                "audit_records"
+            ][0]
+        )
+        wrong_audit_order["audit_records"] = [
+            stale_audit,
+            copy.deepcopy(preserve_result["audit_records"][0]),
+        ]
         probes = {
             "migration shape substitution": {"descriptor-compatible-v2.json": wrong_shape},
             "migration self-cycle substitution": {"descriptor-compatible-v2.json": source_cycle},
+            "migration audit omission": {
+                "migration-preserve-result.json": missing_audit,
+            },
+            "migration audit content substitution": {
+                "migration-preserve-result.json": wrong_audit_content,
+            },
+            "migration audit order or cardinality substitution": {
+                "migration-preserve-result.json": wrong_audit_order,
+            },
             "migration result without target binding or sequence": {
                 "migration-preserve-result.json": {
                     "result": "success",
                     "aggregate_state": source,
                     "dispositions": [],
+                    "audit_records": copy.deepcopy(
+                        preserve_result["audit_records"]
+                    ),
                 }
             },
         }

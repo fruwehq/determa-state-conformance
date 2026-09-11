@@ -66,6 +66,7 @@ version2_vectors:
   - name: migration_preserves_compatible_work
     covers:
       - migration_backlog_independent_descriptor
+      - migration_audit_exact_order_content
       - migration_descriptor_v2_schema_positive_negative
       - migration_package_v2_schema_positive_negative
     operation: migrate_aggregate_v2
