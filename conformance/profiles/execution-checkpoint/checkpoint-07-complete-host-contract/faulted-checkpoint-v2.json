@@ -1,0 +1,162 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 2,
+  "root_instance_id": "complete-host-root",
+  "revision": "2",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 2,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:718f79f88aa5a6f12c956a68e58979159c37d83daf311e29b7a0596099e4cec9",
+      "namespace": "conformance.execution_checkpoint_complete_host_contract",
+      "root_machine_id": "counter",
+      "root_machine_version": "1",
+      "root_instance_id": "complete-host-root",
+      "creation_id": "complete-host-create",
+      "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "2",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "1",
+      "next_queue_sequence": "1",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:718f79f88aa5a6f12c956a68e58979159c37d83daf311e29b7a0596099e4cec9",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "complete-host-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "complete-host-root",
+              "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:718f79f88aa5a6f12c956a68e58979159c37d83daf311e29b7a0596099e4cec9",
+            "machine": {
+              "namespace": "conformance.execution_checkpoint_complete_host_contract",
+              "machine_id": "counter",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "faulted",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/count",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "0"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": {
+            "definition_fingerprint": "sha256:718f79f88aa5a6f12c956a68e58979159c37d83daf311e29b7a0596099e4cec9",
+            "runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e",
+            "cause_id": "complete-faulted",
+            "code": "action_fault",
+            "step_sequence": "1",
+            "source_locator": "/machines/0/root/on_events/fail"
+          },
+          "ready_mailbox": [],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:1ef69e8ba6573dfca1305dca6a787621b2160eb344f5c9c67f085c9383b021c8"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "complete-host-create",
+      "request_digest": "sha256:f7997a2b0bf89f2916ae48a4d5f61361f611c46d8fe6ff88b944eabac0146a48",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:7cc8b6112482db53802fbbff2720804257d656fb525f7a39b94aae002c3a9b14",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "1",
+      "event_id": "complete-faulted",
+      "request_digest": "sha256:a9a3ed13e99d0d013a2ab2da1d008af4a290ae99b945c58dd0d3063370649af7",
+      "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    },
+    {
+      "operation_kind": "event_terminal",
+      "receipt_sequence": "2",
+      "event_id": "complete-faulted",
+      "request_digest": "sha256:a9a3ed13e99d0d013a2ab2da1d008af4a290ae99b945c58dd0d3063370649af7",
+      "acceptance_sequence": "0",
+      "final_queue_sequence": "0",
+      "committed_revision": "2",
+      "resulting_aggregate_state_digest": "sha256:1ef69e8ba6573dfca1305dca6a787621b2160eb344f5c9c67f085c9383b021c8",
+      "outcome": {
+        "disposition": "faulted",
+        "status": "faulted",
+        "fault": {
+          "definition_fingerprint": "sha256:718f79f88aa5a6f12c956a68e58979159c37d83daf311e29b7a0596099e4cec9",
+          "runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e",
+          "cause_id": "complete-faulted",
+          "code": "action_fault",
+          "step_sequence": "1",
+          "source_locator": "/machines/0/root/on_events/fail"
+        },
+        "rejection": null
+      },
+      "emission_references": []
+    }
+  ],
+  "next_operation_receipt_sequence": "3",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:09945e5411464bab52d879ac69a2e70499da86bb0fd12040ad5c68855b702fc5"
+}

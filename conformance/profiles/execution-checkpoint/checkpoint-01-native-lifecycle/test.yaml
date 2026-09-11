@@ -11,7 +11,7 @@ artifacts:
     - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
 durable_host_vectors:
   - name: checkpoint_create_commit
-    covers: [checkpoint_create_commit, creation_receipt_native_v2]
+    covers: [checkpoint_create_commit, creation_receipt_native_v2, exact_creation_revision_equation]
     operation: checkpoint_create_v2
     checkpoint_before: null
     checkpoint_after: created-checkpoint-v2.json
@@ -20,7 +20,7 @@ durable_host_vectors:
     expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
   - name: checkpoint_creation_replay
     covers: [checkpoint_creation_replay]
-    operation: checkpoint_replay_v2
+    operation: checkpoint_create_v2
     checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: created-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/create_replay }
@@ -52,7 +52,7 @@ durable_host_vectors:
     expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
   - name: checkpoint_terminal_replay
     covers: [checkpoint_terminal_replay, replay_precedes_stale_writer]
-    operation: checkpoint_replay_v2
+    operation: checkpoint_admit_v2
     checkpoint_before: processed-checkpoint-v2.json
     checkpoint_after: processed-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/accept_replay }

@@ -19,6 +19,9 @@ Layout:
   driver. They fix schema-version-2 checkpoint/store results and before/after bytes
   without defining a language API, production store schema, worker, daemon, or socket
   protocol.
+- Durable-host requests are a closed operation-tagged union with complete executable
+  inputs. The validator cross-binds each request to its exact result and after artifact;
+  request names and vector coverage labels are never execution inputs.
 - Additional bundle files are allowed only when `test.yaml` names them explicitly.
 - `VERSION` — the synchronized spec version this suite targets.
 
@@ -81,6 +84,10 @@ The workflow uses the same command against an explicitly pinned specification co
 The version-2 generators and durable-host profiles are documented in their READMEs.
 Durable validation proves fixture construction, schema dispositions, and cross-artifact
 semantics; it does not replace each implementation's runtime harness.
+
+CI checks both deterministic generators. Run
+`python scripts/generate_execution_checkpoint_profile.py --check` after changing any
+durable-host request, result, checkpoint, store, call-log, or profile manifest.
 
 The non-normative CLI profile runner is retained at
 `conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.

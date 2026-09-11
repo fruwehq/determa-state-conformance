@@ -24,7 +24,7 @@ durable_host_vectors:
     store_after: initial-store-v2.json
     call_log: transient-call-log-v2.json
     failure_boundary: after_transaction_begin
-    request: { file: inputs-v2.json, pointer: /requests/process }
+    request: { file: inputs-v2.json, pointer: /requests/process_transient }
     result: { file: results-v2.json, pointer: /results/transient }
     expect: { result: rejected, code: transient_processing_failure, mutation: none, core_calls: 0 }
   - name: persistence_transient_retry

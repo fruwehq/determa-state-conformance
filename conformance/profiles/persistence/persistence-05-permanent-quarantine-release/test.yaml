@@ -23,7 +23,7 @@ durable_host_vectors:
     store_after: quarantined-store-v2.json
     call_log: quarantine-call-log-v2.json
     failure_boundary: after_artifact_resolution
-    request: { file: inputs-v2.json, pointer: /requests/process }
+    request: { file: inputs-v2.json, pointer: /requests/process_permanent }
     result: { file: results-v2.json, pointer: /results/quarantined }
     expect: { result: quarantined, code: permanent_processing_failure, mutation: atomic, core_calls: 0 }
   - name: persistence_quarantine_release

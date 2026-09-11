@@ -49,3 +49,6 @@ jobs:
 
       - name: Check generated version-2 fixtures
         run: python scripts/generate_version2_vectors.py --check
+
+      - name: Check generated durable-host fixtures
+        run: python scripts/generate_execution_checkpoint_profile.py --check

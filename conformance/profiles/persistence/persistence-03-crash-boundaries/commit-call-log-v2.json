@@ -14,7 +14,6 @@
     "stage_outbox",
     "stage_audit",
     "stage_application_rows",
-    "commit",
-    "acknowledge"
+    "commit"
   ]
 }

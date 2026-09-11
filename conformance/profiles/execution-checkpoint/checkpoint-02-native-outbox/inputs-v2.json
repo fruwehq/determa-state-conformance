@@ -5,65 +5,318 @@
     "pending": {
       "operation": "checkpoint_step_v2",
       "request_id": "emit-outputs",
-      "parameters": {},
-      "expected_revision": "1",
-      "expected_checkpoint_digest": "sha256:16c9d8090f6bfdaaefc2a73967efc395c9515642717470a021c9a92c7df7f351"
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "2",
+        "digest": "sha256:57ac8f23c60342ac8f960219bc926de886def516e915a5beceb95fc042852cbd"
+      },
+      "event_id": "delivery-outputs",
+      "envelope_digest": "sha256:fa5721fb217ee473e7f24f12bc380e25ec86845b6974ba88c4c1a50541a2f4f4",
+      "target": {
+        "root": {
+          "root_instance_id": "checkpoint-outbox-root",
+          "root_runtime_id": "sha256:8a005ff374ebdf3843dc6a6b3c60aabbd4d8c4276f92b4350faf709842401dcf"
+        }
+      },
+      "processing_mode": "delayed",
+      "acceptance_sequence": "0",
+      "queue_sequence": "0"
     },
     "retryable": {
       "operation": "checkpoint_update_outbox_v2",
       "request_id": "retryable",
-      "parameters": {},
-      "expected_revision": "2",
-      "expected_checkpoint_digest": "sha256:57ac8f23c60342ac8f960219bc926de886def516e915a5beceb95fc042852cbd"
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "2",
+        "digest": "sha256:57ac8f23c60342ac8f960219bc926de886def516e915a5beceb95fc042852cbd"
+      },
+      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "target_disposition": "retryable_failure",
+      "outcome": {
+        "reason_code": "retryable_failure_reported",
+        "durable_acceptance": false
+      }
     },
     "retryable_replay": {
-      "operation": "checkpoint_replay_v2",
+      "operation": "checkpoint_update_outbox_v2",
       "request_id": "retryable",
-      "parameters": {},
-      "expected_revision": "3",
-      "expected_checkpoint_digest": "sha256:ece6209fdeb91545fad96e5c5c7ba2ea7781f8b55a633b066a022fc50179cd7e"
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "3",
+        "digest": "sha256:ece6209fdeb91545fad96e5c5c7ba2ea7781f8b55a633b066a022fc50179cd7e"
+      },
+      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "target_disposition": "retryable_failure",
+      "outcome": {
+        "reason_code": "retryable_failure_reported",
+        "durable_acceptance": false
+      }
     },
     "ambiguous": {
       "operation": "checkpoint_update_outbox_v2",
       "request_id": "ambiguous",
-      "parameters": {},
-      "expected_revision": "3",
-      "expected_checkpoint_digest": "sha256:ece6209fdeb91545fad96e5c5c7ba2ea7781f8b55a633b066a022fc50179cd7e"
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "3",
+        "digest": "sha256:ece6209fdeb91545fad96e5c5c7ba2ea7781f8b55a633b066a022fc50179cd7e"
+      },
+      "effect_id": "sha256:3a64aeda992befdd9c30c080bfd7826d166349179785066dc611eee53dfdbbc5",
+      "target_disposition": "ambiguous",
+      "outcome": {
+        "reason_code": "ambiguous_reported",
+        "durable_acceptance": false
+      }
     },
-    "terminal": {
+    "terminal_confirmed": {
       "operation": "checkpoint_terminalize_outbox_v2",
-      "request_id": "terminalize",
-      "parameters": {},
-      "expected_revision": "4",
-      "expected_checkpoint_digest": "sha256:929f620bcf52889aea2464c09a22cbab3602e0cab80c9f7983ff01a67a3ba5f5"
+      "request_id": "terminalize-confirmed",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "4",
+        "digest": "sha256:929f620bcf52889aea2464c09a22cbab3602e0cab80c9f7983ff01a67a3ba5f5"
+      },
+      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "target_disposition": "confirmed",
+      "outcome": {
+        "reason_code": null,
+        "durable_acceptance": true
+      }
+    },
+    "terminal_permanently_rejected": {
+      "operation": "checkpoint_terminalize_outbox_v2",
+      "request_id": "terminalize-permanently_rejected",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "5",
+        "digest": "sha256:74f783ea6a264b1509871646bef1187ac82bb4be0b5b9542bede6e40c6d0eb47"
+      },
+      "effect_id": "sha256:3a64aeda992befdd9c30c080bfd7826d166349179785066dc611eee53dfdbbc5",
+      "target_disposition": "permanently_rejected",
+      "outcome": {
+        "reason_code": "permanently_rejected_policy",
+        "durable_acceptance": false
+      }
+    },
+    "terminal_operator_cancelled": {
+      "operation": "checkpoint_terminalize_outbox_v2",
+      "request_id": "terminalize-operator_cancelled",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "6",
+        "digest": "sha256:1b23187318991283698bd68eff25cfd911166d5897610e6eeacc7f316b53d17e"
+      },
+      "effect_id": "sha256:20ed8ffae7d3b189515117802a6fff2351b26e32fa77b4afa8841061f47275a7",
+      "target_disposition": "operator_cancelled",
+      "outcome": {
+        "reason_code": "operator_cancelled_policy",
+        "durable_acceptance": false
+      }
+    },
+    "terminal_discarded": {
+      "operation": "checkpoint_terminalize_outbox_v2",
+      "request_id": "terminalize-discarded",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "7",
+        "digest": "sha256:80740f813f999d31746c3d0bd0eac604a100c10c33a743feb3d7e4c46522f460"
+      },
+      "effect_id": "sha256:6e3173f6729d9d6583564f38f4bbee1b2a87e912991701105406929388f5c86e",
+      "target_disposition": "discarded",
+      "outcome": {
+        "reason_code": "discarded_policy",
+        "durable_acceptance": false
+      }
+    },
+    "terminal_dead_lettered": {
+      "operation": "checkpoint_terminalize_outbox_v2",
+      "request_id": "terminalize-dead_lettered",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "8",
+        "digest": "sha256:baa309afdaa580e222ff06036e329eef869e9cb9f20de27b6f56ecfa01ef64ae"
+      },
+      "effect_id": "sha256:546e51d05d05b8367582472d6156829b91b20560a1853fdfa0700ed645737b34",
+      "target_disposition": "dead_lettered",
+      "outcome": {
+        "reason_code": "dead_lettered_policy",
+        "durable_acceptance": false
+      }
     },
     "terminal_replay": {
-      "operation": "checkpoint_replay_v2",
-      "request_id": "terminalize",
-      "parameters": {},
-      "expected_revision": "9",
-      "expected_checkpoint_digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+      "operation": "checkpoint_terminalize_outbox_v2",
+      "request_id": "terminalize-dead_lettered",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "9",
+        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+      },
+      "effect_id": "sha256:546e51d05d05b8367582472d6156829b91b20560a1853fdfa0700ed645737b34",
+      "target_disposition": "dead_lettered",
+      "outcome": {
+        "reason_code": "dead_lettered_policy",
+        "durable_acceptance": false
+      }
     },
     "conflict": {
       "operation": "checkpoint_terminalize_outbox_v2",
       "request_id": "terminalize-conflict",
-      "parameters": {},
-      "expected_revision": "9",
-      "expected_checkpoint_digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "9",
+        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+      },
+      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "target_disposition": "discarded",
+      "outcome": {
+        "reason_code": "discarded_policy",
+        "durable_acceptance": false
+      }
     },
     "compact": {
       "operation": "checkpoint_compact_outbox_v2",
       "request_id": "compact",
-      "parameters": {},
-      "expected_revision": "9",
-      "expected_checkpoint_digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "9",
+        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+      },
+      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "intent_digest": "sha256:5699ae90bed4af566505a96f6024c3a249e0c975c324bb39524a0be20039534b",
+      "retention_mode": "permanent"
     },
     "delete": {
       "operation": "checkpoint_compact_outbox_v2",
       "request_id": "delete",
-      "parameters": {},
-      "expected_revision": "10",
-      "expected_checkpoint_digest": "sha256:b9de092c1113c6a78fef25851b7b35829e0d9468c959c43d4fcbae2926bf8411"
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "10",
+        "digest": "sha256:b9de092c1113c6a78fef25851b7b35829e0d9468c959c43d4fcbae2926bf8411"
+      },
+      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "intent_digest": "sha256:5699ae90bed4af566505a96f6024c3a249e0c975c324bb39524a0be20039534b",
+      "retention_mode": "permanent"
+    },
+    "prune_effect_dependency": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "prune-effect-dependency",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "9",
+        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+      },
+      "cutoff_receipt_sequence": "2",
+      "target_mode": "bounded",
+      "policy_identifier": "bounded-native-v2",
+      "dependency_receipt_sequences": [],
+      "dependency_effect_ids": [
+        "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf"
+      ]
+    },
+    "prune_producer_dependency": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "prune-producer-dependency",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-outbox-root",
+        "revision": "9",
+        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+      },
+      "cutoff_receipt_sequence": "2",
+      "target_mode": "bounded",
+      "policy_identifier": "bounded-native-v2",
+      "dependency_receipt_sequences": [
+        "2"
+      ],
+      "dependency_effect_ids": []
     }
   }
 }

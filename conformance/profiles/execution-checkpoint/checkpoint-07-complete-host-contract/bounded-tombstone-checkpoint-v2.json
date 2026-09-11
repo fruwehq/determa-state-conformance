@@ -1,0 +1,50 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 2,
+  "root_instance_id": "complete-host-root",
+  "revision": "4",
+  "root_record": {
+    "status": "tombstone",
+    "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e",
+    "creation_id": "complete-host-create",
+    "terminal_status": "completed",
+    "final_aggregate_state_digest": "sha256:ab1c7725289bc3a6e10836be8ee56344cd988709f3d8a7319619bd6254beac88",
+    "tombstone_operation_id": "bounded-tombstone"
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "complete-host-create",
+      "request_digest": "sha256:f7997a2b0bf89f2916ae48a4d5f61361f611c46d8fe6ff88b944eabac0146a48",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:7cc8b6112482db53802fbbff2720804257d656fb525f7a39b94aae002c3a9b14",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    }
+  ],
+  "next_operation_receipt_sequence": "3",
+  "replay_retention": {
+    "mode": "bounded",
+    "permanent_replay_eligible": false,
+    "pruned_through_receipt_sequence": "2",
+    "policy_identifier": "bounded-native-v2"
+  },
+  "event_identity_tombstones": [
+    {
+      "event_id": "complete-increment",
+      "request_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
+      "request_digest_domain": "determa-inbox-envelope-digest-2",
+      "acceptance_sequence": "0",
+      "terminal_receipt_sequence": "2",
+      "terminal_disposition": "handled"
+    }
+  ],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:42dcadc39b41907bfb5ecd492464a4500d11efa3a98b0502cdb501c36f707d59"
+}

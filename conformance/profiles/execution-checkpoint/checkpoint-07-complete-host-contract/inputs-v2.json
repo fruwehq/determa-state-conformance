@@ -1,0 +1,1876 @@
+{
+  "durable_host_inputs_format": "determa.durable_host.inputs",
+  "durable_host_inputs_schema_version": 2,
+  "requests": {
+    "creation_rejection": {
+      "operation": "checkpoint_create_v2",
+      "request_id": "invalid-create",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "bundle": {
+        "file": "machine.yaml",
+        "validated_bundle_fingerprint": "sha256:718f79f88aa5a6f12c956a68e58979159c37d83daf311e29b7a0596099e4cec9"
+      },
+      "machine": {
+        "namespace": "conformance.execution_checkpoint_complete_host_contract",
+        "machine_id": "counter",
+        "machine_version": "1",
+        "root_definition_pointer": "/machines/0/root"
+      },
+      "bindings": {
+        "input": {
+          "undeclared": [
+            "integer",
+            "1"
+          ]
+        },
+        "external": {}
+      },
+      "root_instance_id": "complete-host-root",
+      "creation_id": "complete-host-create",
+      "retention_mode": "permanent"
+    },
+    "pending_admission_replay": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "complete-increment",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "1",
+        "digest": "sha256:58f0171c05a9ff18ad251484d87fcab048d1bc37bd9bede66b3be868ac6d0b3d"
+      },
+      "delivery_mode": "input",
+      "envelope": {
+        "event": "increment",
+        "event_id": "complete-increment",
+        "cause_id": "complete-increment",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "external"
+    },
+    "handled_delayed": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "handled-delayed",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "1",
+        "digest": "sha256:58f0171c05a9ff18ad251484d87fcab048d1bc37bd9bede66b3be868ac6d0b3d"
+      },
+      "event_id": "complete-increment",
+      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "processing_mode": "delayed",
+      "acceptance_sequence": "0",
+      "queue_sequence": "0"
+    },
+    "handled_foreground": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "handled-foreground",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "1",
+        "digest": "sha256:58f0171c05a9ff18ad251484d87fcab048d1bc37bd9bede66b3be868ac6d0b3d"
+      },
+      "event_id": "complete-increment",
+      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "processing_mode": "foreground",
+      "acceptance_sequence": "0",
+      "queue_sequence": "0"
+    },
+    "unhandled": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "unhandled",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "1",
+        "digest": "sha256:1534358227cf34b0902836d6ae8b2f28b921ec8c029d2152ffa34e218d37508e"
+      },
+      "event_id": "complete-unhandled",
+      "envelope_digest": "sha256:343627085cb00b91a4db4a2440e1a95258f767b756cd32e9d75047a758e6734a",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "processing_mode": "delayed",
+      "acceptance_sequence": "0",
+      "queue_sequence": "0"
+    },
+    "rejected": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "complete-rejected",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:4f38c318ed0db0536230bc9ca103744793e16b92d4e54a860814ef649b3d7dda"
+      },
+      "delivery_mode": "input",
+      "envelope": {
+        "event": "undeclared",
+        "event_id": "complete-rejected",
+        "cause_id": "complete-rejected",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          []
+        ]
+      },
+      "envelope_digest": "sha256:b8e3aa0eeaf4434fed5f49a1262cc617c2f06192110b091880408bc50db16c2c",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "external"
+    },
+    "faulted": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "faulted",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "1",
+        "digest": "sha256:2af1b789ab5113125de7b6507cf6d6f7f4cc0fee86d0a1e9860fa32b7c91c0aa"
+      },
+      "event_id": "complete-faulted",
+      "envelope_digest": "sha256:a9a3ed13e99d0d013a2ab2da1d008af4a290ae99b945c58dd0d3063370649af7",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "processing_mode": "delayed",
+      "acceptance_sequence": "0",
+      "queue_sequence": "0"
+    },
+    "invalid_origin": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "invalid-origin",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+      },
+      "delivery_mode": "input",
+      "envelope": {
+        "event": "increment",
+        "event_id": "invalid-origin",
+        "cause_id": "invalid-origin",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:dd154eb0629cb9db5944733eacb4d81d006c6436120d80d62989757bb94a5bf0",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "invalid"
+    },
+    "invalid_mode": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "invalid-mode",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+      },
+      "delivery_mode": "invalid",
+      "envelope": {
+        "event": "increment",
+        "event_id": "invalid-mode",
+        "cause_id": "invalid-mode",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:ae1321d579189b59371e0802cf5b73e310fbac3d57a6d600960940a45066386d",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "external"
+    },
+    "invalid_digest": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "invalid-digest",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+      },
+      "delivery_mode": "input",
+      "envelope": {
+        "event": "increment",
+        "event_id": "invalid-digest",
+        "cause_id": "invalid-digest",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "external"
+    },
+    "replay_conflict": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "complete-increment",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+      },
+      "delivery_mode": "invalid",
+      "envelope": {
+        "event": "increment",
+        "event_id": "complete-increment",
+        "cause_id": "complete-increment",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "9"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:6525698bcd0e0f924106398cbe6fb5ea6945b35a97a0904235a0d1c0750a0344",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "external"
+    },
+    "replay_origin": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "complete-increment",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+      },
+      "delivery_mode": "input",
+      "envelope": {
+        "event": "increment",
+        "event_id": "complete-increment",
+        "cause_id": "complete-increment",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "invalid"
+    },
+    "concurrent_winner": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "complete-increment",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:4f38c318ed0db0536230bc9ca103744793e16b92d4e54a860814ef649b3d7dda"
+      },
+      "delivery_mode": "input",
+      "envelope": {
+        "event": "increment",
+        "event_id": "complete-increment",
+        "cause_id": "complete-increment",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "external"
+    },
+    "concurrent_loser": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "concurrent-loser",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:4f38c318ed0db0536230bc9ca103744793e16b92d4e54a860814ef649b3d7dda"
+      },
+      "delivery_mode": "input",
+      "envelope": {
+        "event": "increment",
+        "event_id": "concurrent-loser",
+        "cause_id": "concurrent-loser",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:df0eda3255560a7a53add6dcf5b610f16c9d2be081f35375b4aba01e229b7a93",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "external"
+    },
+    "dependency_live": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "dependency-live",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "1",
+        "digest": "sha256:58f0171c05a9ff18ad251484d87fcab048d1bc37bd9bede66b3be868ac6d0b3d"
+      },
+      "cutoff_receipt_sequence": "1",
+      "target_mode": "bounded",
+      "policy_identifier": "bounded-native-v2",
+      "dependency_receipt_sequences": [
+        "1"
+      ],
+      "dependency_effect_ids": []
+    },
+    "dependency_terminal_pair": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "dependency-terminal-pair",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+      },
+      "cutoff_receipt_sequence": "1",
+      "target_mode": "bounded",
+      "policy_identifier": "bounded-native-v2",
+      "dependency_receipt_sequences": [
+        "2"
+      ],
+      "dependency_effect_ids": []
+    },
+    "dependency_closed": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "dependency-closed",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+      },
+      "cutoff_receipt_sequence": "2",
+      "target_mode": "bounded",
+      "policy_identifier": "bounded-native-v2",
+      "dependency_receipt_sequences": [],
+      "dependency_effect_ids": []
+    },
+    "bounded_to_permanent": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "bounded-to-permanent",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "3",
+        "digest": "sha256:1bf55afca2bcc82b0ff162ad68fbd72a5f666734f9369b929e162f4e096eb5e6"
+      },
+      "cutoff_receipt_sequence": "2",
+      "target_mode": "permanent",
+      "policy_identifier": null,
+      "dependency_receipt_sequences": [],
+      "dependency_effect_ids": []
+    },
+    "stale_tombstone": {
+      "operation": "checkpoint_tombstone_v2",
+      "request_id": "stale-tombstone",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+      },
+      "tombstone_operation_id": "stale-tombstone",
+      "terminal_status": "completed",
+      "retention_mode": "bounded"
+    },
+    "tombstoned_ingress": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "after-tombstone",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "4",
+        "digest": "sha256:42dcadc39b41907bfb5ecd492464a4500d11efa3a98b0502cdb501c36f707d59"
+      },
+      "delivery_mode": "input",
+      "envelope": {
+        "event": "increment",
+        "event_id": "after-tombstone",
+        "cause_id": "after-tombstone",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "complete-host-root",
+            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "amount",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:532ab4db6dc31b0e319f5c3053445dbfe30817903b67ce3adf1b2b4e595168dd",
+      "target": {
+        "root": {
+          "root_instance_id": "complete-host-root",
+          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+        }
+      },
+      "presented_origin": "external"
+    },
+    "backup_permanent": {
+      "operation": "checkpoint_backup_restore_v2",
+      "request_id": "backup-permanent",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "action": "backup",
+      "checkpoint_digests": [
+        "sha256:3250d63afdd210ac6eff863d3feca074d51925742b780f981a997aa224cd6caa"
+      ],
+      "trusted_artifact_digests": [],
+      "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
+      "retention_mode": "permanent"
+    },
+    "restore_permanent": {
+      "operation": "checkpoint_backup_restore_v2",
+      "request_id": "restore-permanent",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "action": "restore",
+      "checkpoint_digests": [
+        "sha256:3250d63afdd210ac6eff863d3feca074d51925742b780f981a997aa224cd6caa"
+      ],
+      "trusted_artifact_digests": [],
+      "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
+      "retention_mode": "permanent"
+    },
+    "backup_bounded": {
+      "operation": "checkpoint_backup_restore_v2",
+      "request_id": "backup-bounded",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "action": "backup",
+      "checkpoint_digests": [
+        "sha256:42dcadc39b41907bfb5ecd492464a4500d11efa3a98b0502cdb501c36f707d59"
+      ],
+      "trusted_artifact_digests": [],
+      "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
+      "retention_mode": "bounded"
+    },
+    "restore_bounded": {
+      "operation": "checkpoint_backup_restore_v2",
+      "request_id": "restore-bounded",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "action": "restore",
+      "checkpoint_digests": [
+        "sha256:42dcadc39b41907bfb5ecd492464a4500d11efa3a98b0502cdb501c36f707d59"
+      ],
+      "trusted_artifact_digests": [],
+      "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
+      "retention_mode": "bounded"
+    },
+    "restore_incomplete": {
+      "operation": "checkpoint_backup_restore_v2",
+      "request_id": "restore-incomplete",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "action": "restore",
+      "checkpoint_digests": [
+        "sha256:4f38c318ed0db0536230bc9ca103744793e16b92d4e54a860814ef649b3d7dda"
+      ],
+      "trusted_artifact_digests": [],
+      "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
+      "retention_mode": "permanent"
+    },
+    "inject_store": {
+      "operation": "checkpoint_inject_store_v2",
+      "request_id": "inject-store",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "store_adapter_identifier": "injected_store",
+      "store_uri": "object://injected-store",
+      "configuration": {
+        "instance": "provided"
+      },
+      "capabilities": [
+        "durable_single_writer",
+        "root_identity_retention"
+      ]
+    },
+    "register_bundled": {
+      "operation": "checkpoint_register_adapter_v2",
+      "request_id": "register-bundled",
+      "registration": {
+        "adapter_identifier": "memory",
+        "uri_scheme": "memory",
+        "source": "bundled",
+        "configuration_schema": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "capabilities": [
+          "ephemeral"
+        ]
+      },
+      "existing_registrations": []
+    },
+    "register_third_party": {
+      "operation": "checkpoint_register_adapter_v2",
+      "request_id": "register-third-party",
+      "registration": {
+        "adapter_identifier": "postgresql",
+        "uri_scheme": "postgresql",
+        "source": "third_party",
+        "configuration_schema": {
+          "type": "object",
+          "properties": {
+            "dsn": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "dsn"
+          ],
+          "additionalProperties": false
+        },
+        "capabilities": [
+          "restart_persistent",
+          "durable_concurrent",
+          "shared_application_transaction",
+          "root_identity_retention"
+        ]
+      },
+      "existing_registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        }
+      ]
+    },
+    "register_duplicate": {
+      "operation": "checkpoint_register_adapter_v2",
+      "request_id": "register-duplicate",
+      "registration": {
+        "adapter_identifier": "memory",
+        "uri_scheme": "memory",
+        "source": "bundled",
+        "configuration_schema": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "capabilities": [
+          "ephemeral"
+        ]
+      },
+      "existing_registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        }
+      ]
+    },
+    "resolve_unknown": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-unknown",
+      "adapter_identifier": "unknown",
+      "uri": "unknown://conformance",
+      "configuration": {},
+      "requested_capabilities": [],
+      "registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        },
+        {
+          "adapter_identifier": "file",
+          "uri_scheme": "file",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        },
+        {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "postgresql",
+          "uri_scheme": "postgresql",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "dsn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dsn"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention"
+          ]
+        }
+      ]
+    },
+    "resolve_invalid_config": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-invalid-config",
+      "adapter_identifier": "sqlite",
+      "uri": "sqlite://conformance",
+      "configuration": {
+        "path": 7
+      },
+      "requested_capabilities": [],
+      "registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        },
+        {
+          "adapter_identifier": "file",
+          "uri_scheme": "file",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        },
+        {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "postgresql",
+          "uri_scheme": "postgresql",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "dsn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dsn"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention"
+          ]
+        }
+      ]
+    },
+    "resolve_capability_mismatch": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-capability-mismatch",
+      "adapter_identifier": "memory",
+      "uri": "memory://conformance",
+      "configuration": {},
+      "requested_capabilities": [
+        "durable_single_writer"
+      ],
+      "registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        },
+        {
+          "adapter_identifier": "file",
+          "uri_scheme": "file",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        },
+        {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "postgresql",
+          "uri_scheme": "postgresql",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "dsn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dsn"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention"
+          ]
+        }
+      ]
+    },
+    "resolve_memory": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-memory",
+      "adapter_identifier": "memory",
+      "uri": "memory://conformance",
+      "configuration": {},
+      "requested_capabilities": [],
+      "registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        },
+        {
+          "adapter_identifier": "file",
+          "uri_scheme": "file",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        },
+        {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "postgresql",
+          "uri_scheme": "postgresql",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "dsn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dsn"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention"
+          ]
+        }
+      ]
+    },
+    "resolve_file": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-file",
+      "adapter_identifier": "file",
+      "uri": "file://conformance",
+      "configuration": {
+        "path": "state.json"
+      },
+      "requested_capabilities": [
+        "restart_persistent"
+      ],
+      "registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        },
+        {
+          "adapter_identifier": "file",
+          "uri_scheme": "file",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        },
+        {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "postgresql",
+          "uri_scheme": "postgresql",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "dsn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dsn"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention"
+          ]
+        }
+      ]
+    },
+    "resolve_sqlite": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-sqlite",
+      "adapter_identifier": "sqlite",
+      "uri": "sqlite://conformance",
+      "configuration": {
+        "path": "state.db"
+      },
+      "requested_capabilities": [
+        "durable_single_writer"
+      ],
+      "registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        },
+        {
+          "adapter_identifier": "file",
+          "uri_scheme": "file",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        },
+        {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "postgresql",
+          "uri_scheme": "postgresql",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "dsn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dsn"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention"
+          ]
+        }
+      ]
+    },
+    "resolve_postgresql": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-postgresql",
+      "adapter_identifier": "postgresql",
+      "uri": "postgresql://conformance",
+      "configuration": {
+        "dsn": "postgresql://db/state"
+      },
+      "requested_capabilities": [
+        "durable_concurrent",
+        "shared_application_transaction"
+      ],
+      "registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        },
+        {
+          "adapter_identifier": "file",
+          "uri_scheme": "file",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        },
+        {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "postgresql",
+          "uri_scheme": "postgresql",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "dsn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dsn"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention"
+          ]
+        }
+      ]
+    },
+    "scope_a": {
+      "operation": "checkpoint_scope_operation_v2",
+      "request_id": "scope-a",
+      "scope": {
+        "scope_id": "scope-a",
+        "ownership_binding": "owner:scope-a",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "portable_identity": "complete-host-root",
+      "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
+      "operation_context": "outbox"
+    },
+    "scope_b": {
+      "operation": "checkpoint_scope_operation_v2",
+      "request_id": "scope-b",
+      "scope": {
+        "scope_id": "scope-b",
+        "ownership_binding": "owner:scope-b",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "portable_identity": "complete-host-root",
+      "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
+      "operation_context": "outbox"
+    },
+    "scope_missing": {
+      "operation": "checkpoint_scope_operation_v2",
+      "request_id": "scope-missing",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "missing"
+      },
+      "portable_identity": "complete-host-root",
+      "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
+      "operation_context": "outbox"
+    },
+    "scope_ambiguous": {
+      "operation": "checkpoint_scope_operation_v2",
+      "request_id": "scope-ambiguous",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "ambiguous"
+      },
+      "portable_identity": "complete-host-root",
+      "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
+      "operation_context": "outbox"
+    },
+    "scope_mismatched": {
+      "operation": "checkpoint_scope_operation_v2",
+      "request_id": "scope-mismatched",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "mismatched"
+      },
+      "portable_identity": "complete-host-root",
+      "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
+      "operation_context": "outbox"
+    },
+    "scope_unauthorized": {
+      "operation": "checkpoint_scope_operation_v2",
+      "request_id": "scope-unauthorized",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "unauthorized"
+      },
+      "portable_identity": "complete-host-root",
+      "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
+      "operation_context": "outbox"
+    },
+    "profile_durable_embedded_positive": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-durable_embedded-positive",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention"
+      ],
+      "host_profile": "durable_embedded_processing",
+      "host_guarantees": [
+        "atomic_accept_process"
+      ],
+      "required_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention",
+        "atomic_accept_process"
+      ]
+    },
+    "profile_durable_embedded_negative": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-durable_embedded-negative",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention"
+      ],
+      "host_profile": "durable_embedded_processing",
+      "host_guarantees": [],
+      "required_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention",
+        "atomic_accept_process"
+      ]
+    },
+    "profile_exactly_once_positive": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-exactly_once-positive",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention",
+        "permanent_receipt_retention"
+      ],
+      "host_profile": "exactly_once_committed_processing",
+      "host_guarantees": [
+        "atomic_accept_process",
+        "permanent_mode"
+      ],
+      "required_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention",
+        "permanent_receipt_retention",
+        "atomic_accept_process",
+        "permanent_mode"
+      ]
+    },
+    "profile_exactly_once_negative": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-exactly_once-negative",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention",
+        "permanent_receipt_retention"
+      ],
+      "host_profile": "exactly_once_committed_processing",
+      "host_guarantees": [
+        "atomic_accept_process"
+      ],
+      "required_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention",
+        "permanent_receipt_retention",
+        "atomic_accept_process",
+        "permanent_mode"
+      ]
+    },
+    "profile_broker_positive": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-broker-positive",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention"
+      ],
+      "host_profile": "broker_integrated",
+      "host_guarantees": [
+        "atomic_accept_process",
+        "ingress_ack_after_commit",
+        "durable_redelivery",
+        "outbox_worker"
+      ],
+      "required_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention",
+        "atomic_accept_process",
+        "ingress_ack_after_commit",
+        "durable_redelivery",
+        "outbox_worker"
+      ]
+    },
+    "profile_broker_negative": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-broker-negative",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention"
+      ],
+      "host_profile": "broker_integrated",
+      "host_guarantees": [
+        "atomic_accept_process",
+        "ingress_ack_after_commit",
+        "durable_redelivery"
+      ],
+      "required_capabilities": [
+        "durable_single_writer",
+        "root_identity_retention",
+        "atomic_accept_process",
+        "ingress_ack_after_commit",
+        "durable_redelivery",
+        "outbox_worker"
+      ]
+    },
+    "profile_strict_outbox_positive": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-strict_outbox-positive",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "root_identity_retention",
+        "permanent_outbox_terminal_retention"
+      ],
+      "host_profile": "strict_durable_outbox",
+      "host_guarantees": [
+        "total_outbox_lifecycle",
+        "outbox_worker",
+        "retain_unresolved_outbox"
+      ],
+      "required_capabilities": [
+        "root_identity_retention",
+        "permanent_outbox_terminal_retention",
+        "total_outbox_lifecycle",
+        "outbox_worker",
+        "retain_unresolved_outbox"
+      ]
+    },
+    "profile_strict_outbox_negative": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-strict_outbox-negative",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "root_identity_retention",
+        "permanent_outbox_terminal_retention"
+      ],
+      "host_profile": "strict_durable_outbox",
+      "host_guarantees": [
+        "total_outbox_lifecycle",
+        "outbox_worker"
+      ],
+      "required_capabilities": [
+        "root_identity_retention",
+        "permanent_outbox_terminal_retention",
+        "total_outbox_lifecycle",
+        "outbox_worker",
+        "retain_unresolved_outbox"
+      ]
+    },
+    "profile_compact_outbox_positive": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-compact_outbox-positive",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "root_identity_retention",
+        "compact_effect_identity_retention"
+      ],
+      "host_profile": "compact_durable_outbox",
+      "host_guarantees": [
+        "total_outbox_lifecycle",
+        "outbox_worker",
+        "retain_receipt_references"
+      ],
+      "required_capabilities": [
+        "root_identity_retention",
+        "compact_effect_identity_retention",
+        "total_outbox_lifecycle",
+        "outbox_worker",
+        "retain_receipt_references"
+      ]
+    },
+    "profile_compact_outbox_negative": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-compact_outbox-negative",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "root_identity_retention",
+        "compact_effect_identity_retention"
+      ],
+      "host_profile": "compact_durable_outbox",
+      "host_guarantees": [
+        "total_outbox_lifecycle",
+        "outbox_worker"
+      ],
+      "required_capabilities": [
+        "root_identity_retention",
+        "compact_effect_identity_retention",
+        "total_outbox_lifecycle",
+        "outbox_worker",
+        "retain_receipt_references"
+      ]
+    },
+    "profile_shared_transaction_positive": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-shared_transaction-positive",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "shared_application_transaction",
+        "root_identity_retention"
+      ],
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "required_capabilities": [
+        "shared_application_transaction",
+        "root_identity_retention",
+        "native_shared_transaction_used"
+      ]
+    },
+    "profile_shared_transaction_negative": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "profile-shared_transaction-negative",
+      "adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "shared_application_transaction",
+        "root_identity_retention"
+      ],
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [],
+      "required_capabilities": [
+        "shared_application_transaction",
+        "root_identity_retention",
+        "native_shared_transaction_used"
+      ]
+    }
+  }
+}

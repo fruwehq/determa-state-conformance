@@ -46,30 +46,509 @@ def result_document(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def request(
-    operation: str,
+def scope(
+    scope_id: str = "primary",
+    authorization: str = "authorized",
+) -> dict[str, Any]:
+    return {
+        "scope_id": scope_id,
+        "ownership_binding": f"owner:{scope_id}",
+        "principal": "conformance-host",
+        "authorization": authorization,
+    }
+
+
+def expected_checkpoint(checkpoint: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "root_instance_id": checkpoint["root_instance_id"],
+        "revision": checkpoint["revision"],
+        "digest": checkpoint["execution_checkpoint_digest"],
+    }
+
+
+def aggregate_of(checkpoint: dict[str, Any]) -> dict[str, Any]:
+    return checkpoint["root_record"]["aggregate_state"]
+
+
+def first_mailbox_entry(checkpoint: dict[str, Any]) -> dict[str, Any] | None:
+    root_record = checkpoint["root_record"]
+    if root_record["status"] != "retained":
+        return None
+    for runtime in root_record["aggregate_state"]["runtimes"]:
+        for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"]):
+            if mailbox:
+                return mailbox[0]
+    return None
+
+
+def default_envelope(
+    checkpoint: dict[str, Any],
+    event_id: str,
+    *,
+    event: str = "increment",
+    payload: dict[str, Any] | None = None,
+    target: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], str]:
+    selected_target = target or root_runtime(checkpoint)["target_identity"]
+    envelope = {
+        "event": event,
+        "event_id": event_id,
+        "cause_id": event_id,
+        "source": {"host": True},
+        "target": copy.deepcopy(selected_target),
+        "payload": typed_value(payload if payload is not None else {"amount": 1}),
+    }
+    envelope_digest = digest(
+        [
+            "determa-inbox-envelope-digest-2",
+            "2",
+            checkpoint["root_instance_id"],
+            "input",
+            envelope,
+        ]
+    )
+    return envelope, envelope_digest
+
+
+def creation_request(
+    case: Path,
+    checkpoint: dict[str, Any],
     request_id: str,
     *,
-    checkpoint: dict[str, Any] | None = None,
-    parameters: dict[str, Any] | None = None,
-    target_fingerprint: str | None = None,
-    descriptor_route: list[str] | None = None,
+    existing: bool = False,
+    creation_id: str | None = None,
 ) -> dict[str, Any]:
-    value: dict[str, Any] = {
-        "operation": operation,
+    aggregate = aggregate_of(checkpoint)
+    definition = root_runtime(checkpoint)["current_definition"]["machine"]
+    value = {
+        "operation": "checkpoint_create_v2",
         "request_id": request_id,
-        "parameters": parameters or {},
+        "scope": scope(),
+        "bundle": {
+            "file": "machine.yaml",
+            "validated_bundle_fingerprint": aggregate[
+                "validated_bundle_fingerprint"
+            ],
+        },
+        "machine": copy.deepcopy(definition),
+        "bindings": {"input": {}, "external": {}},
+        "root_instance_id": aggregate["root_instance_id"],
+        "creation_id": creation_id or aggregate["creation_id"],
+        "retention_mode": checkpoint["replay_retention"]["mode"],
     }
-    if checkpoint is not None:
-        value["expected_revision"] = checkpoint["revision"]
-        value["expected_checkpoint_digest"] = checkpoint[
-            "execution_checkpoint_digest"
-        ]
-    if target_fingerprint is not None:
-        value["target_validated_bundle_fingerprint"] = target_fingerprint
-    if descriptor_route is not None:
-        value["migration_descriptor_digest_route"] = descriptor_route
+    if existing:
+        value["existing_checkpoint"] = expected_checkpoint(checkpoint)
     return value
+
+
+def admission_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    *,
+    event: str = "increment",
+    payload: dict[str, Any] | None = None,
+    target: dict[str, Any] | None = None,
+    delivery_mode: str = "input",
+    origin: str = "external",
+    expected_from: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    envelope, envelope_digest = default_envelope(
+        checkpoint, request_id, event=event, payload=payload, target=target
+    )
+    return {
+        "operation": "checkpoint_admit_v2",
+        "request_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
+        "delivery_mode": delivery_mode,
+        "envelope": envelope,
+        "envelope_digest": envelope_digest,
+        "target": copy.deepcopy(envelope["target"]),
+        "presented_origin": origin,
+    }
+
+
+def processing_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    *,
+    mode: str = "delayed",
+    expected_from: dict[str, Any] | None = None,
+    event_id: str | None = None,
+) -> dict[str, Any]:
+    entry = first_mailbox_entry(checkpoint)
+    if event_id is not None:
+        entry = next(
+            (
+                candidate
+                for runtime in aggregate_of(checkpoint)["runtimes"]
+                for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+                for candidate in mailbox
+                if candidate["envelope"]["event_id"] == event_id
+            ),
+            None,
+        )
+        if entry is None:
+            receipt = next(
+                (
+                    candidate
+                    for candidate in checkpoint["operation_receipts"]
+                    if candidate.get("event_id") == event_id
+                    and candidate["operation_kind"] == "event_terminal"
+                ),
+                None,
+            )
+            if receipt is not None:
+                entry = {
+                    "envelope": {
+                        "event_id": event_id,
+                        "target": root_runtime(checkpoint)["target_identity"],
+                    },
+                    "envelope_digest": receipt["request_digest"],
+                    "acceptance_sequence": receipt["acceptance_sequence"],
+                    "queue_sequence": receipt["final_queue_sequence"],
+                }
+    if entry is None:
+        envelope, envelope_digest = default_envelope(
+            checkpoint, f"{request_id}-event"
+        )
+        entry = {
+            "envelope": envelope,
+            "envelope_digest": envelope_digest,
+            "acceptance_sequence": "0",
+            "queue_sequence": "0",
+        }
+    return {
+        "operation": "checkpoint_step_v2",
+        "request_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
+        "event_id": entry["envelope"]["event_id"],
+        "envelope_digest": entry["envelope_digest"],
+        "target": copy.deepcopy(entry["envelope"]["target"]),
+        "processing_mode": mode,
+        "acceptance_sequence": entry["acceptance_sequence"],
+        "queue_sequence": entry["queue_sequence"],
+    }
+
+
+def outbox_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    effect_id: str,
+    disposition: str,
+    *,
+    terminal: bool,
+    expected_from: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        "operation": (
+            "checkpoint_terminalize_outbox_v2"
+            if terminal
+            else "checkpoint_update_outbox_v2"
+        ),
+        "request_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
+        "effect_id": effect_id,
+        "target_disposition": disposition,
+        "outcome": {
+            "reason_code": (
+                None
+                if disposition == "confirmed"
+                else f"{disposition}_{'policy' if terminal else 'reported'}"
+            ),
+            "durable_acceptance": disposition == "confirmed",
+        },
+    }
+
+
+def compact_request(
+    checkpoint: dict[str, Any], request_id: str, effect_id: str
+) -> dict[str, Any]:
+    record = next(
+        item
+        for item in checkpoint["terminal_outbox_records"]
+        if item["intent"]["effect_id"] == effect_id
+    )
+    return {
+        "operation": "checkpoint_compact_outbox_v2",
+        "request_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(checkpoint),
+        "effect_id": effect_id,
+        "intent_digest": digest(
+            [
+                "determa-outbox-intent-digest-2",
+                "2",
+                checkpoint["root_instance_id"],
+                record["intent"],
+            ]
+        ),
+        "retention_mode": checkpoint["replay_retention"]["mode"],
+    }
+
+
+def prune_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    cutoff: str,
+    target_mode: str,
+    *,
+    expected_from: dict[str, Any] | None = None,
+    dependencies: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "operation": "checkpoint_prune_v2",
+        "request_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
+        "cutoff_receipt_sequence": cutoff,
+        "target_mode": target_mode,
+        "policy_identifier": "bounded-native-v2" if target_mode == "bounded" else None,
+        "dependency_receipt_sequences": dependencies or [],
+        "dependency_effect_ids": [],
+    }
+
+
+def tombstone_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    *,
+    expected_from: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    root_record = checkpoint["root_record"]
+    terminal_status = (
+        root_record["terminal_status"]
+        if root_record["status"] == "tombstone"
+        else "completed"
+    )
+    return {
+        "operation": "checkpoint_tombstone_v2",
+        "request_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
+        "tombstone_operation_id": request_id,
+        "terminal_status": terminal_status,
+        "retention_mode": checkpoint["replay_retention"]["mode"],
+    }
+
+
+STANDARD_REGISTRATIONS = [
+    {
+        "adapter_identifier": "memory",
+        "uri_scheme": "memory",
+        "source": "bundled",
+        "configuration_schema": {"type": "object", "additionalProperties": False},
+        "capabilities": ["ephemeral"],
+    },
+    {
+        "adapter_identifier": "file",
+        "uri_scheme": "file",
+        "source": "bundled",
+        "configuration_schema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"],
+            "additionalProperties": False,
+        },
+        "capabilities": ["restart_persistent"],
+    },
+    {
+        "adapter_identifier": "sqlite",
+        "uri_scheme": "sqlite",
+        "source": "bundled",
+        "configuration_schema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"],
+            "additionalProperties": False,
+        },
+        "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention",
+        ],
+    },
+    {
+        "adapter_identifier": "postgresql",
+        "uri_scheme": "postgresql",
+        "source": "third_party",
+        "configuration_schema": {
+            "type": "object",
+            "properties": {"dsn": {"type": "string"}},
+            "required": ["dsn"],
+            "additionalProperties": False,
+        },
+        "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention",
+        ],
+    },
+]
+
+
+def resolve_adapter_request(
+    request_id: str,
+    adapter: str,
+    *,
+    configuration: dict[str, Any] | None = None,
+    capabilities: list[str] | None = None,
+) -> dict[str, Any]:
+    return {
+        "operation": "checkpoint_resolve_adapter_v2",
+        "request_id": request_id,
+        "adapter_identifier": adapter,
+        "uri": f"{adapter}://conformance",
+        "configuration": configuration or ({"path": "state.db"} if adapter == "sqlite" else {}),
+        "requested_capabilities": capabilities or [],
+        "registrations": copy.deepcopy(STANDARD_REGISTRATIONS),
+    }
+
+
+def capability_request(
+    request_id: str,
+    profile: str,
+    store_capabilities: list[str],
+    host_guarantees: list[str],
+    required_capabilities: list[str],
+    *,
+    adapter: str = "sqlite",
+) -> dict[str, Any]:
+    return {
+        "operation": "checkpoint_validate_capabilities_v2",
+        "request_id": request_id,
+        "adapter_identifier": adapter,
+        "store_capabilities": store_capabilities,
+        "host_profile": profile,
+        "host_guarantees": host_guarantees,
+        "required_capabilities": required_capabilities,
+    }
+
+
+def registration_request(
+    request_id: str,
+    registration: dict[str, Any],
+    existing: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "operation": "checkpoint_register_adapter_v2",
+        "request_id": request_id,
+        "registration": copy.deepcopy(registration),
+        "existing_registrations": copy.deepcopy(existing),
+    }
+
+
+def backup_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    action: str,
+    *,
+    complete: bool,
+) -> dict[str, Any]:
+    return {
+        "operation": "checkpoint_backup_restore_v2",
+        "request_id": request_id,
+        "scope": scope(),
+        "action": action,
+        "checkpoint_digests": [checkpoint["execution_checkpoint_digest"]],
+        "trusted_artifact_digests": (
+            [aggregate_of(checkpoint)["validated_bundle_fingerprint"]]
+            if complete and checkpoint["root_record"]["status"] == "retained"
+            else []
+        ),
+        "adapter_metadata_digest": digest(
+            ["determa-backup-adapter-metadata-2", "primary"]
+        ),
+        "retention_mode": checkpoint["replay_retention"]["mode"],
+    }
+
+
+def inject_store_request(checkpoint: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "operation": "checkpoint_inject_store_v2",
+        "request_id": "inject-store",
+        "scope": scope(),
+        "store_adapter_identifier": "injected_store",
+        "store_uri": "object://injected-store",
+        "configuration": {"instance": "provided"},
+        "capabilities": [
+            "durable_single_writer",
+            "root_identity_retention",
+        ],
+    }
+
+
+def scope_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    authorization: str,
+    *,
+    scope_id: str = "primary",
+) -> dict[str, Any]:
+    return {
+        "operation": "checkpoint_scope_operation_v2",
+        "request_id": request_id,
+        "scope": scope(scope_id, authorization),
+        "portable_identity": checkpoint["root_instance_id"],
+        "effect_id": digest(["determa-scope-effect-2", checkpoint["root_instance_id"]]),
+        "operation_context": "outbox",
+    }
+
+
+def persistence_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    envelope: dict[str, Any],
+    envelope_digest: str,
+    *,
+    failure_policy: str = "commit",
+) -> dict[str, Any]:
+    aggregate = aggregate_of(checkpoint)
+    return {
+        "operation": "persistence_process_v2",
+        "request_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(checkpoint),
+        "presented_envelope": copy.deepcopy(envelope),
+        "envelope_digest": envelope_digest,
+        "transaction_inputs": {
+            "target_validated_bundle_fingerprint": aggregate[
+                "validated_bundle_fingerprint"
+            ],
+            "migration_descriptor_digest_route": [],
+            "application_writes": {"aggregate_version": 1},
+            "failure_policy": failure_policy,
+        },
+        "store_adapter_identifier": "sqlite",
+        "store_capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention",
+            "shared_application_transaction",
+        ],
+        "host_profile": "shared_application_transaction",
+    }
+
+
+def release_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    envelope: dict[str, Any],
+    envelope_digest: str,
+) -> dict[str, Any]:
+    return {
+        "operation": "persistence_release_quarantine_v2",
+        "request_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(checkpoint),
+        "event_id": envelope["event_id"],
+        "envelope_digest": envelope_digest,
+        "quarantine_reason_code": "permanent_processing_failure",
+        "release_authorization": "operator:conformance",
+    }
 
 
 def result(
@@ -257,6 +736,40 @@ def process(
     return seal_checkpoint(value)
 
 
+def process_with_disposition(
+    checkpoint: dict[str, Any], disposition: str
+) -> dict[str, Any]:
+    value = process(checkpoint)
+    aggregate = value["root_record"]["aggregate_state"]
+    runtime = root_runtime(value)
+    receipt = value["operation_receipts"][-1]
+    outcome = receipt["outcome"]
+    outcome["disposition"] = disposition
+    outcome["rejection"] = None
+    outcome["fault"] = None
+    if disposition == "rejected":
+        outcome["rejection"] = {"code": "invalid_event"}
+    elif disposition == "faulted":
+        fault = {
+            "definition_fingerprint": aggregate["validated_bundle_fingerprint"],
+            "runtime_id": runtime["runtime_id"],
+            "cause_id": receipt["event_id"],
+            "code": "action_fault",
+            "step_sequence": str(int(aggregate["next_logical_step_sequence"]) - 1),
+            "source_locator": "/machines/0/root/on_events/fail",
+        }
+        runtime["status"] = "faulted"
+        runtime["fault"] = fault
+        outcome["status"] = "faulted"
+        outcome["fault"] = fault
+        aggregate = seal_aggregate(aggregate)
+        value["root_record"]["aggregate_state"] = aggregate
+        receipt["resulting_aggregate_state_digest"] = aggregate[
+            "aggregate_state_digest"
+        ]
+    return seal_checkpoint(value)
+
+
 def update_pending(
     checkpoint: dict[str, Any], index: int, status: str
 ) -> dict[str, Any]:
@@ -368,17 +881,52 @@ def generate_delivery() -> dict[Path, bytes]:
     processed = process(accepted)
     inputs = request_document(
         {
-            "create": request("checkpoint_create_v2", "create"),
-            "create_replay": request("checkpoint_replay_v2", "create", checkpoint=created),
-            "create_conflict": request("checkpoint_create_v2", "different-create", checkpoint=created),
-            "accept": request("checkpoint_admit_v2", "delivery-increment", checkpoint=created),
-            "accept_replay": request("checkpoint_replay_v2", "delivery-increment", checkpoint=processed),
-            "process": request("checkpoint_step_v2", "process-delivery", checkpoint=accepted),
-            "process_crash": request("checkpoint_step_v2", "process-crash", checkpoint=accepted),
-            "stale_process": request("checkpoint_step_v2", "stale-process", checkpoint=created),
-            "malformed": request("checkpoint_admit_v2", "malformed", checkpoint=processed),
-            "wrong_root": request("checkpoint_admit_v2", "wrong-root", checkpoint=processed),
-            "event_conflict": request("checkpoint_admit_v2", "delivery-increment", checkpoint=processed, parameters={"payload": {"amount": 9}}),
+            "create": creation_request(case, created, "create"),
+            "create_replay": creation_request(case, created, "create", existing=True),
+            "create_conflict": creation_request(
+                case,
+                created,
+                "different-create",
+                existing=True,
+                creation_id="different-create",
+            ),
+            "accept": admission_request(
+                created,
+                "delivery-increment",
+                payload={"amount": 2},
+            ),
+            "accept_replay": admission_request(
+                processed,
+                "delivery-increment",
+                payload={"amount": 2},
+            ),
+            "process": processing_request(accepted, "process-delivery"),
+            "process_crash": processing_request(accepted, "process-crash"),
+            "stale_process": processing_request(
+                accepted,
+                "stale-process",
+                expected_from=created,
+            ),
+            "malformed": admission_request(
+                processed,
+                "malformed",
+                event="missing",
+            ),
+            "wrong_root": admission_request(
+                processed,
+                "wrong-root",
+                target={
+                    "root": {
+                        "root_instance_id": "foreign-root",
+                        "root_runtime_id": root_runtime(processed)["runtime_id"],
+                    }
+                },
+            ),
+            "event_conflict": admission_request(
+                processed,
+                "delivery-increment",
+                payload={"amount": 9},
+            ),
         }
     )
     results = result_document(
@@ -410,21 +958,72 @@ def generate_outbox() -> dict[Path, bytes]:
     retryable = update_pending(pending, 0, "retryable_failure")
     ambiguous = update_pending(retryable, 1, "ambiguous")
     statuses = ["confirmed", "permanently_rejected", "operator_cancelled", "discarded", "dead_lettered"]
+    terminal_states: list[dict[str, Any]] = []
     terminal = ambiguous
+    terminal_requests: dict[str, dict[str, Any]] = {}
     for status in statuses:
+        effect_id = terminal["pending_outbox_intents"][0]["intent"]["effect_id"]
+        terminal_requests[f"terminal_{status}"] = outbox_request(
+            terminal,
+            f"terminalize-{status}",
+            effect_id,
+            status,
+            terminal=True,
+        )
         terminal = terminalize(terminal, 0, status)
+        terminal_states.append(terminal)
     compacted = compact(terminal, 0)
+    pending_effects = [item["intent"]["effect_id"] for item in pending["pending_outbox_intents"]]
     inputs = request_document(
         {
-            "pending": request("checkpoint_step_v2", "emit-outputs", checkpoint=admitted),
-            "retryable": request("checkpoint_update_outbox_v2", "retryable", checkpoint=pending),
-            "retryable_replay": request("checkpoint_replay_v2", "retryable", checkpoint=retryable),
-            "ambiguous": request("checkpoint_update_outbox_v2", "ambiguous", checkpoint=retryable),
-            "terminal": request("checkpoint_terminalize_outbox_v2", "terminalize", checkpoint=ambiguous),
-            "terminal_replay": request("checkpoint_replay_v2", "terminalize", checkpoint=terminal),
-            "conflict": request("checkpoint_terminalize_outbox_v2", "terminalize-conflict", checkpoint=terminal),
-            "compact": request("checkpoint_compact_outbox_v2", "compact", checkpoint=terminal),
-            "delete": request("checkpoint_compact_outbox_v2", "delete", checkpoint=compacted),
+            "pending": processing_request(
+                pending, "emit-outputs", event_id="delivery-outputs"
+            ),
+            "retryable": outbox_request(
+                pending, "retryable", pending_effects[0], "retryable_failure", terminal=False
+            ),
+            "retryable_replay": outbox_request(
+                retryable, "retryable", pending_effects[0], "retryable_failure", terminal=False
+            ),
+            "ambiguous": outbox_request(
+                retryable, "ambiguous", pending_effects[1], "ambiguous", terminal=False
+            ),
+            **terminal_requests,
+            "terminal_replay": outbox_request(
+                terminal,
+                "terminalize-dead_lettered",
+                pending_effects[4],
+                "dead_lettered",
+                terminal=True,
+            ),
+            "conflict": outbox_request(
+                terminal,
+                "terminalize-conflict",
+                pending_effects[0],
+                "discarded",
+                terminal=True,
+            ),
+            "compact": compact_request(terminal, "compact", pending_effects[0]),
+            "delete": {
+                "operation": "checkpoint_compact_outbox_v2",
+                "request_id": "delete",
+                "scope": scope(),
+                "expected_checkpoint": expected_checkpoint(compacted),
+                "effect_id": pending_effects[0],
+                "intent_digest": compacted["outbox_effect_tombstones"][0]["intent_digest"],
+                "retention_mode": compacted["replay_retention"]["mode"],
+            },
+            "prune_effect_dependency": {
+                **prune_request(terminal, "prune-effect-dependency", "2", "bounded"),
+                "dependency_effect_ids": [pending_effects[0]],
+            },
+            "prune_producer_dependency": prune_request(
+                terminal,
+                "prune-producer-dependency",
+                "2",
+                "bounded",
+                dependencies=["2"],
+            ),
         }
     )
     results = result_document(
@@ -439,6 +1038,10 @@ def generate_outbox() -> dict[Path, bytes]:
         case / "pending-checkpoint-v2.json": write_json(case / "x", pending),
         case / "retryable-checkpoint-v2.json": write_json(case / "x", retryable),
         case / "ambiguous-checkpoint-v2.json": write_json(case / "x", ambiguous),
+        case / "terminal-confirmed-checkpoint-v2.json": write_json(case / "x", terminal_states[0]),
+        case / "terminal-permanently-rejected-checkpoint-v2.json": write_json(case / "x", terminal_states[1]),
+        case / "terminal-operator-cancelled-checkpoint-v2.json": write_json(case / "x", terminal_states[2]),
+        case / "terminal-discarded-checkpoint-v2.json": write_json(case / "x", terminal_states[3]),
         case / "terminal-checkpoint-v2.json": write_json(case / "x", terminal),
         case / "effect-tombstone-checkpoint-v2.json": write_json(case / "x", compacted),
         case / "inputs-v2.json": write_json(case / "x", inputs),
@@ -453,18 +1056,39 @@ def generate_retention() -> dict[Path, bytes]:
     processed = process(accepted)
     bounded = prune(processed)
     tombstoned = tombstone(bounded, "root-tombstone")
+    reuse = creation_request(
+        case,
+        created,
+        "reuse",
+        creation_id="reuse",
+    )
+    reuse["existing_checkpoint"] = expected_checkpoint(tombstoned)
     operations = {
-        "prune": request("checkpoint_prune_v2", "prune", checkpoint=processed),
-        "prune_replay": request("checkpoint_replay_v2", "prune", checkpoint=bounded),
-        "prune_lower": request("checkpoint_prune_v2", "prune-lower", checkpoint=bounded),
-        "prune_stale": request("checkpoint_prune_v2", "prune-stale", checkpoint=processed),
-        "tombstone": request("checkpoint_tombstone_v2", "root-tombstone", checkpoint=bounded),
-        "tombstone_replay": request("checkpoint_replay_v2", "root-tombstone", checkpoint=tombstoned),
-        "reuse": request("checkpoint_create_v2", "reuse", checkpoint=tombstoned),
-        "delete": request("checkpoint_tombstone_v2", "delete", checkpoint=tombstoned),
-        "resolve_adapter": request("checkpoint_resolve_adapter_v2", "resolve-adapter", parameters={"adapter": "sqlite"}),
-        "validate_capabilities": request("checkpoint_validate_capabilities_v2", "validate-capabilities", parameters={"profile": "durable_embedded"}),
-        "scope": request("checkpoint_scope_operation_v2", "scope", checkpoint=created, parameters={"scope": "scope-a"}),
+        "prune": prune_request(processed, "prune", "2", "bounded"),
+        "prune_replay": prune_request(bounded, "prune", "2", "bounded"),
+        "prune_lower": prune_request(bounded, "prune-lower", "1", "bounded"),
+        "prune_stale": prune_request(
+            bounded,
+            "prune-stale",
+            "2",
+            "bounded",
+            expected_from=processed,
+        ),
+        "tombstone": tombstone_request(bounded, "root-tombstone"),
+        "tombstone_replay": tombstone_request(tombstoned, "root-tombstone"),
+        "reuse": reuse,
+        "delete": tombstone_request(tombstoned, "delete"),
+        "resolve_adapter": resolve_adapter_request(
+            "resolve-adapter", "sqlite", capabilities=["durable_single_writer"]
+        ),
+        "validate_capabilities": capability_request(
+            "validate-capabilities",
+            "durable_embedded_processing",
+            ["restart_persistent", "durable_single_writer", "root_identity_retention"],
+            ["atomic_accept_process"],
+            ["durable_single_writer", "root_identity_retention"],
+        ),
+        "scope": scope_request(created, "scope", "mismatched", scope_id="scope-a"),
     }
     results = result_document(
         {
@@ -704,13 +1328,33 @@ def generate_spawned(terminal: bool) -> dict[Path, bytes]:
             raise RuntimeError("terminal spawned trace did not complete the root")
     inputs = request_document(
         {
-            "create": request("checkpoint_create_v2", f"{name}-create"),
-            "start_accept": request("checkpoint_admit_v2", "spawn-start", checkpoint=base),
-            "start_process": request("checkpoint_step_v2", f"{name}-start", checkpoint=start_pending),
-            "child_accept": request("checkpoint_admit_v2", "spawned-pay", checkpoint=started),
-            "root_accept": request("checkpoint_admit_v2", "spawned-root-followup", checkpoint=child_pending),
-            "child_process": request("checkpoint_step_v2", f"{name}-child-process", checkpoint=root_pending),
-            "root_process": request("checkpoint_step_v2", f"{name}-root-process", checkpoint=child_terminal),
+            "create": creation_request(case, base, f"{name}-create"),
+            "start_accept": admission_request(
+                base, "spawn-start", event="start", payload={}
+            ),
+            "start_process": processing_request(start_pending, f"{name}-start"),
+            "child_accept": admission_request(
+                started,
+                "spawned-pay",
+                event="pay",
+                payload={"amount": 100},
+                target=spawned_runtime["target_identity"],
+            ),
+            "root_accept": admission_request(
+                child_pending,
+                "spawned-root-followup",
+                event="start",
+                payload={},
+                target=root_runtime(child_pending)["target_identity"],
+            ),
+            "child_process": processing_request(
+                root_pending, f"{name}-child-process", event_id="spawned-pay"
+            ),
+            "root_process": processing_request(
+                child_terminal,
+                f"{name}-root-process",
+                event_id="spawned-root-followup",
+            ),
         }
     )
     results = result_document({"committed": result("committed", "atomic", 1)})
@@ -761,18 +1405,32 @@ def generate_persistence_case(index: int, slug: str) -> dict[Path, bytes]:
         )
     event = "host_commit" if index == 2 else "increment"
     payload = {} if index == 2 else {"amount": 1}
+    presented_envelope, presented_digest = default_envelope(
+        created,
+        f"persistence-{index}-event",
+        event=event,
+        payload=payload,
+    )
     accepted = admit(created, event, f"persistence-{index}-event", payload)
     committed_checkpoint = process(accepted, output_count=1 if index == 2 else 0)
     terminal = next(receipt for receipt in committed_checkpoint["operation_receipts"] if receipt["operation_kind"] == "event_terminal")
     inbox = [{"event_id": terminal["event_id"], "request_digest": terminal["request_digest"], "disposition": "committed"}]
     initial = store(created)
-    committed = store(committed_checkpoint, inbox=inbox, application_rows={"aggregate_version": 1}, acknowledged=True)
-    quarantined = store(created, inbox=[{"event_id": f"persistence-{index}-event", "request_digest": envelope_for(accepted, event, f"persistence-{index}-event", payload)[1], "disposition": "quarantined"}], quarantine={"event_id": f"persistence-{index}-event", "reason_code": "permanent_processing_failure", "released": False})
+    committed = store(
+        committed_checkpoint,
+        inbox=inbox,
+        application_rows={"aggregate_version": 1},
+        acknowledged=index != 3,
+    )
+    quarantined = store(created, inbox=[{"event_id": f"persistence-{index}-event", "request_digest": presented_digest, "disposition": "quarantined"}], quarantine={"event_id": f"persistence-{index}-event", "reason_code": "permanent_processing_failure", "released": False})
     released = copy.deepcopy(quarantined)
     released["quarantine"]["released"] = True
     common = ["select_scope", "resolve_artifacts", "validate_capabilities", "begin_transaction", "read_checkpoint", "check_replay"]
+    commit_calls = common + ["call_core", "stage_checkpoint", "stage_inbox", "stage_outbox", "stage_audit", "stage_application_rows", "commit"]
+    if index != 3:
+        commit_calls.append("acknowledge")
     logs = {
-        "commit": call_log(common + ["call_core", "stage_checkpoint", "stage_inbox", "stage_outbox", "stage_audit", "stage_application_rows", "commit", "acknowledge"]),
+        "commit": call_log(commit_calls),
         "replay": call_log(common + ["acknowledge"]),
         "rollback": call_log(common + ["call_core", "stage_checkpoint", "stage_inbox", "stage_outbox", "stage_audit", "rollback"]),
         "quarantine": call_log(["select_scope", "resolve_artifacts", "validate_capabilities", "quarantine"]),
@@ -786,9 +1444,13 @@ def generate_persistence_case(index: int, slug: str) -> dict[Path, bytes]:
         case / "quarantined-store-v2.json": write_json(case / "x", quarantined),
         case / "released-store-v2.json": write_json(case / "x", released),
         case / "inputs-v2.json": write_json(case / "x", request_document({
-            "process": request("persistence_process_v2", f"persistence-{index}-process", checkpoint=created, target_fingerprint=created["root_record"]["aggregate_state"]["validated_bundle_fingerprint"], descriptor_route=[]),
-            "replay": request("persistence_process_v2", f"persistence-{index}-process", checkpoint=committed_checkpoint, target_fingerprint=created["root_record"]["aggregate_state"]["validated_bundle_fingerprint"], descriptor_route=[]),
-            "release": request("persistence_release_quarantine_v2", f"persistence-{index}-release", checkpoint=created, target_fingerprint=created["root_record"]["aggregate_state"]["validated_bundle_fingerprint"], descriptor_route=[]),
+            "process": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest),
+            "process_precommit_failure": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="inject_pre_commit"),
+            "process_postcommit_response_loss": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="inject_post_commit_response_loss"),
+            "process_transient": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="transient_retry"),
+            "process_permanent": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="permanent_quarantine"),
+            "replay": persistence_request(committed_checkpoint, f"persistence-{index}-process", presented_envelope, presented_digest),
+            "release": release_request(created, f"persistence-{index}-release", presented_envelope, presented_digest),
         })),
         case / "results-v2.json": write_json(case / "x", result_document({
             "committed": result("committed", "atomic", 1, acknowledged=True),
@@ -803,6 +1465,211 @@ def generate_persistence_case(index: int, slug: str) -> dict[Path, bytes]:
     }
 
 
+def generate_complete_host_contract() -> dict[Path, bytes]:
+    case = PROFILE / "execution-checkpoint" / "checkpoint-07-complete-host-contract"
+    created = create_checkpoint(case, "complete-host-root", "complete-host-create")
+    accepted = admit(created, "increment", "complete-increment", {"amount": 1})
+    handled = process_with_disposition(accepted, "handled")
+    unhandled_accepted = admit(created, "ignored", "complete-unhandled", {})
+    unhandled = process_with_disposition(unhandled_accepted, "unhandled")
+    faulted_accepted = admit(created, "fail", "complete-faulted", {})
+    faulted = process_with_disposition(faulted_accepted, "faulted")
+    bounded = prune(handled)
+    permanent_tombstone = tombstone(handled, "permanent-tombstone")
+    bounded_tombstone = tombstone(bounded, "bounded-tombstone")
+
+    invalid_origin = admission_request(
+        handled,
+        "invalid-origin",
+        origin="invalid",
+    )
+    invalid_mode = admission_request(
+        handled,
+        "invalid-mode",
+        delivery_mode="invalid",
+    )
+    invalid_digest = admission_request(handled, "invalid-digest")
+    invalid_digest["envelope_digest"] = "sha256:" + "0" * 64
+    replay_conflict = admission_request(
+        handled,
+        "complete-increment",
+        payload={"amount": 9},
+        delivery_mode="invalid",
+    )
+    replay_origin = admission_request(
+        handled,
+        "complete-increment",
+        payload={"amount": 1},
+        origin="invalid",
+    )
+    creation_rejection = creation_request(case, created, "invalid-create")
+    creation_rejection["bindings"] = {
+        "input": {"undeclared": ["integer", "1"]},
+        "external": {},
+    }
+    concurrent_loser = admission_request(
+        accepted,
+        "concurrent-loser",
+        expected_from=created,
+    )
+    tombstoned_ingress = admission_request(
+        bounded_tombstone,
+        "after-tombstone",
+        target=root_runtime(created)["target_identity"],
+    )
+
+    memory, file_registration, sqlite, postgresql = STANDARD_REGISTRATIONS
+    requests: dict[str, dict[str, Any]] = {
+        "creation_rejection": creation_rejection,
+        "pending_admission_replay": admission_request(
+            accepted,
+            "complete-increment",
+            payload={"amount": 1},
+        ),
+        "handled_delayed": processing_request(
+            accepted, "handled-delayed", mode="delayed"
+        ),
+        "handled_foreground": processing_request(
+            accepted, "handled-foreground", mode="foreground"
+        ),
+        "unhandled": processing_request(unhandled_accepted, "unhandled"),
+        "rejected": admission_request(
+            created,
+            "complete-rejected",
+            event="undeclared",
+            payload={},
+        ),
+        "faulted": processing_request(faulted_accepted, "faulted"),
+        "invalid_origin": invalid_origin,
+        "invalid_mode": invalid_mode,
+        "invalid_digest": invalid_digest,
+        "replay_conflict": replay_conflict,
+        "replay_origin": replay_origin,
+        "concurrent_winner": admission_request(
+            created, "complete-increment", payload={"amount": 1}
+        ),
+        "concurrent_loser": concurrent_loser,
+        "dependency_live": prune_request(
+            accepted, "dependency-live", "1", "bounded", dependencies=["1"]
+        ),
+        "dependency_terminal_pair": prune_request(
+            handled, "dependency-terminal-pair", "1", "bounded", dependencies=["2"]
+        ),
+        "dependency_closed": prune_request(handled, "dependency-closed", "2", "bounded"),
+        "bounded_to_permanent": prune_request(bounded, "bounded-to-permanent", "2", "permanent"),
+        "stale_tombstone": tombstone_request(
+            bounded,
+            "stale-tombstone",
+            expected_from=handled,
+        ),
+        "tombstoned_ingress": tombstoned_ingress,
+        "backup_permanent": backup_request(permanent_tombstone, "backup-permanent", "backup", complete=True),
+        "restore_permanent": backup_request(permanent_tombstone, "restore-permanent", "restore", complete=True),
+        "backup_bounded": backup_request(bounded_tombstone, "backup-bounded", "backup", complete=True),
+        "restore_bounded": backup_request(bounded_tombstone, "restore-bounded", "restore", complete=True),
+        "restore_incomplete": backup_request(created, "restore-incomplete", "restore", complete=False),
+        "inject_store": inject_store_request(created),
+        "register_bundled": registration_request("register-bundled", memory, []),
+        "register_third_party": registration_request("register-third-party", postgresql, [memory]),
+        "register_duplicate": registration_request("register-duplicate", memory, [memory]),
+        "resolve_unknown": resolve_adapter_request("resolve-unknown", "unknown"),
+        "resolve_invalid_config": resolve_adapter_request("resolve-invalid-config", "sqlite", configuration={"path": 7}),
+        "resolve_capability_mismatch": resolve_adapter_request("resolve-capability-mismatch", "memory", capabilities=["durable_single_writer"]),
+        "resolve_memory": resolve_adapter_request("resolve-memory", "memory"),
+        "resolve_file": resolve_adapter_request("resolve-file", "file", configuration={"path": "state.json"}, capabilities=["restart_persistent"]),
+        "resolve_sqlite": resolve_adapter_request("resolve-sqlite", "sqlite", capabilities=["durable_single_writer"]),
+        "resolve_postgresql": resolve_adapter_request("resolve-postgresql", "postgresql", configuration={"dsn": "postgresql://db/state"}, capabilities=["durable_concurrent", "shared_application_transaction"]),
+        "scope_a": scope_request(created, "scope-a", "authorized", scope_id="scope-a"),
+        "scope_b": scope_request(created, "scope-b", "authorized", scope_id="scope-b"),
+        "scope_missing": scope_request(created, "scope-missing", "missing"),
+        "scope_ambiguous": scope_request(created, "scope-ambiguous", "ambiguous"),
+        "scope_mismatched": scope_request(created, "scope-mismatched", "mismatched"),
+        "scope_unauthorized": scope_request(created, "scope-unauthorized", "unauthorized"),
+    }
+
+    profile_matrix = {
+        "durable_embedded": (
+            "durable_embedded_processing",
+            ["durable_single_writer", "root_identity_retention"],
+            ["atomic_accept_process"],
+        ),
+        "exactly_once": (
+            "exactly_once_committed_processing",
+            ["durable_single_writer", "root_identity_retention", "permanent_receipt_retention"],
+            ["atomic_accept_process", "permanent_mode"],
+        ),
+        "broker": (
+            "broker_integrated",
+            ["durable_single_writer", "root_identity_retention"],
+            ["atomic_accept_process", "ingress_ack_after_commit", "durable_redelivery", "outbox_worker"],
+        ),
+        "strict_outbox": (
+            "strict_durable_outbox",
+            ["root_identity_retention", "permanent_outbox_terminal_retention"],
+            ["total_outbox_lifecycle", "outbox_worker", "retain_unresolved_outbox"],
+        ),
+        "compact_outbox": (
+            "compact_durable_outbox",
+            ["root_identity_retention", "compact_effect_identity_retention"],
+            ["total_outbox_lifecycle", "outbox_worker", "retain_receipt_references"],
+        ),
+        "shared_transaction": (
+            "shared_application_transaction",
+            ["shared_application_transaction", "root_identity_retention"],
+            ["native_shared_transaction_used"],
+        ),
+    }
+    for key, (profile, store_caps, guarantees) in profile_matrix.items():
+        required = store_caps + guarantees
+        requests[f"profile_{key}_positive"] = capability_request(
+            f"profile-{key}-positive", profile, store_caps, guarantees, required
+        )
+        requests[f"profile_{key}_negative"] = capability_request(
+            f"profile-{key}-negative",
+            profile,
+            store_caps,
+            guarantees[:-1],
+            required,
+        )
+
+    results = result_document(
+        {
+            "committed": result("committed", "atomic", 1),
+            "committed_no_core": result("committed", "atomic", 0),
+            "replayed": result("replayed", "none", 0),
+            "validated": result("validated", "none", 0),
+            "creation_rejected": result("rejected", "none", 1, code="creation_rejected"),
+            "invalid_origin": result("rejected", "none", 0, code="invalid_delivery_origin"),
+            "invalid_mode": result("rejected", "none", 0, code="invalid_delivery_mode"),
+            "invalid_digest": result("rejected", "none", 0, code="delivery_digest_mismatch"),
+            "invalid_event": result("rejected", "none", 0, code="invalid_event"),
+            "event_conflict": result("rejected", "none", 0, code="event_id_conflict"),
+            "stale": result("rejected", "none", 0, code="checkpoint_revision_conflict"),
+            "invalid_checkpoint": result("rejected", "none", 0, code="invalid_execution_checkpoint"),
+            "tombstoned_root": result("rejected", "none", 0, code="tombstoned_root"),
+            "duplicate_registration": result("rejected", "none", 0, code="duplicate_adapter_registration"),
+            "unknown_adapter": result("rejected", "none", 0, code="unknown_adapter"),
+            "invalid_configuration": result("rejected", "none", 0, code="invalid_adapter_configuration"),
+            "capability_mismatch": result("rejected", "none", 0, code="adapter_capability_mismatch"),
+            "invalid_scope": result("rejected", "none", 0, code="invalid_store_scope"),
+        }
+    )
+    return {
+        case / "created-checkpoint-v2.json": write_json(case / "x", created),
+        case / "accepted-checkpoint-v2.json": write_json(case / "x", accepted),
+        case / "handled-checkpoint-v2.json": write_json(case / "x", handled),
+        case / "unhandled-accepted-checkpoint-v2.json": write_json(case / "x", unhandled_accepted),
+        case / "unhandled-checkpoint-v2.json": write_json(case / "x", unhandled),
+        case / "faulted-accepted-checkpoint-v2.json": write_json(case / "x", faulted_accepted),
+        case / "faulted-checkpoint-v2.json": write_json(case / "x", faulted),
+        case / "bounded-checkpoint-v2.json": write_json(case / "x", bounded),
+        case / "permanent-tombstone-checkpoint-v2.json": write_json(case / "x", permanent_tombstone),
+        case / "bounded-tombstone-checkpoint-v2.json": write_json(case / "x", bounded_tombstone),
+        case / "inputs-v2.json": write_json(case / "x", request_document(requests)),
+        case / "results-v2.json": write_json(case / "x", results),
+    }
+
+
 def outputs() -> dict[Path, bytes]:
     result_map: dict[Path, bytes] = {}
     for generated in (
@@ -811,6 +1678,7 @@ def outputs() -> dict[Path, bytes]:
         generate_retention(),
         generate_spawned(False),
         generate_spawned(True),
+        generate_complete_host_contract(),
     ):
         result_map.update(generated)
     for index, slug in enumerate(

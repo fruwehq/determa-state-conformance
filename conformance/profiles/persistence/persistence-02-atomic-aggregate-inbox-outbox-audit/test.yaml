@@ -23,7 +23,7 @@ durable_host_vectors:
     store_after: initial-store-v2.json
     call_log: rollback-call-log-v2.json
     failure_boundary: before_commit
-    request: { file: inputs-v2.json, pointer: /requests/process }
+    request: { file: inputs-v2.json, pointer: /requests/process_precommit_failure }
     result: { file: results-v2.json, pointer: /results/crashed }
     expect: { result: crashed, code: injected_pre_commit_failure, mutation: none, core_calls: 1 }
   - name: persistence_atomic_full_commit

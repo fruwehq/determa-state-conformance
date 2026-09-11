@@ -398,9 +398,27 @@
     },
     {
       "category": "execution_store_failure",
+      "code": "invalid_store_scope",
+      "condition": "A durable-host operation has missing, ambiguous, mismatched, or unauthorized logical store scope selection.",
+      "source": "SPEC.md section 17.1"
+    },
+    {
+      "category": "execution_store_failure",
+      "code": "permanent_processing_failure",
+      "condition": "A durable-host ingress failure is classified as permanent and the presented envelope is quarantined.",
+      "source": "SPEC.md section 15 durable persistence host behavior"
+    },
+    {
+      "category": "execution_store_failure",
       "code": "response_lost_after_commit",
       "condition": "The conformance store commits successfully but loses the operation response.",
       "source": "execution-checkpoint profile post_commit_response_loss_replay"
+    },
+    {
+      "category": "execution_store_failure",
+      "code": "transient_processing_failure",
+      "condition": "A durable-host ingress failure is classified as transient and must be retried from committed state.",
+      "source": "SPEC.md section 15 durable persistence host behavior"
     },
     {
       "category": "machine_load_failure",

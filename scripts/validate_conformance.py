@@ -74,6 +74,19 @@ ENGINE_FAULT_CODES = frozenset(
     for entry in _CLOSED_CODE_REGISTRY["entries"]
     if entry["category"] == "engine_fault"
 )
+DURABLE_HOST_FAILURE_CODES = frozenset(
+    entry["code"]
+    for entry in _CLOSED_CODE_REGISTRY["entries"]
+    if entry["category"]
+    in {
+        "checkpoint_artifact_failure",
+        "checkpoint_host_failure",
+        "checkpoint_pre_acceptance_failure",
+        "creation_rejection",
+        "execution_store_adapter_failure",
+        "execution_store_failure",
+    }
+)
 NON_FINITE_DOUBLE_MARKERS = frozenset(
     {"nan", "positive_infinity", "negative_infinity"}
 )
@@ -98,6 +111,9 @@ DRIVER_ARTIFACT_KINDS = {
 REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
     {
         "acceptance_receipt_native_v2",
+        "adapter_capability_failure",
+        "all_replay_conflict_precedence",
+        "ambiguous_scope_rejected",
         "admission_event_conflict_precedence",
         "admission_malformed_precedence",
         "admission_wrong_root_precedence",
@@ -129,6 +145,78 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "checkpoint_terminal_replay",
         "checkpoint_third_party_adapter_registration",
         "creation_receipt_native_v2",
+        "creation_rejection_without_checkpoint",
+        "backup_completeness_bounded",
+        "backup_completeness_permanent",
+        "bounded_exactly_once_rejected",
+        "bounded_terminal_retention",
+        "bounded_to_permanent_rejected",
+        "bounded_tombstone_retention",
+        "broker_profile_negative",
+        "broker_profile_positive",
+        "bundled_public_registration",
+        "committed_replay_precedes_invalid_origin",
+        "committed_replay_precedes_stale_writer",
+        "compact_outbox_profile_negative",
+        "compact_outbox_profile_positive",
+        "concurrent_loser_revision_conflict",
+        "concurrent_one_winner",
+        "delayed_processing",
+        "delivery_digest_mismatch",
+        "direct_store_injection",
+        "duplicate_adapter_registration",
+        "durable_embedded_profile_negative",
+        "durable_embedded_profile_positive",
+        "equal_effect_separate_scope_a",
+        "equal_effect_separate_scope_b",
+        "equal_identity_separate_scope_a",
+        "equal_identity_separate_scope_b",
+        "exact_admission_revision_equation",
+        "exact_creation_revision_equation",
+        "exact_outbox_revision_equation",
+        "exact_persistence_revision_equation",
+        "exact_pruning_revision_equation",
+        "exact_processing_revision_equation",
+        "exact_tombstone_revision_equation",
+        "exactly_once_profile_negative",
+        "exactly_once_profile_positive",
+        "faulted_delivery",
+        "file_capability_boundary",
+        "foreground_delayed_equivalence",
+        "foreground_processing",
+        "handled_delivery",
+        "invalid_adapter_configuration",
+        "invalid_delivery_mode",
+        "invalid_delivery_origin",
+        "memory_capability_boundary",
+        "mismatched_scope_rejected",
+        "missing_scope_rejected",
+        "pending_admission_replay",
+        "permanent_terminal_retention",
+        "permanent_tombstone_retention",
+        "postgresql_capability_boundary",
+        "pruning_dependency_closed_variants",
+        "pruning_effect_receipt_dependency",
+        "pruning_live_acceptance_dependency",
+        "pruning_producer_receipt_dependency",
+        "pruning_terminal_pair_dependency",
+        "rejected_delivery",
+        "replay_event_conflict_precedes_invalid_mode",
+        "restore_completeness_bounded",
+        "restore_completeness_permanent",
+        "restore_incomplete_rejected",
+        "restore_retains_bounded_horizon",
+        "shared_transaction_profile_negative",
+        "shared_transaction_profile_positive",
+        "sqlite_capability_boundary",
+        "stale_tombstoning_rejected",
+        "strict_outbox_profile_negative",
+        "strict_outbox_profile_positive",
+        "third_party_public_registration",
+        "tombstoned_ingress_rejected",
+        "unauthorized_scope_rejected",
+        "unhandled_delivery",
+        "unknown_adapter",
         "outbox_ambiguous",
         "outbox_confirmed",
         "outbox_dead_lettered",
@@ -5106,6 +5194,454 @@ def resolve_artifact_pointer(document: Any, pointer: str, location: str) -> Any:
     return value
 
 
+def checkpoint_identity(checkpoint: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "root_instance_id": checkpoint["root_instance_id"],
+        "revision": checkpoint["revision"],
+        "digest": checkpoint["execution_checkpoint_digest"],
+    }
+
+
+def checkpoint_aggregate(checkpoint: dict[str, Any]) -> dict[str, Any] | None:
+    root_record = checkpoint["root_record"]
+    return root_record.get("aggregate_state") if root_record["status"] == "retained" else None
+
+
+def checkpoint_mailbox_entries(checkpoint: dict[str, Any]) -> list[dict[str, Any]]:
+    aggregate = checkpoint_aggregate(checkpoint)
+    if aggregate is None:
+        return []
+    return [
+        entry
+        for runtime in aggregate["runtimes"]
+        for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+        for entry in mailbox
+    ]
+
+
+def validate_request_checkpoint_binding(
+    operation_input: dict[str, Any],
+    checkpoint_before: dict[str, Any],
+    artifacts: dict[str, Any],
+    location: str,
+) -> None:
+    expected = operation_input.get("expected_checkpoint") or operation_input.get(
+        "existing_checkpoint"
+    )
+    if expected is None:
+        return
+    known = {
+        tuple(checkpoint_identity(value).items())
+        for value in artifacts.values()
+        if isinstance(value, dict)
+        and value.get("execution_checkpoint_format") == "determa.execution_checkpoint"
+    }
+    if tuple(expected.items()) not in known:
+        raise ValidationFailure(
+            f"{location}: expected checkpoint is not bound to a declared artifact"
+        )
+    if expected["root_instance_id"] != checkpoint_before["root_instance_id"]:
+        raise ValidationFailure(f"{location}: request root differs from supplied checkpoint")
+
+
+def validate_checkpoint_derivation(
+    operation_input: dict[str, Any],
+    operation_result: dict[str, Any],
+    checkpoint_before: dict[str, Any] | None,
+    checkpoint_after: dict[str, Any],
+    location: str,
+) -> None:
+    operation = operation_input["operation"]
+    mutates = operation_result["mutation"] == "atomic"
+    if checkpoint_before is not None and mutates:
+        expected_revision = int(checkpoint_before["revision"]) + 1
+        if int(checkpoint_after["revision"]) != expected_revision:
+            raise ValidationFailure(
+                f"{location}: atomic operation must advance revision exactly once"
+            )
+    if operation == "checkpoint_create_v2":
+        if not mutates:
+            return
+        aggregate = checkpoint_aggregate(checkpoint_after)
+        if aggregate is None:
+            raise ValidationFailure(f"{location}: creation did not retain an aggregate")
+        receipt = checkpoint_after["operation_receipts"][0]
+        definition = next(
+            runtime for runtime in aggregate["runtimes"] if runtime["relation"]["kind"] == "root"
+        )["current_definition"]["machine"]
+        if (
+            checkpoint_after["revision"] != "0"
+            or aggregate["root_instance_id"] != operation_input["root_instance_id"]
+            or aggregate["creation_id"] != operation_input["creation_id"]
+            or aggregate["validated_bundle_fingerprint"]
+            != operation_input["bundle"]["validated_bundle_fingerprint"]
+            or definition != operation_input["machine"]
+            or receipt["creation_id"] != operation_input["creation_id"]
+            or checkpoint_after["replay_retention"]["mode"]
+            != operation_input["retention_mode"]
+        ):
+            raise ValidationFailure(f"{location}: creation result is not request-derived")
+        return
+    if checkpoint_before is None:
+        return
+    if operation == "checkpoint_admit_v2":
+        envelope = operation_input["envelope"]
+        expected_digest = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                checkpoint_before["root_instance_id"],
+                operation_input["delivery_mode"],
+                envelope,
+            ]
+        )
+        digest_must_differ = operation_result.get("code") == "delivery_digest_mismatch"
+        digest_invalid = (
+            operation_input["envelope_digest"] == expected_digest
+            if digest_must_differ
+            else operation_input["envelope_digest"] != expected_digest
+        )
+        if operation_input["delivery_mode"] == "invalid":
+            digest_invalid = False
+        if operation_input["target"] != envelope["target"] or digest_invalid:
+            raise ValidationFailure(f"{location}: admission request envelope is not canonical")
+        if mutates:
+            matching_receipts = [
+                receipt
+                for receipt in checkpoint_after["operation_receipts"]
+                if receipt["operation_kind"] == "acceptance"
+                and receipt["event_id"] == envelope["event_id"]
+                and receipt["request_digest"] == expected_digest
+            ]
+            matching_entries = [
+                entry
+                for entry in checkpoint_mailbox_entries(checkpoint_after)
+                if entry["envelope"] == envelope
+                and entry["envelope_digest"] == expected_digest
+            ]
+            if len(matching_receipts) != 1 or len(matching_entries) != 1:
+                raise ValidationFailure(f"{location}: admission result is not request-derived")
+        else:
+            retained = [
+                receipt
+                for receipt in checkpoint_before["operation_receipts"]
+                if receipt.get("event_id") == envelope["event_id"]
+            ]
+            retained.extend(
+                tombstone
+                for tombstone in checkpoint_before["event_identity_tombstones"]
+                if tombstone["event_id"] == envelope["event_id"]
+            )
+            code = operation_result.get("code")
+            if operation_result["result"] == "replayed" and not any(
+                item["request_digest"] == operation_input["envelope_digest"]
+                for item in retained
+            ):
+                raise ValidationFailure(f"{location}: replay identity is not retained")
+            if code == "event_id_conflict" and not any(
+                item["request_digest"] != operation_input["envelope_digest"]
+                for item in retained
+            ):
+                raise ValidationFailure(f"{location}: event conflict is not request-derived")
+            if code == "invalid_delivery_origin" and operation_input["presented_origin"] != "invalid":
+                raise ValidationFailure(f"{location}: invalid origin result is not request-derived")
+            if code == "invalid_delivery_mode" and operation_input["delivery_mode"] != "invalid":
+                raise ValidationFailure(f"{location}: invalid mode result is not request-derived")
+            if code == "tombstoned_root" and checkpoint_before["root_record"]["status"] != "tombstone":
+                raise ValidationFailure(f"{location}: tombstoned ingress result is not request-derived")
+    elif operation == "checkpoint_step_v2" and mutates:
+        before_entries = [
+            entry
+            for entry in checkpoint_mailbox_entries(checkpoint_before)
+            if entry["envelope"]["event_id"] == operation_input["event_id"]
+            and entry["envelope_digest"] == operation_input["envelope_digest"]
+            and entry["envelope"]["target"] == operation_input["target"]
+            and entry["acceptance_sequence"] == operation_input["acceptance_sequence"]
+            and entry["queue_sequence"] == operation_input["queue_sequence"]
+        ]
+        receipts = [
+            receipt
+            for receipt in checkpoint_after["operation_receipts"]
+            if receipt["operation_kind"] == "event_terminal"
+            and receipt["event_id"] == operation_input["event_id"]
+            and receipt["request_digest"] == operation_input["envelope_digest"]
+        ]
+        if len(before_entries) != 1 or len(receipts) != 1:
+            raise ValidationFailure(f"{location}: processing result is not request-derived")
+    elif operation in {"checkpoint_update_outbox_v2", "checkpoint_terminalize_outbox_v2"}:
+        effect_id = operation_input["effect_id"]
+        before_matches = [
+            record
+            for record in checkpoint_before["pending_outbox_intents"]
+            if record["intent"]["effect_id"] == effect_id
+        ]
+        after_pending = [
+            record
+            for record in checkpoint_after["pending_outbox_intents"]
+            if record["intent"]["effect_id"] == effect_id
+        ]
+        after_terminal = [
+            record
+            for record in checkpoint_after["terminal_outbox_records"]
+            if record["intent"]["effect_id"] == effect_id
+        ]
+        if mutates and len(before_matches) != 1:
+            raise ValidationFailure(f"{location}: outbox effect is not pending")
+        if mutates and operation == "checkpoint_update_outbox_v2":
+            expected_state = {"status": operation_input["target_disposition"]}
+            if operation_input["outcome"]["reason_code"] is not None:
+                expected_state["reason_code"] = operation_input["outcome"]["reason_code"]
+            if len(after_pending) != 1 or after_pending[0]["delivery_state"] != expected_state:
+                raise ValidationFailure(f"{location}: pending outbox result is not request-derived")
+        if mutates and operation == "checkpoint_terminalize_outbox_v2":
+            expected_outcome = {"status": operation_input["target_disposition"]}
+            if operation_input["outcome"]["reason_code"] is not None:
+                expected_outcome["reason_code"] = operation_input["outcome"]["reason_code"]
+            if (
+                len(after_terminal) != 1
+                or after_terminal[0]["outcome"] != expected_outcome
+                or operation_input["outcome"]["durable_acceptance"]
+                != (operation_input["target_disposition"] == "confirmed")
+            ):
+                raise ValidationFailure(f"{location}: terminal outbox result is not request-derived")
+        if not mutates:
+            retained_dispositions = [
+                record["delivery_state"]["status"] for record in after_pending
+            ] + [record["outcome"]["status"] for record in after_terminal]
+            retained_dispositions.extend(
+                record["outcome"]["status"]
+                for record in checkpoint_after["outbox_effect_tombstones"]
+                if record["effect_id"] == effect_id
+            )
+            if operation_result["result"] == "replayed" and operation_input["target_disposition"] not in retained_dispositions:
+                raise ValidationFailure(f"{location}: outbox replay is not retained")
+            if operation_result.get("code") == "effect_id_conflict" and (
+                not retained_dispositions
+                or operation_input["target_disposition"] in retained_dispositions
+            ):
+                raise ValidationFailure(f"{location}: outbox conflict is not request-derived")
+        before_other = {
+            record["intent"]["effect_id"]: record
+            for record in checkpoint_before["pending_outbox_intents"]
+            if record["intent"]["effect_id"] != effect_id
+        }
+        after_other = {
+            record["intent"]["effect_id"]: record
+            for record in checkpoint_after["pending_outbox_intents"]
+            if record["intent"]["effect_id"] != effect_id
+        }
+        if mutates and before_other != after_other:
+            raise ValidationFailure(f"{location}: outbox request changed unrelated effects")
+    elif operation == "checkpoint_compact_outbox_v2":
+        effect_id = operation_input["effect_id"]
+        before_terminal = [
+            record
+            for record in checkpoint_before["terminal_outbox_records"]
+            if record["intent"]["effect_id"] == effect_id
+        ]
+        after_tombstones = [
+            record
+            for record in checkpoint_after["outbox_effect_tombstones"]
+            if record["effect_id"] == effect_id
+        ]
+        if mutates and (
+            len(before_terminal) != 1
+            or len(after_tombstones) != 1
+            or after_tombstones[0]["intent_digest"] != operation_input["intent_digest"]
+            or any(
+                record["intent"]["effect_id"] == effect_id
+                for record in checkpoint_after["terminal_outbox_records"]
+            )
+        ):
+            raise ValidationFailure(f"{location}: outbox compaction is not request-derived")
+        if not mutates and not after_tombstones:
+            raise ValidationFailure(f"{location}: compacted effect identity was deleted")
+    elif operation == "checkpoint_prune_v2" and mutates:
+        retention = checkpoint_after["replay_retention"]
+        if (
+            retention["mode"] != operation_input["target_mode"]
+            or retention["pruned_through_receipt_sequence"]
+            != operation_input["cutoff_receipt_sequence"]
+            or retention["policy_identifier"] != operation_input["policy_identifier"]
+        ):
+            raise ValidationFailure(f"{location}: pruning result is not request-derived")
+    elif operation == "checkpoint_prune_v2" and operation_result["result"] == "replayed":
+        retention = checkpoint_before["replay_retention"]
+        if (
+            retention["mode"] != operation_input["target_mode"]
+            or retention["pruned_through_receipt_sequence"]
+            != operation_input["cutoff_receipt_sequence"]
+        ):
+            raise ValidationFailure(f"{location}: pruning replay is not request-derived")
+    elif operation == "checkpoint_prune_v2" and operation_result["result"] == "rejected":
+        receipt_sequences = {
+            receipt["receipt_sequence"]
+            for receipt in checkpoint_before["operation_receipts"]
+        }
+        effect_ids = {
+            record["intent"]["effect_id"]
+            for record in checkpoint_before["pending_outbox_intents"]
+        } | {
+            record["intent"]["effect_id"]
+            for record in checkpoint_before["terminal_outbox_records"]
+        } | {
+            record["effect_id"] for record in checkpoint_before["outbox_effect_tombstones"]
+        }
+        if not (
+            set(operation_input["dependency_receipt_sequences"]) & receipt_sequences
+            or set(operation_input["dependency_effect_ids"]) & effect_ids
+            or operation_input["target_mode"] == "permanent"
+            or int(operation_input["cutoff_receipt_sequence"])
+            < int(checkpoint_before["replay_retention"].get("pruned_through_receipt_sequence") or 0)
+            or operation_input["expected_checkpoint"] != checkpoint_identity(checkpoint_before)
+        ):
+            raise ValidationFailure(f"{location}: rejected pruning has no request-derived conflict")
+    elif operation == "checkpoint_tombstone_v2" and mutates:
+        root_record = checkpoint_after["root_record"]
+        if (
+            root_record["status"] != "tombstone"
+            or root_record["terminal_status"] != operation_input["terminal_status"]
+            or root_record["tombstone_operation_id"]
+            != operation_input["tombstone_operation_id"]
+        ):
+            raise ValidationFailure(f"{location}: tombstone result is not request-derived")
+    elif operation == "checkpoint_tombstone_v2" and operation_result["result"] == "replayed":
+        root_record = checkpoint_before["root_record"]
+        if (
+            root_record["status"] != "tombstone"
+            or root_record["terminal_status"] != operation_input["terminal_status"]
+            or root_record["tombstone_operation_id"]
+            != operation_input["tombstone_operation_id"]
+        ):
+            raise ValidationFailure(f"{location}: tombstone replay is not request-derived")
+    elif operation == "checkpoint_register_adapter_v2":
+        identifier = operation_input["registration"]["adapter_identifier"]
+        duplicate = any(
+            item["adapter_identifier"] == identifier
+            for item in operation_input["existing_registrations"]
+        )
+        expected_code = "duplicate_adapter_registration" if duplicate else None
+        if operation_result.get("code") != expected_code:
+            raise ValidationFailure(f"{location}: adapter registration result is not request-derived")
+    elif operation == "checkpoint_resolve_adapter_v2":
+        matches = [
+            item
+            for item in operation_input["registrations"]
+            if item["adapter_identifier"] == operation_input["adapter_identifier"]
+            and operation_input["uri"].split(":", 1)[0] == item["uri_scheme"]
+        ]
+        expected_code = None
+        if not matches:
+            expected_code = "unknown_adapter"
+        else:
+            configuration_errors = list(
+                Draft202012Validator(matches[0]["configuration_schema"]).iter_errors(
+                    operation_input["configuration"]
+                )
+            )
+            if configuration_errors:
+                expected_code = "invalid_adapter_configuration"
+            elif not set(operation_input["requested_capabilities"]) <= set(
+                matches[0]["capabilities"]
+            ):
+                expected_code = "adapter_capability_mismatch"
+        if operation_result.get("code") != expected_code:
+            raise ValidationFailure(f"{location}: adapter resolution result is not request-derived")
+    elif operation == "checkpoint_validate_capabilities_v2":
+        available = set(operation_input["store_capabilities"]) | set(
+            operation_input["host_guarantees"]
+        )
+        expected_code = (
+            None
+            if set(operation_input["required_capabilities"]) <= available
+            else "adapter_capability_mismatch"
+        )
+        if operation_result.get("code") != expected_code:
+            raise ValidationFailure(f"{location}: composed profile result is not request-derived")
+    elif operation == "checkpoint_scope_operation_v2":
+        expected_code = (
+            None
+            if operation_input["scope"]["authorization"] == "authorized"
+            else "invalid_store_scope"
+        )
+        if operation_result.get("code") != expected_code:
+            raise ValidationFailure(f"{location}: scope result is not request-derived")
+    elif operation == "checkpoint_backup_restore_v2":
+        complete = bool(operation_input["checkpoint_digests"]) and (
+            checkpoint_before["root_record"]["status"] == "tombstone"
+            or bool(operation_input["trusted_artifact_digests"])
+        )
+        expected_code = None if complete else "invalid_execution_checkpoint"
+        if operation_result.get("code") != expected_code:
+            raise ValidationFailure(f"{location}: backup or restore result is not request-derived")
+        if checkpoint_before["execution_checkpoint_digest"] not in operation_input["checkpoint_digests"]:
+            raise ValidationFailure(f"{location}: backup omits the supplied checkpoint")
+        if operation_input["retention_mode"] != checkpoint_before["replay_retention"]["mode"]:
+            raise ValidationFailure(f"{location}: backup changes the retention mode")
+    elif operation == "checkpoint_inject_store_v2":
+        if operation_result["result"] != "validated" or not operation_input["capabilities"]:
+            raise ValidationFailure(f"{location}: direct store injection result is not request-derived")
+
+
+def validate_persistence_derivation(
+    operation_input: dict[str, Any],
+    operation_result: dict[str, Any],
+    store_before: dict[str, Any],
+    store_after: dict[str, Any],
+    location: str,
+) -> None:
+    checkpoint_before = store_before["checkpoint"]
+    if operation_input["expected_checkpoint"] != checkpoint_identity(checkpoint_before):
+        raise ValidationFailure(f"{location}: persistence request checkpoint mismatch")
+    if operation_input["operation"] == "persistence_release_quarantine_v2":
+        if operation_result["mutation"] == "atomic" and (
+            store_before["quarantine"] is None
+            or store_before["quarantine"]["event_id"] != operation_input["event_id"]
+            or store_before["quarantine"]["reason_code"]
+            != operation_input["quarantine_reason_code"]
+            or not store_after["quarantine"]["released"]
+        ):
+            raise ValidationFailure(f"{location}: quarantine release is not request-derived")
+        return
+    envelope = operation_input["presented_envelope"]
+    expected_digest = hash_value(
+        [
+            "determa-inbox-envelope-digest-2",
+            "2",
+            checkpoint_before["root_instance_id"],
+            "input",
+            envelope,
+        ]
+    )
+    transaction_inputs = operation_input["transaction_inputs"]
+    aggregate = checkpoint_aggregate(checkpoint_before)
+    if (
+        operation_input["envelope_digest"] != expected_digest
+        or aggregate is None
+        or transaction_inputs["target_validated_bundle_fingerprint"]
+        != aggregate["validated_bundle_fingerprint"]
+    ):
+        raise ValidationFailure(f"{location}: persistence request is not definition-bound")
+    if operation_result["mutation"] == "atomic":
+        inbox = [
+            row
+            for row in store_after["inbox"]
+            if row["event_id"] == envelope["event_id"]
+            and row["request_digest"] == expected_digest
+        ]
+        if not inbox:
+            raise ValidationFailure(f"{location}: persistence result omits request inbox identity")
+        if operation_result["result"] == "committed" and store_after["application_rows"] != transaction_inputs["application_writes"]:
+            raise ValidationFailure(f"{location}: application writes are not request-derived")
+        if operation_result["result"] in {"committed", "crashed"} and (
+            int(store_after["checkpoint"]["revision"])
+            != int(checkpoint_before["revision"]) + 2
+        ):
+            raise ValidationFailure(
+                f"{location}: admitted-and-processed transaction must advance revision exactly twice"
+            )
+
+
 def validate_durable_host_vectors(
     case: Path, test: dict[str, Any], artifact_paths: set[Path]
 ) -> set[str]:
@@ -5146,6 +5682,20 @@ def validate_durable_host_vectors(
         expected_result.setdefault("broker_acknowledged", False)
         if operation_result != expected_result:
             raise ValidationFailure(f"{location}: exact result does not match expectation")
+        failure_result = operation_result["result"] in {
+            "rejected",
+            "crashed",
+            "quarantined",
+        }
+        failure_code = operation_result.get("code")
+        if failure_result != (failure_code is not None):
+            raise ValidationFailure(
+                f"{location}: failure code presence does not match result"
+            )
+        if failure_code is not None and failure_code not in DURABLE_HOST_FAILURE_CODES:
+            raise ValidationFailure(
+                f"{location}: durable host failure code is absent from the closed registry"
+            )
 
         before_name = vector.get("checkpoint_before")
         after_name = vector.get("checkpoint_after")
@@ -5157,11 +5707,29 @@ def validate_durable_host_vectors(
                     raise ValidationFailure(f"{location}: creation must commit revision zero")
             else:
                 checkpoint_before = require_kind(before_name, "execution_checkpoint_v2", location)
+                validate_request_checkpoint_binding(
+                    operation_input, checkpoint_before, artifacts, location
+                )
                 if vector["expect"]["mutation"] == "none":
                     if checkpoint_before != checkpoint_after:
                         raise ValidationFailure(f"{location}: non-mutating result changed checkpoint")
-                elif int(checkpoint_after["revision"]) <= int(checkpoint_before["revision"]):
-                    raise ValidationFailure(f"{location}: atomic mutation did not advance revision")
+            validate_checkpoint_derivation(
+                operation_input,
+                operation_result,
+                checkpoint_before if before_name is not None else None,
+                checkpoint_after,
+                location,
+            )
+        elif vector["operation"] == "checkpoint_create_v2":
+            if (
+                before_name is not None
+                or operation_result.get("code") != "creation_rejected"
+                or operation_result["mutation"] != "none"
+                or operation_input["bindings"] == {"input": {}, "external": {}}
+            ):
+                raise ValidationFailure(
+                    f"{location}: rejected creation is not request-derived"
+                )
 
         store_before_name = vector.get("store_before")
         store_after_name = vector.get("store_after")
@@ -5184,17 +5752,23 @@ def validate_durable_host_vectors(
                     raise ValidationFailure(
                         f"{location}: atomic store omits inbox, outbox, audit, or application state"
                     )
-            if vector["operation"] == "persistence_process_v2" and (
-                "target_validated_bundle_fingerprint" not in operation_input
-                or "migration_descriptor_digest_route" not in operation_input
-            ):
-                raise ValidationFailure(f"{location}: persistence input is not definition-bound")
+            validate_persistence_derivation(
+                operation_input,
+                operation_result,
+                store_before,
+                store_after,
+                location,
+            )
 
         call_log_name = vector.get("call_log")
         if call_log_name is not None:
             call_log = require_kind(call_log_name, "durable_host_call_log_v2", location)["calls"]
             if call_log.count("call_core") != vector["expect"]["core_calls"]:
                 raise ValidationFailure(f"{location}: core call count differs")
+            if ("acknowledge" in call_log) != operation_result["broker_acknowledged"]:
+                raise ValidationFailure(
+                    f"{location}: acknowledgement result differs from the call trace"
+                )
             if "begin_transaction" in call_log:
                 transaction_index = call_log.index("begin_transaction")
                 for required in ("select_scope", "resolve_artifacts", "validate_capabilities"):

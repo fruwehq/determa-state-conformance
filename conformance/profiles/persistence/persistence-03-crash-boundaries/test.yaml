@@ -23,7 +23,7 @@ durable_host_vectors:
     store_after: initial-store-v2.json
     call_log: rollback-call-log-v2.json
     failure_boundary: after_audit_staged
-    request: { file: inputs-v2.json, pointer: /requests/process }
+    request: { file: inputs-v2.json, pointer: /requests/process_precommit_failure }
     result: { file: results-v2.json, pointer: /results/crashed }
     expect: { result: crashed, code: injected_pre_commit_failure, mutation: none, core_calls: 1 }
   - name: persistence_crash_after_commit
@@ -33,7 +33,7 @@ durable_host_vectors:
     store_after: committed-store-v2.json
     call_log: commit-call-log-v2.json
     failure_boundary: after_commit_before_acknowledgement
-    request: { file: inputs-v2.json, pointer: /requests/process }
+    request: { file: inputs-v2.json, pointer: /requests/process_postcommit_response_loss }
     result: { file: results-v2.json, pointer: /results/postcommit_crash }
     expect: { result: crashed, code: response_lost_after_commit, mutation: atomic, core_calls: 1, broker_acknowledged: false }
   - name: persistence_redelivery_after_commit

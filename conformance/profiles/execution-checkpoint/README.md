@@ -29,6 +29,29 @@ under `scripts/schemas/`. Checkpoint and aggregate members use only the specific
 schema-version-2 formats. Machine documents continue to use integer `format: 1` because
 machine grammar and portable artifact schema versions are separate domains.
 
+`durable-host-inputs-v2.schema.json` is a closed operation-tagged union. Each request
+contains the complete driver input for its operation: selected and authorized scope;
+bundle, machine, bindings, and creation identities; canonical admission envelope and
+target; selected pending input; one outbox effect and disposition; pruning cutoff,
+mode, and dependencies; adapter registration or configuration; composed capabilities;
+or the complete persistence transaction input. There is no generic parameter map and
+replay repeats the original operation request.
+
+The repository validator derives operation-specific invariants from those requests. It
+binds checkpoint identity, canonical envelope digest, target, receipt, effect,
+disposition, retention transition, store inbox, and application writes to the named
+before/after artifacts. Creation commits revision `0`; each admission, processing,
+outbox, pruning, or tombstone mutation advances exactly one revision; the combined
+persistence admission-and-processing transaction advances exactly two. A golden from
+another request is therefore not interchangeable even when it is schema-valid.
+
+The complete host-contract case additionally covers creation rejection, pending and
+terminal replay precedence, handled/unhandled/rejected/faulted delivery, foreground
+and delayed equivalence, concurrent writer exclusion, dependency variants, both
+retention modes, complete backup/restore, direct store injection, public adapter
+registration and resolution, backend capability boundaries, positive and negative
+composed profiles, and logical-scope isolation for equal portable identities/effects.
+
 Generate and verify deterministic artifacts with:
 
 ```sh

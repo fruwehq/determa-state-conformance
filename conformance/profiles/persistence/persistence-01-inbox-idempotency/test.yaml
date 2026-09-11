@@ -17,7 +17,7 @@ artifacts:
     - { file: release-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
 durable_host_vectors:
   - name: persistence_inbox_first_commit
-    covers: [persistence_inbox_first_commit]
+    covers: [persistence_inbox_first_commit, exact_persistence_revision_equation]
     operation: persistence_process_v2
     store_before: initial-store-v2.json
     store_after: committed-store-v2.json

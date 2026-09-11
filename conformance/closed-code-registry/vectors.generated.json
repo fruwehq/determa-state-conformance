@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "00400702564d69cd1243b230f1310feab0f5a890bade20763ffeabdc38b93f9b",
+  "registry_sha256": "3c48b20149d13e0d9f70864997dc50fb8be617e836a4c21319c04d47e02caa31",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -103,7 +103,10 @@
       "id": "execution_store_failure",
       "codes": [
         "injected_pre_commit_failure",
-        "response_lost_after_commit"
+        "invalid_store_scope",
+        "permanent_processing_failure",
+        "response_lost_after_commit",
+        "transient_processing_failure"
       ]
     },
     {

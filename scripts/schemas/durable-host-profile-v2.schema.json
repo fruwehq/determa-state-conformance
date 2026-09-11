@@ -81,15 +81,17 @@
         "checkpoint_create_v2",
         "checkpoint_admit_v2",
         "checkpoint_step_v2",
-        "checkpoint_replay_v2",
         "checkpoint_update_outbox_v2",
         "checkpoint_terminalize_outbox_v2",
         "checkpoint_compact_outbox_v2",
         "checkpoint_prune_v2",
         "checkpoint_tombstone_v2",
+        "checkpoint_register_adapter_v2",
         "checkpoint_resolve_adapter_v2",
         "checkpoint_validate_capabilities_v2",
         "checkpoint_scope_operation_v2",
+        "checkpoint_backup_restore_v2",
+        "checkpoint_inject_store_v2",
         "persistence_process_v2",
         "persistence_release_quarantine_v2"
       ]
@@ -114,7 +116,17 @@
         "mutation": { "enum": ["none", "atomic"] },
         "core_calls": { "type": "integer", "minimum": 0, "maximum": 1 },
         "broker_acknowledged": { "type": "boolean" }
-      }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "result": { "enum": ["rejected", "crashed", "quarantined"] } } },
+          "then": { "required": ["code"] }
+        },
+        {
+          "if": { "properties": { "result": { "enum": ["committed", "replayed", "released", "validated"] } } },
+          "then": { "not": { "required": ["code"] } }
+        }
+      ]
     },
     "vector": {
       "type": "object",
@@ -134,7 +146,9 @@
         "checkpoint_before": {
           "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
         },
-        "checkpoint_after": { "$ref": "#/$defs/jsonFile" },
+        "checkpoint_after": {
+          "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
+        },
         "store_before": { "$ref": "#/$defs/jsonFile" },
         "store_after": { "$ref": "#/$defs/jsonFile" },
         "call_log": { "$ref": "#/$defs/jsonFile" },

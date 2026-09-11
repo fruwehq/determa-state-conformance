@@ -160,5 +160,5 @@
     "aggregate_version": 1
   },
   "quarantine": null,
-  "broker_acknowledged": true
+  "broker_acknowledged": false
 }

@@ -24,7 +24,17 @@
           "mutation": { "enum": ["none", "atomic"] },
           "core_calls": { "type": "integer", "minimum": 0, "maximum": 1 },
           "broker_acknowledged": { "type": "boolean" }
-        }
+        },
+        "allOf": [
+          {
+            "if": { "properties": { "result": { "enum": ["rejected", "crashed", "quarantined"] } } },
+            "then": { "required": ["code"] }
+          },
+          {
+            "if": { "properties": { "result": { "enum": ["committed", "replayed", "released", "validated"] } } },
+            "then": { "not": { "required": ["code"] } }
+          }
+        ]
       }
     }
   }

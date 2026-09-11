@@ -62,6 +62,16 @@ python scripts/validate_conformance.py --spec-root ../determa-state-spec
 The supplied specification checkout must be the dependency revision under review; the
 workflow pins that revision by commit rather than following a mutable branch.
 
+Durable-host profile changes must also pass the deterministic profile generator:
+
+```sh
+python scripts/generate_execution_checkpoint_profile.py --check
+```
+
+The durable-host request schema is a closed operation-tagged union. The validator
+cross-binds request semantics to exact result and after-state artifacts, enforces exact
+revision equations, and rejects schema-valid goldens belonging to another request.
+
 ### Closed-code registry
 
 The registry assigns each closed set a stable category and records every exact portable
