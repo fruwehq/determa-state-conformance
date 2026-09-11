@@ -34,6 +34,8 @@ artifacts:
     - { file: native-emit-admitted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: native-internal-producer-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: native-internal-terminal-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: compact-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: compacted-legacy-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: tombstoned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
@@ -414,6 +416,27 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /dependency_prune
     expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: native-internal-checkpoint-v2.json }
+  - name: checkpoint_native_internal_producer_can_be_pruned
+    covers: [version2_native_internal_producer_pruned]
+    operation: checkpoint_prune_v2
+    checkpoint_before: native-internal-terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /native_internal_producer_prune
+    expect: { result: success, exact_result_file: native-internal-producer-pruned-checkpoint-v2.json }
+  - name: checkpoint_native_internal_terminal_pruning_uses_producer_identity
+    covers: [version2_native_internal_terminal_pruned]
+    operation: checkpoint_prune_v2
+    checkpoint_before: native-internal-terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /native_internal_terminal_prune
+    expect: { result: success, exact_result_file: native-internal-terminal-pruned-checkpoint-v2.json }
+  - name: checkpoint_legacy_origin_dependency_pruning_is_rejected
+    covers: [version2_legacy_origin_pruning_rejected]
+    operation: checkpoint_prune_v2
+    checkpoint_before: processed-upgraded-internal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /legacy_origin_dependency_prune
+    expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: processed-upgraded-internal-checkpoint-v2.json }
   - name: checkpoint_skipped_cutoff_is_rejected
     covers: [version2_invalid_pruning_cutoff_rejected]
     operation: checkpoint_prune_v2

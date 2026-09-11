@@ -343,6 +343,9 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "version2_counter_allocation",
         "version2_dependency_safe_pruning",
         "version2_dependency_pruning_rejected",
+        "version2_native_internal_producer_pruned",
+        "version2_native_internal_terminal_pruned",
+        "version2_legacy_origin_pruning_rejected",
         "version2_live_acceptance_pruning_rejected",
         "version2_terminal_pair_pruning_rejected",
         "version2_equal_pruning_cutoff",
@@ -2506,7 +2509,20 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
                         "checkpoint v2: terminal legacy internal producer mismatch"
                     )
         else:
-            validate_producer(event_id, None, terminal)
+            references = producer_references.get(event_id, [])
+            producer_was_attested_pruned = (
+                not references
+                and pruning_cutoff is not None
+                and canonical_decimal(
+                    pruning_cutoff, "checkpoint pruning cutoff"
+                )
+                < canonical_decimal(
+                    terminal["receipt_sequence"],
+                    "checkpoint v2 internal terminal receipt sequence",
+                )
+            )
+            if not producer_was_attested_pruned:
+                validate_producer(event_id, None, terminal)
     located = (
         mailbox_event_ids
         | set(terminal_receipts)
@@ -4475,7 +4491,34 @@ def validate_version2_vectors(
         derived_tombstones = list(projected["event_identity_tombstones"])
         for receipt in removed:
             if receipt["operation_kind"] == "event_terminal":
-                acceptance = acceptance_by_event[receipt["event_id"]]
+                acceptance = acceptance_by_event.get(receipt["event_id"])
+                if acceptance is not None:
+                    if (
+                        acceptance["acceptance_sequence"]
+                        != receipt["acceptance_sequence"]
+                    ):
+                        raise ValidationFailure(
+                            "bounded pruning terminal acceptance mismatch"
+                        )
+                else:
+                    producer_matches = [
+                        reference
+                        for producer in receipts
+                        for reference in producer.get(
+                            "emission_references", []
+                        )
+                        if reference.get("kind") == "internal_terminal"
+                        and reference.get("event_id")
+                        == receipt["event_id"]
+                        and reference.get("acceptance_sequence")
+                        == receipt["acceptance_sequence"]
+                        and reference.get("terminal_receipt_sequence")
+                        == receipt["receipt_sequence"]
+                    ]
+                    if len(producer_matches) != 1:
+                        raise ValidationFailure(
+                            "bounded pruning native terminal lacks exact producer"
+                        )
                 derived_tombstones.append(
                     {
                         "event_id": receipt["event_id"],
@@ -4483,7 +4526,7 @@ def validate_version2_vectors(
                         "request_digest_domain": (
                             "determa-inbox-envelope-digest-2"
                         ),
-                        "acceptance_sequence": acceptance[
+                        "acceptance_sequence": receipt[
                             "acceptance_sequence"
                         ],
                         "terminal_receipt_sequence": receipt[
@@ -6575,6 +6618,30 @@ def validate_version2_vectors(
                     "legacy internal producer sequence",
                 ) <= cutoff:
                     dependency_reasons.add("internal_producer")
+            for receipt in receipts:
+                if canonical_decimal(
+                    receipt["receipt_sequence"],
+                    "retained receipt sequence",
+                ) <= cutoff:
+                    continue
+                legacy_evidence = receipt.get("legacy_v1_delivery")
+                if legacy_evidence is None and receipt.get(
+                    "operation_kind"
+                ) == "legacy_v1_operation":
+                    legacy_evidence = receipt.get("legacy_receipt")
+                if not isinstance(legacy_evidence, dict):
+                    continue
+                origin = legacy_evidence.get("origin")
+                if (
+                    isinstance(origin, dict)
+                    and origin.get("kind") == "internal_emission"
+                    and canonical_decimal(
+                        origin["producing_receipt_sequence"],
+                        "retained legacy origin producer sequence",
+                    )
+                    <= cutoff
+                ):
+                    dependency_reasons.add("legacy_origin")
 
             dependency_invalid = bool(dependency_reasons)
             if expectation.get("code") == "invalid_execution_checkpoint":
@@ -6600,6 +6667,14 @@ def validate_version2_vectors(
                 ):
                     raise ValidationFailure(
                         f"{location}: dependency rejection has no retained producer"
+                    )
+                if (
+                    "version2_legacy_origin_pruning_rejected" in covers
+                    and "legacy_origin" not in dependency_reasons
+                ):
+                    raise ValidationFailure(
+                        f"{location}: legacy-origin pruning rejection lacks "
+                        "a retained dependency chain"
                     )
                 if (
                     "version2_live_acceptance_pruning_rejected" in covers
@@ -6975,6 +7050,41 @@ def validate_version2_vectors(
                 ]
             )
             probes[label] = {"compact-checkpoint-v2.json": compact_projection}
+        for field, value in (
+            ("acceptance_sequence", "999"),
+            ("request_digest", "sha256:" + "0" * 64),
+        ):
+            internal_projection = copy.deepcopy(
+                artifact(
+                    "native-internal-terminal-pruned-checkpoint-v2.json"
+                ).document
+            )
+            internal_event_id = next(
+                receipt["event_id"]
+                for receipt in artifact(
+                    "native-internal-terminal-checkpoint-v2.json"
+                ).document["operation_receipts"]
+                if receipt["receipt_sequence"] == "5"
+            )
+            next(
+                tombstone
+                for tombstone in internal_projection[
+                    "event_identity_tombstones"
+                ]
+                if tombstone["event_id"] == internal_event_id
+            )[field] = value
+            internal_projection.pop("execution_checkpoint_digest")
+            internal_projection["execution_checkpoint_digest"] = hash_value(
+                [
+                    "determa-execution-checkpoint-digest-2",
+                    internal_projection,
+                ]
+            )
+            probes[f"native internal pruning {field}"] = {
+                "native-internal-terminal-pruned-checkpoint-v2.json": (
+                    internal_projection
+                )
+            }
         unseen_checkpoint_conflict_inputs = copy.deepcopy(
             artifact("operation-inputs.json").document
         )

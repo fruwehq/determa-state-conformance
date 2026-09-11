@@ -2407,6 +2407,98 @@ def produce_checkpoint() -> dict[str, bytes]:
             ],
         }
 
+    def prune_checkpoint(
+        checkpoint: dict[str, Any], cutoff: int
+    ) -> dict[str, Any]:
+        projected = copy.deepcopy(checkpoint)
+        receipts = projected["operation_receipts"]
+        removed = [
+            receipt
+            for receipt in receipts
+            if receipt["receipt_sequence"] != "0"
+            and int(receipt["receipt_sequence"]) <= cutoff
+        ]
+        acceptance_by_event = {
+            receipt["event_id"]: receipt
+            for receipt in receipts
+            if receipt["operation_kind"] == "acceptance"
+        }
+        tombstones = list(projected["event_identity_tombstones"])
+        for receipt in removed:
+            if receipt["operation_kind"] == "event_terminal":
+                acceptance = acceptance_by_event.get(receipt["event_id"])
+                if acceptance is not None:
+                    assert (
+                        acceptance["acceptance_sequence"]
+                        == receipt["acceptance_sequence"]
+                    )
+                else:
+                    producer_references = [
+                        reference
+                        for producer in receipts
+                        for reference in producer.get("emission_references", [])
+                        if reference.get("kind") == "internal_terminal"
+                        and reference.get("event_id") == receipt["event_id"]
+                        and reference.get("acceptance_sequence")
+                        == receipt["acceptance_sequence"]
+                        and reference.get("terminal_receipt_sequence")
+                        == receipt["receipt_sequence"]
+                    ]
+                    assert len(producer_references) == 1
+                tombstones.append(
+                    {
+                        "event_id": receipt["event_id"],
+                        "request_digest": receipt["request_digest"],
+                        "request_digest_domain": (
+                            "determa-inbox-envelope-digest-2"
+                        ),
+                        "acceptance_sequence": receipt[
+                            "acceptance_sequence"
+                        ],
+                        "terminal_receipt_sequence": receipt[
+                            "receipt_sequence"
+                        ],
+                        "terminal_disposition": receipt["outcome"][
+                            "disposition"
+                        ],
+                    }
+                )
+            elif (
+                receipt["operation_kind"] == "legacy_v1_operation"
+                and receipt["legacy_receipt"].get("operation_kind")
+                == "delivery"
+            ):
+                legacy = receipt["legacy_receipt"]
+                tombstones.append(
+                    {
+                        "event_id": legacy["event_id"],
+                        "request_digest": legacy["request_digest"],
+                        "request_digest_domain": (
+                            "determa-inbox-envelope-digest-1"
+                        ),
+                        "acceptance_sequence": legacy[
+                            "accepted_delivery_sequence"
+                        ],
+                        "terminal_receipt_sequence": receipt[
+                            "receipt_sequence"
+                        ],
+                        "terminal_disposition": legacy["outcome"][
+                            "disposition"
+                        ],
+                    }
+                )
+        projected["operation_receipts"] = [
+            receipt for receipt in receipts if receipt not in removed
+        ]
+        projected["event_identity_tombstones"] = sorted(
+            tombstones, key=lambda item: int(item["terminal_receipt_sequence"])
+        )
+        projected["replay_retention"][
+            "pruned_through_receipt_sequence"
+        ] = str(cutoff)
+        projected["revision"] = str(int(checkpoint["revision"]) + 1)
+        return seal_checkpoint(projected)
+
     v1 = load(CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "internal-pending-checkpoint.json")
     upgraded = upgrade_checkpoint(v1)
     processed_upgraded_internal = process_upgraded_internal(upgraded)
@@ -2732,6 +2824,9 @@ def produce_checkpoint() -> dict[str, bytes]:
     })
     native_terminal["next_operation_receipt_sequence"] = str(int(native_terminal_sequence) + 1)
     native_terminal = seal_checkpoint(native_terminal)
+
+    native_internal_producer_pruned = prune_checkpoint(native_terminal, 4)
+    native_internal_terminal_pruned = prune_checkpoint(native_terminal, 5)
 
     compact = copy.deepcopy(terminal)
     acceptance = compact["operation_receipts"].pop(-2)
@@ -3474,6 +3569,18 @@ def produce_checkpoint() -> dict[str, bytes]:
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": native_host_terminal_receipt_sequence,
         }, native_internal),
+        "native_internal_producer_prune": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": "4",
+        }, native_terminal),
+        "native_internal_terminal_prune": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": "5",
+        }, native_terminal),
+        "legacy_origin_dependency_prune": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": "2",
+        }, processed_upgraded_internal),
         "invalid_high_prune": with_checkpoint_cas({
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": "9",
@@ -3539,6 +3646,12 @@ def produce_checkpoint() -> dict[str, bytes]:
         "native-emit-admitted-checkpoint-v2.json": canonical(native_emit_admitted),
         "native-internal-checkpoint-v2.json": canonical(native_internal),
         "native-internal-terminal-checkpoint-v2.json": canonical(native_terminal),
+        "native-internal-producer-pruned-checkpoint-v2.json": canonical(
+            native_internal_producer_pruned
+        ),
+        "native-internal-terminal-pruned-checkpoint-v2.json": canonical(
+            native_internal_terminal_pruned
+        ),
         "compact-checkpoint-v2.json": canonical(compact),
         "compacted-legacy-checkpoint-v2.json": canonical(compacted_legacy),
         "tombstoned-checkpoint-v2.json": canonical(tombstoned),
