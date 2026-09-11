@@ -267,7 +267,7 @@
     },
     "malformed": {
       "operation": "checkpoint_admit_v2",
-      "request_id": "malformed",
+      "request_id": "malformed-placeholder",
       "scope": {
         "scope_id": "primary",
         "ownership_binding": "owner:primary",
@@ -279,7 +279,38 @@
         "revision": "2",
         "digest": "sha256:5a5e129eb6659e694af30e3dcb94b8d3f54671c3c39b37d4e4793c4dc11f774a"
       },
-      "envelopes": []
+      "envelopes": [
+        {
+          "delivery_mode": "unsupported",
+          "envelope": {
+            "event": "increment",
+            "event_id": "malformed-placeholder",
+            "cause_id": "malformed-placeholder",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "checkpoint-lifecycle-root",
+                "root_runtime_id": "sha256:5b5dc7bb5fffe1c44b07b273c3ec57cb86628cec6326a75d7fe394cab5dee913"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:f4bddc1bfb0e58636ac5248c22c67de95fd47818362b55e55e83c9db5baa28cb"
+        }
+      ]
     },
     "wrong_root": {
       "operation": "checkpoint_admit_v2",

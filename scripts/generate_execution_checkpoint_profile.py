@@ -555,15 +555,18 @@ def scope_request(
         "portable_identity": portable_identity,
         "effect_id": effect_id,
         "operation_context": "outbox",
-        "store_records": [
-            {
-                "scope_id": selected_scope,
-                "ownership_binding": f"owner:{selected_scope}",
-                "portable_identity": portable_identity,
-                "effect_id": effect_id,
-            }
-            for selected_scope in ("scope-a", "scope-b")
-        ],
+        "store_records": (
+            [
+                {
+                    "scope_id": scope_id,
+                    "ownership_binding": f"owner:{scope_id}",
+                    "portable_identity": portable_identity,
+                    "effect_id": effect_id,
+                }
+            ]
+            if authorization == "authorized"
+            else []
+        ),
     }
 
 
@@ -1031,13 +1034,11 @@ def generate_delivery() -> dict[Path, bytes]:
                 accepted,
                 "stale-process",
             ),
-            "malformed": {
-                "operation": "checkpoint_admit_v2",
-                "request_id": "malformed",
-                "scope": scope(),
-                "expected_checkpoint": expected_checkpoint(processed),
-                "envelopes": [],
-            },
+            "malformed": admission_request(
+                processed,
+                "malformed-placeholder",
+                delivery_mode="unsupported",
+            ),
             "wrong_root": admission_batch_request(
                 processed,
                 "wrong-root",
@@ -1661,6 +1662,22 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
         handled,
         "complete-increment",
         payload={"amount": 1},
+        expected_from=created,
+    )
+    global_batch_precedence = admission_batch_request(
+        created,
+        "global-batch-precedence",
+        [
+            {
+                "event_id": "invalid-payload-before-mode",
+                "event": "work_completed",
+                "payload": {"unexpected": "field"},
+            },
+            {
+                "event_id": "later-invalid-mode",
+                "delivery_mode": "unsupported",
+            },
+        ],
     )
     creation_rejection = creation_request(case, created, "invalid-create")
     creation_rejection["bindings"] = {
@@ -1732,12 +1749,10 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
             ],
         ),
         "malformed_batch": {
-            "operation": "checkpoint_admit_v2",
+            **copy.deepcopy(global_batch_precedence),
             "request_id": "malformed-batch",
-            "scope": scope(),
-            "expected_checkpoint": expected_checkpoint(created),
-            "envelopes": [],
         },
+        "global_batch_precedence": global_batch_precedence,
         "duplicate_event_id_batch": admission_batch_request(
             handled,
             "duplicate-event-id-batch",

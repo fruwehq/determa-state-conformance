@@ -71,6 +71,10 @@ python scripts/generate_execution_checkpoint_profile.py --check
 The durable-host request schema is a closed operation-tagged union. The validator
 cross-binds request semantics to exact result and after-state artifacts, enforces exact
 revision equations, and rejects schema-valid goldens belonging to another request.
+Malformed batch members are represented by a driver-level pre-acceptance probe while
+the executable request remains a valid ordered batch. Scoped operations receive exactly
+the selected authorized record, or no records when scope authorization fails; equality
+across scopes is checked relationally between separate vectors.
 
 ### Closed-code registry
 

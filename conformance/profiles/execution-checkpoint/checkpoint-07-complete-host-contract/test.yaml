@@ -127,13 +127,22 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/committed }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: malformed_batch
-    covers: [ordered_batch_malformed_failure]
+    covers: [ordered_batch_malformed_failure, malformed_probe_precedes_normalized_batch]
     operation: checkpoint_admit_v2
     checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: created-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/malformed_batch }
     result: { file: results-v2.json, pointer: /results/malformed_delivery }
+    pre_acceptance_probe: { malformed_member_indices: [0] }
     expect: { result: rejected, code: malformed_delivery, mutation: none, core_calls: 0 }
+  - name: global_batch_precedence
+    covers: [batch_global_validation_precedence]
+    operation: checkpoint_admit_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/global_batch_precedence }
+    result: { file: results-v2.json, pointer: /results/invalid_mode }
+    expect: { result: rejected, code: invalid_delivery_mode, mutation: none, core_calls: 0 }
   - name: duplicate_event_id_batch
     covers: [duplicate_event_id_in_batch, duplicate_batch_precedes_replay_conflict]
     operation: checkpoint_admit_v2
@@ -199,7 +208,7 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/event_conflict }
     expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
   - name: committed_replay_read_only
-    covers: [committed_replay_precedes_stale_writer]
+    covers: [committed_replay_precedes_stale_writer, exact_committed_replay_identity_precedes_cas]
     operation: checkpoint_admit_v2
     checkpoint_before: handled-checkpoint-v2.json
     checkpoint_after: handled-checkpoint-v2.json
@@ -423,7 +432,7 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/validated }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: equal_identity_scope_a
-    covers: [equal_identity_separate_scope_a, equal_effect_separate_scope_a]
+    covers: [equal_identity_separate_scope_a, equal_effect_separate_scope_a, selected_scope_records_only]
     operation: checkpoint_scope_operation_v2
     checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: created-checkpoint-v2.json
@@ -463,7 +472,7 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/invalid_scope }
     expect: { result: rejected, code: invalid_store_scope, mutation: none, core_calls: 0 }
   - name: unauthorized_scope
-    covers: [unauthorized_scope_rejected]
+    covers: [unauthorized_scope_rejected, unauthorized_scope_records_absent]
     operation: checkpoint_scope_operation_v2
     checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: created-checkpoint-v2.json

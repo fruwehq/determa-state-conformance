@@ -82,6 +82,7 @@ durable_host_vectors:
     checkpoint_after: processed-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/malformed }
     result: { file: results-v2.json, pointer: /results/malformed }
+    pre_acceptance_probe: { malformed_member_indices: [0] }
     expect: { result: rejected, code: malformed_delivery, mutation: none, core_calls: 0 }
   - name: checkpoint_wrong_root_admission
     covers: [admission_wrong_root_precedence]

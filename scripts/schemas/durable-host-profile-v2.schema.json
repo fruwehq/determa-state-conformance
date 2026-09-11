@@ -172,6 +172,19 @@
             "after_commit_before_acknowledgement"
           ]
         },
+        "pre_acceptance_probe": {
+          "type": "object",
+          "required": ["malformed_member_indices"],
+          "additionalProperties": false,
+          "properties": {
+            "malformed_member_indices": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": { "type": "integer", "minimum": 0 }
+            }
+          }
+        },
         "expect": { "$ref": "#/$defs/expectation" }
       },
       "allOf": [
@@ -182,6 +195,10 @@
         {
           "if": { "properties": { "operation": { "pattern": "^persistence_" } } },
           "then": { "required": ["store_before", "store_after", "call_log"] }
+        },
+        {
+          "if": { "required": ["pre_acceptance_probe"] },
+          "then": { "properties": { "operation": { "const": "checkpoint_admit_v2" } } }
         }
       ]
     }

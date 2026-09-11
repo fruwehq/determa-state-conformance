@@ -298,20 +298,7 @@
       "portable_identity": "checkpoint-retention-root",
       "effect_id": "sha256:3af974ef3b5a0cb5f8b20fd93e49c774da6800e95ca58847fb0e2f40f97772f2",
       "operation_context": "outbox",
-      "store_records": [
-        {
-          "scope_id": "scope-a",
-          "ownership_binding": "owner:scope-a",
-          "portable_identity": "checkpoint-retention-root",
-          "effect_id": "sha256:3af974ef3b5a0cb5f8b20fd93e49c774da6800e95ca58847fb0e2f40f97772f2"
-        },
-        {
-          "scope_id": "scope-b",
-          "ownership_binding": "owner:scope-b",
-          "portable_identity": "checkpoint-retention-root",
-          "effect_id": "sha256:3af974ef3b5a0cb5f8b20fd93e49c774da6800e95ca58847fb0e2f40f97772f2"
-        }
-      ]
+      "store_records": []
     }
   }
 }

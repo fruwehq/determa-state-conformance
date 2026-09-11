@@ -209,10 +209,12 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "bounded_terminal_retention",
         "bounded_to_permanent_rejected",
         "bounded_tombstone_retention",
+        "batch_global_validation_precedence",
         "broker_profile_negative",
         "broker_profile_positive",
         "bundled_public_registration",
         "committed_replay_precedes_stale_writer",
+        "exact_committed_replay_identity_precedes_cas",
         "compact_outbox_profile_negative",
         "compact_outbox_profile_positive",
         "concurrent_loser_revision_conflict",
@@ -265,6 +267,7 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "ordered_batch_single_revision",
         "ordered_batch_caller_order",
         "ordered_batch_malformed_failure",
+        "malformed_probe_precedes_normalized_batch",
         "all_replay_batch_read_only",
         "mixed_replay_new_batch",
         "checkpoint_request_exact_before_identity",
@@ -274,6 +277,7 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "adapter_identifier_underscore_rejected",
         "adapter_scheme_underscore_rejected",
         "cross_scope_store_record_isolation",
+        "selected_scope_records_only",
         "memory_capability_boundary",
         "mismatched_scope_rejected",
         "missing_scope_rejected",
@@ -301,6 +305,7 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "third_party_public_registration",
         "tombstoned_ingress_rejected",
         "unauthorized_scope_rejected",
+        "unauthorized_scope_records_absent",
         "unhandled_delivery",
         "unknown_adapter",
         "outbox_ambiguous",
@@ -5317,32 +5322,95 @@ def validate_request_checkpoint_binding(
     if expected is None:
         return
     del artifacts
-    if expected != checkpoint_identity(checkpoint_before):
+    if (
+        expected != checkpoint_identity(checkpoint_before)
+        and not is_exact_committed_admission_replay(
+            operation_input, checkpoint_before
+        )
+    ):
         raise ValidationFailure(
             f"{location}: request checkpoint identity differs from checkpoint_before"
         )
+
+
+def retained_admission_digests(
+    checkpoint: dict[str, Any],
+) -> dict[str, set[str]]:
+    retained: dict[str, set[str]] = {}
+    for receipt in checkpoint["operation_receipts"]:
+        if "event_id" in receipt:
+            retained.setdefault(receipt["event_id"], set()).add(
+                receipt["request_digest"]
+            )
+    for tombstone in checkpoint["event_identity_tombstones"]:
+        retained.setdefault(tombstone["event_id"], set()).add(
+            tombstone["request_digest"]
+        )
+    for entry in checkpoint_mailbox_entries(checkpoint):
+        retained.setdefault(entry["envelope"]["event_id"], set()).add(
+            entry["envelope_digest"]
+        )
+    return retained
+
+
+def is_exact_committed_admission_replay(
+    operation_input: dict[str, Any], checkpoint: dict[str, Any]
+) -> bool:
+    if operation_input.get("operation") != "checkpoint_admit_v2":
+        return False
+    deliveries = operation_input.get("envelopes")
+    if not isinstance(deliveries, list) or not deliveries:
+        return False
+    event_ids = [delivery["envelope"]["event_id"] for delivery in deliveries]
+    if len(event_ids) != len(set(event_ids)):
+        return False
+    retained = retained_admission_digests(checkpoint)
+    for delivery in deliveries:
+        envelope = delivery["envelope"]
+        target_root = next(iter(envelope["target"].values()))["root_instance_id"]
+        canonical_digest = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                checkpoint["root_instance_id"],
+                delivery["delivery_mode"],
+                envelope,
+            ]
+        )
+        if (
+            target_root != checkpoint["root_instance_id"]
+            or delivery["envelope_digest"] != canonical_digest
+            or canonical_digest not in retained.get(envelope["event_id"], set())
+        ):
+            return False
+    return True
 
 
 def durable_admission_contract_error(
     delivery: dict[str, Any],
     checkpoint: dict[str, Any],
     bundle_path: Path,
+    category: str,
 ) -> str | None:
     mode = delivery["delivery_mode"]
     envelope = delivery["envelope"]
+    if category == "mode":
+        return None if mode in {"input", "internal"} else "invalid_delivery_mode"
     if mode not in {"input", "internal"}:
-        return "invalid_delivery_mode"
-    if mode == "input" and (
+        return None
+    if category == "source" and mode == "input" and (
         envelope["source"] != {"host": True}
         or envelope["cause_id"] != envelope["event_id"]
     ):
         return "invalid_delivery_source"
-    if mode == "internal" and "host" in envelope["source"]:
+    if category == "source" and mode == "internal" and "host" in envelope["source"]:
         return "invalid_delivery_source"
+    if category == "source":
+        return None
 
     aggregate = checkpoint_aggregate(checkpoint)
     if aggregate is None:
-        return "tombstoned_root"
+        return None
     runtime = next(
         (
             item
@@ -5351,14 +5419,18 @@ def durable_admission_contract_error(
         ),
         None,
     )
-    if runtime is None:
-        return "invalid_instance_target"
-    if runtime["relation"]["kind"] == "component" and runtime["status"] != "running":
-        return "inactive_component_target"
-    if runtime["status"] != "running":
-        return "invalid_instance_target"
-    if runtime["relation"]["kind"] == "component" and mode == "input":
-        return "invalid_instance_target"
+    if category == "target":
+        if runtime is None:
+            return "invalid_instance_target"
+        if runtime["relation"]["kind"] == "component" and runtime["status"] != "running":
+            return "inactive_component_target"
+        if runtime["status"] != "running":
+            return "invalid_instance_target"
+        if runtime["relation"]["kind"] == "component" and mode == "input":
+            return "invalid_instance_target"
+        return None
+    if runtime is None or runtime["status"] != "running":
+        return None
 
     bundle = normalized_bundle_value(bundle_path)
     machine_identity = runtime["current_definition"]["machine"]
@@ -5372,41 +5444,49 @@ def durable_admission_contract_error(
         None,
     )
     if machine is None:
-        return "invalid_instance_target"
+        return "invalid_instance_target" if category == "event" else None
     declaration = bundle.get("events", {}).get(envelope["event"])
     if declaration is None:
         declaration = machine.get("events", {}).get(envelope["event"])
+    if category == "event":
+        if declaration is None:
+            return "invalid_event"
+        required_direction = "input" if mode == "input" else "internal"
+        if declaration.get("direction", "internal") != required_direction:
+            return "invalid_event"
+        return None
     if declaration is None:
-        return "invalid_event"
-    required_direction = "input" if mode == "input" else "internal"
-    if declaration.get("direction", "internal") != required_direction:
-        return "invalid_event"
+        return None
 
-    payload = decode_typed_value(envelope["payload"])
-    if not isinstance(payload, dict):
-        return "invalid_payload"
-    fields = declaration.get("payload", {})
-    if set(payload) - set(fields):
-        return "invalid_payload"
-
-    def value_matches_type(value: Any, expected_type: str) -> bool:
-        return {
-            "string": isinstance(value, str),
-            "int": isinstance(value, int) and not isinstance(value, bool),
-            "float": isinstance(value, (int, float)) and not isinstance(value, bool),
-            "bool": isinstance(value, bool),
-            "map": isinstance(value, dict),
-            "list": isinstance(value, list),
-        }[expected_type]
-
-    for name, field in fields.items():
-        if field.get("required", False) and name not in payload:
+    if category == "payload":
+        payload = decode_typed_value(envelope["payload"])
+        if not isinstance(payload, dict):
             return "invalid_payload"
-        if name in payload and not value_matches_type(payload[name], field["type"]):
+        fields = declaration.get("payload", {})
+        if set(payload) - set(fields):
             return "invalid_payload"
 
-    correlates_to = declaration.get("correlates_to")
-    if correlates_to is not None:
+        def value_matches_type(value: Any, expected_type: str) -> bool:
+            return {
+                "string": isinstance(value, str),
+                "int": isinstance(value, int) and not isinstance(value, bool),
+                "float": isinstance(value, (int, float)) and not isinstance(value, bool),
+                "bool": isinstance(value, bool),
+                "map": isinstance(value, dict),
+                "list": isinstance(value, list),
+            }[expected_type]
+
+        for name, field in fields.items():
+            if field.get("required", False) and name not in payload:
+                return "invalid_payload"
+            if name in payload and not value_matches_type(payload[name], field["type"]):
+                return "invalid_payload"
+        return None
+
+    if category == "correlation":
+        correlates_to = declaration.get("correlates_to")
+        if correlates_to is None:
+            return None
         correlation_id = envelope.get("correlation_id")
         correlated_effects = {
             record["intent"]["effect_id"]
@@ -5417,9 +5497,14 @@ def durable_admission_contract_error(
             for record in checkpoint["terminal_outbox_records"]
             if record["intent"]["event"] == correlates_to
         }
-        if not isinstance(correlation_id, str) or correlation_id not in correlated_effects:
-            return "invalid_correlation"
+        return (
+            None
+            if isinstance(correlation_id, str) and correlation_id in correlated_effects
+            else "invalid_correlation"
+        )
 
+    if category != "digest":
+        raise AssertionError(f"unknown admission validation category: {category}")
     expected_digest = hash_value(
         [
             "determa-inbox-envelope-digest-2",
@@ -5460,6 +5545,7 @@ def validate_checkpoint_derivation(
     checkpoint_after: dict[str, Any],
     location: str,
     bundle_path: Path,
+    pre_acceptance_probe: dict[str, Any] | None = None,
 ) -> None:
     operation = operation_input["operation"]
     mutates = operation_result["mutation"] == "atomic"
@@ -5496,8 +5582,17 @@ def validate_checkpoint_derivation(
         return
     if operation == "checkpoint_admit_v2":
         deliveries = operation_input["envelopes"]
+        malformed_indices = (
+            pre_acceptance_probe.get("malformed_member_indices", [])
+            if pre_acceptance_probe is not None
+            else []
+        )
+        if any(index >= len(deliveries) for index in malformed_indices):
+            raise ValidationFailure(
+                f"{location}: malformed member probe index is outside the ordered batch"
+            )
         expected_code = None
-        if not deliveries:
+        if malformed_indices:
             expected_code = "malformed_delivery"
         if expected_code is None:
             roots = []
@@ -5510,20 +5605,7 @@ def validate_checkpoint_derivation(
         if expected_code is None and len(event_ids) != len(set(event_ids)):
             expected_code = "duplicate_event_id_in_batch"
 
-        retained_digests: dict[str, set[str]] = {}
-        for receipt in checkpoint_before["operation_receipts"]:
-            if "event_id" in receipt:
-                retained_digests.setdefault(receipt["event_id"], set()).add(
-                    receipt["request_digest"]
-                )
-        for tombstone in checkpoint_before["event_identity_tombstones"]:
-            retained_digests.setdefault(tombstone["event_id"], set()).add(
-                tombstone["request_digest"]
-            )
-        for entry in checkpoint_mailbox_entries(checkpoint_before):
-            retained_digests.setdefault(entry["envelope"]["event_id"], set()).add(
-                entry["envelope_digest"]
-            )
+        retained_digests = retained_admission_digests(checkpoint_before)
         replayed = []
         if expected_code is None:
             for delivery in deliveries:
@@ -5560,10 +5642,21 @@ def validate_checkpoint_derivation(
                 if root["status"] in {"completed", "faulted"}:
                     expected_code = "terminal_root"
         if expected_code is None:
-            for delivery in new_deliveries:
-                expected_code = durable_admission_contract_error(
-                    delivery, checkpoint_before, bundle_path
-                )
+            for category in (
+                "mode",
+                "source",
+                "target",
+                "event",
+                "payload",
+                "correlation",
+                "digest",
+            ):
+                for delivery in new_deliveries:
+                    expected_code = durable_admission_contract_error(
+                        delivery, checkpoint_before, bundle_path, category
+                    )
+                    if expected_code is not None:
+                        break
                 if expected_code is not None:
                     break
 
@@ -5817,39 +5910,25 @@ def validate_checkpoint_derivation(
         if operation_result.get("code") != expected_code:
             raise ValidationFailure(f"{location}: composed profile result is not request-derived")
     elif operation == "checkpoint_scope_operation_v2":
-        expected_code = (
-            None
-            if operation_input["scope"]["authorization"] == "authorized"
-            else "invalid_store_scope"
-        )
+        authorized = operation_input["scope"]["authorization"] == "authorized"
+        expected_code = None if authorized else "invalid_store_scope"
         if operation_result.get("code") != expected_code:
             raise ValidationFailure(f"{location}: scope result is not request-derived")
         records = operation_input["store_records"]
-        record_keys = {
-            (record["scope_id"], record["ownership_binding"]) for record in records
+        expected_record = {
+            "scope_id": operation_input["scope"]["scope_id"],
+            "ownership_binding": operation_input["scope"]["ownership_binding"],
+            "portable_identity": operation_input["portable_identity"],
+            "effect_id": operation_input["effect_id"],
         }
-        matching = [
-            record
-            for record in records
-            if record["scope_id"] == operation_input["scope"]["scope_id"]
-            and record["ownership_binding"]
-            == operation_input["scope"]["ownership_binding"]
-        ]
         if (
-            len(record_keys) != len(records)
-            or any(
-                record["portable_identity"] != operation_input["portable_identity"]
-                or record["effect_id"] != operation_input["effect_id"]
-                for record in records
-            )
-            or operation_input["portable_identity"]
-            != checkpoint_before["root_instance_id"]
-            or (
-                operation_input["scope"]["authorization"] == "authorized"
-                and len(matching) != 1
-            )
+            operation_input["portable_identity"] != checkpoint_before["root_instance_id"]
+            or (authorized and records != [expected_record])
+            or (not authorized and records)
         ):
-            raise ValidationFailure(f"{location}: scoped store records are not isolated")
+            raise ValidationFailure(
+                f"{location}: request exposes records outside the selected authorized scope"
+            )
     elif operation == "checkpoint_backup_restore_v2":
         complete = bool(operation_input["checkpoint_digests"]) and (
             checkpoint_before["root_record"]["status"] == "tombstone"
@@ -5948,26 +6027,14 @@ def validate_cross_scope_pair(
         raise ValidationFailure(
             f"{location}: authorized scopes do not share the same portable identities"
         )
-    expected_records = {
-        (
-            operation["scope"]["scope_id"],
-            operation["scope"]["ownership_binding"],
-            operation["portable_identity"],
-            operation["effect_id"],
-        )
-        for operation in operations
-    }
     for operation in operations:
-        actual_records = {
-            (
-                record["scope_id"],
-                record["ownership_binding"],
-                record["portable_identity"],
-                record["effect_id"],
-            )
-            for record in operation["store_records"]
+        expected_record = {
+            "scope_id": operation["scope"]["scope_id"],
+            "ownership_binding": operation["scope"]["ownership_binding"],
+            "portable_identity": operation["portable_identity"],
+            "effect_id": operation["effect_id"],
         }
-        if actual_records != expected_records:
+        if operation["store_records"] != [expected_record]:
             raise ValidationFailure(
                 f"{location}: cross-scope store records are not relationally isolated"
             )
@@ -6070,6 +6137,7 @@ def validate_durable_host_vectors(
                 checkpoint_after,
                 location,
                 case / "machine.yaml",
+                vector.get("pre_acceptance_probe"),
             )
         elif vector["operation"] == "checkpoint_create_v2":
             if (
