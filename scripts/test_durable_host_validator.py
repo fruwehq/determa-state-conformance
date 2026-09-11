@@ -132,6 +132,60 @@ class DurableHostValidatorTests(unittest.TestCase):
             created,
         )
 
+    def test_stale_writer_requires_explicit_current_store_checkpoint(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            test = load_fixture_document(mutated_case / "test.yaml")
+            vector = next(
+                item
+                for item in test["durable_host_vectors"]
+                if item["name"] == "checkpoint_stale_writer"
+            )
+            del vector["stored_checkpoint_before"]
+            with self.assertRaisesRegex(
+                ValidationFailure, "must be declared together"
+            ):
+                validate_durable_host_vectors(
+                    mutated_case,
+                    test,
+                    set(mutated_case.glob("*.json")),
+                    self.input_validator,
+                )
+
+    def test_stale_writer_store_identity_is_request_derived(self) -> None:
+        self._assert_complete_case_mutation_fails(
+            lambda requests: requests["concurrent_loser"][
+                "writer_checkpoint_context"
+            ].update(
+                stored_checkpoint=copy.deepcopy(
+                    requests["concurrent_loser"]["writer_checkpoint_context"][
+                        "presented_checkpoint"
+                    ]
+                )
+            ),
+            "writer checkpoint context does not match",
+        )
+
+    def test_stale_tombstone_names_explicit_presented_and_stored_states(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        test = load_fixture_document(case / "test.yaml")
+        vector = next(
+            item
+            for item in test["durable_host_vectors"]
+            if item["name"] == "stale_tombstone_rejection"
+        )
+        request = load(case / "inputs-v2.json")["requests"]["stale_tombstone"]
+        self.assertEqual(vector["checkpoint_before"], "handled-checkpoint-v2.json")
+        self.assertEqual(
+            vector["stored_checkpoint_before"], "bounded-checkpoint-v2.json"
+        )
+        self.assertNotEqual(
+            request["writer_checkpoint_context"]["presented_checkpoint"],
+            request["writer_checkpoint_context"]["stored_checkpoint"],
+        )
+
     def test_batch_precedence_is_global_across_members(self) -> None:
         self._assert_complete_case_mutation_fails(
             lambda requests: requests["global_batch_precedence"]["envelopes"][1].update(

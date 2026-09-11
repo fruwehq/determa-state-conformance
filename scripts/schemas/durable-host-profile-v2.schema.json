@@ -222,6 +222,7 @@
           "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
         },
         "historical_checkpoint": { "$ref": "#/$defs/jsonFile" },
+        "stored_checkpoint_before": { "$ref": "#/$defs/jsonFile" },
         "store_before": { "$ref": "#/$defs/jsonFile" },
         "store_after": { "$ref": "#/$defs/jsonFile" },
         "call_log": { "$ref": "#/$defs/jsonFile" },

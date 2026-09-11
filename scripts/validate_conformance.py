@@ -6652,6 +6652,7 @@ def validate_durable_host_vectors(
             )
 
         before_name = vector.get("checkpoint_before")
+        stored_before_name = vector.get("stored_checkpoint_before")
         after_name = vector.get("checkpoint_after")
         if after_name is not None:
             checkpoint_after = require_kind(after_name, "execution_checkpoint_v2", location)
@@ -6661,6 +6662,56 @@ def validate_durable_host_vectors(
                     raise ValidationFailure(f"{location}: creation must commit revision zero")
             else:
                 checkpoint_before = require_kind(before_name, "execution_checkpoint_v2", location)
+                stored_checkpoint_before = None
+                writer_context = operation_input.get("writer_checkpoint_context")
+                if (stored_before_name is None) != (writer_context is None):
+                    raise ValidationFailure(
+                        f"{location}: stored checkpoint and writer context must be "
+                        "declared together"
+                    )
+                if stored_before_name is not None:
+                    stored_checkpoint_before = require_kind(
+                        stored_before_name, "execution_checkpoint_v2", location
+                    )
+                    validate_execution_checkpoint_v2_semantics(
+                        stored_checkpoint_before
+                    )
+                    if (
+                        writer_context["presented_checkpoint"]
+                        != checkpoint_identity(checkpoint_before)
+                        or writer_context["stored_checkpoint"]
+                        != checkpoint_identity(stored_checkpoint_before)
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: writer checkpoint context does not match "
+                            "the explicit checkpoints"
+                        )
+                    if (
+                        checkpoint_before["root_instance_id"]
+                        != stored_checkpoint_before["root_instance_id"]
+                        or int(checkpoint_before["revision"])
+                        >= int(stored_checkpoint_before["revision"])
+                        or checkpoint_before["execution_checkpoint_digest"]
+                        == stored_checkpoint_before["execution_checkpoint_digest"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: writer context does not describe a stale view"
+                        )
+                    if checkpoint_after != stored_checkpoint_before:
+                        raise ValidationFailure(
+                            f"{location}: stale writer changed the committed checkpoint"
+                        )
+                    expected_stale_result = {
+                        "result": "rejected",
+                        "mutation": "none",
+                        "core_calls": 0,
+                        "broker_acknowledged": False,
+                        "code": "checkpoint_revision_conflict",
+                    }
+                    if operation_result != expected_stale_result:
+                        raise ValidationFailure(
+                            f"{location}: stale writer result is not input-derived"
+                        )
                 historical_checkpoint = None
                 if "historical_checkpoint" in vector:
                     historical_checkpoint = require_kind(
@@ -6696,10 +6747,8 @@ def validate_durable_host_vectors(
                         )
                         direct_conflict = (
                             historical_checkpoint is None
-                            and checkpoint_before["root_instance_id"]
-                            == checkpoint_after["root_instance_id"]
-                            and int(checkpoint_after["revision"])
-                            > int(checkpoint_before["revision"])
+                            and stored_checkpoint_before is not None
+                            and checkpoint_after == stored_checkpoint_before
                         )
                         if not (historical_conflict or direct_conflict):
                             raise ValidationFailure(

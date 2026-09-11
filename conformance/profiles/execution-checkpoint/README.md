@@ -38,6 +38,14 @@ mode, and dependencies; adapter registration or configuration; composed capabili
 or the complete persistence transaction input. There is no generic parameter map and
 replay repeats the original operation request.
 
+Stale and concurrent-writer requests carry a closed `writer_checkpoint_context`
+containing both the writer-presented checkpoint identity and the currently stored
+checkpoint identity. Their vectors name the complete presented artifact as
+`checkpoint_before` and the complete committed artifact as
+`stored_checkpoint_before`; `checkpoint_after` is the unchanged committed artifact.
+Runners therefore determine compare-and-swap failure from explicit inputs rather than
+from a vector name, coverage label, expected code, or post-operation golden.
+
 The repository validator derives operation-specific invariants from those requests. It
 requires every request checkpoint identity to equal its vector's actual
 `checkpoint_before` and binds canonical envelope digests, ordered allocation, targets,

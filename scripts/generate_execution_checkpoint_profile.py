@@ -72,6 +72,15 @@ def expected_checkpoint(checkpoint: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def writer_checkpoint_context(
+    presented_checkpoint: dict[str, Any], stored_checkpoint: dict[str, Any]
+) -> dict[str, Any]:
+    return {
+        "presented_checkpoint": expected_checkpoint(presented_checkpoint),
+        "stored_checkpoint": expected_checkpoint(stored_checkpoint),
+    }
+
+
 def aggregate_of(checkpoint: dict[str, Any]) -> dict[str, Any]:
     return checkpoint["root_record"]["aggregate_state"]
 
@@ -1155,6 +1164,10 @@ def generate_delivery() -> dict[Path, bytes]:
     created = create_checkpoint(case, "checkpoint-lifecycle-root", "checkpoint-lifecycle-create")
     accepted = admit(created, "increment", "delivery-increment", {"amount": 2})
     processed = process(accepted)
+    stale_process = processing_request(accepted, "stale-process")
+    stale_process["writer_checkpoint_context"] = writer_checkpoint_context(
+        accepted, processed
+    )
     inputs = request_document(
         {
             "create": creation_request(case, created, "create"),
@@ -1178,10 +1191,7 @@ def generate_delivery() -> dict[Path, bytes]:
             ),
             "process": processing_request(accepted, "process-delivery"),
             "process_crash": processing_request(accepted, "process-crash"),
-            "stale_process": processing_request(
-                accepted,
-                "stale-process",
-            ),
+            "stale_process": stale_process,
             "wrong_root": admission_batch_request(
                 processed,
                 "wrong-root",
@@ -2347,6 +2357,13 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
         created,
         "concurrent-loser",
     )
+    concurrent_loser["writer_checkpoint_context"] = writer_checkpoint_context(
+        created, accepted
+    )
+    stale_tombstone = tombstone_request(handled, "stale-tombstone")
+    stale_tombstone["writer_checkpoint_context"] = writer_checkpoint_context(
+        handled, bounded
+    )
     tombstoned_ingress = admission_request(
         bounded_tombstone,
         "after-tombstone",
@@ -2474,10 +2491,7 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
         ),
         "dependency_closed": prune_request(handled, "dependency-closed", "2", "bounded"),
         "bounded_to_permanent": prune_request(bounded, "bounded-to-permanent", "2", "permanent"),
-        "stale_tombstone": tombstone_request(
-            handled,
-            "stale-tombstone",
-        ),
+        "stale_tombstone": stale_tombstone,
         "tombstoned_ingress": tombstoned_ingress,
         "tombstoned_replay": {
             **admission_request(
