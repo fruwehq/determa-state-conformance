@@ -81,6 +81,10 @@
           "pattern": "^(?:/(?:[^~/]|~[01])*)*$"
         },
         "descriptor_file": { "$ref": "#/$defs/jsonFile" },
+        "descriptor_files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonFile" }
+        },
         "expect": { "oneOf": [{ "$ref": "#/$defs/success" }, { "$ref": "#/$defs/failure" }] }
       }
     }

@@ -3,6 +3,7 @@ static:
   documents:
     - { file: machine.yaml, valid: true }
     - { file: target-compatible.yaml, valid: true }
+    - { file: target-compatible-second.yaml, valid: true }
     - { file: target-removed-event.yaml, valid: true }
     - { file: target-payload-incompatible.yaml, valid: true }
     - { file: target-correlation-incompatible.yaml, valid: true }
@@ -15,6 +16,7 @@ artifacts:
     - { file: base-descriptor-v1.json, kind: migration_descriptor, valid: true }
     - { file: upgraded-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
     - { file: descriptor-compatible-v2.json, kind: migration_descriptor_v2, valid: true }
+    - { file: descriptor-compatible-second-v2.json, kind: migration_descriptor_v2, valid: true }
     - { file: descriptor-dispose-v2.json, kind: migration_descriptor_v2, valid: true }
     - { file: descriptor-removed-event-v2.json, kind: migration_descriptor_v2, valid: true }
     - { file: descriptor-payload-v2.json, kind: migration_descriptor_v2, valid: true }
@@ -28,6 +30,8 @@ artifacts:
     - { file: disposal-before.json, kind: aggregate_state_v2, valid: true }
     - { file: fault-frozen-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
     - { file: migration-preserve-result.json, kind: version2_operation_result, valid: true }
+    - { file: migration-empty-route-result.json, kind: version2_operation_result, valid: true }
+    - { file: migration-two-hop-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-stale-target-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-fault-frozen-preserve-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-historical-fault-result.json, kind: version2_operation_result, valid: true }
@@ -66,6 +70,7 @@ version2_vectors:
   - name: migration_preserves_compatible_work
     covers:
       - migration_backlog_independent_descriptor
+      - migration_audit_exact_order_content
       - migration_descriptor_v2_schema_positive_negative
       - migration_package_v2_schema_positive_negative
     operation: migrate_aggregate_v2
@@ -74,6 +79,24 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /preserve
     expect: { result: success, exact_result_file: migration-preserve-result.json }
+  - name: migration_equal_fingerprint_empty_route
+    covers: [migration_empty_route_audit]
+    operation: migrate_aggregate_v2
+    state_before: base-aggregate-v2.json
+    descriptor_files: []
+    request_file: operation-inputs.json
+    request_pointer: /empty_route
+    expect: { result: success, exact_result_file: migration-empty-route-result.json }
+  - name: migration_two_descriptor_ordered_audit
+    covers: [migration_multiple_audit_order]
+    operation: migrate_aggregate_v2
+    state_before: base-aggregate-v2.json
+    descriptor_files:
+      - descriptor-compatible-v2.json
+      - descriptor-compatible-second-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /two_hop
+    expect: { result: success, exact_result_file: migration-two-hop-result.json }
   - name: migration_preserves_fault_frozen_work
     covers: [migration_fault_frozen_preservation]
     operation: migrate_aggregate_v2

@@ -165,9 +165,37 @@
         "migration_descriptor_digest": { "$ref": "#/$defs/sha256" }
       }
     },
+    "migrationAuditRecord": {
+      "type": "object",
+      "required": [
+        "migration_audit_record_schema_version",
+        "root_instance_id",
+        "root_runtime_id",
+        "migration_sequence",
+        "source_validated_bundle_fingerprint",
+        "target_validated_bundle_fingerprint",
+        "migration_descriptor_digest",
+        "source_aggregate_state_digest",
+        "target_aggregate_state_digest",
+        "result_code"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "migration_audit_record_schema_version": { "const": 1 },
+        "root_instance_id": { "type": "string", "minLength": 1 },
+        "root_runtime_id": { "type": "string", "minLength": 1 },
+        "migration_sequence": { "$ref": "#/$defs/canonicalDecimal" },
+        "source_validated_bundle_fingerprint": { "$ref": "#/$defs/sha256" },
+        "target_validated_bundle_fingerprint": { "$ref": "#/$defs/sha256" },
+        "migration_descriptor_digest": { "$ref": "#/$defs/sha256" },
+        "source_aggregate_state_digest": { "$ref": "#/$defs/sha256" },
+        "target_aggregate_state_digest": { "$ref": "#/$defs/sha256" },
+        "result_code": { "const": "migration_applied" }
+      }
+    },
     "migration": {
       "type": "object",
-      "required": ["result", "aggregate_state", "dispositions"],
+      "required": ["result", "aggregate_state", "dispositions", "audit_records"],
       "additionalProperties": false,
       "properties": {
         "result": { "const": "success" },
@@ -175,6 +203,10 @@
         "dispositions": {
           "type": "array",
           "items": { "$ref": "#/$defs/migrationDisposition" }
+        },
+        "audit_records": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/migrationAuditRecord" }
         }
       }
     },
