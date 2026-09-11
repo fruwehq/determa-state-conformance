@@ -43,33 +43,30 @@
         "revision": "0",
         "digest": "sha256:b39e2d234dee79eb17bc746dc35aaca8251d34ed0cf080b8e0afcf94bbdabf1f"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "start",
-        "event_id": "spawn-start",
-        "cause_id": "spawn-start",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "owned-migration-root",
-            "root_runtime_id": "sha256:5293c0887061d9a8b83471697151f29f16284cf75e0706e36f7d5ca591654030"
-          }
-        },
-        "payload": [
-          "map",
-          []
-        ]
-      },
-      "envelope_digest": "sha256:9c196d9b33896a981a0e3d99f2b0fc8a89c18b97b4b3292f4adf8e42c7f2aa14",
-      "target": {
-        "root": {
-          "root_instance_id": "owned-migration-root",
-          "root_runtime_id": "sha256:5293c0887061d9a8b83471697151f29f16284cf75e0706e36f7d5ca591654030"
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "start",
+            "event_id": "spawn-start",
+            "cause_id": "spawn-start",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "owned-migration-root",
+                "root_runtime_id": "sha256:5293c0887061d9a8b83471697151f29f16284cf75e0706e36f7d5ca591654030"
+              }
+            },
+            "payload": [
+              "map",
+              []
+            ]
+          },
+          "envelope_digest": "sha256:9c196d9b33896a981a0e3d99f2b0fc8a89c18b97b4b3292f4adf8e42c7f2aa14"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "start_process": {
       "operation": "checkpoint_step_v2",
@@ -111,45 +108,40 @@
         "revision": "2",
         "digest": "sha256:31d724d4b3d55e9d2d2c027f906745f8146c9d1c90242035276e71bb4165827b"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "pay",
-        "event_id": "spawned-pay",
-        "cause_id": "spawned-pay",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "spawned_instance": {
-            "instance_id": "sha256:49505d9f32be464a974ec0a1231a10a350ea755fce6bd2f045f4487567c9c279",
-            "machine_id": "payment",
-            "machine_version": "1",
-            "root_instance_id": "owned-migration-root"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "pay",
+            "event_id": "spawned-pay",
+            "cause_id": "spawned-pay",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "spawned_instance": {
+                "instance_id": "sha256:49505d9f32be464a974ec0a1231a10a350ea755fce6bd2f045f4487567c9c279",
+                "machine_id": "payment",
+                "machine_version": "1",
+                "root_instance_id": "owned-migration-root"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "100"
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "100"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:a5061de8f26ee25138a9332b19ed194537aa60fa6dac6b88f31550a110efd5b6",
-      "target": {
-        "spawned_instance": {
-          "instance_id": "sha256:49505d9f32be464a974ec0a1231a10a350ea755fce6bd2f045f4487567c9c279",
-          "machine_id": "payment",
-          "machine_version": "1",
-          "root_instance_id": "owned-migration-root"
+          },
+          "envelope_digest": "sha256:a5061de8f26ee25138a9332b19ed194537aa60fa6dac6b88f31550a110efd5b6"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "root_accept": {
       "operation": "checkpoint_admit_v2",
@@ -165,33 +157,30 @@
         "revision": "3",
         "digest": "sha256:3572862bfd1157ff61920b87329d1208bc22d8ef0e827a3f66d9568b4963ac59"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "start",
-        "event_id": "spawned-root-followup",
-        "cause_id": "spawned-root-followup",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "owned-migration-root",
-            "root_runtime_id": "sha256:5293c0887061d9a8b83471697151f29f16284cf75e0706e36f7d5ca591654030"
-          }
-        },
-        "payload": [
-          "map",
-          []
-        ]
-      },
-      "envelope_digest": "sha256:78b140680cf6017300e79b5fee981ba908892a50cc186286bf6d140a67e4d20b",
-      "target": {
-        "root": {
-          "root_instance_id": "owned-migration-root",
-          "root_runtime_id": "sha256:5293c0887061d9a8b83471697151f29f16284cf75e0706e36f7d5ca591654030"
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "start",
+            "event_id": "spawned-root-followup",
+            "cause_id": "spawned-root-followup",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "owned-migration-root",
+                "root_runtime_id": "sha256:5293c0887061d9a8b83471697151f29f16284cf75e0706e36f7d5ca591654030"
+              }
+            },
+            "payload": [
+              "map",
+              []
+            ]
+          },
+          "envelope_digest": "sha256:78b140680cf6017300e79b5fee981ba908892a50cc186286bf6d140a67e4d20b"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "child_process": {
       "operation": "checkpoint_step_v2",

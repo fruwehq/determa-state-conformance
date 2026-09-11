@@ -39,6 +39,13 @@
             "type": "object",
             "required": ["file", "kind", "valid"],
             "additionalProperties": false,
+            "allOf": [
+              {
+                "if": { "properties": { "valid": { "const": false } }, "required": ["valid"] },
+                "then": { "required": ["error"] },
+                "else": { "not": { "required": ["error"] } }
+              }
+            ],
             "properties": {
               "file": { "$ref": "#/$defs/jsonFile" },
               "kind": {
@@ -51,7 +58,8 @@
                   "durable_host_call_log_v2"
                 ]
               },
-              "valid": { "const": true }
+              "valid": { "type": "boolean" },
+              "error": { "const": "invalid_durable_host_inputs_v2" }
             }
           }
         }

@@ -13,7 +13,7 @@
       },
       "bundle": {
         "file": "machine.yaml",
-        "validated_bundle_fingerprint": "sha256:718f79f88aa5a6f12c956a68e58979159c37d83daf311e29b7a0596099e4cec9"
+        "validated_bundle_fingerprint": "sha256:0220d281a519af24f180206a551c5e57fcd4f45d3b4ea98f26ab31f3e336a2bc"
       },
       "machine": {
         "namespace": "conformance.execution_checkpoint_complete_host_contract",
@@ -46,43 +46,40 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:58f0171c05a9ff18ad251484d87fcab048d1bc37bd9bede66b3be868ac6d0b3d"
+        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "increment",
-        "event_id": "complete-increment",
-        "cause_id": "complete-increment",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "1"
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          },
+          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "handled_delayed": {
       "operation": "checkpoint_step_v2",
@@ -96,14 +93,14 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:58f0171c05a9ff18ad251484d87fcab048d1bc37bd9bede66b3be868ac6d0b3d"
+        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
       },
       "event_id": "complete-increment",
-      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
+      "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc",
       "target": {
         "root": {
           "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
         }
       },
       "processing_mode": "delayed",
@@ -122,14 +119,14 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:58f0171c05a9ff18ad251484d87fcab048d1bc37bd9bede66b3be868ac6d0b3d"
+        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
       },
       "event_id": "complete-increment",
-      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
+      "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc",
       "target": {
         "root": {
           "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
         }
       },
       "processing_mode": "foreground",
@@ -148,14 +145,14 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:1534358227cf34b0902836d6ae8b2f28b921ec8c029d2152ffa34e218d37508e"
+        "digest": "sha256:8adb16b896308f8f0433480b532cc60b1661eefbad8ba8d239a794b84814a53c"
       },
       "event_id": "complete-unhandled",
-      "envelope_digest": "sha256:343627085cb00b91a4db4a2440e1a95258f767b756cd32e9d75047a758e6734a",
+      "envelope_digest": "sha256:29265d3f208e111ebc1e50d385437770863bd5c79a9bb5d70c447c7dbdff2c77",
       "target": {
         "root": {
           "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
         }
       },
       "processing_mode": "delayed",
@@ -174,35 +171,32 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:4f38c318ed0db0536230bc9ca103744793e16b92d4e54a860814ef649b3d7dda"
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "undeclared",
-        "event_id": "complete-rejected",
-        "cause_id": "complete-rejected",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          []
-        ]
-      },
-      "envelope_digest": "sha256:b8e3aa0eeaf4434fed5f49a1262cc617c2f06192110b091880408bc50db16c2c",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "undeclared",
+            "event_id": "complete-rejected",
+            "cause_id": "complete-rejected",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              []
+            ]
+          },
+          "envelope_digest": "sha256:5bd3f5e8fd9165380f443bea67203c535641c523af9e73f9a467d41c0bf5ae80"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "faulted": {
       "operation": "checkpoint_step_v2",
@@ -216,69 +210,19 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:2af1b789ab5113125de7b6507cf6d6f7f4cc0fee86d0a1e9860fa32b7c91c0aa"
+        "digest": "sha256:64b0bf79331499bc599fb5b6dd4b7173bf1c7c5d7ff4d6a1b1a16461691c32d7"
       },
       "event_id": "complete-faulted",
-      "envelope_digest": "sha256:a9a3ed13e99d0d013a2ab2da1d008af4a290ae99b945c58dd0d3063370649af7",
+      "envelope_digest": "sha256:ce5e5d5d2220c3149fd2f47bcb605e150b39b3de9ea6c13aeb6d92564d132702",
       "target": {
         "root": {
           "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
         }
       },
       "processing_mode": "delayed",
       "acceptance_sequence": "0",
       "queue_sequence": "0"
-    },
-    "invalid_origin": {
-      "operation": "checkpoint_admit_v2",
-      "request_id": "invalid-origin",
-      "scope": {
-        "scope_id": "primary",
-        "ownership_binding": "owner:primary",
-        "principal": "conformance-host",
-        "authorization": "authorized"
-      },
-      "expected_checkpoint": {
-        "root_instance_id": "complete-host-root",
-        "revision": "2",
-        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
-      },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "increment",
-        "event_id": "invalid-origin",
-        "cause_id": "invalid-origin",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
-              [
-                "integer",
-                "1"
-              ]
-            ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:dd154eb0629cb9db5944733eacb4d81d006c6436120d80d62989757bb94a5bf0",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-        }
-      },
-      "presented_origin": "invalid"
     },
     "invalid_mode": {
       "operation": "checkpoint_admit_v2",
@@ -292,43 +236,45 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
       },
-      "delivery_mode": "invalid",
-      "envelope": {
-        "event": "increment",
-        "event_id": "invalid-mode",
-        "cause_id": "invalid-mode",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "unsupported",
+          "envelope": {
+            "event": "increment",
+            "event_id": "invalid-mode",
+            "cause_id": "invalid-mode",
+            "source": {
+              "runtime": {
+                "root": {
+                  "root_instance_id": "complete-host-root",
+                  "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                }
+              }
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "1"
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:ae1321d579189b59371e0802cf5b73e310fbac3d57a6d600960940a45066386d",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          },
+          "envelope_digest": "sha256:eae72faf1372f0b5d2b6264e8a165217b33ab456b7ee68867712cbb93cef1a17"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "invalid_digest": {
       "operation": "checkpoint_admit_v2",
@@ -342,47 +288,44 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "increment",
-        "event_id": "invalid-digest",
-        "cause_id": "invalid-digest",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "invalid-digest",
+            "cause_id": "invalid-digest",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "1"
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          },
+          "envelope_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "replay_conflict": {
       "operation": "checkpoint_admit_v2",
-      "request_id": "complete-increment",
+      "request_id": "complete-faulted",
       "scope": {
         "scope_id": "primary",
         "ownership_binding": "owner:primary",
@@ -392,45 +335,42 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+        "digest": "sha256:e8c7a6f41017c5d0f2a6bc6934450da3125645e44d819207323588e4bdadebc8"
       },
-      "delivery_mode": "invalid",
-      "envelope": {
-        "event": "increment",
-        "event_id": "complete-increment",
-        "cause_id": "complete-increment",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "unsupported",
+          "envelope": {
+            "event": "fail",
+            "event_id": "complete-faulted",
+            "cause_id": "complete-faulted",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "9"
+                [
+                  "unexpected",
+                  [
+                    "integer",
+                    "9"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:6525698bcd0e0f924106398cbe6fb5ea6945b35a97a0904235a0d1c0750a0344",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          },
+          "envelope_digest": "sha256:58a62a2d516856409bf21e8e03cc41c6233288685851b76a821850b84517d0b1"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
-    "replay_origin": {
+    "replay_committed": {
       "operation": "checkpoint_admit_v2",
       "request_id": "complete-increment",
       "scope": {
@@ -442,43 +382,678 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "increment",
-        "event_id": "complete-increment",
-        "cause_id": "complete-increment",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "1"
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          },
+          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
         }
+      ]
+    },
+    "ordered_batch": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "ordered-batch",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
       },
-      "presented_origin": "invalid"
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "batch-first",
+            "cause_id": "batch-first",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:164f3f3a828459d44ecbb52f7de3afee00aea995e09808b3fd11d23e5e573cbc"
+        },
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "batch-second",
+            "cause_id": "batch-second",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "2"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:b36e18e76bb74a7629ae0b8b4d3545984033e9955e91bdfbd65d1c595d79bf64"
+        }
+      ]
+    },
+    "all_replay_batch": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "all-replay-batch",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "1",
+        "digest": "sha256:575a539d6980ab83cb81acde8976afc866c882e89fb94e05a09769a0abf54bdc"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "batch-first",
+            "cause_id": "batch-first",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:164f3f3a828459d44ecbb52f7de3afee00aea995e09808b3fd11d23e5e573cbc"
+        },
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "batch-second",
+            "cause_id": "batch-second",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "2"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:b36e18e76bb74a7629ae0b8b4d3545984033e9955e91bdfbd65d1c595d79bf64"
+        }
+      ]
+    },
+    "mixed_replay_new_batch": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "mixed-replay-new-batch",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "1",
+        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+        },
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "mixed-new",
+            "cause_id": "mixed-new",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "3"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:2d1183648f27ac654b48f77f0e3f2c26438bdd8d72d86e28653324453f3ff1d8"
+        }
+      ]
+    },
+    "malformed_batch": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "malformed-batch",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+      },
+      "envelopes": []
+    },
+    "duplicate_event_id_batch": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "duplicate-event-id-batch",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+        },
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "2"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:24c01daaaeab88aae88ad9941bcbeb2c4a79eba5a6c9472dda8d3860ea7b678c"
+        }
+      ]
+    },
+    "terminal_root": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "terminal-root",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:e8c7a6f41017c5d0f2a6bc6934450da3125645e44d819207323588e4bdadebc8"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "unsupported",
+          "envelope": {
+            "event": "increment",
+            "event_id": "terminal-root",
+            "cause_id": "terminal-root",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:f12620b2314fd4e27bdaa28a4e4de71b2f9bf3147209712a79170190a501f3ec"
+        }
+      ]
+    },
+    "terminal_root_replay": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "complete-faulted",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "2",
+        "digest": "sha256:e8c7a6f41017c5d0f2a6bc6934450da3125645e44d819207323588e4bdadebc8"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "fail",
+            "event_id": "complete-faulted",
+            "cause_id": "complete-faulted",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              []
+            ]
+          },
+          "envelope_digest": "sha256:ce5e5d5d2220c3149fd2f47bcb605e150b39b3de9ea6c13aeb6d92564d132702"
+        }
+      ]
+    },
+    "invalid_source": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "invalid-source",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "invalid-source",
+            "cause_id": "invalid-source",
+            "source": {
+              "runtime": {
+                "root": {
+                  "root_instance_id": "complete-host-root",
+                  "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                }
+              }
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:4532e29f8c5685217f08fa39892cd32ba94341c4ab98432ab55abd257a99162e"
+        }
+      ]
+    },
+    "invalid_instance_target": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "invalid-instance-target",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "undeclared",
+            "event_id": "invalid-instance-target",
+            "cause_id": "invalid-instance-target",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:6ab9679027a7e184554ed26a4b429b67c3a06f0bbbe449a5509780addf8fd06c"
+        }
+      ]
+    },
+    "inactive_component_target": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "inactive-component-target",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "component-migration-root",
+        "revision": "0",
+        "digest": "sha256:d6e88f6274bdec9357c767db6723a7f401668774d29cb862265a171660f2202a"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "reserved_failure",
+            "event_id": "inactive-component-target",
+            "cause_id": "inactive-component-target",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "left",
+                "component_runtime_id": "sha256:daa953292925c45421b52f73cd74d4f50cf0654ceda93d83a572f8aefa92e8d1",
+                "owner_runtime_id": "sha256:7699ce213fe14f33eefaeecb2bc915dcfaf20c9782e8664c241e03300a97e954",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "payload": [
+              "map",
+              []
+            ]
+          },
+          "envelope_digest": "sha256:5a1ec71720cc88ab25b2e1cca4c55cf38507e8a26bdecc4bf375070e87aff600"
+        }
+      ]
+    },
+    "invalid_payload": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "invalid-payload",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "work_completed",
+            "event_id": "invalid-payload",
+            "cause_id": "invalid-payload",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "unexpected",
+                  [
+                    "string",
+                    "field"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:eec2605add36372056056114ac74848cdeca00c9060d8b9a8cf80ddeee701caf"
+        }
+      ]
+    },
+    "invalid_correlation": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "invalid-correlation",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "work_completed",
+            "event_id": "invalid-correlation",
+            "cause_id": "invalid-correlation",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              []
+            ],
+            "correlation_id": "missing-output-effect"
+          },
+          "envelope_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+        }
+      ]
     },
     "concurrent_winner": {
       "operation": "checkpoint_admit_v2",
@@ -492,43 +1067,40 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:4f38c318ed0db0536230bc9ca103744793e16b92d4e54a860814ef649b3d7dda"
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "increment",
-        "event_id": "complete-increment",
-        "cause_id": "complete-increment",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "1"
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:1103d1998a2b7ffc085e5330a35688fa549ed810020e752c404ff1ea82730785",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          },
+          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "concurrent_loser": {
       "operation": "checkpoint_admit_v2",
@@ -542,43 +1114,40 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "0",
-        "digest": "sha256:4f38c318ed0db0536230bc9ca103744793e16b92d4e54a860814ef649b3d7dda"
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "increment",
-        "event_id": "concurrent-loser",
-        "cause_id": "concurrent-loser",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "concurrent-loser",
+            "cause_id": "concurrent-loser",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "1"
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:df0eda3255560a7a53add6dcf5b610f16c9d2be081f35375b4aba01e229b7a93",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          },
+          "envelope_digest": "sha256:9c763b626e06b30540462851914a9c02ab7435e3a67327100bc40fb3f08c53c8"
         }
-      },
-      "presented_origin": "external"
+      ]
     },
     "dependency_live": {
       "operation": "checkpoint_prune_v2",
@@ -592,7 +1161,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "1",
-        "digest": "sha256:58f0171c05a9ff18ad251484d87fcab048d1bc37bd9bede66b3be868ac6d0b3d"
+        "digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
       },
       "cutoff_receipt_sequence": "1",
       "target_mode": "bounded",
@@ -614,7 +1183,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
       },
       "cutoff_receipt_sequence": "1",
       "target_mode": "bounded",
@@ -636,7 +1205,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "bounded",
@@ -656,7 +1225,7 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "3",
-        "digest": "sha256:1bf55afca2bcc82b0ff162ad68fbd72a5f666734f9369b929e162f4e096eb5e6"
+        "digest": "sha256:85d9861d5bc316f4545fade7c9e0ff6806abfa8f5f802a10ff786f0d99844802"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "permanent",
@@ -676,11 +1245,11 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "2",
-        "digest": "sha256:43baf9cc10f9809d74f57c8149d62a678eab38c11cd4ee9da2248bb698ef8890"
+        "digest": "sha256:10979f37635f06f89b5036578f93772767474a520e4a8ca3a131e43901755eee"
       },
       "tombstone_operation_id": "stale-tombstone",
       "terminal_status": "completed",
-      "retention_mode": "bounded"
+      "retention_mode": "permanent"
     },
     "tombstoned_ingress": {
       "operation": "checkpoint_admit_v2",
@@ -694,43 +1263,87 @@
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
         "revision": "4",
-        "digest": "sha256:42dcadc39b41907bfb5ecd492464a4500d11efa3a98b0502cdb501c36f707d59"
+        "digest": "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
       },
-      "delivery_mode": "input",
-      "envelope": {
-        "event": "increment",
-        "event_id": "after-tombstone",
-        "cause_id": "after-tombstone",
-        "source": {
-          "host": true
-        },
-        "target": {
-          "root": {
-            "root_instance_id": "complete-host-root",
-            "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
-          }
-        },
-        "payload": [
-          "map",
-          [
-            [
-              "amount",
+      "envelopes": [
+        {
+          "delivery_mode": "unsupported",
+          "envelope": {
+            "event": "increment",
+            "event_id": "after-tombstone",
+            "cause_id": "after-tombstone",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
               [
-                "integer",
-                "1"
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
               ]
             ]
-          ]
-        ]
-      },
-      "envelope_digest": "sha256:532ab4db6dc31b0e319f5c3053445dbfe30817903b67ce3adf1b2b4e595168dd",
-      "target": {
-        "root": {
-          "root_instance_id": "complete-host-root",
-          "root_runtime_id": "sha256:104a4ea34af96b23faf614567bf42bc7331d0aa30169f318eb171474fa361d2e"
+          },
+          "envelope_digest": "sha256:27c7e189a56fc31ba8956a77dc9684ddcc3d3123e9565b8d1797dff97eabf7e0"
         }
+      ]
+    },
+    "tombstoned_replay": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "complete-increment",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
       },
-      "presented_origin": "external"
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "4",
+        "digest": "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc"
+        }
+      ]
     },
     "backup_permanent": {
       "operation": "checkpoint_backup_restore_v2",
@@ -743,7 +1356,7 @@
       },
       "action": "backup",
       "checkpoint_digests": [
-        "sha256:3250d63afdd210ac6eff863d3feca074d51925742b780f981a997aa224cd6caa"
+        "sha256:3a1802a652df554e976ee91cb4d1291b9a7039dbe10d3e5d9591cb2bb874df5a"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -760,7 +1373,7 @@
       },
       "action": "restore",
       "checkpoint_digests": [
-        "sha256:3250d63afdd210ac6eff863d3feca074d51925742b780f981a997aa224cd6caa"
+        "sha256:3a1802a652df554e976ee91cb4d1291b9a7039dbe10d3e5d9591cb2bb874df5a"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -777,7 +1390,7 @@
       },
       "action": "backup",
       "checkpoint_digests": [
-        "sha256:42dcadc39b41907bfb5ecd492464a4500d11efa3a98b0502cdb501c36f707d59"
+        "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -794,7 +1407,7 @@
       },
       "action": "restore",
       "checkpoint_digests": [
-        "sha256:42dcadc39b41907bfb5ecd492464a4500d11efa3a98b0502cdb501c36f707d59"
+        "sha256:0882e55d90eea097aaa7de57e5585b5024abefaca51583b3d6a346a2b00b766d"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -811,7 +1424,7 @@
       },
       "action": "restore",
       "checkpoint_digests": [
-        "sha256:4f38c318ed0db0536230bc9ca103744793e16b92d4e54a860814ef649b3d7dda"
+        "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
       ],
       "trusted_artifact_digests": [],
       "adapter_metadata_digest": "sha256:21312bfd7ffbc7e843ae74ac283768c74b51b42f1c4245b7a56ecdb02ac0ca01",
@@ -826,7 +1439,7 @@
         "principal": "conformance-host",
         "authorization": "authorized"
       },
-      "store_adapter_identifier": "injected_store",
+      "store_adapter_identifier": "injected-store",
       "store_uri": "object://injected-store",
       "configuration": {
         "instance": "provided"
@@ -877,6 +1490,36 @@
           "durable_concurrent",
           "shared_application_transaction",
           "root_identity_retention"
+        ]
+      },
+      "existing_registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        }
+      ]
+    },
+    "register_vendor_http": {
+      "operation": "checkpoint_register_adapter_v2",
+      "request_id": "register-vendor-http",
+      "registration": {
+        "adapter_identifier": "vendor-http",
+        "uri_scheme": "vendor+https",
+        "source": "third_party",
+        "configuration_schema": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "capabilities": [
+          "restart_persistent"
         ]
       },
       "existing_registrations": [
@@ -1008,6 +1651,18 @@
             "shared_application_transaction",
             "root_identity_retention"
           ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
         }
       ]
     },
@@ -1096,6 +1751,18 @@
             "durable_concurrent",
             "shared_application_transaction",
             "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
           ]
         }
       ]
@@ -1186,6 +1853,18 @@
             "shared_application_transaction",
             "root_identity_retention"
           ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
         }
       ]
     },
@@ -1272,6 +1951,18 @@
             "durable_concurrent",
             "shared_application_transaction",
             "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
           ]
         }
       ]
@@ -1364,6 +2055,18 @@
             "shared_application_transaction",
             "root_identity_retention"
           ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
         }
       ]
     },
@@ -1454,6 +2157,18 @@
             "durable_concurrent",
             "shared_application_transaction",
             "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
           ]
         }
       ]
@@ -1547,6 +2262,117 @@
             "shared_application_transaction",
             "root_identity_retention"
           ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        }
+      ]
+    },
+    "resolve_vendor_http": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-vendor-http",
+      "adapter_identifier": "vendor-http",
+      "uri": "vendor+https://conformance",
+      "configuration": {},
+      "requested_capabilities": [],
+      "registrations": [
+        {
+          "adapter_identifier": "memory",
+          "uri_scheme": "memory",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "ephemeral"
+          ]
+        },
+        {
+          "adapter_identifier": "file",
+          "uri_scheme": "file",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
+        },
+        {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "postgresql",
+          "uri_scheme": "postgresql",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "dsn": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "dsn"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_concurrent",
+            "shared_application_transaction",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
         }
       ]
     },
@@ -1561,7 +2387,21 @@
       },
       "portable_identity": "complete-host-root",
       "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
-      "operation_context": "outbox"
+      "operation_context": "outbox",
+      "store_records": [
+        {
+          "scope_id": "scope-a",
+          "ownership_binding": "owner:scope-a",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        },
+        {
+          "scope_id": "scope-b",
+          "ownership_binding": "owner:scope-b",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        }
+      ]
     },
     "scope_b": {
       "operation": "checkpoint_scope_operation_v2",
@@ -1574,7 +2414,21 @@
       },
       "portable_identity": "complete-host-root",
       "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
-      "operation_context": "outbox"
+      "operation_context": "outbox",
+      "store_records": [
+        {
+          "scope_id": "scope-a",
+          "ownership_binding": "owner:scope-a",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        },
+        {
+          "scope_id": "scope-b",
+          "ownership_binding": "owner:scope-b",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        }
+      ]
     },
     "scope_missing": {
       "operation": "checkpoint_scope_operation_v2",
@@ -1587,7 +2441,21 @@
       },
       "portable_identity": "complete-host-root",
       "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
-      "operation_context": "outbox"
+      "operation_context": "outbox",
+      "store_records": [
+        {
+          "scope_id": "scope-a",
+          "ownership_binding": "owner:scope-a",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        },
+        {
+          "scope_id": "scope-b",
+          "ownership_binding": "owner:scope-b",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        }
+      ]
     },
     "scope_ambiguous": {
       "operation": "checkpoint_scope_operation_v2",
@@ -1600,7 +2468,21 @@
       },
       "portable_identity": "complete-host-root",
       "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
-      "operation_context": "outbox"
+      "operation_context": "outbox",
+      "store_records": [
+        {
+          "scope_id": "scope-a",
+          "ownership_binding": "owner:scope-a",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        },
+        {
+          "scope_id": "scope-b",
+          "ownership_binding": "owner:scope-b",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        }
+      ]
     },
     "scope_mismatched": {
       "operation": "checkpoint_scope_operation_v2",
@@ -1613,7 +2495,21 @@
       },
       "portable_identity": "complete-host-root",
       "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
-      "operation_context": "outbox"
+      "operation_context": "outbox",
+      "store_records": [
+        {
+          "scope_id": "scope-a",
+          "ownership_binding": "owner:scope-a",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        },
+        {
+          "scope_id": "scope-b",
+          "ownership_binding": "owner:scope-b",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        }
+      ]
     },
     "scope_unauthorized": {
       "operation": "checkpoint_scope_operation_v2",
@@ -1626,7 +2522,21 @@
       },
       "portable_identity": "complete-host-root",
       "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48",
-      "operation_context": "outbox"
+      "operation_context": "outbox",
+      "store_records": [
+        {
+          "scope_id": "scope-a",
+          "ownership_binding": "owner:scope-a",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        },
+        {
+          "scope_id": "scope-b",
+          "ownership_binding": "owner:scope-b",
+          "portable_identity": "complete-host-root",
+          "effect_id": "sha256:0f7da04a41b867d10bdf765af412569f93153649f2af42a4431054ef0c3f4e48"
+        }
+      ]
     },
     "profile_durable_embedded_positive": {
       "operation": "checkpoint_validate_capabilities_v2",
@@ -1640,11 +2550,7 @@
       "host_guarantees": [
         "atomic_accept_process"
       ],
-      "required_capabilities": [
-        "durable_single_writer",
-        "root_identity_retention",
-        "atomic_accept_process"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_durable_embedded_negative": {
       "operation": "checkpoint_validate_capabilities_v2",
@@ -1656,11 +2562,7 @@
       ],
       "host_profile": "durable_embedded_processing",
       "host_guarantees": [],
-      "required_capabilities": [
-        "durable_single_writer",
-        "root_identity_retention",
-        "atomic_accept_process"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_exactly_once_positive": {
       "operation": "checkpoint_validate_capabilities_v2",
@@ -1673,16 +2575,9 @@
       ],
       "host_profile": "exactly_once_committed_processing",
       "host_guarantees": [
-        "atomic_accept_process",
-        "permanent_mode"
+        "atomic_accept_process"
       ],
-      "required_capabilities": [
-        "durable_single_writer",
-        "root_identity_retention",
-        "permanent_receipt_retention",
-        "atomic_accept_process",
-        "permanent_mode"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_exactly_once_negative": {
       "operation": "checkpoint_validate_capabilities_v2",
@@ -1697,13 +2592,7 @@
       "host_guarantees": [
         "atomic_accept_process"
       ],
-      "required_capabilities": [
-        "durable_single_writer",
-        "root_identity_retention",
-        "permanent_receipt_retention",
-        "atomic_accept_process",
-        "permanent_mode"
-      ]
+      "retention_mode": "bounded"
     },
     "profile_broker_positive": {
       "operation": "checkpoint_validate_capabilities_v2",
@@ -1720,14 +2609,7 @@
         "durable_redelivery",
         "outbox_worker"
       ],
-      "required_capabilities": [
-        "durable_single_writer",
-        "root_identity_retention",
-        "atomic_accept_process",
-        "ingress_ack_after_commit",
-        "durable_redelivery",
-        "outbox_worker"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_broker_negative": {
       "operation": "checkpoint_validate_capabilities_v2",
@@ -1743,20 +2625,14 @@
         "ingress_ack_after_commit",
         "durable_redelivery"
       ],
-      "required_capabilities": [
-        "durable_single_writer",
-        "root_identity_retention",
-        "atomic_accept_process",
-        "ingress_ack_after_commit",
-        "durable_redelivery",
-        "outbox_worker"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_strict_outbox_positive": {
       "operation": "checkpoint_validate_capabilities_v2",
       "request_id": "profile-strict_outbox-positive",
       "adapter_identifier": "sqlite",
       "store_capabilities": [
+        "durable_single_writer",
         "root_identity_retention",
         "permanent_outbox_terminal_retention"
       ],
@@ -1766,19 +2642,14 @@
         "outbox_worker",
         "retain_unresolved_outbox"
       ],
-      "required_capabilities": [
-        "root_identity_retention",
-        "permanent_outbox_terminal_retention",
-        "total_outbox_lifecycle",
-        "outbox_worker",
-        "retain_unresolved_outbox"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_strict_outbox_negative": {
       "operation": "checkpoint_validate_capabilities_v2",
       "request_id": "profile-strict_outbox-negative",
       "adapter_identifier": "sqlite",
       "store_capabilities": [
+        "durable_single_writer",
         "root_identity_retention",
         "permanent_outbox_terminal_retention"
       ],
@@ -1787,19 +2658,14 @@
         "total_outbox_lifecycle",
         "outbox_worker"
       ],
-      "required_capabilities": [
-        "root_identity_retention",
-        "permanent_outbox_terminal_retention",
-        "total_outbox_lifecycle",
-        "outbox_worker",
-        "retain_unresolved_outbox"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_compact_outbox_positive": {
       "operation": "checkpoint_validate_capabilities_v2",
       "request_id": "profile-compact_outbox-positive",
       "adapter_identifier": "sqlite",
       "store_capabilities": [
+        "durable_single_writer",
         "root_identity_retention",
         "compact_effect_identity_retention"
       ],
@@ -1809,19 +2675,14 @@
         "outbox_worker",
         "retain_receipt_references"
       ],
-      "required_capabilities": [
-        "root_identity_retention",
-        "compact_effect_identity_retention",
-        "total_outbox_lifecycle",
-        "outbox_worker",
-        "retain_receipt_references"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_compact_outbox_negative": {
       "operation": "checkpoint_validate_capabilities_v2",
       "request_id": "profile-compact_outbox-negative",
       "adapter_identifier": "sqlite",
       "store_capabilities": [
+        "durable_single_writer",
         "root_identity_retention",
         "compact_effect_identity_retention"
       ],
@@ -1830,19 +2691,14 @@
         "total_outbox_lifecycle",
         "outbox_worker"
       ],
-      "required_capabilities": [
-        "root_identity_retention",
-        "compact_effect_identity_retention",
-        "total_outbox_lifecycle",
-        "outbox_worker",
-        "retain_receipt_references"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_shared_transaction_positive": {
       "operation": "checkpoint_validate_capabilities_v2",
       "request_id": "profile-shared_transaction-positive",
       "adapter_identifier": "sqlite",
       "store_capabilities": [
+        "durable_concurrent",
         "shared_application_transaction",
         "root_identity_retention"
       ],
@@ -1850,27 +2706,20 @@
       "host_guarantees": [
         "native_shared_transaction_used"
       ],
-      "required_capabilities": [
-        "shared_application_transaction",
-        "root_identity_retention",
-        "native_shared_transaction_used"
-      ]
+      "retention_mode": "permanent"
     },
     "profile_shared_transaction_negative": {
       "operation": "checkpoint_validate_capabilities_v2",
       "request_id": "profile-shared_transaction-negative",
       "adapter_identifier": "sqlite",
       "store_capabilities": [
+        "durable_concurrent",
         "shared_application_transaction",
         "root_identity_retention"
       ],
       "host_profile": "shared_application_transaction",
       "host_guarantees": [],
-      "required_capabilities": [
-        "shared_application_transaction",
-        "root_identity_retention",
-        "native_shared_transaction_used"
-      ]
+      "retention_mode": "permanent"
     }
   }
 }

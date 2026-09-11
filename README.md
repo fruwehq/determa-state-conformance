@@ -349,9 +349,10 @@ implementations that declare a CLI profile, without queue introspection. Until t
 the absence of CLI cases is intentional and no CLI surface is portable conformance.
 
 The `execution-checkpoint` profile fixes the portable SPEC §17 durable-host lifecycle
-over the schema-version-2 checkpoint artifact. It covers native creation, admission,
-processing, replay, outbox transitions, pruning, root identity, spawned-runtime traces,
-adapter capabilities, store scope, and keyed maintenance migration. The persistence
+over the schema-version-2 checkpoint artifact. It covers native creation, ordered-batch
+admission and its exact failure precedence, processing, replay, outbox transitions,
+pruning, root identity, spawned-runtime traces, exact adapter scheme grammar,
+profile-derived capabilities, relational store-scope isolation, and keyed maintenance migration. The persistence
 profile adds the six required host transaction traces. Both bind only hosts that
 declare them and do not standardize storage or a public API. See the profile READMEs.
 

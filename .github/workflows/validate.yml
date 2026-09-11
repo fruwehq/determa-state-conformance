@@ -44,6 +44,9 @@ jobs:
       - name: Test closed-code registry validation
         run: python scripts/test_closed_code_registry.py
 
+      - name: Test durable-host relational validation
+        run: python scripts/test_durable_host_validator.py
+
       - name: Check generated closed-code vectors
         run: python scripts/closed_code_registry.py --check
 

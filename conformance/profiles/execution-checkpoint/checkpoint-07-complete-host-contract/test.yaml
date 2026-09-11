@@ -11,11 +11,16 @@ artifacts:
     - { file: unhandled-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: faulted-accepted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: faulted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: ordered-batch-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: mixed-batch-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: inactive-component-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: bounded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: permanent-tombstone-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: bounded-tombstone-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
     - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+    - { file: invalid-adapter-identifier-v2.json, kind: durable_host_inputs_v2, valid: false, error: invalid_durable_host_inputs_v2 }
+    - { file: invalid-uri-scheme-v2.json, kind: durable_host_inputs_v2, valid: false, error: invalid_durable_host_inputs_v2 }
 durable_host_vectors:
   - name: creation_rejection_without_checkpoint
     covers: [creation_rejection_without_checkpoint]
@@ -26,7 +31,7 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/creation_rejected }
     expect: { result: rejected, code: creation_rejected, mutation: none, core_calls: 1 }
   - name: pending_admission_replay
-    covers: [pending_admission_replay]
+    covers: [pending_admission_replay, checkpoint_request_exact_before_identity]
     operation: checkpoint_admit_v2
     checkpoint_before: accepted-checkpoint-v2.json
     checkpoint_after: accepted-checkpoint-v2.json
@@ -73,16 +78,16 @@ durable_host_vectors:
     request: { file: inputs-v2.json, pointer: /requests/faulted }
     result: { file: results-v2.json, pointer: /results/committed }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
-  - name: invalid_delivery_origin
-    covers: [invalid_delivery_origin]
+  - name: invalid_delivery_source
+    covers: [invalid_delivery_source, delivery_source_precedes_target]
     operation: checkpoint_admit_v2
-    checkpoint_before: handled-checkpoint-v2.json
-    checkpoint_after: handled-checkpoint-v2.json
-    request: { file: inputs-v2.json, pointer: /requests/invalid_origin }
-    result: { file: results-v2.json, pointer: /results/invalid_origin }
-    expect: { result: rejected, code: invalid_delivery_origin, mutation: none, core_calls: 0 }
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/invalid_source }
+    result: { file: results-v2.json, pointer: /results/invalid_delivery_source }
+    expect: { result: rejected, code: invalid_delivery_source, mutation: none, core_calls: 0 }
   - name: invalid_delivery_mode
-    covers: [invalid_delivery_mode]
+    covers: [invalid_delivery_mode, delivery_mode_precedes_source]
     operation: checkpoint_admit_v2
     checkpoint_before: handled-checkpoint-v2.json
     checkpoint_after: handled-checkpoint-v2.json
@@ -97,20 +102,108 @@ durable_host_vectors:
     request: { file: inputs-v2.json, pointer: /requests/invalid_digest }
     result: { file: results-v2.json, pointer: /results/invalid_digest }
     expect: { result: rejected, code: delivery_digest_mismatch, mutation: none, core_calls: 0 }
-  - name: replay_conflict_precedence
-    covers: [all_replay_conflict_precedence, replay_event_conflict_precedes_invalid_mode]
+  - name: ordered_batch_admission
+    covers: [ordered_batch_admission, ordered_batch_single_revision, ordered_batch_caller_order]
+    operation: checkpoint_admit_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: ordered-batch-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/ordered_batch }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: all_replay_batch
+    covers: [all_replay_batch_read_only]
+    operation: checkpoint_admit_v2
+    checkpoint_before: ordered-batch-checkpoint-v2.json
+    checkpoint_after: ordered-batch-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/all_replay_batch }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
+  - name: mixed_replay_new_batch
+    covers: [mixed_replay_new_batch]
+    operation: checkpoint_admit_v2
+    checkpoint_before: accepted-checkpoint-v2.json
+    checkpoint_after: mixed-batch-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/mixed_replay_new_batch }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: malformed_batch
+    covers: [ordered_batch_malformed_failure]
+    operation: checkpoint_admit_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/malformed_batch }
+    result: { file: results-v2.json, pointer: /results/malformed_delivery }
+    expect: { result: rejected, code: malformed_delivery, mutation: none, core_calls: 0 }
+  - name: duplicate_event_id_batch
+    covers: [duplicate_event_id_in_batch, duplicate_batch_precedes_replay_conflict]
     operation: checkpoint_admit_v2
     checkpoint_before: handled-checkpoint-v2.json
     checkpoint_after: handled-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/duplicate_event_id_batch }
+    result: { file: results-v2.json, pointer: /results/duplicate_event_id_in_batch }
+    expect: { result: rejected, code: duplicate_event_id_in_batch, mutation: none, core_calls: 0 }
+  - name: terminal_root
+    covers: [terminal_root, terminal_root_precedes_delivery_validation]
+    operation: checkpoint_admit_v2
+    checkpoint_before: faulted-checkpoint-v2.json
+    checkpoint_after: faulted-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/terminal_root }
+    result: { file: results-v2.json, pointer: /results/terminal_root }
+    expect: { result: rejected, code: terminal_root, mutation: none, core_calls: 0 }
+  - name: terminal_root_replay
+    covers: [replay_precedes_terminal_root]
+    operation: checkpoint_admit_v2
+    checkpoint_before: faulted-checkpoint-v2.json
+    checkpoint_after: faulted-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/terminal_root_replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
+  - name: invalid_instance_target
+    covers: [invalid_instance_target, instance_target_precedes_event]
+    operation: checkpoint_admit_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/invalid_instance_target }
+    result: { file: results-v2.json, pointer: /results/invalid_instance_target }
+    expect: { result: rejected, code: invalid_instance_target, mutation: none, core_calls: 0 }
+  - name: inactive_component_target
+    covers: [inactive_component_target]
+    operation: checkpoint_admit_v2
+    checkpoint_before: inactive-component-checkpoint-v2.json
+    checkpoint_after: inactive-component-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/inactive_component_target }
+    result: { file: results-v2.json, pointer: /results/inactive_component_target }
+    expect: { result: rejected, code: inactive_component_target, mutation: none, core_calls: 0 }
+  - name: invalid_payload
+    covers: [invalid_payload, payload_precedes_correlation]
+    operation: checkpoint_admit_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/invalid_payload }
+    result: { file: results-v2.json, pointer: /results/invalid_payload }
+    expect: { result: rejected, code: invalid_payload, mutation: none, core_calls: 0 }
+  - name: invalid_correlation
+    covers: [invalid_correlation, correlation_precedes_digest]
+    operation: checkpoint_admit_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/invalid_correlation }
+    result: { file: results-v2.json, pointer: /results/invalid_correlation }
+    expect: { result: rejected, code: invalid_correlation, mutation: none, core_calls: 0 }
+  - name: replay_conflict_precedence
+    covers: [all_replay_conflict_precedence, replay_event_conflict_precedes_invalid_mode, replay_conflict_precedes_terminal_root]
+    operation: checkpoint_admit_v2
+    checkpoint_before: faulted-checkpoint-v2.json
+    checkpoint_after: faulted-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/replay_conflict }
     result: { file: results-v2.json, pointer: /results/event_conflict }
     expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
-  - name: committed_replay_precedence
-    covers: [committed_replay_precedes_invalid_origin, committed_replay_precedes_stale_writer]
+  - name: committed_replay_read_only
+    covers: [committed_replay_precedes_stale_writer]
     operation: checkpoint_admit_v2
     checkpoint_before: handled-checkpoint-v2.json
     checkpoint_after: handled-checkpoint-v2.json
-    request: { file: inputs-v2.json, pointer: /requests/replay_origin }
+    request: { file: inputs-v2.json, pointer: /requests/replay_committed }
     result: { file: results-v2.json, pointer: /results/replayed }
     expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: concurrent_writer_winner
@@ -124,7 +217,7 @@ durable_host_vectors:
   - name: concurrent_writer_loser
     covers: [concurrent_loser_revision_conflict]
     operation: checkpoint_admit_v2
-    checkpoint_before: accepted-checkpoint-v2.json
+    checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: accepted-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/concurrent_loser }
     result: { file: results-v2.json, pointer: /results/stale }
@@ -164,19 +257,27 @@ durable_host_vectors:
   - name: stale_tombstone_rejection
     covers: [stale_tombstoning_rejected]
     operation: checkpoint_tombstone_v2
-    checkpoint_before: bounded-checkpoint-v2.json
+    checkpoint_before: handled-checkpoint-v2.json
     checkpoint_after: bounded-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/stale_tombstone }
     result: { file: results-v2.json, pointer: /results/stale }
     expect: { result: rejected, code: checkpoint_revision_conflict, mutation: none, core_calls: 0 }
   - name: tombstoned_ingress_rejection
-    covers: [tombstoned_ingress_rejected]
+    covers: [tombstoned_ingress_rejected, tombstoned_root_precedes_delivery_validation]
     operation: checkpoint_admit_v2
     checkpoint_before: bounded-tombstone-checkpoint-v2.json
     checkpoint_after: bounded-tombstone-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/tombstoned_ingress }
     result: { file: results-v2.json, pointer: /results/tombstoned_root }
     expect: { result: rejected, code: tombstoned_root, mutation: none, core_calls: 0 }
+  - name: tombstoned_replay
+    covers: [tombstone_replay_precedes_tombstoned_root]
+    operation: checkpoint_admit_v2
+    checkpoint_before: bounded-tombstone-checkpoint-v2.json
+    checkpoint_after: bounded-tombstone-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/tombstoned_replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: permanent_backup
     covers: [permanent_terminal_retention, permanent_tombstone_retention, backup_completeness_permanent]
     operation: checkpoint_backup_restore_v2
@@ -239,6 +340,22 @@ durable_host_vectors:
     checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: created-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/register_third_party }
+    result: { file: results-v2.json, pointer: /results/validated }
+    expect: { result: validated, mutation: none, core_calls: 0 }
+  - name: vendor_adapter_scheme_registration
+    covers: [adapter_vendor_scheme_positive, adapter_identifier_underscore_rejected, adapter_scheme_underscore_rejected]
+    operation: checkpoint_register_adapter_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/register_vendor_http }
+    result: { file: results-v2.json, pointer: /results/validated }
+    expect: { result: validated, mutation: none, core_calls: 0 }
+  - name: vendor_adapter_scheme_resolution
+    covers: [adapter_vendor_scheme_resolution]
+    operation: checkpoint_resolve_adapter_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/resolve_vendor_http }
     result: { file: results-v2.json, pointer: /results/validated }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: duplicate_adapter_registration
@@ -314,7 +431,7 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/validated }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: equal_identity_scope_b
-    covers: [equal_identity_separate_scope_b, equal_effect_separate_scope_b]
+    covers: [equal_identity_separate_scope_b, equal_effect_separate_scope_b, cross_scope_store_record_isolation]
     operation: checkpoint_scope_operation_v2
     checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: created-checkpoint-v2.json
@@ -354,7 +471,7 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/invalid_scope }
     expect: { result: rejected, code: invalid_store_scope, mutation: none, core_calls: 0 }
   - name: durable_embedded_positive
-    covers: [durable_embedded_profile_positive]
+    covers: [durable_embedded_profile_positive, capability_requirements_derived_from_profile]
     operation: checkpoint_validate_capabilities_v2
     checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: created-checkpoint-v2.json

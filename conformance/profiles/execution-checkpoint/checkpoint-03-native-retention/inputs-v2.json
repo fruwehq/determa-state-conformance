@@ -256,6 +256,18 @@
             "shared_application_transaction",
             "root_identity_retention"
           ]
+        },
+        {
+          "adapter_identifier": "vendor-http",
+          "uri_scheme": "vendor+https",
+          "source": "third_party",
+          "configuration_schema": {
+            "type": "object",
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent"
+          ]
         }
       ]
     },
@@ -272,10 +284,7 @@
       "host_guarantees": [
         "atomic_accept_process"
       ],
-      "required_capabilities": [
-        "durable_single_writer",
-        "root_identity_retention"
-      ]
+      "retention_mode": "permanent"
     },
     "scope": {
       "operation": "checkpoint_scope_operation_v2",
@@ -288,7 +297,21 @@
       },
       "portable_identity": "checkpoint-retention-root",
       "effect_id": "sha256:3af974ef3b5a0cb5f8b20fd93e49c774da6800e95ca58847fb0e2f40f97772f2",
-      "operation_context": "outbox"
+      "operation_context": "outbox",
+      "store_records": [
+        {
+          "scope_id": "scope-a",
+          "ownership_binding": "owner:scope-a",
+          "portable_identity": "checkpoint-retention-root",
+          "effect_id": "sha256:3af974ef3b5a0cb5f8b20fd93e49c774da6800e95ca58847fb0e2f40f97772f2"
+        },
+        {
+          "scope_id": "scope-b",
+          "ownership_binding": "owner:scope-b",
+          "portable_identity": "checkpoint-retention-root",
+          "effect_id": "sha256:3af974ef3b5a0cb5f8b20fd93e49c774da6800e95ca58847fb0e2f40f97772f2"
+        }
+      ]
     }
   }
 }

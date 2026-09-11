@@ -11,6 +11,11 @@ events:
     direction: input
   fail:
     direction: input
+  work_requested:
+    direction: output
+  work_completed:
+    direction: input
+    correlates_to: work_requested
 machines:
   - machine_id: counter
     version: 1

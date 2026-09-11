@@ -33,13 +33,6 @@
       "broker_acknowledged": false,
       "code": "creation_rejected"
     },
-    "invalid_origin": {
-      "result": "rejected",
-      "mutation": "none",
-      "core_calls": 0,
-      "broker_acknowledged": false,
-      "code": "invalid_delivery_origin"
-    },
     "invalid_mode": {
       "result": "rejected",
       "mutation": "none",
@@ -60,6 +53,62 @@
       "core_calls": 0,
       "broker_acknowledged": false,
       "code": "invalid_event"
+    },
+    "malformed_delivery": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "malformed_delivery"
+    },
+    "duplicate_event_id_in_batch": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "duplicate_event_id_in_batch"
+    },
+    "terminal_root": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "terminal_root"
+    },
+    "invalid_delivery_source": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_delivery_source"
+    },
+    "invalid_instance_target": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_instance_target"
+    },
+    "inactive_component_target": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "inactive_component_target"
+    },
+    "invalid_payload": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_payload"
+    },
+    "invalid_correlation": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_correlation"
     },
     "event_conflict": {
       "result": "rejected",

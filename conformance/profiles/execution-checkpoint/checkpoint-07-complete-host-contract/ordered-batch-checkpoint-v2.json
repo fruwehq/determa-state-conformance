@@ -19,8 +19,8 @@
       "migration_sequence": "0",
       "next_logical_step_sequence": "1",
       "next_output_sequence": "0",
-      "next_acceptance_sequence": "1",
-      "next_queue_sequence": "1",
+      "next_acceptance_sequence": "2",
+      "next_queue_sequence": "2",
       "runtimes": [
         {
           "runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620",
@@ -89,8 +89,8 @@
             {
               "envelope": {
                 "event": "increment",
-                "event_id": "complete-increment",
-                "cause_id": "complete-increment",
+                "event_id": "batch-first",
+                "cause_id": "batch-first",
                 "source": {
                   "host": true
                 },
@@ -113,17 +113,50 @@
                   ]
                 ]
               },
-              "envelope_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc",
+              "envelope_digest": "sha256:164f3f3a828459d44ecbb52f7de3afee00aea995e09808b3fd11d23e5e573cbc",
               "delivery_mode": "input",
               "acceptance_sequence": "0",
               "queue_sequence": "0",
+              "deferral_count": "0"
+            },
+            {
+              "envelope": {
+                "event": "increment",
+                "event_id": "batch-second",
+                "cause_id": "batch-second",
+                "source": {
+                  "host": true
+                },
+                "target": {
+                  "root": {
+                    "root_instance_id": "complete-host-root",
+                    "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                  }
+                },
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "amount",
+                      [
+                        "integer",
+                        "2"
+                      ]
+                    ]
+                  ]
+                ]
+              },
+              "envelope_digest": "sha256:b36e18e76bb74a7629ae0b8b4d3545984033e9955e91bdfbd65d1c595d79bf64",
+              "delivery_mode": "input",
+              "acceptance_sequence": "1",
+              "queue_sequence": "1",
               "deferral_count": "0"
             }
           ],
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:54761120aa51f26ae28ce042c47a8fded1271b05432a71699ebb732286196940"
+      "aggregate_state_digest": "sha256:a070ca19df3ffaabb5557e0de198b5be665b6f26e2d84f86f33a40ef67cd4878"
     }
   },
   "operation_receipts": [
@@ -141,14 +174,23 @@
     {
       "operation_kind": "acceptance",
       "receipt_sequence": "1",
-      "event_id": "complete-increment",
-      "request_digest": "sha256:7413d96105bfc0e7463075d6a5f1daf464e14aff9ff0a326e1e15330efae1afc",
+      "event_id": "batch-first",
+      "request_digest": "sha256:164f3f3a828459d44ecbb52f7de3afee00aea995e09808b3fd11d23e5e573cbc",
       "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "2",
+      "event_id": "batch-second",
+      "request_digest": "sha256:b36e18e76bb74a7629ae0b8b4d3545984033e9955e91bdfbd65d1c595d79bf64",
+      "acceptance_sequence": "1",
       "accepted_revision": "1",
       "delivery_mode": "input"
     }
   ],
-  "next_operation_receipt_sequence": "2",
+  "next_operation_receipt_sequence": "3",
   "replay_retention": {
     "mode": "permanent",
     "permanent_replay_eligible": true,
@@ -161,5 +203,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:c0f149508795531f6b48c80b5e115e68a352390d42b84fc5398c5abb8a45e1c6"
+  "execution_checkpoint_digest": "sha256:575a539d6980ab83cb81acde8976afc866c882e89fb94e05a09769a0abf54bdc"
 }

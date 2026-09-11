@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "3c48b20149d13e0d9f70864997dc50fb8be617e836a4c21319c04d47e02caa31",
+  "registry_sha256": "8f7df88a3abf79394bccbee56be4353634cf838d126787df02b3910b14b20d9d",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -34,7 +34,6 @@
         "inactive_component_target",
         "invalid_correlation",
         "invalid_delivery_mode",
-        "invalid_delivery_origin",
         "invalid_delivery_source",
         "invalid_event",
         "invalid_instance_target",

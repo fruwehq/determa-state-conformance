@@ -148,13 +148,13 @@
       "category": "checkpoint_pre_acceptance_failure",
       "code": "inactive_component_target",
       "condition": "A version-2 admission targets a retained component that is no longer active.",
-      "source": "SPEC.md sections 8 and 17.15"
+      "source": "SPEC.md sections 8 and 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_correlation",
       "condition": "A version-2 admission correlation identity violates its public event contract.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
@@ -164,33 +164,27 @@
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
-      "code": "invalid_delivery_origin",
-      "condition": "The delivery origin is outside the closed origin union or inconsistent with its mode.",
-      "source": "SPEC.md section 17.4"
-    },
-    {
-      "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_delivery_source",
       "condition": "A version-2 admission carries a source outside the closed source union or inconsistent with its delivery mode.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_event",
       "condition": "A version-2 admission carries an undeclared or invalid event.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_instance_target",
       "condition": "A version-2 admission targets an absent or non-targetable machine runtime.",
-      "source": "SPEC.md sections 8 and 17.15"
+      "source": "SPEC.md sections 8 and 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_payload",
       "condition": "A version-2 admission payload violates the declared event contract.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
@@ -202,7 +196,7 @@
       "category": "checkpoint_pre_acceptance_failure",
       "code": "terminal_root",
       "condition": "A non-replay version-2 delivery targets a completed or faulted aggregate root.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",

@@ -27,7 +27,8 @@ ordered migration descriptor digest route. Machine documents remain `format: 1`.
 
 The request also carries the exact presented envelope and digest, selected logical
 scope, expected checkpoint identity, application writes, configured store
-capabilities, composed host profile, and failure policy. Validation binds those fields
+capabilities, exact composed host profile, and failure policy. Profile requirements are
+derived from the selected profile rather than accepted as caller claims. Validation binds those fields
 to the before/after store snapshots and requires inbox identity, checkpoint revisions,
 outbox and audit state, and application rows to commit as one request-derived result.
 Quarantine release requests name the retained event, digest, reason, scope, and release

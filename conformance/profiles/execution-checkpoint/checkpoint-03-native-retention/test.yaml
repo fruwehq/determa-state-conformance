@@ -38,7 +38,7 @@ durable_host_vectors:
   - name: checkpoint_stale_pruning_rejected
     covers: [checkpoint_stale_pruning_rejected]
     operation: checkpoint_prune_v2
-    checkpoint_before: bounded-checkpoint-v2.json
+    checkpoint_before: processed-checkpoint-v2.json
     checkpoint_after: bounded-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/prune_stale }
     result: { file: results-v2.json, pointer: /results/stale }

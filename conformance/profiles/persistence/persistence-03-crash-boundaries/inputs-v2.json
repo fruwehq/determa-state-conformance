@@ -58,7 +58,11 @@
         "root_identity_retention",
         "shared_application_transaction"
       ],
-      "host_profile": "shared_application_transaction"
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
     },
     "process_precommit_failure": {
       "operation": "persistence_process_v2",
@@ -116,7 +120,11 @@
         "root_identity_retention",
         "shared_application_transaction"
       ],
-      "host_profile": "shared_application_transaction"
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
     },
     "process_postcommit_response_loss": {
       "operation": "persistence_process_v2",
@@ -174,7 +182,11 @@
         "root_identity_retention",
         "shared_application_transaction"
       ],
-      "host_profile": "shared_application_transaction"
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
     },
     "process_transient": {
       "operation": "persistence_process_v2",
@@ -232,7 +244,11 @@
         "root_identity_retention",
         "shared_application_transaction"
       ],
-      "host_profile": "shared_application_transaction"
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
     },
     "process_permanent": {
       "operation": "persistence_process_v2",
@@ -290,7 +306,11 @@
         "root_identity_retention",
         "shared_application_transaction"
       ],
-      "host_profile": "shared_application_transaction"
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
     },
     "replay": {
       "operation": "persistence_process_v2",
@@ -348,7 +368,11 @@
         "root_identity_retention",
         "shared_application_transaction"
       ],
-      "host_profile": "shared_application_transaction"
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
     },
     "release": {
       "operation": "persistence_release_quarantine_v2",
