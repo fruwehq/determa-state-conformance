@@ -3450,6 +3450,14 @@ def produce_checkpoint() -> dict[str, bytes]:
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": event_terminal["receipt_sequence"],
         }, terminal),
+        "live_acceptance_prune": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": "1",
+        }, admitted),
+        "terminal_pair_prune": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": "1",
+        }, terminal),
         "equal_prune": with_checkpoint_cas({
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": event_terminal["receipt_sequence"],
@@ -3470,6 +3478,13 @@ def produce_checkpoint() -> dict[str, bytes]:
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": "9",
         }, terminal),
+        "admit_invalid_checkpoint": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_admit_v2",
+                "deliveries": [{}],
+            },
+            invalid,
+        ),
         "tombstone": with_checkpoint_cas(
             {"operation": "checkpoint_tombstone_v2"}, terminal
         ),

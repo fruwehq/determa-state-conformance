@@ -372,6 +372,20 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /bounded_prune
     expect: { result: success, exact_result_file: compact-checkpoint-v2.json }
+  - name: checkpoint_live_acceptance_blocks_pruning
+    covers: [version2_live_acceptance_pruning_rejected]
+    operation: checkpoint_prune_v2
+    checkpoint_before: admitted-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /live_acceptance_prune
+    expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: admitted-checkpoint-v2.json }
+  - name: checkpoint_terminal_pair_blocks_partial_pruning
+    covers: [version2_terminal_pair_pruning_rejected]
+    operation: checkpoint_prune_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /terminal_pair_prune
+    expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: terminal-checkpoint-v2.json }
   - name: checkpoint_equal_cutoff_is_idempotent
     covers: [version2_equal_pruning_cutoff]
     operation: checkpoint_prune_v2
@@ -407,6 +421,14 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /invalid_high_prune
     expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: terminal-checkpoint-v2.json }
+  - name: checkpoint_admission_rejects_invalid_checkpoint_artifact
+    covers: [checkpoint_admission_invalid_artifact]
+    operation: checkpoint_admit_v2
+    bundle: machine.yaml
+    checkpoint_before: invalid-duplicate-location-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /admit_invalid_checkpoint
+    expect: { result: failure, code: invalid_execution_checkpoint, unchanged_file: invalid-duplicate-location-checkpoint-v2.json }
   - name: checkpoint_tombstone_replay
     covers: [terminal_tombstone_replay]
     operation: checkpoint_admit_v2

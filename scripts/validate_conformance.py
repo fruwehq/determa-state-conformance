@@ -245,6 +245,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "capacity_zero_and_overflow_fault",
         "checkpoint_v1_requires_upgrade",
         "checkpoint_v2_schema_positive_negative",
+        "checkpoint_admission_invalid_artifact",
         "compacted_legacy_terminal_replay",
         "checkpoint_pending_replay_precedes_stale_cas",
         "cleanup_fault_rollback",
@@ -342,6 +343,8 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "version2_counter_allocation",
         "version2_dependency_safe_pruning",
         "version2_dependency_pruning_rejected",
+        "version2_live_acceptance_pruning_rejected",
+        "version2_terminal_pair_pruning_rejected",
         "version2_equal_pruning_cutoff",
         "version2_equal_pruning_precedes_stale_cas",
         "version2_invalid_pruning_cutoff_rejected",
@@ -4055,7 +4058,8 @@ def validate_version2_vectors(
         | {"checkpoint_revision_conflict"},
         "downgrade_checkpoint_v2_to_v1": checkpoint_artifact_failure_codes
         | {"checkpoint_revision_conflict"},
-        "checkpoint_admit_v2": checkpoint_admission_rejection_codes,
+        "checkpoint_admit_v2": checkpoint_artifact_failure_codes
+        | checkpoint_admission_rejection_codes,
         "checkpoint_step_v2": checkpoint_artifact_failure_codes
         | {"checkpoint_revision_conflict"},
         "checkpoint_prune_v2": checkpoint_artifact_failure_codes
@@ -4446,6 +4450,91 @@ def validate_version2_vectors(
             )
         validate_execution_checkpoint_v2_semantics(checkpoint)
 
+    def project_bounded_prune(
+        checkpoint: dict[str, Any], cutoff: int
+    ) -> dict[str, Any]:
+        projected = copy.deepcopy(checkpoint)
+        receipts = projected["operation_receipts"]
+        removed = [
+            receipt
+            for receipt in receipts
+            if receipt["receipt_sequence"] != "0"
+            and canonical_decimal(
+                receipt["receipt_sequence"], "pruned receipt sequence"
+            )
+            <= cutoff
+        ]
+        projected["operation_receipts"] = [
+            receipt for receipt in receipts if receipt not in removed
+        ]
+        acceptance_by_event = {
+            receipt["event_id"]: receipt
+            for receipt in receipts
+            if receipt["operation_kind"] == "acceptance"
+        }
+        derived_tombstones = list(projected["event_identity_tombstones"])
+        for receipt in removed:
+            if receipt["operation_kind"] == "event_terminal":
+                acceptance = acceptance_by_event[receipt["event_id"]]
+                derived_tombstones.append(
+                    {
+                        "event_id": receipt["event_id"],
+                        "request_digest": receipt["request_digest"],
+                        "request_digest_domain": (
+                            "determa-inbox-envelope-digest-2"
+                        ),
+                        "acceptance_sequence": acceptance[
+                            "acceptance_sequence"
+                        ],
+                        "terminal_receipt_sequence": receipt[
+                            "receipt_sequence"
+                        ],
+                        "terminal_disposition": receipt["outcome"][
+                            "disposition"
+                        ],
+                    }
+                )
+            elif (
+                receipt["operation_kind"] == "legacy_v1_operation"
+                and receipt["legacy_receipt"].get("operation_kind")
+                == "delivery"
+            ):
+                legacy = receipt["legacy_receipt"]
+                derived_tombstones.append(
+                    {
+                        "event_id": legacy["event_id"],
+                        "request_digest": legacy["request_digest"],
+                        "request_digest_domain": (
+                            "determa-inbox-envelope-digest-1"
+                        ),
+                        "acceptance_sequence": legacy[
+                            "accepted_delivery_sequence"
+                        ],
+                        "terminal_receipt_sequence": receipt[
+                            "receipt_sequence"
+                        ],
+                        "terminal_disposition": legacy["outcome"][
+                            "disposition"
+                        ],
+                    }
+                )
+        projected["event_identity_tombstones"] = sorted(
+            derived_tombstones,
+            key=lambda item: canonical_decimal(
+                item["terminal_receipt_sequence"],
+                "projected tombstone terminal sequence",
+            ),
+        )
+        projected["replay_retention"][
+            "pruned_through_receipt_sequence"
+        ] = str(cutoff)
+        projected["revision"] = str(int(checkpoint["revision"]) + 1)
+        projected.pop("execution_checkpoint_digest", None)
+        projected["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-2", projected]
+        )
+        return projected
+
     operation_signatures: dict[tuple[str, str | None, str], str] = {}
 
     for index, vector in enumerate(test["version2_vectors"]):
@@ -4550,6 +4639,18 @@ def validate_version2_vectors(
                 raise ValidationFailure(
                     f"{location}: invalid input artifact requires exact "
                     f"{invalid_input_error} rejection"
+                )
+            if "checkpoint_admission_invalid_artifact" in covers and (
+                operation != "checkpoint_admit_v2"
+                or manifests[vector["checkpoint_before"]]["kind"]
+                != "execution_checkpoint_v2"
+                or manifests[vector["checkpoint_before"]]["error"]
+                != "invalid_execution_checkpoint"
+                or not any(not delivery for delivery in selected["deliveries"])
+            ):
+                raise ValidationFailure(
+                    f"{location}: invalid checkpoint admission does not prove "
+                    "artifact validation precedence"
                 )
             continue
         if operation.startswith("checkpoint_") or operation in {
@@ -6343,24 +6444,18 @@ def validate_version2_vectors(
                         prior_cutoff_value, "prior pruning cutoff"
                     )
                 )
-                retention = result_document["replay_retention"]
-                retained_sequences = {
-                    canonical_decimal(receipt["receipt_sequence"], "retained receipt sequence")
-                    for receipt in result_document["operation_receipts"]
-                }
                 if prior_cutoff == cutoff:
                     if result_document != checkpoint_before:
                         raise ValidationFailure(
                             f"{location}: equal pruning cutoff mutated checkpoint"
                         )
-                elif (
-                    retention["mode"] != "bounded"
-                    or canonical_decimal(retention["pruned_through_receipt_sequence"], "recorded pruning cutoff") != cutoff
-                    or any(sequence != 0 and sequence <= cutoff for sequence in retained_sequences)
-                    or result_document["revision"] != str(int(checkpoint_before["revision"]) + 1)
-                    or result_document["pending_outbox_intents"] != checkpoint_before["pending_outbox_intents"]
+                elif result_document != project_bounded_prune(
+                    checkpoint_before, cutoff
                 ):
-                    raise ValidationFailure(f"{location}: bounded pruning result is not the exact requested cutoff")
+                    raise ValidationFailure(
+                        f"{location}: bounded pruning result is not the exact "
+                        "specification projection"
+                    )
         if operation == "checkpoint_prune_v2" and expectation["result"] == "failure":
             checkpoint_before = artifact(vector["checkpoint_before"]).document
             cutoff = canonical_decimal(
@@ -6382,28 +6477,106 @@ def validate_version2_vectors(
                 "next receipt sequence",
             )
             aggregate = checkpoint_before["root_record"].get("aggregate_state")
-            producer_sequences = {
-                canonical_decimal(
-                    reference_receipt["receipt_sequence"],
-                    "producer receipt sequence",
-                )
-                for reference_receipt in checkpoint_before["operation_receipts"]
-                for reference in reference_receipt.get("emission_references", [])
-                if reference.get("kind") == "internal_mailbox"
-                and aggregate is not None
-                and any(
-                    entry["envelope"]["event_id"] == reference["event_id"]
+            live_entries = (
+                [
+                    entry
                     for runtime in aggregate["runtimes"]
                     for mailbox in (
                         runtime["ready_mailbox"],
                         runtime["deferred_mailbox"],
                     )
                     for entry in mailbox
-                )
-            }
-            dependency_invalid = any(
-                sequence <= cutoff for sequence in producer_sequences
+                ]
+                if aggregate is not None
+                else []
             )
+            live_event_ids = {
+                entry["envelope"]["event_id"] for entry in live_entries
+            }
+            receipts = checkpoint_before["operation_receipts"]
+            acceptance_by_event = {
+                receipt["event_id"]: receipt
+                for receipt in receipts
+                if receipt["operation_kind"] == "acceptance"
+            }
+            terminal_by_event = {
+                receipt["event_id"]: receipt
+                for receipt in receipts
+                if receipt["operation_kind"] == "event_terminal"
+            }
+            dependency_reasons: set[str] = set()
+            if any(
+                event_id in live_event_ids
+                and canonical_decimal(
+                    receipt["receipt_sequence"],
+                    "live acceptance receipt sequence",
+                )
+                <= cutoff
+                for event_id, receipt in acceptance_by_event.items()
+            ):
+                dependency_reasons.add("live_acceptance")
+            if any(
+                (
+                    canonical_decimal(
+                        acceptance_by_event[event_id]["receipt_sequence"],
+                        "acceptance receipt sequence",
+                    )
+                    <= cutoff
+                )
+                != (
+                    canonical_decimal(
+                        terminal["receipt_sequence"],
+                        "terminal receipt sequence",
+                    )
+                    <= cutoff
+                )
+                for event_id, terminal in terminal_by_event.items()
+                if event_id in acceptance_by_event
+            ):
+                dependency_reasons.add("terminal_pair")
+
+            retained_event_ids = live_event_ids
+            pending_effect_ids = {
+                item["intent"]["effect_id"]
+                for item in checkpoint_before["pending_outbox_intents"]
+            }
+            for producer in receipts:
+                producer_sequence = canonical_decimal(
+                    producer["receipt_sequence"], "producer receipt sequence"
+                )
+                if producer_sequence > cutoff:
+                    continue
+                references = list(producer.get("emission_references", []))
+                legacy = producer.get("legacy_receipt")
+                if isinstance(legacy, dict):
+                    references.extend(legacy.get("emission_references", []))
+                if any(
+                    reference.get("event_id") in retained_event_ids
+                    for reference in references
+                    if reference.get("kind")
+                    in {
+                        "internal_mailbox",
+                        "internal_terminal",
+                        "internal_delivery",
+                    }
+                ):
+                    dependency_reasons.add("internal_producer")
+                if any(
+                    reference.get("effect_id") in pending_effect_ids
+                    for reference in references
+                    if reference.get("kind") == "external_outbox"
+                ):
+                    dependency_reasons.add("pending_outbox")
+            for entry in live_entries:
+                source = entry["envelope"]["source"]
+                legacy_origin = source.get("legacy_v1_internal")
+                if legacy_origin is not None and canonical_decimal(
+                    legacy_origin["producing_receipt_sequence"],
+                    "legacy internal producer sequence",
+                ) <= cutoff:
+                    dependency_reasons.add("internal_producer")
+
+            dependency_invalid = bool(dependency_reasons)
             if expectation.get("code") == "invalid_execution_checkpoint":
                 if lower_cutoff_invalid or skipped_cutoff_invalid or dependency_invalid:
                     failure_evidence.add("invalid_execution_checkpoint")
@@ -6427,6 +6600,22 @@ def validate_version2_vectors(
                 ):
                     raise ValidationFailure(
                         f"{location}: dependency rejection has no retained producer"
+                    )
+                if (
+                    "version2_live_acceptance_pruning_rejected" in covers
+                    and "live_acceptance" not in dependency_reasons
+                ):
+                    raise ValidationFailure(
+                        f"{location}: live-acceptance pruning rejection lacks "
+                        "protected live work"
+                    )
+                if (
+                    "version2_terminal_pair_pruning_rejected" in covers
+                    and "terminal_pair" not in dependency_reasons
+                ):
+                    raise ValidationFailure(
+                        f"{location}: terminal-pair pruning rejection is not "
+                        "distinguishing"
                     )
         if (
             expectation["result"] == "failure"
@@ -6755,6 +6944,37 @@ def validate_version2_vectors(
             "tombstoned-batch-replay-result.json"
         ).document
         probes = {}
+        for label, mutation in (
+            ("pruning changed aggregate variable", "variable"),
+            ("pruning changed logical step counter", "logical_step"),
+            ("pruning omitted required replay tombstone", "tombstone"),
+        ):
+            compact_projection = copy.deepcopy(
+                artifact("compact-checkpoint-v2.json").document
+            )
+            aggregate = compact_projection["root_record"]["aggregate_state"]
+            if mutation == "variable":
+                aggregate["runtimes"][0]["variables"][0]["value"] = [
+                    "integer",
+                    "999",
+                ]
+            elif mutation == "logical_step":
+                aggregate["next_logical_step_sequence"] = "999"
+            else:
+                compact_projection["event_identity_tombstones"] = []
+            if mutation != "tombstone":
+                aggregate.pop("aggregate_state_digest")
+                aggregate["aggregate_state_digest"] = hash_value(
+                    ["determa-aggregate-state-digest-2", aggregate]
+                )
+            compact_projection.pop("execution_checkpoint_digest")
+            compact_projection["execution_checkpoint_digest"] = hash_value(
+                [
+                    "determa-execution-checkpoint-digest-2",
+                    compact_projection,
+                ]
+            )
+            probes[label] = {"compact-checkpoint-v2.json": compact_projection}
         unseen_checkpoint_conflict_inputs = copy.deepcopy(
             artifact("operation-inputs.json").document
         )
