@@ -332,7 +332,6 @@
         },
         "migration_descriptor_files": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "$ref": "#/$defs/jsonFileName"
           }
@@ -342,7 +341,6 @@
         },
         "migration_descriptor_digest_route": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "$ref": "#/$defs/sha256"
           }

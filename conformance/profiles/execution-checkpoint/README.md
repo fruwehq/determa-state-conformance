@@ -82,8 +82,9 @@ Coverage is intentionally grouped into five scenario directories:
   two externally selected logical scopes and require byte-identical portable
   checkpoint serialization, checkpoint digest, and effect identities after both
   operations.
-- `checkpoint-03-retention-and-root-lifecycle` covers a non-empty keyed maintenance
-  migration/audit, post-commit response loss and replay, operation conflict, permanent
+- `checkpoint-03-retention-and-root-lifecycle` covers empty, one-hop, and two-hop keyed
+  maintenance transactions with exact public receipts and ordered audits, post-commit
+  response loss and replay-before-CAS, operation conflict, stale-writer rejection, permanent
   retention, irreversible bounded retention in both directions, dependency-safe
   pruning, stale pruning/tombstoning, completed-root tombstoning/replay, root identity
   non-reuse, tombstoned pre-acceptance, and unsupported physical deletion. It also
@@ -104,8 +105,9 @@ The invalid artifacts separately prove format/version classification, structural
 closure, digest mismatch, foreign-root delivery targets, permanent delivery-allocation
 gaps, noncanonical outbox order, dangling effect linkage, wrong compact intent digest,
 wrong initial outbox state revision, a bounded cutoff that crosses a retained internal
-origin, and an unrelated root-tombstone final digest. Every semantic probe recomputes
-the outer checkpoint digest.
+origin, an unrelated root-tombstone final digest, and malformed maintenance receipt
+shape, digest, allocation, revision, sequence, and audit order. Every semantic probe
+recomputes the outer checkpoint digest.
 
 ## Generation and independent core verification
 
@@ -127,7 +129,7 @@ checkout.
 
 The checked generation used:
 
-- specification `7782671b56165a59caa61a65c29fefc63105ebf8`;
+- specification `e22f9db295d632f3f46a9d1260c63b5af92efa7e`;
 - Python core `7b17d788b48049648e7e463aa3d35ba13dc1aa6e`; and
 - Rust core `d17480c8b281dcd17953f59afcf6b5d23ff44efd`.
 

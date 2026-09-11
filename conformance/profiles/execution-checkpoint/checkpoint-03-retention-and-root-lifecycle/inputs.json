@@ -54,6 +54,54 @@
       "expected_revision": "0",
       "expected_checkpoint_digest": "sha256:9232ed9942a1bb953323035e3532f7ea9004f4f8982628a008a43bdfd5c78a06"
     },
+    "maintenance_empty": {
+      "operation": "maintenance_migration",
+      "operation_id": "maintenance-empty",
+      "source_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+      "target_bundle_file": "migration-source.yaml",
+      "target_bundle_source_digest": "sha256:8cb23f483b79c77284ca942fef33fd51ae804aa03d896e63c33ca6a3251606bf",
+      "migration_descriptor_files": [],
+      "target_validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9",
+      "migration_descriptor_digest_route": [],
+      "maintenance_mode": true,
+      "request_digest": "sha256:ee0b794fde85dc442e797aabadc3a7f0dd3e18b22c9d1b26c771018f012bb53c",
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:9232ed9942a1bb953323035e3532f7ea9004f4f8982628a008a43bdfd5c78a06"
+    },
+    "maintenance_multi_hop": {
+      "operation": "maintenance_migration",
+      "operation_id": "maintenance-multi-hop",
+      "source_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+      "target_bundle_file": "migration-target-second.yaml",
+      "target_bundle_source_digest": "sha256:691e432a2d4f231d609f778195f22a329acaa16e9cec9430692f0068844e4e17",
+      "migration_descriptor_files": [
+        "migration-descriptor.json",
+        "migration-descriptor-second.json"
+      ],
+      "target_validated_bundle_fingerprint": "sha256:75581a6535ba01f63e9d16098d68b740dc839cae7d401946a9ac9641cc307f57",
+      "migration_descriptor_digest_route": [
+        "sha256:b79f764863cb9b02a706d6feb5a2fb8a78907fd85bff31f7810466a9815e62af",
+        "sha256:b837c80379f5a9e8f8d434b3861ce71d58b6cf05d8a6a0179594688a4d7d6a9a"
+      ],
+      "maintenance_mode": true,
+      "request_digest": "sha256:964318ba78c5b9b092cd2967944c2049e8e1687c1e4a1be9e8a90d3a3af19339",
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:9232ed9942a1bb953323035e3532f7ea9004f4f8982628a008a43bdfd5c78a06"
+    },
+    "maintenance_stale_writer": {
+      "operation": "maintenance_migration",
+      "operation_id": "maintenance-stale-writer",
+      "source_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+      "target_bundle_file": "migration-source.yaml",
+      "target_bundle_source_digest": "sha256:8cb23f483b79c77284ca942fef33fd51ae804aa03d896e63c33ca6a3251606bf",
+      "migration_descriptor_files": [],
+      "target_validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9",
+      "migration_descriptor_digest_route": [],
+      "maintenance_mode": true,
+      "request_digest": "sha256:c48deb65a82f1e13014fe9dfead52b1f0a2cf16f388e0abc6425f541cb07fa85",
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:9232ed9942a1bb953323035e3532f7ea9004f4f8982628a008a43bdfd5c78a06"
+    },
     "prune_through_1": {
       "operation": "update_replay_retention",
       "target_replay_retention": {

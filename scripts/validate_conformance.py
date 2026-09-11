@@ -154,6 +154,9 @@ REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
         "maintenance_migration_commit",
         "maintenance_migration_replay",
         "maintenance_migration_conflict",
+        "maintenance_migration_empty_route_commit",
+        "maintenance_migration_multi_hop_commit",
+        "maintenance_migration_stale_writer",
         "migration_audit_non_empty",
         "pre_acceptance_malformed_delivery",
         "pre_acceptance_wrong_root",
@@ -560,6 +563,9 @@ EXECUTION_CHECKPOINT_COVERAGE_RULES = {
     "maintenance_migration_commit": ("maintenance_migration", "response_lost", "response_lost_after_commit", "changed", "migrate", "after_commit_before_response", "migration"),
     "maintenance_migration_replay": ("maintenance_migration", "committed", None, "unchanged", "none", None, "migration_replay"),
     "maintenance_migration_conflict": ("maintenance_migration", "failure", "operation_id_conflict", "unchanged", "none", None, "migration_conflict"),
+    "maintenance_migration_empty_route_commit": ("maintenance_migration", "committed", None, "changed", "migrate", None, "migration_empty"),
+    "maintenance_migration_multi_hop_commit": ("maintenance_migration", "committed", None, "changed", "migrate", None, "migration_multi"),
+    "maintenance_migration_stale_writer": ("maintenance_migration", "failure", "checkpoint_revision_conflict", "unchanged", "none", None, "stale_cas"),
     "migration_audit_non_empty": ("maintenance_migration", "response_lost", "response_lost_after_commit", "changed", "migrate", "after_commit_before_response", "migration"),
     "pre_acceptance_malformed_delivery": ("accept_delivery", "not_accepted", "malformed_delivery", "unchanged", "none", None, "malformed"),
     "pre_acceptance_wrong_root": ("accept_delivery", "not_accepted", "wrong_root", "unchanged", "none", None, "wrong_root"),
@@ -1681,6 +1687,94 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
             or audit["root_runtime_id"] != root_runtime_id
         ):
             raise ValidationFailure("checkpoint: migration audit root mismatch")
+
+    maintenance_operation_ids: set[str] = set()
+    audits_by_sequence = {
+        item["migration_sequence"]: item for item in audits
+    }
+    for receipt in receipts:
+        if receipt["operation_kind"] != "maintenance_migration":
+            continue
+        operation_id = receipt["operation_id"]
+        if operation_id in maintenance_operation_ids:
+            raise ValidationFailure(
+                "checkpoint: duplicate maintenance operation identity"
+            )
+        maintenance_operation_ids.add(operation_id)
+        sequences = receipt["migration_sequences"]
+        selected_audits = [audits_by_sequence.get(item) for item in sequences]
+        if any(item is None for item in selected_audits):
+            raise ValidationFailure("checkpoint: maintenance receipt has dangling audit")
+        selected = [item for item in selected_audits if item is not None]
+        if receipt["result_code"] == "migration_no_operation":
+            if (
+                sequences
+                or receipt["source_aggregate_state_digest"]
+                != receipt["resulting_aggregate_state_digest"]
+            ):
+                raise ValidationFailure(
+                    "checkpoint: maintenance no-operation receipt is inconsistent"
+                )
+            if (
+                root_record["status"] == "retained"
+                and root_record["aggregate_state"]["aggregate_state_digest"]
+                == receipt["resulting_aggregate_state_digest"]
+            ):
+                expected_request_digest = hash_value([
+                    "determa-maintenance-migration-request-digest-1",
+                    "1",
+                    root_id,
+                    operation_id,
+                    receipt["source_aggregate_state_digest"],
+                    root_record["aggregate_state"][
+                        "validated_bundle_fingerprint"
+                    ],
+                    [],
+                    True,
+                ])
+                if receipt["request_digest"] != expected_request_digest:
+                    raise ValidationFailure(
+                        "checkpoint: maintenance request digest is inconsistent"
+                    )
+            continue
+        if not selected:
+            raise ValidationFailure(
+                "checkpoint: applied maintenance receipt lacks audit"
+            )
+        if (
+            [item["migration_sequence"] for item in selected] != sequences
+            or any(
+                int(right["migration_sequence"])
+                != int(left["migration_sequence"]) + 1
+                for left, right in zip(selected, selected[1:])
+            )
+            or selected[0]["source_aggregate_state_digest"]
+            != receipt["source_aggregate_state_digest"]
+            or selected[-1]["target_aggregate_state_digest"]
+            != receipt["resulting_aggregate_state_digest"]
+            or any(
+                left["target_aggregate_state_digest"]
+                != right["source_aggregate_state_digest"]
+                for left, right in zip(selected, selected[1:])
+            )
+        ):
+            raise ValidationFailure(
+                "checkpoint: maintenance receipt audit chain is inconsistent"
+            )
+        expected_request_digest = hash_value([
+            "determa-maintenance-migration-request-digest-1",
+            "1",
+            root_id,
+            operation_id,
+            receipt["source_aggregate_state_digest"],
+            selected[-1]["target_validated_bundle_fingerprint"],
+            [item["migration_descriptor_digest"] for item in selected],
+            True,
+        ])
+        if receipt["request_digest"] != expected_request_digest:
+            raise ValidationFailure(
+                "checkpoint: maintenance request digest is inconsistent"
+            )
 
     if root_record["status"] == "tombstone":
         final_receipt_digest = receipts[-1]["resulting_aggregate_state_digest"]
@@ -3091,7 +3185,7 @@ def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) ->
             checkpoint = analyze_artifact(path).document
             if checkpoint["root_record"]["status"] == "retained":
                 retained_paths.add(path)
-    if len(retained_paths) != 42:
+    if len(retained_paths) != 44:
         raise ValidationFailure(
             "version-1 retained checkpoint upgrade probe set is incomplete"
         )
@@ -8838,6 +8932,8 @@ def validate_execution_checkpoint_profile(
             raise ValidationFailure(
                 f"{location}: migration descriptor files and route differ"
             )
+        if not route:
+            return
         for filename, digest in zip(files, route, strict=True):
             entry = manifest.get(filename)
             if (
@@ -9283,6 +9379,35 @@ def validate_execution_checkpoint_profile(
                     != operation_input["request_digest"]
                     for item in before_document["operation_receipts"]
                 )
+            )
+        elif predicate == "migration_empty":
+            require(
+                operation_input is not None
+                and before_document is not None
+                and after_document is not None
+                and core_result is not None
+                and receipt is not None
+                and operation_input["migration_descriptor_digest_route"] == []
+                and operation_input["target_validated_bundle_fingerprint"]
+                == before_document["root_record"]["aggregate_state"][
+                    "validated_bundle_fingerprint"
+                ]
+                and core_result["audit_records"] == []
+                and receipt["migration_sequences"] == []
+                and receipt["result_code"] == "migration_no_operation"
+                and before_document["root_record"]["aggregate_state"]
+                == after_document["root_record"]["aggregate_state"]
+            )
+        elif predicate == "migration_multi":
+            require(
+                operation_input is not None
+                and core_result is not None
+                and receipt is not None
+                and len(operation_input["migration_descriptor_digest_route"]) > 1
+                and len(core_result["audit_records"])
+                == len(operation_input["migration_descriptor_digest_route"])
+                and receipt["migration_sequences"]
+                == [item["migration_sequence"] for item in core_result["audit_records"]]
             )
         elif predicate == "malformed":
             require(
@@ -10141,6 +10266,11 @@ def validate_execution_checkpoint_profile(
                 raise ValidationFailure(
                     f"{location}: missing expected receipt {receipt_sequence}"
                 )
+        expected_receipt = expectation.get("receipt")
+        if expected_receipt is not None and expected_receipt != receipt:
+            raise ValidationFailure(
+                f"{location}: public operation receipt bytes differ"
+            )
 
         if operation == "create" and result == "committed":
             if receipt is None or receipt["operation_kind"] != "creation":
@@ -10237,6 +10367,51 @@ def validate_execution_checkpoint_profile(
                 or receipt["request_digest"] != operation_input["request_digest"]
             ):
                 raise ValidationFailure(f"{location}: maintenance receipt mismatch")
+            assert before_document is not None and after_document is not None
+            if mutation == "unchanged":
+                if (
+                    after_document != before_document
+                    or receipt not in before_document["operation_receipts"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: maintenance replay changed its checkpoint"
+                    )
+            else:
+                route = operation_input["migration_descriptor_digest_route"]
+                appended_audits = after_document["migration_audit_records"][
+                    len(before_document["migration_audit_records"]):
+                ]
+                expected_sequences = [
+                    item["migration_sequence"] for item in appended_audits
+                ]
+                expected_result_code = (
+                    "migration_no_operation" if not route else "migration_applied"
+                )
+                if (
+                    receipt["receipt_sequence"]
+                    != before_document["next_operation_receipt_sequence"]
+                    or receipt["committed_revision"] != after_document["revision"]
+                    or receipt["source_aggregate_state_digest"]
+                    != before_document["root_record"]["aggregate_state"][
+                        "aggregate_state_digest"
+                    ]
+                    or receipt["resulting_aggregate_state_digest"]
+                    != after_document["root_record"]["aggregate_state"][
+                        "aggregate_state_digest"
+                    ]
+                    or receipt["migration_sequences"] != expected_sequences
+                    or receipt["result_code"] != expected_result_code
+                    or len(appended_audits) != len(route)
+                    or [
+                        item["migration_descriptor_digest"]
+                        for item in appended_audits
+                    ] != route
+                    or after_document["operation_receipts"]
+                    != [*before_document["operation_receipts"], receipt]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: maintenance transaction projection mismatch"
+                    )
         if operation == "update_pending_outbox" and result == "committed":
             assert operation_input is not None
             record = next(
@@ -10384,8 +10559,9 @@ def validate_execution_checkpoint_profile(
                 or core_result["aggregate_state"]
                 != after_document["root_record"]["aggregate_state"]
                 or core_result["audit_records"]
-                != after_document["migration_audit_records"]
-                or not core_result["audit_records"]
+                != after_document["migration_audit_records"][
+                    len(before_document["migration_audit_records"]):
+                ]
             ):
                 raise ValidationFailure(
                     f"{location}: migration result or audit differs from core"

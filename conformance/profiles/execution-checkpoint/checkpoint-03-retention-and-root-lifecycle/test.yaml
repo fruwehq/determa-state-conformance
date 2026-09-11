@@ -5,14 +5,42 @@ static:
     - { file: terminal.yaml, valid: true }
     - { file: migration-source.yaml, valid: true }
     - { file: migration-target.yaml, valid: true }
+    - { file: migration-target-second.yaml, valid: true }
 artifacts:
   documents:
     - { file: inputs.json, kind: execution_checkpoint_inputs, valid: true }
     - { file: core-results.json, kind: execution_checkpoint_core_evidence, valid: true }
     - { file: migration-descriptor.json, kind: migration_descriptor, valid: true }
     - { file: migration-descriptor-conflict.json, kind: migration_descriptor, valid: true }
+    - { file: migration-descriptor-second.json, kind: migration_descriptor, valid: true }
     - { file: maintenance-created-checkpoint.json, kind: execution_checkpoint, valid: true }
     - { file: maintenance-checkpoint.json, kind: execution_checkpoint, valid: true }
+    - { file: maintenance-empty-checkpoint.json, kind: execution_checkpoint, valid: true }
+    - { file: maintenance-multi-hop-checkpoint.json, kind: execution_checkpoint, valid: true }
+    - file: invalid-maintenance-receipt-schema-checkpoint.json
+      kind: execution_checkpoint
+      valid: false
+      error: invalid_execution_checkpoint
+    - file: invalid-maintenance-receipt-digest-checkpoint.json
+      kind: execution_checkpoint
+      valid: false
+      error: invalid_execution_checkpoint
+    - file: invalid-maintenance-receipt-sequences-checkpoint.json
+      kind: execution_checkpoint
+      valid: false
+      error: invalid_execution_checkpoint
+    - file: invalid-maintenance-audit-order-checkpoint.json
+      kind: execution_checkpoint
+      valid: false
+      error: invalid_execution_checkpoint
+    - file: invalid-maintenance-receipt-revision-checkpoint.json
+      kind: execution_checkpoint
+      valid: false
+      error: invalid_execution_checkpoint
+    - file: invalid-maintenance-receipt-allocation-checkpoint.json
+      kind: execution_checkpoint
+      valid: false
+      error: invalid_execution_checkpoint
     - { file: dependency-checkpoint.json, kind: execution_checkpoint, valid: true }
     - { file: bounded-checkpoint.json, kind: execution_checkpoint, valid: true }
     - { file: completed-checkpoint.json, kind: execution_checkpoint, valid: true }
@@ -76,6 +104,60 @@ execution_checkpoint_profile:
         checkpoint_mutation: unchanged
         core_call: none
         receipt_sequence: "1"
+        receipt:
+          operation_kind: maintenance_migration
+          receipt_sequence: "1"
+          operation_id: maintenance-transform
+          request_digest: sha256:5add1768fcbd3c4dea3400ab11c90e5a7d5dd17162a10b2c2cd2f90914188ff5
+          committed_revision: "1"
+          source_aggregate_state_digest: sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a
+          resulting_aggregate_state_digest: sha256:76f3cc4911d437948ee89b6b574144cf8fbe01cef3a10794b3ded6ba876f755b
+          migration_sequences: ["1"]
+          result_code: migration_applied
+    - name: empty_route_maintenance_still_commits_receipt
+      covers: [maintenance_migration_empty_route_commit]
+      operation: maintenance_migration
+      checkpoint_before: maintenance-created-checkpoint.json
+      input: { file: inputs.json, pointer: /requests/maintenance_empty }
+      core_result: { file: core-results.json, pointer: /calls/maintenance_empty }
+      expect:
+        result: committed
+        checkpoint_after: maintenance-empty-checkpoint.json
+        checkpoint_mutation: changed
+        core_call: migrate
+        receipt_sequence: "1"
+        receipt:
+          operation_kind: maintenance_migration
+          receipt_sequence: "1"
+          operation_id: maintenance-empty
+          request_digest: sha256:ee0b794fde85dc442e797aabadc3a7f0dd3e18b22c9d1b26c771018f012bb53c
+          committed_revision: "1"
+          source_aggregate_state_digest: sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a
+          resulting_aggregate_state_digest: sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a
+          migration_sequences: []
+          result_code: migration_no_operation
+    - name: multi_hop_maintenance_commits_ordered_audits
+      covers: [maintenance_migration_multi_hop_commit]
+      operation: maintenance_migration
+      checkpoint_before: maintenance-created-checkpoint.json
+      input: { file: inputs.json, pointer: /requests/maintenance_multi_hop }
+      core_result: { file: core-results.json, pointer: /calls/maintenance_multi_hop }
+      expect:
+        result: committed
+        checkpoint_after: maintenance-multi-hop-checkpoint.json
+        checkpoint_mutation: changed
+        core_call: migrate
+        receipt_sequence: "1"
+        receipt:
+          operation_kind: maintenance_migration
+          receipt_sequence: "1"
+          operation_id: maintenance-multi-hop
+          request_digest: sha256:964318ba78c5b9b092cd2967944c2049e8e1687c1e4a1be9e8a90d3a3af19339
+          committed_revision: "1"
+          source_aggregate_state_digest: sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a
+          resulting_aggregate_state_digest: sha256:fa70d5bec928366fe3bc32f2d88f3423fe72bcc7294dee0a926f7df06e0378cc
+          migration_sequences: ["1", "2"]
+          result_code: migration_applied
     - name: unequal_maintenance_request_conflicts
       covers: [maintenance_migration_conflict]
       operation: maintenance_migration
@@ -84,6 +166,17 @@ execution_checkpoint_profile:
       expect:
         result: failure
         code: operation_id_conflict
+        checkpoint_after: maintenance-checkpoint.json
+        checkpoint_mutation: unchanged
+        core_call: none
+    - name: new_maintenance_operation_obeys_stale_writer_guard
+      covers: [maintenance_migration_stale_writer]
+      operation: maintenance_migration
+      checkpoint_before: maintenance-checkpoint.json
+      input: { file: inputs.json, pointer: /requests/maintenance_stale_writer }
+      expect:
+        result: failure
+        code: checkpoint_revision_conflict
         checkpoint_after: maintenance-checkpoint.json
         checkpoint_mutation: unchanged
         core_call: none

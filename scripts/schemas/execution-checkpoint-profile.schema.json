@@ -100,6 +100,9 @@
         "maintenance_migration_commit",
         "maintenance_migration_replay",
         "maintenance_migration_conflict",
+        "maintenance_migration_empty_route_commit",
+        "maintenance_migration_multi_hop_commit",
+        "maintenance_migration_stale_writer",
         "migration_audit_non_empty",
         "pre_acceptance_malformed_delivery",
         "pre_acceptance_wrong_root",
@@ -397,6 +400,9 @@
         "receipt_sequence": {
           "$ref": "#/$defs/canonicalDecimal"
         },
+        "receipt": {
+          "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/maintenanceMigrationReceipt"
+        },
         "delivery_sequence": {
           "$ref": "#/$defs/canonicalDecimal"
         },
@@ -583,7 +589,20 @@
                 }
               ]
             }
-          }
+          },
+          "allOf": [{
+            "if": {
+              "properties": {
+                "expect": {
+                  "properties": { "result": { "const": "committed" } },
+                  "required": ["result"]
+                }
+              }
+            },
+            "then": {
+              "properties": { "expect": { "required": ["receipt"] } }
+            }
+          }]
         },
         {
           "properties": {
