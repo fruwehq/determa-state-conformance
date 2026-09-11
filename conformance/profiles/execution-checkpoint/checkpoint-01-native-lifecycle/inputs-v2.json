@@ -263,7 +263,19 @@
       },
       "processing_mode": "delayed",
       "acceptance_sequence": "0",
-      "queue_sequence": "0"
+      "queue_sequence": "0",
+      "writer_checkpoint_context": {
+        "presented_checkpoint": {
+          "root_instance_id": "checkpoint-lifecycle-root",
+          "revision": "1",
+          "digest": "sha256:45f8412c4baf966cdda9a853afabb34b9fc56afaf4228642eb6de407e81f8f3f"
+        },
+        "stored_checkpoint": {
+          "root_instance_id": "checkpoint-lifecycle-root",
+          "revision": "1",
+          "digest": "sha256:f381723a45ee78ae5c2a56d37f7e175059a9a07a3d69b70ea75183a273248472"
+        }
+      }
     },
     "wrong_root": {
       "operation": "checkpoint_admit_v2",

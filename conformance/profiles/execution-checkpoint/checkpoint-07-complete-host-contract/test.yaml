@@ -255,6 +255,7 @@ durable_host_vectors:
     covers: [concurrent_loser_revision_conflict]
     operation: checkpoint_admit_v2
     checkpoint_before: created-checkpoint-v2.json
+    stored_checkpoint_before: accepted-checkpoint-v2.json
     checkpoint_after: accepted-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/concurrent_loser }
     result: { file: results-v2.json, pointer: /results/stale }
@@ -295,6 +296,7 @@ durable_host_vectors:
     covers: [stale_tombstoning_rejected]
     operation: checkpoint_tombstone_v2
     checkpoint_before: handled-checkpoint-v2.json
+    stored_checkpoint_before: bounded-checkpoint-v2.json
     checkpoint_after: bounded-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/stale_tombstone }
     result: { file: results-v2.json, pointer: /results/stale }

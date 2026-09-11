@@ -25,6 +25,7 @@ from validate_conformance import (
     validate_durable_host_vectors,
     validate_persistence_derivation,
     validate_request_checkpoint_binding,
+    validate_writer_checkpoint_context,
 )
 from generate_execution_checkpoint_profile import process
 
@@ -130,6 +131,287 @@ class DurableHostValidatorTests(unittest.TestCase):
             {},
             "stale identity conflict",
             created,
+        )
+
+    def test_stale_writer_requires_explicit_current_store_checkpoint(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            test = load_fixture_document(mutated_case / "test.yaml")
+            vector = next(
+                item
+                for item in test["durable_host_vectors"]
+                if item["name"] == "checkpoint_stale_writer"
+            )
+            del vector["stored_checkpoint_before"]
+            with self.assertRaisesRegex(
+                ValidationFailure, "must be declared together"
+            ):
+                validate_durable_host_vectors(
+                    mutated_case,
+                    test,
+                    set(mutated_case.glob("*.json")),
+                    self.input_validator,
+                )
+
+    def test_stale_writer_store_identity_is_request_derived(self) -> None:
+        self._assert_complete_case_mutation_fails(
+            lambda requests: requests["concurrent_loser"][
+                "writer_checkpoint_context"
+            ].update(
+                stored_checkpoint=copy.deepcopy(
+                    requests["concurrent_loser"]["writer_checkpoint_context"][
+                        "presented_checkpoint"
+                    ]
+                )
+            ),
+            "writer checkpoint context does not match",
+        )
+
+    def test_stale_step_terminal_replay_precedes_cas(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        requests = load(case / "inputs-v2.json")["requests"]
+        results = load(case / "results-v2.json")["results"]
+        presented = load(case / "accepted-checkpoint-v2.json")
+        stored = load(case / "processed-checkpoint-v2.json")
+        request = copy.deepcopy(requests["stale_process"])
+        request["writer_checkpoint_context"]["stored_checkpoint"] = {
+            "root_instance_id": stored["root_instance_id"],
+            "revision": stored["revision"],
+            "digest": stored["execution_checkpoint_digest"],
+        }
+        with self.assertRaisesRegex(
+            ValidationFailure, "retained identity precedence"
+        ):
+            validate_writer_checkpoint_context(
+                request,
+                results["stale"],
+                presented,
+                stored,
+                stored,
+                "terminal replay precedence",
+            )
+        validate_writer_checkpoint_context(
+            request,
+            results["replayed"],
+            presented,
+            stored,
+            stored,
+            "terminal replay precedence",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            inputs_path = mutated_case / "inputs-v2.json"
+            inputs = load(inputs_path)
+            inputs["requests"]["stale_process"] = request
+            inputs_path.write_text(
+                json.dumps(inputs, indent=2, ensure_ascii=True) + "\n",
+                encoding="utf-8",
+            )
+            test = load_fixture_document(mutated_case / "test.yaml")
+            vector = next(
+                item
+                for item in test["durable_host_vectors"]
+                if item["name"] == "checkpoint_stale_writer"
+            )
+            vector["stored_checkpoint_before"] = "processed-checkpoint-v2.json"
+            vector["checkpoint_after"] = "processed-checkpoint-v2.json"
+            with self.assertRaisesRegex(
+                ValidationFailure, "retained identity precedence"
+            ):
+                validate_durable_host_vectors(
+                    mutated_case,
+                    test,
+                    set(mutated_case.glob("*.json")),
+                    self.input_validator,
+                )
+
+    def test_stale_step_identity_conflict_precedes_cas(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        requests = load(case / "inputs-v2.json")["requests"]
+        results = load(case / "results-v2.json")["results"]
+        presented = load(case / "accepted-checkpoint-v2.json")
+        stored = load(case / "processed-checkpoint-v2.json")
+        request = copy.deepcopy(requests["stale_process"])
+        request["envelope_digest"] = "sha256:" + "0" * 64
+        request["writer_checkpoint_context"]["stored_checkpoint"] = {
+            "root_instance_id": stored["root_instance_id"],
+            "revision": stored["revision"],
+            "digest": stored["execution_checkpoint_digest"],
+        }
+        with self.assertRaisesRegex(
+            ValidationFailure, "retained identity precedence"
+        ):
+            validate_writer_checkpoint_context(
+                request,
+                results["stale"],
+                presented,
+                stored,
+                stored,
+                "identity conflict precedence",
+            )
+        validate_writer_checkpoint_context(
+            request,
+            results["event_conflict"],
+            presented,
+            stored,
+            stored,
+            "identity conflict precedence",
+        )
+
+    def test_digest_only_writer_conflict_is_valid(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        request = load(case / "inputs-v2.json")["requests"]["stale_process"]
+        result = load(case / "results-v2.json")["results"]["stale"]
+        presented = load(case / "accepted-checkpoint-v2.json")
+        stored = load(case / "stale-writer-store-checkpoint-v2.json")
+        self.assertEqual(presented["revision"], stored["revision"])
+        self.assertNotEqual(
+            presented["execution_checkpoint_digest"],
+            stored["execution_checkpoint_digest"],
+        )
+        validate_writer_checkpoint_context(
+            request,
+            result,
+            presented,
+            stored,
+            stored,
+            "digest-only conflict",
+        )
+
+    def test_stale_tombstone_equal_identity_replays_before_cas(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        request = copy.deepcopy(
+            load(case / "inputs-v2.json")["requests"]["stale_tombstone"]
+        )
+        result = load(case / "results-v2.json")["results"]["replayed"]
+        presented = load(case / "handled-checkpoint-v2.json")
+        stored = load(case / "bounded-tombstone-checkpoint-v2.json")
+        request["writer_checkpoint_context"]["stored_checkpoint"] = {
+            "root_instance_id": stored["root_instance_id"],
+            "revision": stored["revision"],
+            "digest": stored["execution_checkpoint_digest"],
+        }
+        request["tombstone_operation_id"] = stored["root_record"][
+            "tombstone_operation_id"
+        ]
+        request["terminal_status"] = stored["root_record"]["terminal_status"]
+        request["retention_mode"] = stored["replay_retention"]["mode"]
+        validate_writer_checkpoint_context(
+            request,
+            result,
+            presented,
+            stored,
+            stored,
+            "tombstone replay precedence",
+        )
+        self._assert_stale_tombstone_writer_outcome_passes(
+            operation_id=stored["root_record"]["tombstone_operation_id"],
+            result_name="replayed",
+            expected={"result": "replayed", "mutation": "none", "core_calls": 0},
+        )
+
+    def test_stale_tombstone_different_identity_conflicts_before_cas(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        request = copy.deepcopy(
+            load(case / "inputs-v2.json")["requests"]["stale_tombstone"]
+        )
+        presented = load(case / "handled-checkpoint-v2.json")
+        stored = load(case / "bounded-tombstone-checkpoint-v2.json")
+        request["writer_checkpoint_context"]["stored_checkpoint"] = {
+            "root_instance_id": stored["root_instance_id"],
+            "revision": stored["revision"],
+            "digest": stored["execution_checkpoint_digest"],
+        }
+        request["terminal_status"] = stored["root_record"]["terminal_status"]
+        request["retention_mode"] = stored["replay_retention"]["mode"]
+        result = {
+            "result": "rejected",
+            "mutation": "none",
+            "core_calls": 0,
+            "broker_acknowledged": False,
+            "code": "operation_id_conflict",
+        }
+        validate_writer_checkpoint_context(
+            request,
+            result,
+            presented,
+            stored,
+            stored,
+            "tombstone identity conflict precedence",
+        )
+        stale = copy.deepcopy(result)
+        stale["code"] = "checkpoint_revision_conflict"
+        with self.assertRaisesRegex(
+            ValidationFailure, "retained identity precedence"
+        ):
+            validate_writer_checkpoint_context(
+                request,
+                stale,
+                presented,
+                stored,
+                stored,
+                "tombstone identity conflict precedence",
+            )
+        self._assert_stale_tombstone_writer_outcome_passes(
+            operation_id="stale-tombstone",
+            result_name="tombstone_operation_conflict",
+            expected={
+                "result": "rejected",
+                "code": "operation_id_conflict",
+                "mutation": "none",
+                "core_calls": 0,
+            },
+            result=result,
+        )
+
+    def test_stale_writer_cannot_acknowledge_rejected_ingress(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            results_path = mutated_case / "results-v2.json"
+            results = load(results_path)
+            results["results"]["stale"]["broker_acknowledged"] = True
+            results_path.write_text(
+                json.dumps(results, indent=2, ensure_ascii=True) + "\n",
+                encoding="utf-8",
+            )
+            test = load_fixture_document(mutated_case / "test.yaml")
+            vector = next(
+                item
+                for item in test["durable_host_vectors"]
+                if item["name"] == "checkpoint_stale_writer"
+            )
+            vector["expect"]["broker_acknowledged"] = True
+            with self.assertRaisesRegex(
+                ValidationFailure, "retained identity precedence"
+            ):
+                validate_durable_host_vectors(
+                    mutated_case,
+                    test,
+                    set(mutated_case.glob("*.json")),
+                    self.input_validator,
+                )
+
+    def test_stale_tombstone_names_explicit_presented_and_stored_states(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        test = load_fixture_document(case / "test.yaml")
+        vector = next(
+            item
+            for item in test["durable_host_vectors"]
+            if item["name"] == "stale_tombstone_rejection"
+        )
+        request = load(case / "inputs-v2.json")["requests"]["stale_tombstone"]
+        self.assertEqual(vector["checkpoint_before"], "handled-checkpoint-v2.json")
+        self.assertEqual(
+            vector["stored_checkpoint_before"], "bounded-checkpoint-v2.json"
+        )
+        self.assertNotEqual(
+            request["writer_checkpoint_context"]["presented_checkpoint"],
+            request["writer_checkpoint_context"]["stored_checkpoint"],
         )
 
     def test_batch_precedence_is_global_across_members(self) -> None:
@@ -578,6 +860,61 @@ class DurableHostValidatorTests(unittest.TestCase):
                     set(mutated_case.glob("*.json")),
                     self.input_validator,
                 )
+
+    def _assert_stale_tombstone_writer_outcome_passes(
+        self,
+        *,
+        operation_id: str,
+        result_name: str,
+        expected: dict,
+        result: dict | None = None,
+    ) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            stored = load(mutated_case / "bounded-tombstone-checkpoint-v2.json")
+            inputs_path = mutated_case / "inputs-v2.json"
+            inputs = load(inputs_path)
+            request = inputs["requests"]["stale_tombstone"]
+            request["writer_checkpoint_context"]["stored_checkpoint"] = {
+                "root_instance_id": stored["root_instance_id"],
+                "revision": stored["revision"],
+                "digest": stored["execution_checkpoint_digest"],
+            }
+            request["tombstone_operation_id"] = operation_id
+            request["terminal_status"] = stored["root_record"]["terminal_status"]
+            request["retention_mode"] = stored["replay_retention"]["mode"]
+            inputs_path.write_text(
+                json.dumps(inputs, indent=2, ensure_ascii=True) + "\n",
+                encoding="utf-8",
+            )
+            results_path = mutated_case / "results-v2.json"
+            results = load(results_path)
+            if result is not None:
+                results["results"][result_name] = result
+                results_path.write_text(
+                    json.dumps(results, indent=2, ensure_ascii=True) + "\n",
+                    encoding="utf-8",
+                )
+            test = load_fixture_document(mutated_case / "test.yaml")
+            vector = next(
+                item
+                for item in test["durable_host_vectors"]
+                if item["name"] == "stale_tombstone_rejection"
+            )
+            vector["stored_checkpoint_before"] = (
+                "bounded-tombstone-checkpoint-v2.json"
+            )
+            vector["checkpoint_after"] = "bounded-tombstone-checkpoint-v2.json"
+            vector["result"]["pointer"] = f"/results/{result_name}"
+            vector["expect"] = expected
+            validate_durable_host_vectors(
+                mutated_case,
+                test,
+                set(mutated_case.glob("*.json")),
+                self.input_validator,
+            )
 
     def _assert_case_artifact_mutation_fails(
         self, case: Path, filename: str, mutate, pattern: str

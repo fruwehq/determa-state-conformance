@@ -6,6 +6,7 @@ artifacts:
   documents:
     - { file: created-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: accepted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: stale-writer-store-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: processed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
     - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
@@ -71,7 +72,8 @@ durable_host_vectors:
     covers: [checkpoint_stale_writer_rejected]
     operation: checkpoint_step_v2
     checkpoint_before: accepted-checkpoint-v2.json
-    checkpoint_after: processed-checkpoint-v2.json
+    stored_checkpoint_before: stale-writer-store-checkpoint-v2.json
+    checkpoint_after: stale-writer-store-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/stale_process }
     result: { file: results-v2.json, pointer: /results/stale }
     expect: { result: rejected, code: checkpoint_revision_conflict, mutation: none, core_calls: 0 }
