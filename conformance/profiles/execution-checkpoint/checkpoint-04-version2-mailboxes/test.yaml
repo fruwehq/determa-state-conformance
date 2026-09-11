@@ -12,6 +12,13 @@ artifacts:
     - { file: multi-pending-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: multi-pending-upgraded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: multi-pending-upgraded-with-metadata-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: multi-pending-processed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: multi-pending-processed-with-metadata-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: multiple-converted-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
+    - { file: multiple-converted-upgraded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: multiple-converted-upgraded-with-metadata-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: multiple-converted-processed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: multiple-converted-processed-with-metadata-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-child-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: spawned-child-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-terminal-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
@@ -73,6 +80,41 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /upgrade_multi_pending
     expect: { result: success, exact_result_file: multi-pending-upgraded-checkpoint-v2.json }
+  - name: processed_upgraded_host_acceptance_without_optional_metadata
+    covers: [processed_upgrade_history_without_optional_metadata]
+    operation: checkpoint_step_v2
+    checkpoint_before: multi-pending-upgraded-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /process_upgraded_without_metadata
+    expect: { result: success, exact_result_file: multi-pending-processed-checkpoint-v2.json }
+  - name: processed_upgraded_host_acceptance_with_optional_metadata
+    covers: [processed_upgrade_history_with_optional_metadata]
+    operation: checkpoint_step_v2
+    checkpoint_before: multi-pending-upgraded-with-metadata-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /process_upgraded_with_metadata
+    expect: { result: success, exact_result_file: multi-pending-processed-with-metadata-checkpoint-v2.json }
+  - name: checkpoint_upgrade_preserves_multiple_converted_events
+    covers: [multiple_converted_upgrade_history]
+    operation: upgrade_checkpoint_v1_to_v2
+    checkpoint_before: multiple-converted-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /upgrade_multiple_converted
+    expect: { result: success, exact_result_file: multiple-converted-upgraded-checkpoint-v2.json }
+  - name: processed_multiple_upgraded_events_without_optional_metadata
+    covers: [multiple_processed_upgrade_history_without_optional_metadata]
+    operation: checkpoint_step_v2
+    checkpoint_before: multiple-converted-upgraded-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /process_multiple_converted_without_metadata
+    expect: { result: success, exact_result_file: multiple-converted-processed-checkpoint-v2.json }
+  - name: processed_multiple_upgraded_events_with_optional_metadata
+    covers: [multiple_processed_upgrade_history_with_optional_metadata]
+    operation: checkpoint_step_v2
+    checkpoint_before: multiple-converted-upgraded-with-metadata-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /process_multiple_converted_with_metadata
+    expect: { result: success, exact_result_file: multiple-converted-processed-with-metadata-checkpoint-v2.json }
   - name: checkpoint_atomic_admission
     covers: [receipt_acceptance_terminal_distinction]
     operation: checkpoint_admit_v2

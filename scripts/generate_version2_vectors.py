@@ -2274,6 +2274,77 @@ def upgrade_checkpoint(value: dict[str, Any]) -> dict[str, Any]:
     return seal_checkpoint(result)
 
 
+def add_optional_host_legacy_metadata(
+    checkpoint: dict[str, Any], source: dict[str, Any]
+) -> dict[str, Any]:
+    result = copy.deepcopy(checkpoint)
+    pending_by_event = {
+        item["envelope"]["event_id"]: item for item in source["pending_deliveries"]
+    }
+    for receipt in result["operation_receipts"]:
+        if receipt["operation_kind"] != "acceptance":
+            continue
+        pending = pending_by_event[receipt["event_id"]]
+        if pending["origin"] != {"kind": "host_input"}:
+            continue
+        receipt["legacy_v1_delivery"] = {
+            "delivery_sequence": pending["delivery_sequence"],
+            "envelope_digest": pending["envelope_digest"],
+            "origin": copy.deepcopy(pending["origin"]),
+        }
+    return seal_checkpoint(result)
+
+
+def process_upgraded_unhandled(
+    checkpoint: dict[str, Any], event_id: str
+) -> dict[str, Any]:
+    result = copy.deepcopy(checkpoint)
+    aggregate = result["root_record"]["aggregate_state"]
+    selected_runtime = None
+    selected_index = None
+    for runtime in aggregate["runtimes"]:
+        for index, entry in enumerate(runtime["ready_mailbox"]):
+            if entry["envelope"]["event_id"] == event_id:
+                selected_runtime = runtime
+                selected_index = index
+                break
+        if selected_runtime is not None:
+            break
+    if selected_runtime is None or selected_index is None:
+        raise ValueError(f"missing upgraded ready event: {event_id}")
+    consumed = selected_runtime["ready_mailbox"].pop(selected_index)
+    aggregate["next_logical_step_sequence"] = str(
+        int(aggregate["next_logical_step_sequence"]) + 1
+    )
+    aggregate = seal_aggregate(aggregate)
+    result["root_record"]["aggregate_state"] = aggregate
+    result["revision"] = str(int(result["revision"]) + 1)
+    receipt_sequence = result["next_operation_receipt_sequence"]
+    result["next_operation_receipt_sequence"] = str(int(receipt_sequence) + 1)
+    result["operation_receipts"].append(
+        {
+            "operation_kind": "event_terminal",
+            "receipt_sequence": receipt_sequence,
+            "event_id": consumed["envelope"]["event_id"],
+            "request_digest": consumed["envelope_digest"],
+            "acceptance_sequence": consumed["acceptance_sequence"],
+            "final_queue_sequence": consumed["queue_sequence"],
+            "committed_revision": result["revision"],
+            "resulting_aggregate_state_digest": aggregate[
+                "aggregate_state_digest"
+            ],
+            "outcome": {
+                "status": "running",
+                "disposition": "unhandled",
+                "fault": None,
+                "rejection": None,
+            },
+            "emission_references": [],
+        }
+    )
+    return seal_checkpoint(result)
+
+
 def produce_checkpoint() -> dict[str, bytes]:
     def with_checkpoint_cas(
         operation: dict[str, Any], checkpoint: dict[str, Any]
@@ -2346,23 +2417,43 @@ def produce_checkpoint() -> dict[str, bytes]:
     )
     multi_pending_v1 = seal_checkpoint_v1(multi_pending_v1)
     multi_pending_upgraded = upgrade_checkpoint(multi_pending_v1)
-    multi_pending_upgraded_with_metadata = copy.deepcopy(multi_pending_upgraded)
-    multi_pending_acceptance = next(
-        receipt
-        for receipt in multi_pending_upgraded_with_metadata["operation_receipts"]
-        if receipt["operation_kind"] == "acceptance"
+    multi_pending_upgraded_with_metadata = add_optional_host_legacy_metadata(
+        multi_pending_upgraded, multi_pending_v1
     )
-    multi_pending_acceptance["legacy_v1_delivery"] = {
-        "delivery_sequence": multi_pending_v1["pending_deliveries"][0][
-            "delivery_sequence"
-        ],
-        "envelope_digest": multi_pending_v1["pending_deliveries"][0][
-            "envelope_digest"
-        ],
-        "origin": copy.deepcopy(multi_pending_v1["pending_deliveries"][0]["origin"]),
-    }
-    multi_pending_upgraded_with_metadata = seal_checkpoint(
-        multi_pending_upgraded_with_metadata
+    multi_pending_processed = process_upgraded_unhandled(
+        multi_pending_upgraded, "delivery-unhandled"
+    )
+    multi_pending_processed_with_metadata = process_upgraded_unhandled(
+        multi_pending_upgraded_with_metadata, "delivery-unhandled"
+    )
+
+    multiple_converted_v1 = copy.deepcopy(multi_pending_v1)
+    additional_request = delivery_inputs["emit_internal"]
+    additional_sequence = multiple_converted_v1["next_delivery_sequence"]
+    multiple_converted_v1["next_delivery_sequence"] = str(
+        int(additional_sequence) + 1
+    )
+    multiple_converted_v1["revision"] = "4"
+    multiple_converted_v1["pending_deliveries"].append(
+        {
+            "delivery_sequence": additional_sequence,
+            "accepted_revision": "4",
+            "delivery_mode": additional_request["delivery_mode"],
+            "origin": copy.deepcopy(additional_request["origin"]),
+            "envelope": copy.deepcopy(additional_request["envelope"]),
+            "envelope_digest": additional_request["envelope_digest"],
+        }
+    )
+    multiple_converted_v1 = seal_checkpoint_v1(multiple_converted_v1)
+    multiple_converted_upgraded = upgrade_checkpoint(multiple_converted_v1)
+    multiple_converted_upgraded_with_metadata = add_optional_host_legacy_metadata(
+        multiple_converted_upgraded, multiple_converted_v1
+    )
+    multiple_converted_processed = process_upgraded_unhandled(
+        multiple_converted_upgraded, "delivery-unhandled"
+    )
+    multiple_converted_processed_with_metadata = process_upgraded_unhandled(
+        multiple_converted_upgraded_with_metadata, "delivery-unhandled"
     )
     outbox_v1 = load(
         CHECKPOINT.parent
@@ -3062,6 +3153,46 @@ def produce_checkpoint() -> dict[str, bytes]:
             {"operation": "upgrade_checkpoint_v1_to_v2"},
             multi_pending_v1,
         ),
+        "upgrade_multiple_converted": with_checkpoint_cas(
+            {"operation": "upgrade_checkpoint_v1_to_v2"},
+            multiple_converted_v1,
+        ),
+        "process_upgraded_without_metadata": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_step_v2",
+                "target_runtime_id": multi_pending_upgraded[
+                    "root_record"
+                ]["aggregate_state"]["root_runtime_id"],
+            },
+            multi_pending_upgraded,
+        ),
+        "process_upgraded_with_metadata": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_step_v2",
+                "target_runtime_id": multi_pending_upgraded_with_metadata[
+                    "root_record"
+                ]["aggregate_state"]["root_runtime_id"],
+            },
+            multi_pending_upgraded_with_metadata,
+        ),
+        "process_multiple_converted_without_metadata": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_step_v2",
+                "target_runtime_id": multiple_converted_upgraded[
+                    "root_record"
+                ]["aggregate_state"]["root_runtime_id"],
+            },
+            multiple_converted_upgraded,
+        ),
+        "process_multiple_converted_with_metadata": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_step_v2",
+                "target_runtime_id": multiple_converted_upgraded_with_metadata[
+                    "root_record"
+                ]["aggregate_state"]["root_runtime_id"],
+            },
+            multiple_converted_upgraded_with_metadata,
+        ),
         "admit": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
             "delivery_mode": entry["delivery_mode"],
             "envelope": entry["envelope"],
@@ -3287,6 +3418,25 @@ def produce_checkpoint() -> dict[str, bytes]:
         ),
         "multi-pending-upgraded-with-metadata-checkpoint-v2.json": canonical(
             multi_pending_upgraded_with_metadata
+        ),
+        "multi-pending-processed-checkpoint-v2.json": canonical(
+            multi_pending_processed
+        ),
+        "multi-pending-processed-with-metadata-checkpoint-v2.json": canonical(
+            multi_pending_processed_with_metadata
+        ),
+        "multiple-converted-checkpoint-v1.json": canonical(multiple_converted_v1),
+        "multiple-converted-upgraded-checkpoint-v2.json": canonical(
+            multiple_converted_upgraded
+        ),
+        "multiple-converted-upgraded-with-metadata-checkpoint-v2.json": canonical(
+            multiple_converted_upgraded_with_metadata
+        ),
+        "multiple-converted-processed-checkpoint-v2.json": canonical(
+            multiple_converted_processed
+        ),
+        "multiple-converted-processed-with-metadata-checkpoint-v2.json": canonical(
+            multiple_converted_processed_with_metadata
         ),
         "base-outbox-checkpoint-v1.json": canonical(outbox_v1),
         "base-checkpoint.json": canonical(operational_base),
