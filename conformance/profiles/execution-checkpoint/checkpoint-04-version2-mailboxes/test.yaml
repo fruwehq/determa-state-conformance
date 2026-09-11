@@ -66,6 +66,8 @@ artifacts:
     - { file: invalid-maintenance-digest-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-maintenance-historical-digest-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-maintenance-audit-order-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-maintenance-next-receipt-gap-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-maintenance-shifted-receipt-gap-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-duplicate-location-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-acceptance-tombstone-overlap-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }
     - { file: invalid-tombstone-counter-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: false, error: invalid_execution_checkpoint }

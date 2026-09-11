@@ -4558,6 +4558,27 @@ def produce_checkpoint() -> dict[str, bytes]:
     invalid_maintenance_audit_order = seal_checkpoint(
         invalid_maintenance_audit_order
     )
+    invalid_maintenance_next_receipt_gap = copy.deepcopy(
+        maintenance_empty_checkpoint
+    )
+    invalid_maintenance_next_receipt_gap[
+        "next_operation_receipt_sequence"
+    ] = "3"
+    invalid_maintenance_next_receipt_gap = seal_checkpoint(
+        invalid_maintenance_next_receipt_gap
+    )
+    invalid_maintenance_shifted_receipt_gap = copy.deepcopy(
+        maintenance_empty_checkpoint
+    )
+    invalid_maintenance_shifted_receipt_gap["operation_receipts"][1][
+        "receipt_sequence"
+    ] = "2"
+    invalid_maintenance_shifted_receipt_gap[
+        "next_operation_receipt_sequence"
+    ] = "3"
+    invalid_maintenance_shifted_receipt_gap = seal_checkpoint(
+        invalid_maintenance_shifted_receipt_gap
+    )
     return {
         "maintenance-source.yaml": maintenance_source_bytes,
         "maintenance-target-one.yaml": canonical(
@@ -4608,6 +4629,12 @@ def produce_checkpoint() -> dict[str, bytes]:
         ),
         "invalid-maintenance-audit-order-checkpoint-v2.json": canonical(
             invalid_maintenance_audit_order
+        ),
+        "invalid-maintenance-next-receipt-gap-checkpoint-v2.json": canonical(
+            invalid_maintenance_next_receipt_gap
+        ),
+        "invalid-maintenance-shifted-receipt-gap-checkpoint-v2.json": canonical(
+            invalid_maintenance_shifted_receipt_gap
         ),
         "base-checkpoint-v1.json": canonical(v1),
         "multi-pending-checkpoint-v1.json": canonical(multi_pending_v1),

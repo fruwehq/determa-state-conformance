@@ -2337,19 +2337,30 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
         )
     if receipt_chronology != sorted(receipt_chronology):
         raise ValidationFailure("checkpoint v2: receipt chronology is invalid")
-    if sequences and canonical_decimal(
+    next_receipt_sequence = canonical_decimal(
         document["next_operation_receipt_sequence"], "next receipt sequence"
-    ) <= max(sequences):
+    )
+    if sequences and next_receipt_sequence <= max(sequences):
         raise ValidationFailure("checkpoint v2: receipt counter regression")
     pruning_cutoff = document["replay_retention"][
         "pruned_through_receipt_sequence"
     ]
-    if pruning_cutoff is not None:
-        cutoff = canonical_decimal(pruning_cutoff, "checkpoint pruning cutoff")
-        if any(sequence != 0 and sequence <= cutoff for sequence in sequences):
-            raise ValidationFailure(
-                "checkpoint v2: retained receipt contradicts pruning cutoff"
-            )
+    cutoff = (
+        canonical_decimal(pruning_cutoff, "checkpoint pruning cutoff")
+        if pruning_cutoff is not None
+        else None
+    )
+    if document["replay_retention"]["mode"] == "permanent" or cutoff is None:
+        expected_receipt_sequences = list(range(next_receipt_sequence))
+    else:
+        expected_receipt_sequences = [
+            0,
+            *range(cutoff + 1, next_receipt_sequence),
+        ]
+    if sequences != expected_receipt_sequences:
+        raise ValidationFailure(
+            "checkpoint v2: receipt retention interval is incomplete"
+        )
 
     def require_sequence_order(values: list[dict[str, Any]], field: str, label: str) -> set[int]:
         allocations = [canonical_decimal(item[field], label) for item in values]
