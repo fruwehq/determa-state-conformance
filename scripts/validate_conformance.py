@@ -5573,14 +5573,13 @@ def retained_writer_identity_disposition(
         root_record = checkpoint["root_record"]
         if root_record["status"] != "tombstone":
             return None
-        if (
-            root_record["tombstone_operation_id"]
-            != operation_input["tombstone_operation_id"]
-        ):
-            return None
         return (
             "replayed"
-            if root_record["terminal_status"] == operation_input["terminal_status"]
+            if root_record["tombstone_operation_id"]
+            == operation_input["tombstone_operation_id"]
+            and root_record["terminal_status"] == operation_input["terminal_status"]
+            and checkpoint["replay_retention"]["mode"]
+            == operation_input["retention_mode"]
             else "operation_id_conflict"
         )
     return None
@@ -5593,7 +5592,7 @@ def validate_writer_checkpoint_context(
     stored_checkpoint: dict[str, Any],
     checkpoint_after: dict[str, Any],
     location: str,
-) -> None:
+) -> str | None:
     writer_context = operation_input["writer_checkpoint_context"]
     if (
         writer_context["presented_checkpoint"]
@@ -5630,15 +5629,20 @@ def validate_writer_checkpoint_context(
     else:
         expected_result = "rejected"
         expected_code = "checkpoint_revision_conflict"
+    expected_acknowledged = disposition == "replayed" and operation_input[
+        "operation"
+    ] in {"checkpoint_admit_v2", "checkpoint_step_v2"}
     if (
         operation_result["result"] != expected_result
         or operation_result.get("code") != expected_code
         or operation_result["mutation"] != "none"
         or operation_result["core_calls"] != 0
+        or operation_result["broker_acknowledged"] != expected_acknowledged
     ):
         raise ValidationFailure(
             f"{location}: writer result violates retained identity precedence"
         )
+    return disposition
 
 
 def retained_admission_precedes_cas(
@@ -6802,6 +6806,7 @@ def validate_durable_host_vectors(
             else:
                 checkpoint_before = require_kind(before_name, "execution_checkpoint_v2", location)
                 stored_checkpoint_before = None
+                writer_disposition = None
                 writer_context = operation_input.get("writer_checkpoint_context")
                 if (stored_before_name is None) != (writer_context is None):
                     raise ValidationFailure(
@@ -6815,7 +6820,7 @@ def validate_durable_host_vectors(
                     validate_execution_checkpoint_v2_semantics(
                         stored_checkpoint_before
                     )
-                    validate_writer_checkpoint_context(
+                    writer_disposition = validate_writer_checkpoint_context(
                         operation_input,
                         operation_result,
                         checkpoint_before,
@@ -6845,7 +6850,15 @@ def validate_durable_host_vectors(
                         operation_result.get("code")
                         == "checkpoint_revision_conflict"
                     )
-                    if checkpoint_before != checkpoint_after and not stale_conflict:
+                    writer_read_only = (
+                        stored_checkpoint_before is not None
+                        and checkpoint_after == stored_checkpoint_before
+                    )
+                    if (
+                        checkpoint_before != checkpoint_after
+                        and not stale_conflict
+                        and not writer_read_only
+                    ):
                         raise ValidationFailure(f"{location}: non-mutating result changed checkpoint")
                     if stale_conflict:
                         historical_conflict = (
@@ -6865,10 +6878,17 @@ def validate_durable_host_vectors(
                             raise ValidationFailure(
                                 f"{location}: stale conflict lacks a newer committed checkpoint"
                             )
+            derivation_checkpoint_before = (
+                stored_checkpoint_before
+                if before_name is not None
+                and stored_checkpoint_before is not None
+                and writer_disposition is not None
+                else checkpoint_before if before_name is not None else None
+            )
             validate_checkpoint_derivation(
                 operation_input,
                 operation_result,
-                checkpoint_before if before_name is not None else None,
+                derivation_checkpoint_before,
                 checkpoint_after,
                 location,
                 case / "machine.yaml",
