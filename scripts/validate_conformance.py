@@ -304,6 +304,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "migration_fault_frozen_preservation",
         "migration_historical_fault_locator_preservation",
         "migration_package_v2_schema_positive_negative",
+        "mailbox_payload_matches_event_declaration",
         "migration_preserve_dispose_default",
         "migration_stale_target_transform",
         "mixed_replay_new_batch",
@@ -1056,6 +1057,61 @@ def validate_aggregate_against_bundle(
         if current["validated_bundle_fingerprint"] != fingerprint:
             raise ValidationFailure("aggregate v2: runtime current definition mismatch")
         resolve(current["machine"]["root_definition_pointer"])
+        current_machine = next(
+            (
+                machine
+                for machine in bundle["machines"]
+                if machine["machine_id"] == current["machine"]["machine_id"]
+                and str(machine["version"])
+                == current["machine"]["machine_version"]
+            ),
+            None,
+        )
+        if current_machine is None:
+            raise ValidationFailure("aggregate v2: current machine is unavailable")
+        for mailbox_name in ("ready_mailbox", "deferred_mailbox"):
+            for entry in runtime.get(mailbox_name, []):
+                event_name = entry["envelope"]["event"]
+                declaration = current_machine.get("events", {}).get(event_name)
+                if declaration is None:
+                    declaration = bundle.get("events", {}).get(event_name)
+                if declaration is None:
+                    continue
+                payload_entries = entry["envelope"]["payload"]
+                if payload_entries[0] != "map":
+                    raise ValidationFailure(
+                        "aggregate v2: mailbox payload is not a typed map"
+                    )
+                payload = dict(payload_entries[1])
+                fields = declaration.get("payload", {})
+                if set(payload) - set(fields):
+                    raise ValidationFailure(
+                        "aggregate v2: mailbox payload has undeclared fields"
+                    )
+                required_fields = {
+                    name
+                    for name, field in fields.items()
+                    if field.get("required", False) or "default" in field
+                }
+                if not required_fields <= set(payload):
+                    raise ValidationFailure(
+                        "aggregate v2: mailbox payload lacks materialized fields"
+                    )
+                expected_tags = {
+                    "string": "string",
+                    "int": "integer",
+                    "float": "float",
+                    "bool": "boolean",
+                    "map": "map",
+                    "list": "list",
+                }
+                if any(
+                    payload[name][0] != expected_tags[fields[name]["type"]]
+                    for name in payload
+                ):
+                    raise ValidationFailure(
+                        "aggregate v2: mailbox payload field type mismatch"
+                    )
         for pointer in runtime["active_leaf_state_definition_pointers"]:
             resolve(pointer)
         for item in runtime["active_state_activations"]:
@@ -3305,6 +3361,36 @@ def validate_version2_aggregate_adversarial_probes(repository_root: Path) -> Non
         component_migration_case / "target.yaml",
         component_migration_case / "machine.yaml",
     )
+
+    persistence_case = repository_root / "conformance/core/118-version2-persistence"
+    undeclared_payload = copy.deepcopy(
+        analyze_artifact(persistence_case / "disposal-before.json").document
+    )
+    undeclared_entry = undeclared_payload["runtimes"][0]["deferred_mailbox"][0]
+    undeclared_entry["envelope"]["payload"] = encode_typed_value(
+        {"transaction_id": "transaction-2"}
+    )
+    undeclared_entry["envelope_digest"] = hash_value(
+        [
+            "determa-inbox-envelope-digest-2",
+            "2",
+            undeclared_payload["root_instance_id"],
+            undeclared_entry["delivery_mode"],
+            undeclared_entry["envelope"],
+        ]
+    )
+    undeclared_payload = reseal(undeclared_payload)
+    validate_aggregate_v2_semantics(undeclared_payload)
+    try:
+        validate_aggregate_against_bundle(
+            undeclared_payload, persistence_case / "machine.yaml"
+        )
+    except ValidationFailure:
+        pass
+    else:
+        raise ValidationFailure(
+            "version-2 aggregate adversarial probe accepted undeclared mailbox payload"
+        )
 
 
 def artifact_error(
