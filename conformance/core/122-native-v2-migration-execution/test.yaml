@@ -1,0 +1,362 @@
+title: 122 native v2 migration execution
+static:
+  documents:
+    - file: chain-middle.yaml
+      valid: true
+    - file: chain-source.yaml
+      valid: true
+    - file: chain-target.yaml
+      valid: true
+    - file: compatible-source.yaml
+      valid: true
+    - file: compatible-target.yaml
+      valid: true
+    - file: completed-source.yaml
+      valid: true
+    - file: completed-target.yaml
+      valid: true
+    - file: dispatch-source.yaml
+      valid: true
+    - file: dispatch-target.yaml
+      valid: true
+    - file: faulted-source.yaml
+      valid: true
+    - file: faulted-target.yaml
+      valid: true
+    - file: resume-machine.yaml
+      valid: true
+    - file: retry-source.yaml
+      valid: true
+    - file: retry-target.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: chain-descriptor-v2-first.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: chain-descriptor-v2-second.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: chain-empty_route_canonical_input_preserves_canonical_bytes-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: chain-empty_route_same_definition_is_exact_noop-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: chain-exact_two_hop_route-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: chain-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: chain-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: compatible-compatible_definition_migration-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: compatible-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: compatible-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: compatible-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: completed-completed_preserved-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: completed-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: completed-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: completed-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: dispatch-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: dispatch-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: dispatch-faulted-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: dispatch-handled-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: dispatch-migration_then_processing_faulted-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: dispatch-migration_then_processing_handled-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: dispatch-migration_then_processing_rejected-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: dispatch-migration_then_processing_unhandled-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: dispatch-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: faulted-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: faulted-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: faulted-faulted_diagnostic_tree_preserved-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: faulted-reject-descriptor.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: faulted-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: operation-inputs.json
+      kind: version2_operation_inputs
+      valid: true
+    - file: resume-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: resume-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: resume-unchanged_definition_resume-result.json
+      kind: core_step_result_v2
+      valid: true
+    - file: retry-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: retry-expected-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: retry-identical_retry-result.json
+      kind: version2_operation_result
+      valid: true
+    - file: retry-invalid-descriptor-v2.json
+      kind: migration_descriptor_v2
+      valid: true
+    - file: retry-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+version2_vectors:
+  - name: unchanged_definition_resume
+    covers:
+      - unchanged_definition_resume
+    operation: step_v2
+    request_file: operation-inputs.json
+    request_pointer: /unchanged_definition_resume
+    state_before: resume-source-aggregate-v2.json
+    bundle: resume-machine.yaml
+    expect:
+      result: success
+      exact_result_file: resume-unchanged_definition_resume-result.json
+  - name: compatible_definition_migration
+    covers:
+      - compatible_definition_migration
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /compatible_definition_migration
+    state_before: compatible-source-aggregate-v2.json
+    descriptor_file: compatible-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: compatible-compatible_definition_migration-result.json
+  - name: empty_route_same_definition_is_exact_noop
+    covers:
+      - empty_route_same_definition_is_exact_noop
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /empty_route_same_definition_is_exact_noop
+    state_before: chain-source-aggregate-v2.json
+    descriptor_files: []
+    expect:
+      result: success
+      exact_result_file: chain-empty_route_same_definition_is_exact_noop-result.json
+  - name: empty_route_canonical_input_preserves_canonical_bytes
+    covers:
+      - empty_route_canonical_input_preserves_canonical_bytes
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /empty_route_canonical_input_preserves_canonical_bytes
+    state_before: chain-source-aggregate-v2.json
+    descriptor_files: []
+    expect:
+      result: success
+      exact_result_file: chain-empty_route_canonical_input_preserves_canonical_bytes-result.json
+  - name: empty_route_changed_definition_is_missing
+    covers:
+      - empty_route_changed_definition_is_missing
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /empty_route_changed_definition_is_missing
+    state_before: chain-source-aggregate-v2.json
+    descriptor_files: []
+    expect:
+      result: failure
+      code: migration_route_missing
+      unchanged_file: chain-source-aggregate-v2.json
+  - name: exact_two_hop_route
+    covers:
+      - exact_two_hop_route
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /exact_two_hop_route
+    state_before: chain-source-aggregate-v2.json
+    descriptor_files:
+      - chain-descriptor-v2-first.json
+      - chain-descriptor-v2-second.json
+    expect:
+      result: success
+      exact_result_file: chain-exact_two_hop_route-result.json
+  - name: wrong_descriptor_order
+    covers:
+      - wrong_descriptor_order
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /wrong_descriptor_order
+    state_before: chain-source-aggregate-v2.json
+    descriptor_files:
+      - chain-descriptor-v2-second.json
+      - chain-descriptor-v2-first.json
+    expect:
+      result: failure
+      code: migration_route_mismatch
+      unchanged_file: chain-source-aggregate-v2.json
+  - name: repeated_descriptor_cycle
+    covers:
+      - repeated_descriptor_cycle
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /repeated_descriptor_cycle
+    state_before: chain-source-aggregate-v2.json
+    descriptor_files:
+      - chain-descriptor-v2-first.json
+      - chain-descriptor-v2-first.json
+    expect:
+      result: failure
+      code: migration_route_mismatch
+      unchanged_file: chain-source-aggregate-v2.json
+  - name: identical_retry
+    covers:
+      - identical_retry
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /identical_retry
+    state_before: retry-source-aggregate-v2.json
+    descriptor_file: retry-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: retry-identical_retry-result.json
+  - name: identical_failed_retry
+    covers:
+      - identical_failed_retry
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /identical_failed_retry
+    state_before: retry-source-aggregate-v2.json
+    descriptor_file: retry-invalid-descriptor-v2.json
+    expect:
+      result: failure
+      code: migration_totality_failure
+      unchanged_file: retry-source-aggregate-v2.json
+  - name: migration_then_processing_handled
+    covers:
+      - migration_then_processing_handled
+    operation: migrate_then_process_v2
+    request_file: operation-inputs.json
+    request_pointer: /migration_then_processing_handled
+    state_before: dispatch-source-aggregate-v2.json
+    descriptor_file: dispatch-descriptor-v2.json
+    migration_state_after: dispatch-expected-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: dispatch-migration_then_processing_handled-result.json
+  - name: migration_then_processing_unhandled
+    covers:
+      - migration_then_processing_unhandled
+    operation: migrate_then_process_v2
+    request_file: operation-inputs.json
+    request_pointer: /migration_then_processing_unhandled
+    state_before: dispatch-source-aggregate-v2.json
+    descriptor_file: dispatch-descriptor-v2.json
+    migration_state_after: dispatch-expected-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: dispatch-migration_then_processing_unhandled-result.json
+  - name: migration_then_processing_rejected
+    covers:
+      - migration_then_processing_rejected
+    operation: migrate_then_process_v2
+    request_file: operation-inputs.json
+    request_pointer: /migration_then_processing_rejected
+    state_before: dispatch-source-aggregate-v2.json
+    descriptor_file: dispatch-descriptor-v2.json
+    migration_state_after: dispatch-expected-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: dispatch-migration_then_processing_rejected-result.json
+  - name: migration_then_processing_faulted
+    covers:
+      - migration_then_processing_faulted
+    operation: migrate_then_process_v2
+    request_file: operation-inputs.json
+    request_pointer: /migration_then_processing_faulted
+    state_before: dispatch-source-aggregate-v2.json
+    descriptor_file: dispatch-descriptor-v2.json
+    migration_state_after: dispatch-expected-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: dispatch-migration_then_processing_faulted-result.json
+  - name: maintenance_required
+    covers:
+      - maintenance_required
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_required
+    state_before: completed-source-aggregate-v2.json
+    descriptor_file: completed-descriptor-v2.json
+    expect:
+      result: failure
+      code: terminal_migration_requires_maintenance
+      unchanged_file: completed-source-aggregate-v2.json
+  - name: completed_preserved
+    covers:
+      - completed_preserved
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /completed_preserved
+    state_before: completed-source-aggregate-v2.json
+    descriptor_file: completed-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: completed-completed_preserved-result.json
+  - name: faulted_diagnostic_tree_preserved
+    covers:
+      - faulted_diagnostic_tree_preserved
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /faulted_diagnostic_tree_preserved
+    state_before: faulted-source-aggregate-v2.json
+    descriptor_file: faulted-descriptor-v2.json
+    expect:
+      result: success
+      exact_result_file: faulted-faulted_diagnostic_tree_preserved-result.json
+  - name: terminal_policy_rejects
+    covers:
+      - terminal_policy_rejects
+    operation: migrate_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /terminal_policy_rejects
+    state_before: faulted-source-aggregate-v2.json
+    descriptor_file: faulted-reject-descriptor.json
+    expect:
+      result: failure
+      code: terminal_migration_rejected
+      unchanged_file: faulted-source-aggregate-v2.json

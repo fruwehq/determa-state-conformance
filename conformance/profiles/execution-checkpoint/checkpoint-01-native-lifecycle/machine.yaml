@@ -1,0 +1,22 @@
+format: 1
+namespace: conformance.execution_checkpoint_native_lifecycle
+events:
+  increment:
+    direction: input
+    payload:
+      amount: { type: int, required: true }
+  deliberate_fault: { direction: input }
+machines:
+  - machine_id: counter
+    version: 1
+    root:
+      type: simple
+      variables:
+        count: { type: int, init: 0 }
+      on_events:
+        increment:
+          action:
+            - assign: { count: "count + event.payload.amount" }
+        deliberate_fault:
+          action:
+            - assign: { count: "count / 0" }

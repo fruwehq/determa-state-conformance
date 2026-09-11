@@ -1,75 +1,72 @@
-title: completed spawned child and root independent host trace
+title: native schema-v2 terminal spawned child and root host trace
 static:
   documents:
     - { file: machine.yaml, valid: true }
 artifacts:
   documents:
-    - { file: inputs.json, kind: execution_checkpoint_inputs, valid: true }
-    - { file: core-results.json, kind: execution_checkpoint_core_evidence, valid: true }
-    - { file: created-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
-    - { file: started-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
-    - { file: child-pending-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
-    - { file: child-terminal-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
-    - { file: terminal-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
-execution_checkpoint_profile:
-  vectors:
-    - name: terminal_spawn_trace_create
-      covers: [terminal_spawn_trace_creation]
-      operation: create
-      checkpoint_before: null
-      input: { file: inputs.json, pointer: /requests/create }
-      core_result: { file: core-results.json, pointer: /calls/create }
-      expect:
-        result: committed
-        checkpoint_after: created-checkpoint-v1.json
-        checkpoint_mutation: created
-        core_call: create
-        receipt_sequence: "0"
-    - name: terminal_spawn_trace_start
-      covers: [terminal_spawn_trace_start]
-      operation: foreground_process_delivery
-      checkpoint_before: created-checkpoint-v1.json
-      input: { file: inputs.json, pointer: /requests/start }
-      core_result: { file: core-results.json, pointer: /calls/start }
-      expect:
-        result: committed
-        checkpoint_after: started-checkpoint-v1.json
-        checkpoint_mutation: changed
-        core_call: dispatch
-        receipt_sequence: "1"
-    - name: terminal_spawn_trace_accept_child
-      covers: [terminal_spawn_trace_child_acceptance]
-      operation: accept_delivery
-      checkpoint_before: started-checkpoint-v1.json
-      input: { file: inputs.json, pointer: /requests/accept_child }
-      expect:
-        result: pending
-        checkpoint_after: child-pending-checkpoint-v1.json
-        checkpoint_mutation: changed
-        core_call: none
-        delivery_sequence: "1"
-        accepted_revision: "2"
-    - name: terminal_spawn_trace_process_child
-      covers: [terminal_spawn_trace_child_processing]
-      operation: process_pending_delivery
-      checkpoint_before: child-pending-checkpoint-v1.json
-      input: { file: inputs.json, pointer: /requests/process_child }
-      core_result: { file: core-results.json, pointer: /calls/process_child }
-      expect:
-        result: committed
-        checkpoint_after: child-terminal-checkpoint-v1.json
-        checkpoint_mutation: changed
-        core_call: dispatch
-        receipt_sequence: "2"
-    - name: terminal_spawn_trace_process_completion
-      covers: [terminal_spawn_trace_completion_processing]
-      operation: process_pending_delivery
-      checkpoint_before: child-terminal-checkpoint-v1.json
-      input: { file: inputs.json, pointer: /requests/process_completion }
-      core_result: { file: core-results.json, pointer: /calls/process_completion }
-      expect:
-        result: committed
-        checkpoint_after: terminal-checkpoint-v1.json
-        checkpoint_mutation: changed
-        core_call: dispatch
-        receipt_sequence: "3"
+    - { file: spawned-base-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-start-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-started-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-child-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-root-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-child-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+durable_host_vectors:
+  - name: terminal_spawned_creation
+    covers: [terminal_spawned_creation]
+    operation: checkpoint_create_v2
+    checkpoint_before: null
+    checkpoint_after: spawned-base-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/create }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_start_admission
+    covers: [terminal_spawned_start_admission]
+    operation: checkpoint_admit_v2
+    checkpoint_before: spawned-base-checkpoint-v2.json
+    checkpoint_after: spawned-start-pending-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/start_accept }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_start
+    covers: [terminal_spawned_start]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-start-pending-checkpoint-v2.json
+    checkpoint_after: spawned-started-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/start_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_child_admission
+    covers: [terminal_spawned_child_admission]
+    operation: checkpoint_admit_v2
+    checkpoint_before: spawned-started-checkpoint-v2.json
+    checkpoint_after: spawned-child-pending-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/child_accept }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_root_admission
+    covers: [terminal_spawned_root_admission]
+    operation: checkpoint_admit_v2
+    checkpoint_before: spawned-child-pending-checkpoint-v2.json
+    checkpoint_after: spawned-root-pending-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/root_accept }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_child_processing
+    covers: [terminal_spawned_child_processing]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-root-pending-checkpoint-v2.json
+    checkpoint_after: spawned-child-terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/child_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_root_processing
+    covers: [terminal_spawned_root_processing]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-child-terminal-checkpoint-v2.json
+    checkpoint_after: spawned-terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/root_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }

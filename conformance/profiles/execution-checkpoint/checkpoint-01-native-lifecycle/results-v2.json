@@ -1,0 +1,60 @@
+{
+  "durable_host_results_format": "determa.durable_host.results",
+  "durable_host_results_schema_version": 2,
+  "results": {
+    "committed": {
+      "result": "committed",
+      "mutation": "atomic",
+      "core_calls": 1,
+      "broker_acknowledged": true
+    },
+    "replayed": {
+      "result": "replayed",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": true
+    },
+    "creation_conflict": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "creation_id_conflict"
+    },
+    "crash": {
+      "result": "crashed",
+      "mutation": "none",
+      "core_calls": 1,
+      "broker_acknowledged": false,
+      "code": "injected_pre_commit_failure"
+    },
+    "stale": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "checkpoint_revision_conflict"
+    },
+    "malformed": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "malformed_delivery"
+    },
+    "wrong_root": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "wrong_root"
+    },
+    "event_conflict": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "event_id_conflict"
+    }
+  }
+}

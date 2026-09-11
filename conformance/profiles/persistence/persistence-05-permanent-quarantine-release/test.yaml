@@ -1,0 +1,46 @@
+title: native schema-v2 permanent failure quarantine and release
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: initial-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: committed-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: quarantined-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: released-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+    - { file: commit-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: replay-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: rollback-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: quarantine-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: release-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+durable_host_vectors:
+  - name: persistence_permanent_quarantine
+    covers: [persistence_permanent_failure_quarantine, persistence_quarantine_no_core_call]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: quarantined-store-v2.json
+    call_log: quarantine-call-log-v2.json
+    failure_boundary: after_artifact_resolution
+    request: { file: inputs-v2.json, pointer: /requests/process_permanent }
+    result: { file: results-v2.json, pointer: /results/quarantined }
+    expect: { result: quarantined, code: permanent_processing_failure, mutation: atomic, core_calls: 0 }
+  - name: persistence_quarantine_release
+    covers: [persistence_quarantine_release_semantics]
+    operation: persistence_release_quarantine_v2
+    store_before: quarantined-store-v2.json
+    store_after: released-store-v2.json
+    call_log: release-call-log-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/release }
+    result: { file: results-v2.json, pointer: /results/released }
+    expect: { result: released, mutation: atomic, core_calls: 0 }
+  - name: persistence_released_processing
+    covers: [persistence_released_event_processing]
+    operation: persistence_process_v2
+    store_before: released-store-v2.json
+    store_after: committed-store-v2.json
+    call_log: commit-call-log-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }

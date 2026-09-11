@@ -1,0 +1,138 @@
+title: native schema-v2 durable outbox lifecycle
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: retryable-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: ambiguous-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: terminal-confirmed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: terminal-permanently-rejected-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: terminal-operator-cancelled-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: terminal-discarded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: effect-tombstone-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+durable_host_vectors:
+  - name: outbox_initial_pending
+    covers: [outbox_not_attempted, outbox_receipt_linkage]
+    operation: checkpoint_step_v2
+    checkpoint_before: pending-checkpoint-v2.json
+    checkpoint_after: pending-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/pending }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
+  - name: outbox_retryable_failure
+    covers: [outbox_retryable_failure]
+    operation: checkpoint_update_outbox_v2
+    checkpoint_before: pending-checkpoint-v2.json
+    checkpoint_after: retryable-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/retryable }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: outbox_equal_pending_replay
+    covers: [outbox_equal_pending_replay]
+    operation: checkpoint_update_outbox_v2
+    checkpoint_before: retryable-checkpoint-v2.json
+    checkpoint_after: retryable-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/retryable_replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
+  - name: outbox_ambiguous
+    covers: [outbox_ambiguous]
+    operation: checkpoint_update_outbox_v2
+    checkpoint_before: retryable-checkpoint-v2.json
+    checkpoint_after: ambiguous-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/ambiguous }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: outbox_terminal_confirmed
+    covers: [outbox_confirmed, exact_outbox_revision_equation]
+    operation: checkpoint_terminalize_outbox_v2
+    checkpoint_before: ambiguous-checkpoint-v2.json
+    checkpoint_after: terminal-confirmed-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/terminal_confirmed }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: outbox_terminal_permanently_rejected
+    covers: [outbox_permanently_rejected]
+    operation: checkpoint_terminalize_outbox_v2
+    checkpoint_before: terminal-confirmed-checkpoint-v2.json
+    checkpoint_after: terminal-permanently-rejected-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/terminal_permanently_rejected }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: outbox_terminal_operator_cancelled
+    covers: [outbox_operator_cancelled]
+    operation: checkpoint_terminalize_outbox_v2
+    checkpoint_before: terminal-permanently-rejected-checkpoint-v2.json
+    checkpoint_after: terminal-operator-cancelled-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/terminal_operator_cancelled }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: outbox_terminal_discarded
+    covers: [outbox_discarded]
+    operation: checkpoint_terminalize_outbox_v2
+    checkpoint_before: terminal-operator-cancelled-checkpoint-v2.json
+    checkpoint_after: terminal-discarded-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/terminal_discarded }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: outbox_terminal_dead_lettered
+    covers: [outbox_dead_lettered]
+    operation: checkpoint_terminalize_outbox_v2
+    checkpoint_before: terminal-discarded-checkpoint-v2.json
+    checkpoint_after: terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/terminal_dead_lettered }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: outbox_terminal_replay
+    covers: [outbox_equal_terminal_replay]
+    operation: checkpoint_terminalize_outbox_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    checkpoint_after: terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/terminal_replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
+  - name: outbox_terminal_conflict
+    covers: [outbox_terminal_conflict]
+    operation: checkpoint_terminalize_outbox_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    checkpoint_after: terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/conflict }
+    result: { file: results-v2.json, pointer: /results/conflict }
+    expect: { result: rejected, code: effect_id_conflict, mutation: none, core_calls: 0 }
+  - name: outbox_effect_tombstone
+    covers: [outbox_effect_tombstone]
+    operation: checkpoint_compact_outbox_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    checkpoint_after: effect-tombstone-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/compact }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: outbox_forbidden_deletion
+    covers: [outbox_forbidden_deletion]
+    operation: checkpoint_compact_outbox_v2
+    checkpoint_before: effect-tombstone-checkpoint-v2.json
+    checkpoint_after: effect-tombstone-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/delete }
+    result: { file: results-v2.json, pointer: /results/deletion_rejected }
+    expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
+  - name: outbox_effect_dependency_pruning
+    covers: [pruning_effect_receipt_dependency]
+    operation: checkpoint_prune_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    checkpoint_after: terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/prune_effect_dependency }
+    result: { file: results-v2.json, pointer: /results/deletion_rejected }
+    expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
+  - name: outbox_producer_dependency_pruning
+    covers: [pruning_producer_receipt_dependency]
+    operation: checkpoint_prune_v2
+    checkpoint_before: terminal-checkpoint-v2.json
+    checkpoint_after: terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/prune_producer_dependency }
+    result: { file: results-v2.json, pointer: /results/deletion_rejected }
+    expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }

@@ -1,0 +1,10 @@
+{
+  "durable_host_call_log_format": "determa.durable_host.call_log",
+  "durable_host_call_log_schema_version": 2,
+  "calls": [
+    "select_scope",
+    "resolve_artifacts",
+    "validate_capabilities",
+    "release_quarantine"
+  ]
+}

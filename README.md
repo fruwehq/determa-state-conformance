@@ -13,8 +13,10 @@ by this repository. Cases under `conformance/profiles/<profile>/` bind only
 implementations that declare support for that profile, and never override core prose.
 External broker delivery policy, timers, production stores, CLI shapes, and other host
 surfaces remain outside core conformance. Runtime-local ready/deferred mailboxes in
-aggregate-state version 2 are core state and do not define a broker or worker. SPEC §16 separately defines a portable
-aggregate wire and pure migration operations; core cases 94 onward cover that boundary.
+aggregate-state schema version 2 are core state and do not define a broker or worker.
+SPEC §16 defines the sole portable aggregate wire and pure migration operations; cases
+117–118 cover that boundary. Machine document `format: 1` remains unchanged and is
+independent of portable artifact schema versioning.
 
 Migration note: repository revisions before issue #21 used the pre-format-1 grammar and
 are not authoritative for format 1. The authority statement above applies to the
@@ -26,10 +28,9 @@ migrated suite.
   normative core case.
 - `conformance/core/<number>-<name>/test.yaml` — its scenario or static-validation
   assertion.
-- `conformance/core/94-*` onward may use `persistence_vectors` plus a strict
+- `conformance/core/117-*` onward may use `version2_vectors` plus a strict
   `artifacts.documents` manifest for portable JSON operations.
-- `conformance/profiles/<profile>/` — optional, explicitly non-core compatibility
-  surfaces.
+- `conformance/profiles/<profile>/` — optional, explicitly non-core host surfaces.
 - `conformance/profiles/execution-checkpoint/` — the optional SPEC §17 durable-host
   checkpoint profile.
 - `conformance/closed-code-registry/registry.json` — the single machine-readable
@@ -39,20 +40,14 @@ migrated suite.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
 - `VERSION` — the synchronized specification version, currently `0.2.0`.
 
-Release 0.2.0 contains the existing 111 core cases, 108 persistence vectors, 12
-persistence-profile steps, 94 execution-checkpoint vectors including six scope vectors,
-and 101 closed-code registry entries across 11 categories. The release metadata does not
-change their behavior expectations or unresolved future scope.
-
-The unreleased issue-45 additions retain `VERSION` 0.2.0 while review is in progress:
-core case 04, cases 117–118, and checkpoint cases 04–06 add the version-2 contracts without
-changing any released version-1 fixture.
+The v2-only artifact cleanup retains `VERSION` 0.2.0 while review is in progress.
+Current fixture totals are reported by the repository validator rather than maintained
+as release promises in prose.
 
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
 pre-schema rejections, checks declared structural results against an immutable
 specification commit, verifies artifact digests, and compares canonical JSON files as
-exact bytes. Persistence vectors separately name the exact operation-result bytes, which
-may intentionally be noncanonical for an empty-route migration no-op. CI does not
+exact bytes. CI does not
 execute scenario traces, and there is no standalone runtime runner.
 Each implementation's harness must later load and execute every core case;
 implementation work follows this suite in a separate pull request.
@@ -66,6 +61,25 @@ python scripts/validate_conformance.py --spec-root ../determa-state-spec
 
 The supplied specification checkout must be the dependency revision under review; the
 workflow pins that revision by commit rather than following a mutable branch.
+
+Durable-host profile changes must also pass the deterministic profile generator:
+
+```sh
+python scripts/generate_execution_checkpoint_profile.py --check
+```
+
+The durable-host request schema is a closed operation-tagged union. The validator
+cross-binds request semantics to exact result and after-state artifacts, enforces exact
+revision equations, and rejects schema-valid goldens belonging to another request.
+Malformed batch members are represented by exact driver-owned UTF-8 JSON sources or
+JSON values; the harness applies the repository's strict JSON source checks and the
+durable-host input schema to each ordered member before admission.
+Scoped operations receive exactly the selected authorized record, or no records when
+scope authorization fails; equality across scopes is checked relationally between
+separate vectors.
+Stale admission replay vectors name the exact historical checkpoint read by the
+original admission. The validator binds that root, revision, and digest to the retained
+acceptance receipt before replay or same-identity conflict can precede CAS.
 
 ### Closed-code registry
 
@@ -183,188 +197,32 @@ capture or delivery as public APIs. Explicit delivery is intentional: automatica
 draining returned emissions would silently standardize FIFO or run-to-quiescence
 behavior that format 1 assigns to queue plugins.
 
-### Persistence vector mechanics
+### Portable version-2 vector mechanics
 
-A persistence case is self-contained and uses `static.documents` for every source or
-target bundle, `artifacts.documents` for every JSON file, and one or more closed
-`persistence_vectors`. Existing runtime-step mechanics remain unchanged.
-
-The exact driver operations are `serialize_created_aggregate`,
-`restore_and_serialize`, `restore_and_dispatch`, `restore_package`,
-`restore_package_and_migrate`, `migrate_aggregate`, and `migrate_and_dispatch`. They
-adapt the pure SPEC §16 operations without fixing language API names. A vector
-explicitly supplies every definition, descriptor digest, route member, target
-fingerprint, maintenance flag, input envelope, resolver override, and resource-limit
-fixture it uses.
-
-The additional driver-only operation `decode_selected_migration_descriptor` names one
-exact `migration_descriptor` JSON artifact and invokes the selected migration-descriptor
-decoder directly. It exists for source bytes, such as legacy documents without a modern
-routing digest, that cannot faithfully enter a migration route. Its closed expectation is
-only `{result: success}` or `{result: failure, code: <exact decoder code>}`. It does not
-resolve a route, create or restore an aggregate, mutate a resolver, or assert aggregate
-ownership. A manifest-valid selected descriptor requires success; an invalid selected
-descriptor requires failure with its exact decoder-mapped code.
-
-Migration vectors normally use the required top-level `migration_route`,
-`target_validated_bundle_fingerprint`, and `maintenance_mode` driver fields. A vector
-testing request validation may instead use the closed `migration_request` object, whose
-only fields are those same three request members. Within that object only, the exact
-string `not-a-boolean` is admitted as a malformed `maintenance_mode` value. This keeps
-malformed-request coverage inside a closed harness contract; case 113 separately omits
-the member and supplies this string so the operation, rather than fixture-schema
-validation, returns `invalid_migration_request` for both required branches.
-
-An artifact manifest classifies `aggregate_state`, `migration_descriptor`,
-`aggregate_state_package`, driver-only `artifact_resolver` and `resource_limits`, or
-driver-only `json_value`. Recognized portable artifacts are checked against the pinned
-specification schema and have their embedded digests recomputed. The two driver-only
-documents are checked against closed repository schemas. `verify_digest: false` is
-permitted only for a schema-valid semantic-negative vector whose operation asserts the
-exact digest/package failure. `canonical_of` requires the complete file bytes to equal
-the RFC 8785 serialization of the readable fixture, with no byte-order mark, whitespace,
-or trailing newline.
-
-`expect.aggregate_state_file` compares the semantic aggregate value.
-`expect.exact_bytes_file` compares the complete returned aggregate-envelope bytes.
-Successful serialization, ordinary restoration, and non-empty migration use canonical
-RFC 8785 bytes. An empty migration route to the unchanged definition instead returns the
-exact supplied bytes, including insignificant source whitespace; cases exercise both a
-pretty input and a canonical input. These assertions are intentionally separate.
-
-Successful vectors require every result member relevant to their operation: aggregate
-value and exact bytes; migration audit for migration; emissions and disposition for
-dispatch; and resulting resolver state for package-seeded migration. A failure asserts
-only the exact closed code and `caller_still_owns_aggregate: true`; no intermediate
-candidate, bytes, audit, emissions, resolver mutation, or disposition is available to
-the caller.
-
-A migration operation expecting a migration-descriptor decoder error must uniquely route
-to an invalid descriptor fixture declaring that exact error. The direct selected-decoder
-operation instead validates only its one named artifact; unrelated descriptors with the
-same manifest classification do not participate in either assertion.
-
-An `artifact_resolver` fixture has exactly `definitions` and
-`migration_descriptors`. Each definition record has exactly
-`validated_bundle_fingerprint`, `bundle_file`, and Boolean `trusted`; each descriptor
-record has exactly `migration_descriptor_digest`, `descriptor_file`, and Boolean
-`trusted`. Named files must be declared by the same case. Package attachment vectors
-compare the complete resolver result so put-if-absent and non-overriding behavior is
-observable.
-
-A `resource_limits` fixture contains exactly the canonical-decimal string members in
-`scripts/schemas/resource-limits.schema.json`. Byte limits use RFC 8785 UTF-8 bytes for
-portable JSON values; definition bytes use each normalized bundle's RFC 8785 bytes.
-JSON nesting counts the outer map/list as depth 1. Runtime count is aggregate-wide.
-Active-state and live-variable limits apply to each runtime independently. Map/list
-limits are the maximum immediate member count of any recursively visited JSON
-container. String bytes include both member names and string values. Descriptor rules
-are the sum of entries in its eight closed `mappings` arrays. CEL expression, AST,
-evaluation, and transformed-output accounting follows SPEC §16.14 exactly.
-
-Core implementations must support at least these configured floors:
-
-| resource | floor |
-|---|---:|
-| aggregate bytes | 1,048,576 |
-| bytes per normalized definition | 1,048,576 |
-| bytes per migration descriptor | 65,536 |
-| transformed-output bytes | 65,536 |
-| JSON nesting depth | 64 |
-| runtimes per aggregate | 256 |
-| active states per runtime | 1,024 |
-| live variables per runtime | 4,096 |
-| immediate map members | 4,096 |
-| immediate list members | 4,096 |
-| UTF-8 bytes per string | 65,536 |
-| migration-chain descriptors | 8 |
-| mapping rules per descriptor | 1,024 |
-| CEL expression bytes | 65,536 |
-| CEL AST nodes | 65,536 |
-| CEL evaluation steps | 1,000,000 |
-
-Case 112 proves that one migration within every floor succeeds, then lowers each newly
-covered configured dimension below the same fixture's actual use and requires
-`migration_resource_limit_exceeded`. It retains the aggregate-byte, descriptor-byte,
-chain-length, transformed-output, and evaluation vectors. Migration-chain length is
-exactly the number of descriptor digests in the requested route, including zero for an
-empty route. Every descriptor is checked independently against its declared
-requirements and the matching configured per-descriptor limits; no resource dimension
-is summed across the route.
-
-### Execution-checkpoint profile mechanics
-
-An execution-checkpoint case uses `execution_checkpoint_profile.vectors`. The closed
-driver names one host operation, its exact checkpoint before the operation, the
-portable operation input by JSON Pointer, and an exact expectation. Core-calling
-vectors also name one generated projected core result. Creation supplies the exact
-bundle file bytes and validated fingerprint, namespace, machine and version, root
-identity, creation identity, normalized bindings, and request digest. Delivery supplies
-the exact portable envelope, mode, origin, envelope digest, and byte/fingerprint-bound
-native `dispatch` input. Every writer of an existing checkpoint supplies the exact
-revision and checkpoint digest it read.
-The expectation fixes the closed result or failure code, checkpoint after the
-operation, whether bytes are absent/created/changed/unchanged, the one permitted core
-call classification, and any returned receipt, delivery, or effect identity. Closed
-registry and capability vectors cover only SPEC §17.10–§17.11 identifiers, failures,
-and declared capability sets; they do not define factory or configuration APIs.
-Invalid adapter configuration is resolved before capability comparison.
-
-`execution_checkpoint_inputs` and `execution_checkpoint_core_evidence` are separate
-closed driver artifacts. Core evidence permits only the portable create/dispatch or
-migration projection, carries exact immutable SPEC/Python/Rust pins, and binds each
-call to its complete operation input with
-`sha256(JCS(["determa-conformance-execution-checkpoint-operation-input-1", input]))`.
-The validator also binds bundle source bytes, bundle fingerprints, dispatch mode and
-payload, migration descriptors and request digest, prior aggregate digest, and
-resulting aggregate/audit.
-
-`execution_checkpoint` artifacts are strict JSON checked against the pinned SPEC §17
-schema. Validation recomputes the embedded aggregate digest, checkpoint digest,
-pending-envelope digests, canonical sequence/counter ordering, receipt revision and
-retention intervals, root membership, permanent delivery-allocation continuity,
-internal-delivery bidirectional links, outbox producer/revision/receipt links,
-tombstone final-state evidence, and migration-audit links. Relational probes compare
-compact intent digests to the full pre-compaction intent. `canonical_of` files remain
-exact RFC 8785 bytes with no
-trailing newline. Semantic-negative artifacts recompute their outer digest so ordering,
-dependency, and linkage failures cannot pass merely as digest failures.
-
-Coverage labels are checked against a total declarative rule table. Each rule fixes the
-operation, result/code, mutation, core call, failure boundary, and a relational
-state/input/capability predicate. Built-in mutation probes reject swapped labels,
-language-specific evidence members, wrong pins or input digests, rebound dispatch
-drift, excluded result/code/core-call combinations, and capability evaluation before
-configuration validation.
-
-Replay vectors repeat the original `create`, delivery, maintenance, outbox, retention,
-or tombstone operation with equal inputs; there is no driver-only replay or standalone
-compare-and-swap operation. The driver operation names are adapters for conformance
-only. They do not define a
-language API, SQL schema, URI, daemon, socket, worker, or command-line surface. See
-`conformance/profiles/execution-checkpoint/README.md`.
-
-Scope-isolation vectors select one externally authorized logical store scope and then
-invoke the existing foreground `update_pending_outbox` host operation. They compare
-the complete checkpoint and stored outbox-record maps in both scopes before and after
-the call. Missing, ambiguous, mismatched, or unauthorized selection records one
-resolver call, no ExecutionHost, store, or core call, and byte-identical complete store
-state. Equal operation results in two external scopes also require byte-identical
-portable checkpoint serialization, checkpoint digest, and effect identities.
-
-### Queue-bearing version-2 vector mechanics
-
-Cases with `version2_vectors` exercise only the pure, language-neutral operations from
-SPEC §§8, 16.15, and 17.15. Their operation names are driver adapters, not required
-public API names. A vector supplies the exact aggregate/checkpoint before value where
-required, an exact target or request artifact, and either canonical RFC 8785 result
-bytes or one closed failure code with the byte-identical unchanged input artifact.
+Cases with `version2_vectors` exercise the pure, language-neutral operations from SPEC
+§§8, 16, and 17. Their operation names are driver adapters, not required public API
+names. A vector supplies the exact aggregate or checkpoint before value where required,
+an exact target or request artifact, and either canonical RFC 8785 result bytes or one
+closed failure code with the byte-identical unchanged input artifact.
 
 One `step_v2` names one runtime and processes at most its ready head. No version-2
 operation chooses another runtime or drains an aggregate. Repository validation checks
-result artifacts against the pinned schemas, recomputes aggregate, checkpoint,
-envelope, and descriptor digests, validates single mailbox ownership and receipt
-relations, rejects repeated coverage claims, and requires the closed coverage set.
+result artifacts against the pinned schema-version-2 schemas, recomputes aggregate,
+checkpoint, envelope, descriptor, and maintenance request digests, validates single
+mailbox ownership and retained receipt relations, rejects repeated coverage claims, and
+requires the closed coverage set. The checkpoint profile is intentionally limited to
+maintenance migration.
+
+The required native core coverage is grouped as follows:
+
+| Case | Required coverage labels |
+|---|---|
+| `119-native-v2-aggregate-integrity` | aggregate round trips; typed values; exact root, component, and spawned targets; relation and discriminator rejection |
+| `120-native-v2-definition-package` | definition resolution; package attachment digest, uniqueness, resolver seeding, trust, and put-if-absent behavior |
+| `121-native-v2-migration-totality` | active and historical state, variables, components, owned runtimes, counters, identities, and total mapping rejection |
+| `122-native-v2-migration-execution` | unchanged-definition resume; route adjacency, order, cycle, and absence; retry; all migration-then-processing outcomes; terminal migration |
+| `123-native-v2-migration-guards` | trust, resource and security limits, request validation, transform faults, and failure/discriminator precedence |
+| `124-native-v2-occurrence-identity` | occurrence-local bindings plus exact decimal target identity boundaries for spawn and component activation sequences |
 
 Generate or independently verify the canonical fixtures with:
 
@@ -499,18 +357,13 @@ A later, separate issue may define commands, exit codes, and JSON shapes for
 implementations that declare a CLI profile, without queue introspection. Until then,
 the absence of CLI cases is intentional and no CLI surface is portable conformance.
 
-The `persistence` profile fixes inbox idempotency, aggregate/inbox/outbox/audit atomic
-commit, crash recovery, transient retry, permanent quarantine, and pre-transaction
-artifact resolution for hosts that declare it. Its store snapshots and call logs are
-assertion notation, not a standardized database schema or public engine API. See
-`conformance/profiles/persistence/README.md`.
-
-The `execution-checkpoint` profile fixes the portable SPEC §17 checkpoint artifact and
-host-observable create/accept/process/replay, compare-and-swap, retention, tombstone,
-outbox, logical-store isolation, registry-result, and composed-capability transitions.
-It binds only hosts that declare the profile and does not standardize their storage or
-public API. See
-`conformance/profiles/execution-checkpoint/README.md`.
+The `execution-checkpoint` profile fixes the portable SPEC §17 durable-host lifecycle
+over the schema-version-2 checkpoint artifact. It covers native creation, ordered-batch
+admission and its exact failure precedence, processing, replay, outbox transitions,
+pruning, root identity, spawned-runtime traces, exact adapter scheme grammar,
+profile-derived capabilities, relational store-scope isolation, and keyed maintenance migration. The persistence
+profile adds the six required host transaction traces. Both bind only hosts that
+declare them and do not standardize storage or a public API. See the profile READMEs.
 
 ## Coverage
 
@@ -602,50 +455,27 @@ public API. See
 | 91 | ordinary host input to a live component rejects with `invalid_instance_target` (§6, §8) |
 | 92 | aggregate-root fault terminality overrides retained component target status (§6, §8) |
 | 93 | non-correlating input and internal envelopes may carry optional correlation ids (§6) |
-| 94 | portable aggregate encoding, decoding, canonical bytes, typed values, targets, and fault round trip (§16.1–§16.4) |
-| 95 | strict JSON source, format/version, structural, numeric, and relationship rejection (§16.1–§16.3) |
-| 96 | content-addressed definition resolution, absence, trust, and collision behavior (§16.5) |
-| 97 | self-contained package attachment verification and collision rejection (§16.13) |
-| 98 | unchanged-definition restore and dispatch equivalence (§16.1–§16.3) |
-| 99 | aggregate-shape-compatible migration and exact audit output (§16.6–§16.8) |
-| 100 | explicit active-state remapping without author behavior (§16.8–§16.9) |
-| 101 | deleted-state totality, ambiguity, partial mapping, and no guessed reset (§16.9) |
-| 102 | copy, transform, initialize, and destructive-drop variable rules (§16.7, §16.9) |
-| 103 | explicit history-slot and recorded-state migration (§16.9) |
-| 104 | component placement migration with immutable target identity (§16.4, §16.9) |
-| 105 | owned-runtime and holder migration with immutable nominal reference (§16.4, §16.9) |
-| 106 | counter-domain mapping plus identity and allocation preservation (§16.4, §16.9) |
-| 107 | exact multi-hop route, adjacency, ordering, and cycle rejection (§16.8) |
-| 108 | deterministic retry and complete intermediate-candidate rollback (§16.8, §16.12) |
-| 109 | migration plus handled, unhandled, rejected, and faulted dispatch outcomes (§16.11) |
-| 110 | completed terminal maintenance migration and terminal preservation (§16.10) |
-| 111 | faulted diagnostic migration and terminal-policy rejection (§16.10) |
-| 112 | descriptor trust plus configured and actual-use resource-limit failure (§16.12, §16.14) |
-| 113 | closed migration request, resolution, transform, and descriptor-discriminator failures (§16.8, §16.10, §16.12) |
-| 114 | occurrence-local transform binding across repeated runtimes and activations (§16.9) |
-| 115 | target-identity decimal projections, JavaScript boundaries, signed-64 spawned versions, unbounded component activations, and numeric-form rejection (§16.2, §16.4) |
 | 116 | legacy definition discriminator policy: 0.0.1–0.0.6 rejection, explicit-format structural rejection, and 0.0.7/current format-1 acceptance (§2) |
 | 117 | runtime-local ready/deferred mailboxes, explicit one-step processing, recall, capacity, isolation, and lifecycle outcomes (§6–§10, §16.15) |
-| 118 | queue-bearing artifact schemas, canonical bytes, explicit version conversion, and migration totality (§16.15) |
+| 118 | schema-version-2 aggregate creation, admission, stepping, migration, canonical bytes, and migration totality (§16) |
 
 ## Deliberate format-1 boundaries
 
 - Parallel behavior uses isolated components; regions and implicit broadcast do not
   exist.
-- Direct aggregate-state version-1 dispatch leaves a deferred envelope caller-owned and
-  performs no automatic recall. Aggregate-state version 2 instead owns accepted ready
-  and deferred envelopes; external broker retry and acknowledgement remain host policy.
+- Portable aggregate-state schema version 2 owns accepted ready and deferred envelopes;
+  external broker retry and acknowledgement remain host policy.
 - Time behavior uses declared external requests and later correlated inputs. The core has
   no clock or timer.
 - Separate named contracts are replaced by bundle public event declarations.
 - Submachines are replaced by explicit lifecycle-bound components or owned spawning.
-- Portable aggregate encoding and declarative definition migration use the separate
-  closed JSON artifacts in SPEC §16; they do not change machine `format: 1`.
+- Portable aggregate encoding and declarative definition migration use the sole
+  schema-version-2 JSON artifacts in SPEC §16; they do not change machine `format: 1`.
 - Package imports and dependency/version resolution remain unsupported.
 - Production store protocols, CLI JSON, queue inspection, enabled-event lists, and
   visualization output are implementation/host surfaces rather than portable core
-  behavior. Optional persistence and execution-checkpoint profiles bind only hosts
-  that declare them.
+  behavior. The optional execution-checkpoint and persistence durable-host profiles
+  bind only hosts that declare them.
 
 ## License
 

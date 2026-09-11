@@ -1,0 +1,137 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 2,
+  "root_instance_id": "owned-migration-root",
+  "revision": "0",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 2,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:aba911d2e963aa68c2443ee3b446b1375f066c0c5e4a890b0d349b0a0b7bb6a3",
+      "namespace": "conformance.case_29_owned_spawn",
+      "root_machine_id": "order",
+      "root_machine_version": "1",
+      "root_instance_id": "owned-migration-root",
+      "creation_id": "owned-migration-create",
+      "root_runtime_id": "sha256:28716afdd14d2691eeaa4244889ca423d7aa89fa27129e3275eba74da387950e",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "1",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "0",
+      "next_queue_sequence": "0",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:28716afdd14d2691eeaa4244889ca423d7aa89fa27129e3275eba74da387950e",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:aba911d2e963aa68c2443ee3b446b1375f066c0c5e4a890b0d349b0a0b7bb6a3",
+              "machine": {
+                "namespace": "conformance.case_29_owned_spawn",
+                "machine_id": "order",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "owned-migration-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "owned-migration-root",
+              "root_runtime_id": "sha256:28716afdd14d2691eeaa4244889ca423d7aa89fa27129e3275eba74da387950e"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:aba911d2e963aa68c2443ee3b446b1375f066c0c5e4a890b0d349b0a0b7bb6a3",
+            "machine": {
+              "namespace": "conformance.case_29_owned_spawn",
+              "machine_id": "order",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root/states/idle"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/0/root/states/idle",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "null"
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/total",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "100"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/idle",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:c5874e763bf667d4df70ba2cad27ad3d0f4fb85268581163e9c555e4eba97771"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "owned-migration-create",
+      "request_digest": "sha256:20e1df824d39699e78d05ba856ce25948dae4a20beede696c4507b07a38857f6",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:c5874e763bf667d4df70ba2cad27ad3d0f4fb85268581163e9c555e4eba97771",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    }
+  ],
+  "next_operation_receipt_sequence": "1",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:7207b648527cda6ea9c9f6d7a9b9866a13bf1873d33652c6d84be894ef023fc7"
+}

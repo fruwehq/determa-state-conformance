@@ -8,11 +8,10 @@
     { "$ref": "#/$defs/pendingReplay" },
     { "$ref": "#/$defs/terminalReplay" },
     { "$ref": "#/$defs/tombstoneReplay" },
-    { "$ref": "#/$defs/legacyTerminalReplay" },
     { "$ref": "#/$defs/batchAdmission" },
     { "$ref": "#/$defs/maintenanceMigration" },
-    { "$ref": "#/$defs/migration" },
-    { "$ref": "#/$defs/downgrade" }
+    { "$ref": "#/$defs/migratedAndProcessed" },
+    { "$ref": "#/$defs/migration" }
   ],
   "$defs": {
     "canonicalDecimal": {
@@ -95,21 +94,6 @@
         }
       }
     },
-    "legacyTerminalReplay": {
-      "type": "object",
-      "required": ["result", "event_id", "acceptance_sequence", "terminal_receipt_sequence", "terminal_disposition", "request_digest_domain"],
-      "additionalProperties": false,
-      "properties": {
-        "result": { "const": "replay" },
-        "event_id": { "type": "string", "minLength": 1 },
-        "acceptance_sequence": { "$ref": "#/$defs/canonicalDecimal" },
-        "terminal_receipt_sequence": { "$ref": "#/$defs/canonicalDecimal" },
-        "terminal_disposition": {
-          "enum": ["handled", "unhandled", "rejected", "faulted"]
-        },
-        "request_digest_domain": { "const": "determa-inbox-envelope-digest-1" }
-      }
-    },
     "batchMember": {
       "oneOf": [
         {
@@ -134,8 +118,7 @@
               "oneOf": [
                 { "$ref": "#/$defs/pendingReplay" },
                 { "$ref": "#/$defs/terminalReplay" },
-                { "$ref": "#/$defs/tombstoneReplay" },
-                { "$ref": "#/$defs/legacyTerminalReplay" }
+                { "$ref": "#/$defs/tombstoneReplay" }
               ]
             }
           }
@@ -193,7 +176,7 @@
       ],
       "additionalProperties": false,
       "properties": {
-        "migration_audit_record_schema_version": { "const": 1 },
+        "migration_audit_record_schema_version": { "const": 2 },
         "root_instance_id": { "type": "string", "minLength": 1 },
         "root_runtime_id": { "type": "string", "minLength": 1 },
         "migration_sequence": { "$ref": "#/$defs/canonicalDecimal" },
@@ -222,13 +205,57 @@
         }
       }
     },
-    "downgrade": {
+    "migrationAdmissionRejection": {
       "type": "object",
-      "required": ["result", "aggregate_state"],
+      "required": [
+        "core_step_result_format", "core_step_result_schema_version", "status",
+        "disposition", "state", "emissions", "lifecycle_dispositions", "fault",
+        "rejection"
+      ],
       "additionalProperties": false,
       "properties": {
-        "result": { "const": "success" },
-        "aggregate_state": { "$ref": "https://determa.dev/state/schema/aggregate-state.schema.json" }
+        "core_step_result_format": { "const": "determa.core_step_result" },
+        "core_step_result_schema_version": { "const": 2 },
+        "status": { "enum": ["running", "completed", "faulted"] },
+        "disposition": { "const": "rejected" },
+        "state": { "$ref": "https://determa.dev/state/schema/aggregate-state-v2.schema.json" },
+        "emissions": { "type": "array", "maxItems": 0 },
+        "lifecycle_dispositions": { "type": "array", "maxItems": 0 },
+        "fault": { "type": "null" },
+        "rejection": {
+          "type": "object",
+          "required": ["code"],
+          "additionalProperties": false,
+          "properties": {
+            "code": {
+              "enum": [
+                "invalid_delivery_mode", "invalid_delivery_source",
+                "invalid_instance_target", "inactive_component_target",
+                "invalid_event", "invalid_payload", "invalid_correlation",
+                "delivery_digest_mismatch"
+              ]
+            }
+          }
+        }
+      }
+    },
+    "migratedAndProcessed": {
+      "type": "object",
+      "required": ["result", "migration_audit_records", "processing"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "migrated_and_processed" },
+        "migration_audit_records": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/migrationAuditRecord" }
+        },
+        "processing": {
+          "oneOf": [
+            { "$ref": "https://determa.dev/state/schema/core-step-result-v2.schema.json" },
+            { "$ref": "#/$defs/migrationAdmissionRejection" }
+          ]
+        }
       }
     }
   }

@@ -1,0 +1,177 @@
+{
+  "durable_host_results_format": "determa.durable_host.results",
+  "durable_host_results_schema_version": 2,
+  "results": {
+    "committed": {
+      "result": "committed",
+      "mutation": "atomic",
+      "core_calls": 1,
+      "broker_acknowledged": false
+    },
+    "committed_no_core": {
+      "result": "committed",
+      "mutation": "atomic",
+      "core_calls": 0,
+      "broker_acknowledged": false
+    },
+    "replayed": {
+      "result": "replayed",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false
+    },
+    "validated": {
+      "result": "validated",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false
+    },
+    "creation_rejected": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 1,
+      "broker_acknowledged": false,
+      "code": "creation_rejected"
+    },
+    "invalid_mode": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_delivery_mode"
+    },
+    "invalid_digest": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "delivery_digest_mismatch"
+    },
+    "invalid_event": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_event"
+    },
+    "malformed_delivery": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "malformed_delivery"
+    },
+    "duplicate_event_id_in_batch": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "duplicate_event_id_in_batch"
+    },
+    "terminal_root": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "terminal_root"
+    },
+    "invalid_delivery_source": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_delivery_source"
+    },
+    "invalid_instance_target": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_instance_target"
+    },
+    "inactive_component_target": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "inactive_component_target"
+    },
+    "invalid_payload": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_payload"
+    },
+    "invalid_correlation": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_correlation"
+    },
+    "event_conflict": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "event_id_conflict"
+    },
+    "stale": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "checkpoint_revision_conflict"
+    },
+    "invalid_checkpoint": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_execution_checkpoint"
+    },
+    "tombstoned_root": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "tombstoned_root"
+    },
+    "duplicate_registration": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "duplicate_adapter_registration"
+    },
+    "unknown_adapter": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "unknown_adapter"
+    },
+    "invalid_configuration": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_adapter_configuration"
+    },
+    "capability_mismatch": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "adapter_capability_mismatch"
+    },
+    "invalid_scope": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_store_scope"
+    }
+  }
+}

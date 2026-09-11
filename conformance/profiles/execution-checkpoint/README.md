@@ -1,145 +1,67 @@
-# Execution-checkpoint host profile
+# Execution-checkpoint durable host profile
 
-This optional profile binds hosts that declare support for the portable SPEC §17
-execution-checkpoint contract. It does not bind a core-only engine and does not
-standardize a language API, SQL schema, object-relational mapper, URI, daemon, socket,
-broker protocol, outbox worker, or command-line surface.
+This optional profile binds hosts that implement the portable schema-version-2
+execution checkpoint from SPEC section 17. It fixes durable transaction outcomes and
+before/after bytes without standardizing a language API, database schema, worker,
+daemon, socket, broker, or command-line surface.
 
-Each case contains a compact table of closed `execution_checkpoint_profile.vectors`.
-A vector names:
+The profile covers:
 
-- one real SPEC §17 host operation; replay repeats that operation and exact input;
-- the exact checkpoint before and after the operation;
-- one JSON Pointer to a closed operation input in `inputs.json`;
-- one JSON Pointer to the projected pure-core result when a core call occurs;
-- the exact closed result or failure code;
-- whether checkpoint bytes are absent, created, changed once, or unchanged; and
-- whether the host calls `create`, `dispatch`, `migrate`, or no core operation.
+- checkpoint creation, input admission, processing, durable receipts, exact replay,
+  conflict ordering, stale writers, and crashes on both sides of commit;
+- every pending and terminal outbox state, equal-state replay, effect tombstones,
+  conflict handling, and dependency-safe deletion refusal;
+- bounded pruning, irreversible retention history, root tombstones, root no-reuse,
+  adapter registration, composed capabilities, and logical store isolation;
+- native admission, processing, replay, pruning, and tombstoning with schema-version-2
+  mailbox and receipt identities;
+- owned spawned-runtime and terminal spawned-runtime host traces; and
+- keyed maintenance migration, including empty, one-hop, two-hop, sequential,
+  replay, conflict, stale-writer, retention, and tombstoned-root cases.
 
-Every writer against an existing checkpoint supplies the exact `expected_revision`
-and `expected_checkpoint_digest` it read. Equal pending/committed identity and equal
-outbox/tombstone retries are checked before this stale-writer guard as required by
-SPEC §17; a genuinely new mutation with stale values returns
-`checkpoint_revision_conflict` before a core call. There is no synthetic `replay` or
-standalone compare-and-swap operation.
+Every maintenance receipt retains `target_validated_bundle_fingerprint`. Maintenance
+requests retain a non-empty operation identity and the exact ordered descriptor digest
+route. Replay and operation-identity conflict are resolved before the writer revision
+and checkpoint-digest comparison.
 
-`inputs.json` has the closed
-`determa.execution_checkpoint_profile.inputs` format. Every cited bundle includes its
-exact source-byte SHA-256 and validated bundle fingerprint. Create inputs additionally
-fix namespace and machine version; dispatch inputs are relationally equal to the
-presented mode, event, identity, target, and decoded typed payload; migration inputs
-bind the target bundle, descriptor files/digest route, source aggregate, and request
-digest.
+Profile requests, results, store snapshots, and call logs use dedicated closed schemas
+under `scripts/schemas/`. Checkpoint and aggregate members use only the specification's
+schema-version-2 formats. Machine documents continue to use integer `format: 1` because
+machine grammar and portable artifact schema versions are separate domains.
 
-`core-results.json` has the closed
-`determa.execution_checkpoint_profile.core_evidence` format. It rejects extra
-language-specific fields, pins the exact SPEC, Python, Python version, and Rust
-verification revisions, and binds every projected call to its complete input using:
+`durable-host-inputs-v2.schema.json` is a closed operation-tagged union. Each request
+contains the complete driver input for its operation: selected and authorized scope;
+bundle, machine, bindings, and creation identities; a canonical ordered admission
+`envelopes` batch with each exact source, target, mode, payload, correlation, and
+digest; selected pending input; one outbox effect and disposition; pruning cutoff,
+mode, and dependencies; adapter registration or configuration; composed capabilities;
+or the complete persistence transaction input. There is no generic parameter map and
+replay repeats the original operation request.
 
-```text
-sha256(JCS(["determa-conformance-execution-checkpoint-operation-input-1", input]))
-```
+The repository validator derives operation-specific invariants from those requests. It
+requires every request checkpoint identity to equal its vector's actual
+`checkpoint_before` and binds canonical envelope digests, ordered allocation, targets,
+receipts, effects,
+disposition, retention transition, store inbox, and application writes to the named
+before/after artifacts. Creation commits revision `0`; each admission, processing,
+outbox, pruning, or tombstone mutation advances exactly one revision; the combined
+persistence admission-and-processing transaction advances exactly two. A golden from
+another request is therefore not interchangeable even when it is schema-valid.
 
-All named checkpoints are strict JSON artifacts validated against the exact
-`execution-checkpoint.schema.json` pin. The durable validator independently verifies
-RFC 8785 checkpoint and embedded aggregate digests, envelope digests, mathematical
-sequence order, counters, receipt/revision relations, permanent and bounded retention,
-root membership, gap-free permanent delivery allocation, internal-delivery origin
-links, producer-linked outbox state revisions, outbox effect links, root-tombstone
-final-state evidence, and migration-audit links. Compact intent digests are checked
-relationally against the exact full pre-compaction intent and operation input.
-Canonical companions are exact bytes with no trailing newline.
+The complete host-contract case additionally covers creation rejection, pending and
+terminal replay precedence, handled/unhandled/rejected/faulted delivery, foreground
+and delayed equivalence, concurrent writer exclusion, dependency variants, both
+retention modes, complete backup/restore, direct store injection, public adapter
+registration and resolution, backend capability boundaries, positive and negative
+composed profiles derived from the exact `host_profile`, exact adapter identifier and
+URI-scheme grammar, and relational logical-scope isolation for equal portable
+identities/effects with separate store records.
 
-Operation/result/failure-code/core-call combinations are closed. Coverage labels are
-independently checked by a total declarative table plus relational predicates over the
-input, before/after checkpoint, receipt, outbox/retention transition, adapter
-capabilities, and composed host features. Validator self-mutations prove that swapped
-creation coverage, wrong code/pin/input digest, rebound dispatch drift, extra evidence
-members, and capability-first invalid-configuration handling are rejected.
-
-The scope-isolation variant adds only behavior executable through existing foreground
-host/store operations. Each vector invokes an external scope resolver and, on success,
-the existing `update_pending_outbox` ExecutionHost operation. Exact call traces cover
-the resolver, ExecutionHost, store, and core boundaries. The state artifact binds the
-complete checkpoint map and complete stored outbox-record map for every scope; a
-successful call may change only the selected scope. Rejected missing, ambiguous,
-mismatched, or unauthorized selection preserves the complete artifact byte-for-byte
-and makes no ExecutionHost, store, or core call.
-
-Coverage is intentionally grouped into five scenario directories:
-
-- `checkpoint-01-delivery-lifecycle` covers creation commit/replay/conflict and
-  rejection without reservation, durable pending acceptance/replay, injected
-  pre-commit rollback, delayed and foreground processing, handled, internal-send,
-  internal-consume, unhandled, rejected, and deliberately faulted receipts, revision
-  progression, committed response replay, stale processing, and every closed
-  pre-acceptance failure except the tombstoned-root branch.
-- `checkpoint-02-outbox-lifecycle` covers initial, retryable, ambiguous, and all five
-  terminal states; idempotent pending and terminal updates; unequal-effect conflict;
-  stale writer rejection; compact effect tombstones; receipt linkage; canonical
-  ordering; and forbidden deletion while a retained receipt references the effect.
-  Its scope-isolation vectors perform the same pending-outbox update independently in
-  two externally selected logical scopes and require byte-identical portable
-  checkpoint serialization, checkpoint digest, and effect identities after both
-  operations.
-- `checkpoint-03-retention-and-root-lifecycle` covers empty, one-hop, and two-hop keyed
-  schema-version-1 compatibility maintenance transactions with exact public receipts
-  and ordered audits, post-commit
-  response loss and replay-before-CAS, operation conflict, stale-writer rejection, permanent
-  retention, irreversible bounded retention in both directions, dependency-safe
-  pruning, stale pruning/tombstoning, completed-root tombstoning/replay, root identity
-  non-reuse, tombstoned pre-acceptance, and unsupported physical deletion. It also
-  covers direct injection, bundled and third-party public registration, all four
-  standard adapter capability boundaries, and complete positive/negative composed
-  host-profile requirements.
-- `checkpoint-04-version2-mailboxes` covers explicit checkpoint version conversion,
-  aggregate-owned admission, acceptance versus terminal evidence, single and batched
-  replay, mixed replay/new admission, wrapped legacy replay, dependency-closed
-  compaction, tombstone replay, native schema-version-2 empty, one-hop, and two-hop
-  keyed maintenance migration, replay-before-CAS, operation conflict, stale-writer
-  rejection, retained historical no-op receipt identity, and version-2 artifact
-  rejection. It uses the repository-level `version2_vectors` driver and does not alter
-  any released version-1 checkpoint vector.
-- `checkpoint-05-spawned-host-trace` derives creation, foreground spawn, and delayed
-  spawned-child acceptance checkpoints from one complete Python-host trace against the
-  pinned implementation. Its creation request uses the exact SPEC section 17 digest.
-
-The invalid artifacts separately prove format/version classification, structural
-closure, digest mismatch, foreign-root delivery targets, permanent delivery-allocation
-gaps, noncanonical outbox order, dangling effect linkage, wrong compact intent digest,
-wrong initial outbox state revision, a bounded cutoff that crosses a retained internal
-origin, an unrelated root-tombstone final digest, and malformed maintenance receipt
-shape, digest, allocation, revision, sequence, and audit order. Every semantic probe
-recomputes the outer checkpoint digest.
-
-## Generation and independent core verification
-
-`scripts/generate_execution_checkpoint_profile.py` is the reproducible fixture
-generator. It imports the Python core, invokes only public pure `load_bundle`,
-`create`, `dispatch`, aggregate encoding, and migration operations, projects native
-payloads into SPEC §16.2 typed values, and then applies the SPEC §17 host transaction
-rules. Run it from this repository with the Python implementation environment:
+Generate and verify deterministic artifacts with:
 
 ```sh
-/path/to/determa-state-python/.venv/bin/python \
-  scripts/generate_execution_checkpoint_profile.py --check
+python scripts/generate_execution_checkpoint_profile.py
+python scripts/generate_execution_checkpoint_profile.py --check
+python scripts/generate_version2_vectors.py --check
+python scripts/validate_conformance.py --spec-root ../determa-state-spec
 ```
-
-`--check` resolves the imported `determa.state` module to its Git checkout and fails
-unless `HEAD` is exactly the pinned Python commit and tracked files are clean. The
-recorded commit therefore cannot be produced by importing a different or modified
-checkout.
-
-The checked generation used:
-
-- specification `e22f9db295d632f3f46a9d1260c63b5af92efa7e`;
-- Python core `7b17d788b48049648e7e463aa3d35ba13dc1aa6e`; and
-- Rust core `d17480c8b281dcd17953f59afcf6b5d23ff44efd`.
-
-Each `core-results.json` records schema-enforced constant pins. The Rust cross-check loaded the same
-machines and exact inputs, then compared every encoded aggregate, status, disposition,
-rejection, fault, internal event identity, external effect identity, payload, logical
-and output counter, variable value, migration result, and audit record to the generated
-artifacts. It covered the complete six-dispatch delivery chain, all eight output
-emissions, and the non-empty migration. This verification does not add an engine,
-adapter, host API, SQL schema, worker, daemon, socket protocol, CLI, or release.

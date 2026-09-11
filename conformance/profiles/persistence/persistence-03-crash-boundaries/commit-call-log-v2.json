@@ -1,0 +1,19 @@
+{
+  "durable_host_call_log_format": "determa.durable_host.call_log",
+  "durable_host_call_log_schema_version": 2,
+  "calls": [
+    "select_scope",
+    "resolve_artifacts",
+    "validate_capabilities",
+    "begin_transaction",
+    "read_checkpoint",
+    "check_replay",
+    "call_core",
+    "stage_checkpoint",
+    "stage_inbox",
+    "stage_outbox",
+    "stage_audit",
+    "stage_application_rows",
+    "commit"
+  ]
+}

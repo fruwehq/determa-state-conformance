@@ -54,28 +54,23 @@
         "operation": {
           "enum": [
             "create_v2",
+            "round_trip_aggregate_v2",
+            "restore_package_v2",
             "admit_v2",
             "step_v2",
-            "upgrade_aggregate_v1_to_v2",
-            "downgrade_aggregate_v2_to_v1",
             "migrate_aggregate_v2",
-            "upgrade_checkpoint_v1_to_v2",
-            "downgrade_checkpoint_v2_to_v1",
-            "checkpoint_admit_v2",
-            "checkpoint_step_v2",
-            "checkpoint_prune_v2",
-            "checkpoint_tombstone_v2",
-            "checkpoint_migrate_v2",
-            "checkpoint_v1_accept"
+            "migrate_then_process_v2",
+            "checkpoint_migrate_v2"
           ]
         },
         "bundle": { "$ref": "#/$defs/yamlFile" },
         "state_before": { "$ref": "#/$defs/jsonFile" },
+        "package_file": { "$ref": "#/$defs/jsonFile" },
         "checkpoint_before": {
           "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
         },
         "checkpoint_after": { "$ref": "#/$defs/jsonFile" },
-        "source_checkpoint_v1": { "$ref": "#/$defs/jsonFile" },
+        "migration_state_after": { "$ref": "#/$defs/jsonFile" },
         "request_file": { "$ref": "#/$defs/jsonFile" },
         "request_pointer": {
           "type": "string",
@@ -101,6 +96,19 @@
             "required": ["operation", "expect"]
           },
           "then": { "required": ["checkpoint_after"] }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": { "const": "migrate_then_process_v2" },
+              "expect": {
+                "properties": { "result": { "const": "success" } },
+                "required": ["result"]
+              }
+            },
+            "required": ["operation", "expect"]
+          },
+          "then": { "required": ["migration_state_after"] }
         }
       ]
     }

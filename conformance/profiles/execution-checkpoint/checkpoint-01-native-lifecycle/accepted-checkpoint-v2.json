@@ -1,0 +1,165 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 2,
+  "root_instance_id": "checkpoint-lifecycle-root",
+  "revision": "1",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 2,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:231aa75d35d3eb51638dc72dd6d1817cb36b23076c99f7ca495925c8f9885bf2",
+      "namespace": "conformance.execution_checkpoint_native_lifecycle",
+      "root_machine_id": "counter",
+      "root_machine_version": "1",
+      "root_instance_id": "checkpoint-lifecycle-root",
+      "creation_id": "checkpoint-lifecycle-create",
+      "root_runtime_id": "sha256:5b5dc7bb5fffe1c44b07b273c3ec57cb86628cec6326a75d7fe394cab5dee913",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "1",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "1",
+      "next_queue_sequence": "1",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:5b5dc7bb5fffe1c44b07b273c3ec57cb86628cec6326a75d7fe394cab5dee913",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:231aa75d35d3eb51638dc72dd6d1817cb36b23076c99f7ca495925c8f9885bf2",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_native_lifecycle",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "checkpoint-lifecycle-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "checkpoint-lifecycle-root",
+              "root_runtime_id": "sha256:5b5dc7bb5fffe1c44b07b273c3ec57cb86628cec6326a75d7fe394cab5dee913"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:231aa75d35d3eb51638dc72dd6d1817cb36b23076c99f7ca495925c8f9885bf2",
+            "machine": {
+              "namespace": "conformance.execution_checkpoint_native_lifecycle",
+              "machine_id": "counter",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/count",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "0"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [
+            {
+              "envelope": {
+                "event": "increment",
+                "event_id": "delivery-increment",
+                "cause_id": "delivery-increment",
+                "source": {
+                  "host": true
+                },
+                "target": {
+                  "root": {
+                    "root_instance_id": "checkpoint-lifecycle-root",
+                    "root_runtime_id": "sha256:5b5dc7bb5fffe1c44b07b273c3ec57cb86628cec6326a75d7fe394cab5dee913"
+                  }
+                },
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "amount",
+                      [
+                        "integer",
+                        "2"
+                      ]
+                    ]
+                  ]
+                ]
+              },
+              "envelope_digest": "sha256:eaa8f291eee1444886645b92ef171b4b9dcb304d291218a6fc5f41b5f9814db9",
+              "delivery_mode": "input",
+              "acceptance_sequence": "0",
+              "queue_sequence": "0",
+              "deferral_count": "0"
+            }
+          ],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:621ec3e1e244d393c073e2301e3e2e84bf51fa9bf094819a64022c705d420306"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "checkpoint-lifecycle-create",
+      "request_digest": "sha256:abefd568962bb20f566a54b632d73fb81cf968b83ba30d053dceabde3f557f62",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:7f17828dbd844c7d279e02f54f557f00be407c79b9e95b8060230aa85aacfd22",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "1",
+      "event_id": "delivery-increment",
+      "request_digest": "sha256:eaa8f291eee1444886645b92ef171b4b9dcb304d291218a6fc5f41b5f9814db9",
+      "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    }
+  ],
+  "next_operation_receipt_sequence": "2",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:45f8412c4baf966cdda9a853afabb34b9fc56afaf4228642eb6de407e81f8f3f"
+}

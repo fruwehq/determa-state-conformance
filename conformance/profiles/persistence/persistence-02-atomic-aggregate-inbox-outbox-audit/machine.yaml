@@ -1,22 +1,18 @@
 format: 1
-namespace: conformance.persistence_profile_output
+namespace: conformance.persistence_native_v2
 events:
-  work:
+  increment:
     direction: input
-  work_recorded:
-    direction: output
     payload:
-      request_id: { type: string, required: true }
+      amount: { type: int, required: true }
 machines:
-  - machine_id: job
+  - machine_id: counter
     version: 1
     root:
+      type: simple
+      variables:
+        count: { type: int, init: 0 }
       on_events:
-        work:
+        increment:
           action:
-            - send:
-                event: work_recorded
-                to: { external: true }
-                correlation_id: "'profile-output-correlation'"
-                payload:
-                  request_id: "'profile-input-1'"
+            - assign: { count: "count + event.payload.amount" }

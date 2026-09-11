@@ -1,4 +1,4 @@
-title: queue-bearing artifact migration and explicit version conversion
+title: queue-bearing artifact migration
 static:
   documents:
     - { file: machine.yaml, valid: true }
@@ -11,10 +11,7 @@ static:
     - { file: target-stale-state.yaml, valid: true }
 artifacts:
   documents:
-    - { file: base-aggregate-v1.json, kind: aggregate_state, valid: true }
     - { file: base-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
-    - { file: base-descriptor-v1.json, kind: migration_descriptor, valid: true }
-    - { file: upgraded-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
     - { file: descriptor-compatible-v2.json, kind: migration_descriptor_v2, valid: true }
     - { file: descriptor-compatible-second-v2.json, kind: migration_descriptor_v2, valid: true }
     - { file: descriptor-dispose-v2.json, kind: migration_descriptor_v2, valid: true }
@@ -36,37 +33,8 @@ artifacts:
     - { file: migration-fault-frozen-preserve-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-historical-fault-result.json, kind: version2_operation_result, valid: true }
     - { file: migration-dispose-result.json, kind: version2_operation_result, valid: true }
-    - { file: downgrade-result.json, kind: version2_operation_result, valid: true }
     - { file: operation-inputs.json, kind: version2_operation_inputs, valid: true }
 version2_vectors:
-  - name: explicit_aggregate_upgrade
-    covers: [upgrade_aggregate_v1_to_v2]
-    operation: upgrade_aggregate_v1_to_v2
-    state_before: base-aggregate-v1.json
-    request_file: operation-inputs.json
-    request_pointer: /upgrade
-    expect: { result: success, exact_result_file: upgraded-aggregate-v2.json }
-  - name: empty_queue_aggregate_downgrade
-    covers: [downgrade_permitted]
-    operation: downgrade_aggregate_v2_to_v1
-    state_before: upgraded-aggregate-v2.json
-    request_file: operation-inputs.json
-    request_pointer: /downgrade
-    expect: { result: success, exact_result_file: downgrade-result.json }
-  - name: nonempty_queue_aggregate_downgrade_rejected
-    covers: [downgrade_prohibited]
-    operation: downgrade_aggregate_v2_to_v1
-    state_before: base-aggregate-v2.json
-    request_file: operation-inputs.json
-    request_pointer: /downgrade_prohibited
-    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v2.json }
-  - name: invalid_aggregate_rejected_before_downgrade
-    covers: [invalid_aggregate_artifact_precedes_operation]
-    operation: downgrade_aggregate_v2_to_v1
-    state_before: invalid-counter-aggregate-v2.json
-    request_file: operation-inputs.json
-    request_pointer: /downgrade
-    expect: { result: failure, code: invalid_aggregate_state, unchanged_file: invalid-counter-aggregate-v2.json }
   - name: migration_preserves_compatible_work
     covers:
       - migration_backlog_independent_descriptor

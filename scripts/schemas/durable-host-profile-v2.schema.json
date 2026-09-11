@@ -1,0 +1,265 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/durable-host-profile-v2.schema.json",
+  "title": "Determa State durable host profile vectors",
+  "type": "object",
+  "required": ["title", "static", "artifacts", "durable_host_vectors"],
+  "additionalProperties": false,
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "static": {
+      "type": "object",
+      "required": ["documents"],
+      "additionalProperties": false,
+      "properties": {
+        "documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["file", "valid"],
+            "additionalProperties": false,
+            "properties": {
+              "file": { "$ref": "#/$defs/yamlFile" },
+              "valid": { "const": true }
+            }
+          }
+        }
+      }
+    },
+    "artifacts": {
+      "type": "object",
+      "required": ["documents"],
+      "additionalProperties": false,
+      "properties": {
+        "documents": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["file", "kind", "valid"],
+            "additionalProperties": false,
+            "allOf": [
+              {
+                "if": { "properties": { "valid": { "const": false } }, "required": ["valid"] },
+                "then": { "required": ["error"] },
+                "else": { "not": { "required": ["error"] } }
+              }
+            ],
+            "properties": {
+              "file": { "$ref": "#/$defs/jsonFile" },
+              "kind": {
+                "enum": [
+                  "execution_checkpoint_v2",
+                  "migration_descriptor_v2",
+                  "durable_host_inputs_v2",
+                  "durable_host_results_v2",
+                  "durable_host_store_v2",
+                  "durable_host_call_log_v2"
+                ]
+              },
+              "valid": { "type": "boolean" },
+              "error": { "const": "invalid_durable_host_inputs_v2" }
+            }
+          }
+        }
+      }
+    },
+    "durable_host_vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/vector" }
+    }
+  },
+  "$defs": {
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "admissionEnvelope": {
+      "type": "object",
+      "required": ["delivery_mode", "envelope", "envelope_digest"],
+      "additionalProperties": false,
+      "properties": {
+        "delivery_mode": { "type": "string", "minLength": 1 },
+        "envelope": { "$ref": "https://determa.dev/state/schema/aggregate-state-v2.schema.json#/$defs/envelope" },
+        "envelope_digest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "jsonFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.json$" },
+    "yamlFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.yaml$" },
+    "artifactPointer": {
+      "type": "object",
+      "required": ["file", "pointer"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "$ref": "#/$defs/jsonFile" },
+        "pointer": { "type": "string", "pattern": "^(?:/(?:[^~/]|~[01])*)+$" }
+      }
+    },
+    "rawMemberSource": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["utf8_json"],
+          "additionalProperties": false,
+          "properties": { "utf8_json": { "type": "string", "minLength": 1 } }
+        },
+        {
+          "type": "object",
+          "required": ["json_value"],
+          "additionalProperties": false,
+          "properties": { "json_value": { "$ref": "#/$defs/admissionEnvelope" } }
+        }
+      ]
+    },
+    "rawAdmissionRequest": {
+      "type": "object",
+      "required": ["operation", "request_id", "scope", "expected_checkpoint", "ordered_member_sources"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": { "const": "checkpoint_admit_v2" },
+        "request_id": { "type": "string", "minLength": 1 },
+        "scope": {
+          "type": "object",
+          "required": ["scope_id", "ownership_binding", "principal", "authorization"],
+          "additionalProperties": false,
+          "properties": {
+            "scope_id": { "type": "string", "minLength": 1 },
+            "ownership_binding": { "type": "string", "minLength": 1 },
+            "principal": { "type": "string", "minLength": 1 },
+            "authorization": { "enum": ["authorized", "missing", "ambiguous", "mismatched", "unauthorized"] }
+          }
+        },
+        "expected_checkpoint": {
+          "type": "object",
+          "required": ["root_instance_id", "revision", "digest"],
+          "additionalProperties": false,
+          "properties": {
+            "root_instance_id": { "type": "string", "minLength": 1 },
+            "revision": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+            "digest": { "$ref": "#/$defs/sha256" }
+          }
+        },
+        "ordered_member_sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/rawMemberSource" }
+        }
+      }
+    },
+    "operation": {
+      "enum": [
+        "checkpoint_create_v2",
+        "checkpoint_admit_v2",
+        "checkpoint_step_v2",
+        "checkpoint_update_outbox_v2",
+        "checkpoint_terminalize_outbox_v2",
+        "checkpoint_compact_outbox_v2",
+        "checkpoint_prune_v2",
+        "checkpoint_tombstone_v2",
+        "checkpoint_register_adapter_v2",
+        "checkpoint_resolve_adapter_v2",
+        "checkpoint_validate_capabilities_v2",
+        "checkpoint_scope_operation_v2",
+        "checkpoint_backup_restore_v2",
+        "checkpoint_inject_store_v2",
+        "persistence_process_v2",
+        "persistence_release_quarantine_v2"
+      ]
+    },
+    "expectation": {
+      "type": "object",
+      "required": ["result", "mutation", "core_calls"],
+      "additionalProperties": false,
+      "properties": {
+        "result": {
+          "enum": [
+            "committed",
+            "replayed",
+            "rejected",
+            "crashed",
+            "quarantined",
+            "released",
+            "validated"
+          ]
+        },
+        "code": { "$ref": "#/$defs/name" },
+        "mutation": { "enum": ["none", "atomic"] },
+        "core_calls": { "type": "integer", "minimum": 0, "maximum": 1 },
+        "broker_acknowledged": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "result": { "enum": ["rejected", "crashed", "quarantined"] } } },
+          "then": { "required": ["code"] }
+        },
+        {
+          "if": { "properties": { "result": { "enum": ["committed", "replayed", "released", "validated"] } } },
+          "then": { "not": { "required": ["code"] } }
+        }
+      ]
+    },
+    "vector": {
+      "type": "object",
+      "required": ["name", "covers", "operation", "result", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "covers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/name" }
+        },
+        "operation": { "$ref": "#/$defs/operation" },
+        "request": { "$ref": "#/$defs/artifactPointer" },
+        "raw_admission_request": { "$ref": "#/$defs/rawAdmissionRequest" },
+        "result": { "$ref": "#/$defs/artifactPointer" },
+        "checkpoint_before": {
+          "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
+        },
+        "checkpoint_after": {
+          "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
+        },
+        "historical_checkpoint": { "$ref": "#/$defs/jsonFile" },
+        "store_before": { "$ref": "#/$defs/jsonFile" },
+        "store_after": { "$ref": "#/$defs/jsonFile" },
+        "call_log": { "$ref": "#/$defs/jsonFile" },
+        "failure_boundary": {
+          "enum": [
+            "after_artifact_resolution",
+            "after_transaction_begin",
+            "after_checkpoint_staged",
+            "after_inbox_staged",
+            "after_outbox_staged",
+            "after_audit_staged",
+            "before_commit",
+            "after_commit_before_acknowledgement"
+          ]
+        },
+        "expect": { "$ref": "#/$defs/expectation" }
+      },
+      "oneOf": [
+        { "required": ["request"], "not": { "required": ["raw_admission_request"] } },
+        { "required": ["raw_admission_request"], "not": { "required": ["request"] } }
+      ],
+      "allOf": [
+        {
+          "if": { "properties": { "operation": { "pattern": "^checkpoint_" } } },
+          "then": { "required": ["checkpoint_before", "checkpoint_after"] }
+        },
+        {
+          "if": { "properties": { "operation": { "pattern": "^persistence_" } } },
+          "then": { "required": ["store_before", "store_after", "call_log"] }
+        },
+        {
+          "if": { "required": ["raw_admission_request"] },
+          "then": { "properties": { "operation": { "const": "checkpoint_admit_v2" } } }
+        },
+        {
+          "if": { "required": ["historical_checkpoint"] },
+          "then": { "properties": { "operation": { "const": "checkpoint_admit_v2" } } }
+        }
+      ]
+    }
+  }
+}

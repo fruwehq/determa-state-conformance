@@ -1,0 +1,32 @@
+{
+  "durable_host_results_format": "determa.durable_host.results",
+  "durable_host_results_schema_version": 2,
+  "results": {
+    "committed": {
+      "result": "committed",
+      "mutation": "atomic",
+      "core_calls": 0,
+      "broker_acknowledged": false
+    },
+    "replayed": {
+      "result": "replayed",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false
+    },
+    "conflict": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "effect_id_conflict"
+    },
+    "deletion_rejected": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_execution_checkpoint"
+    }
+  }
+}

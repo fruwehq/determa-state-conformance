@@ -1,0 +1,52 @@
+{
+  "durable_host_results_format": "determa.durable_host.results",
+  "durable_host_results_schema_version": 2,
+  "results": {
+    "committed": {
+      "result": "committed",
+      "mutation": "atomic",
+      "core_calls": 1,
+      "broker_acknowledged": true
+    },
+    "replayed": {
+      "result": "replayed",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": true
+    },
+    "crashed": {
+      "result": "crashed",
+      "mutation": "none",
+      "core_calls": 1,
+      "broker_acknowledged": false,
+      "code": "injected_pre_commit_failure"
+    },
+    "postcommit_crash": {
+      "result": "crashed",
+      "mutation": "atomic",
+      "core_calls": 1,
+      "broker_acknowledged": false,
+      "code": "response_lost_after_commit"
+    },
+    "transient": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "transient_processing_failure"
+    },
+    "quarantined": {
+      "result": "quarantined",
+      "mutation": "atomic",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "permanent_processing_failure"
+    },
+    "released": {
+      "result": "released",
+      "mutation": "atomic",
+      "core_calls": 0,
+      "broker_acknowledged": false
+    }
+  }
+}

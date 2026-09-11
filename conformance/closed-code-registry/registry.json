@@ -122,21 +122,9 @@
     },
     {
       "category": "checkpoint_host_failure",
-      "code": "physical_deletion_unsupported",
-      "condition": "A caller requests physical deletion forbidden by checkpoint schema version 1.",
-      "source": "SPEC.md section 17.8; execution-checkpoint profile physical_deletion_unsupported"
-    },
-    {
-      "category": "checkpoint_host_failure",
       "code": "response_lost_after_commit",
       "condition": "The conformance host loses the response after a successful durable commit.",
       "source": "SPEC.md sections 17.4 and 17.9; execution-checkpoint profile post_commit_response_loss_replay"
-    },
-    {
-      "category": "checkpoint_pre_acceptance_failure",
-      "code": "checkpoint_upgrade_required",
-      "condition": "A version-1 checkpoint host receives work for a bundle that declares event deferral.",
-      "source": "SPEC.md sections 17.1 and 17.15"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
@@ -160,13 +148,13 @@
       "category": "checkpoint_pre_acceptance_failure",
       "code": "inactive_component_target",
       "condition": "A version-2 admission targets a retained component that is no longer active.",
-      "source": "SPEC.md sections 8 and 17.15"
+      "source": "SPEC.md sections 8 and 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_correlation",
       "condition": "A version-2 admission correlation identity violates its public event contract.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
@@ -176,33 +164,27 @@
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
-      "code": "invalid_delivery_origin",
-      "condition": "The delivery origin is outside the closed origin union or inconsistent with its mode.",
-      "source": "SPEC.md section 17.4"
-    },
-    {
-      "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_delivery_source",
       "condition": "A version-2 admission carries a source outside the closed source union or inconsistent with its delivery mode.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_event",
       "condition": "A version-2 admission carries an undeclared or invalid event.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_instance_target",
       "condition": "A version-2 admission targets an absent or non-targetable machine runtime.",
-      "source": "SPEC.md sections 8 and 17.15"
+      "source": "SPEC.md sections 8 and 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
       "code": "invalid_payload",
       "condition": "A version-2 admission payload violates the declared event contract.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
@@ -214,7 +196,7 @@
       "category": "checkpoint_pre_acceptance_failure",
       "code": "terminal_root",
       "condition": "A non-replay version-2 delivery targets a completed or faulted aggregate root.",
-      "source": "SPEC.md section 17.15"
+      "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
@@ -410,9 +392,27 @@
     },
     {
       "category": "execution_store_failure",
+      "code": "invalid_store_scope",
+      "condition": "A durable-host operation has missing, ambiguous, mismatched, or unauthorized logical store scope selection.",
+      "source": "SPEC.md section 17.1"
+    },
+    {
+      "category": "execution_store_failure",
+      "code": "permanent_processing_failure",
+      "condition": "A durable-host ingress failure is classified as permanent and the presented envelope is quarantined.",
+      "source": "SPEC.md section 15 durable persistence host behavior"
+    },
+    {
+      "category": "execution_store_failure",
       "code": "response_lost_after_commit",
       "condition": "The conformance store commits successfully but loses the operation response.",
       "source": "execution-checkpoint profile post_commit_response_loss_replay"
+    },
+    {
+      "category": "execution_store_failure",
+      "code": "transient_processing_failure",
+      "condition": "A durable-host ingress failure is classified as transient and must be retried from committed state.",
+      "source": "SPEC.md section 15 durable persistence host behavior"
     },
     {
       "category": "machine_load_failure",

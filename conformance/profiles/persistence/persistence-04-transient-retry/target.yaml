@@ -1,7 +1,0 @@
-format: 1
-namespace: example.persistence
-meta:
-  release: next
-machines:
-  - machine_id: job
-    root: {}

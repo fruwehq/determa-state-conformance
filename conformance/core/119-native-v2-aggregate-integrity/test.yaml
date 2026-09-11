@@ -1,0 +1,430 @@
+title: 119 native v2 aggregate integrity
+static:
+  documents:
+    - file: component-machine.yaml
+      valid: true
+    - file: root-machine.yaml
+      valid: true
+    - file: spawn-machine.yaml
+      valid: true
+    - file: typed-values-machine.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: aggregate-component-target-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: aggregate-component-target-extra_component_definition_pointer.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-component-target-extra_field.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-component-target-missing_activation_sequence.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-component-target-missing_component_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-component-target-missing_component_runtime_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-component-target-missing_owner_runtime_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-component-target-missing_root_instance_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-faulted-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: aggregate-root-target-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: aggregate-root-target-extra_field.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-root-target-missing_root_instance_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-root-target-missing_root_runtime_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-source-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: aggregate-spawned_instance-target-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: aggregate-spawned_instance-target-extra_field.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-spawned_instance-target-extra_namespace.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-spawned_instance-target-extra_owner_runtime_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-spawned_instance-target-extra_spawn_sequence.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-spawned_instance-target-missing_instance_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-spawned_instance-target-missing_machine_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-spawned_instance-target-missing_machine_version.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-spawned_instance-target-missing_root_instance_id.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: aggregate-typed-values-aggregate-v2.json
+      kind: aggregate_state_v2
+      valid: true
+    - file: operation-inputs.json
+      kind: version2_operation_inputs
+      valid: true
+    - file: rejection-duplicate-key.json
+      kind: aggregate_state_v2
+      valid: false
+      error: duplicate_key
+    - file: rejection-inconsistent-relation.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: rejection-invalid-unicode.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_unicode
+    - file: rejection-malformed-decimal.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: rejection-malformed-float.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: rejection-unknown-field.json
+      kind: aggregate_state_v2
+      valid: false
+      error: invalid_aggregate_state
+    - file: rejection-unsupported-format.json
+      kind: aggregate_state_v2
+      valid: false
+      error: unsupported_aggregate_state_format
+    - file: rejection-unsupported-schema-version.json
+      kind: aggregate_state_v2
+      valid: false
+      error: unsupported_aggregate_state_schema_version
+version2_vectors:
+  - name: native_created_aggregate_matches_canonical_artifact
+    covers:
+      - native_created_aggregate_matches_canonical_artifact
+    operation: create_v2
+    request_file: operation-inputs.json
+    request_pointer: /native_created_aggregate_matches_canonical_artifact
+    bundle: root-machine.yaml
+    expect:
+      result: success
+      exact_result_file: aggregate-source-aggregate-v2.json
+  - name: faulted_aggregate_round_trip
+    covers:
+      - faulted_aggregate_round_trip
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /faulted_aggregate_round_trip
+    state_before: aggregate-faulted-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: aggregate-faulted-aggregate-v2.json
+  - name: all_typed_values_round_trip
+    covers:
+      - all_typed_values_round_trip
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /all_typed_values_round_trip
+    state_before: aggregate-typed-values-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: aggregate-typed-values-aggregate-v2.json
+  - name: exact_root_target_shape
+    covers:
+      - exact_root_target_shape
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /exact_root_target_shape
+    state_before: aggregate-root-target-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: aggregate-root-target-aggregate-v2.json
+  - name: root_target_missing_root_instance_id
+    covers:
+      - root_target_missing_root_instance_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /root_target_missing_root_instance_id
+    state_before: aggregate-root-target-missing_root_instance_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-root-target-missing_root_instance_id.json
+  - name: root_target_missing_root_runtime_id
+    covers:
+      - root_target_missing_root_runtime_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /root_target_missing_root_runtime_id
+    state_before: aggregate-root-target-missing_root_runtime_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-root-target-missing_root_runtime_id.json
+  - name: root_target_extra_field
+    covers:
+      - root_target_extra_field
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /root_target_extra_field
+    state_before: aggregate-root-target-extra_field.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-root-target-extra_field.json
+  - name: exact_component_target_shape
+    covers:
+      - exact_component_target_shape
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /exact_component_target_shape
+    state_before: aggregate-component-target-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: aggregate-component-target-aggregate-v2.json
+  - name: component_target_missing_root_instance_id
+    covers:
+      - component_target_missing_root_instance_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_target_missing_root_instance_id
+    state_before: aggregate-component-target-missing_root_instance_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-component-target-missing_root_instance_id.json
+  - name: component_target_missing_owner_runtime_id
+    covers:
+      - component_target_missing_owner_runtime_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_target_missing_owner_runtime_id
+    state_before: aggregate-component-target-missing_owner_runtime_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-component-target-missing_owner_runtime_id.json
+  - name: component_target_missing_component_id
+    covers:
+      - component_target_missing_component_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_target_missing_component_id
+    state_before: aggregate-component-target-missing_component_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-component-target-missing_component_id.json
+  - name: component_target_missing_component_runtime_id
+    covers:
+      - component_target_missing_component_runtime_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_target_missing_component_runtime_id
+    state_before: aggregate-component-target-missing_component_runtime_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-component-target-missing_component_runtime_id.json
+  - name: component_target_missing_activation_sequence
+    covers:
+      - component_target_missing_activation_sequence
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_target_missing_activation_sequence
+    state_before: aggregate-component-target-missing_activation_sequence.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-component-target-missing_activation_sequence.json
+  - name: component_target_extra_field
+    covers:
+      - component_target_extra_field
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_target_extra_field
+    state_before: aggregate-component-target-extra_field.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-component-target-extra_field.json
+  - name: exact_spawned_instance_target_shape
+    covers:
+      - exact_spawned_instance_target_shape
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /exact_spawned_instance_target_shape
+    state_before: aggregate-spawned_instance-target-aggregate-v2.json
+    expect:
+      result: success
+      exact_result_file: aggregate-spawned_instance-target-aggregate-v2.json
+  - name: spawned_instance_target_missing_root_instance_id
+    covers:
+      - spawned_instance_target_missing_root_instance_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_instance_target_missing_root_instance_id
+    state_before: aggregate-spawned_instance-target-missing_root_instance_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-spawned_instance-target-missing_root_instance_id.json
+  - name: spawned_instance_target_missing_instance_id
+    covers:
+      - spawned_instance_target_missing_instance_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_instance_target_missing_instance_id
+    state_before: aggregate-spawned_instance-target-missing_instance_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-spawned_instance-target-missing_instance_id.json
+  - name: spawned_instance_target_missing_machine_id
+    covers:
+      - spawned_instance_target_missing_machine_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_instance_target_missing_machine_id
+    state_before: aggregate-spawned_instance-target-missing_machine_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-spawned_instance-target-missing_machine_id.json
+  - name: spawned_instance_target_missing_machine_version
+    covers:
+      - spawned_instance_target_missing_machine_version
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_instance_target_missing_machine_version
+    state_before: aggregate-spawned_instance-target-missing_machine_version.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-spawned_instance-target-missing_machine_version.json
+  - name: spawned_instance_target_extra_field
+    covers:
+      - spawned_instance_target_extra_field
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_instance_target_extra_field
+    state_before: aggregate-spawned_instance-target-extra_field.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-spawned_instance-target-extra_field.json
+  - name: spawned_instance_target_extra_owner_runtime_id
+    covers:
+      - spawned_instance_target_extra_owner_runtime_id
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_instance_target_extra_owner_runtime_id
+    state_before: aggregate-spawned_instance-target-extra_owner_runtime_id.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-spawned_instance-target-extra_owner_runtime_id.json
+  - name: spawned_instance_target_extra_namespace
+    covers:
+      - spawned_instance_target_extra_namespace
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_instance_target_extra_namespace
+    state_before: aggregate-spawned_instance-target-extra_namespace.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-spawned_instance-target-extra_namespace.json
+  - name: spawned_instance_target_extra_spawn_sequence
+    covers:
+      - spawned_instance_target_extra_spawn_sequence
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /spawned_instance_target_extra_spawn_sequence
+    state_before: aggregate-spawned_instance-target-extra_spawn_sequence.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-spawned_instance-target-extra_spawn_sequence.json
+  - name: component_target_extra_component_definition_pointer
+    covers:
+      - component_target_extra_component_definition_pointer
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /component_target_extra_component_definition_pointer
+    state_before: aggregate-component-target-extra_component_definition_pointer.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: aggregate-component-target-extra_component_definition_pointer.json
+  - name: semantic_relation_mismatch
+    covers:
+      - semantic_relation_mismatch
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /semantic_relation_mismatch
+    state_before: rejection-inconsistent-relation.json
+    expect:
+      result: failure
+      code: invalid_aggregate_state
+      unchanged_file: rejection-inconsistent-relation.json
+  - name: unsupported_aggregate_discriminator
+    covers:
+      - unsupported_aggregate_discriminator
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /unsupported_aggregate_discriminator
+    state_before: rejection-unsupported-format.json
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_format
+      unchanged_file: rejection-unsupported-format.json
+  - name: unsupported_aggregate_schema_version
+    covers:
+      - unsupported_aggregate_schema_version
+    operation: round_trip_aggregate_v2
+    request_file: operation-inputs.json
+    request_pointer: /unsupported_aggregate_schema_version
+    state_before: rejection-unsupported-schema-version.json
+    expect:
+      result: failure
+      code: unsupported_aggregate_state_schema_version
+      unchanged_file: rejection-unsupported-schema-version.json

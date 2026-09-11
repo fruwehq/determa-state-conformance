@@ -1,5 +1,18 @@
 format: 1
-namespace: example.persistence
+namespace: conformance.persistence_native_v2
+events:
+  increment:
+    direction: input
+    payload:
+      amount: { type: int, required: true }
 machines:
-  - machine_id: job
-    root: {}
+  - machine_id: counter
+    version: 1
+    root:
+      type: simple
+      variables:
+        count: { type: int, init: 0 }
+      on_events:
+        increment:
+          action:
+            - assign: { count: "count + event.payload.amount" }

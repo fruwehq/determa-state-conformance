@@ -1,0 +1,50 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 2,
+  "root_instance_id": "checkpoint-retention-root",
+  "revision": "4",
+  "root_record": {
+    "status": "tombstone",
+    "root_runtime_id": "sha256:e8a1691517959e3c92cf1e0f20ba7f375eccdc8c7a92b997beea135868d9ce03",
+    "creation_id": "checkpoint-retention-create",
+    "terminal_status": "completed",
+    "final_aggregate_state_digest": "sha256:1063eda8debfa9fe745e26749bfeab2cb736fafdad43e5a19a4051be4ceba4ef",
+    "tombstone_operation_id": "root-tombstone"
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "checkpoint-retention-create",
+      "request_digest": "sha256:3eca10ffbb41333c4db2a0f0b3e3086e509bf14c9fc3f5fb3d73f03e4ba9f527",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:a1eda49af4df3ab856da5b1d6bfe82f59ebb415f38c96d9575905abc2422509d",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    }
+  ],
+  "next_operation_receipt_sequence": "3",
+  "replay_retention": {
+    "mode": "bounded",
+    "permanent_replay_eligible": false,
+    "pruned_through_receipt_sequence": "2",
+    "policy_identifier": "bounded-native-v2"
+  },
+  "event_identity_tombstones": [
+    {
+      "event_id": "retention-event",
+      "request_digest": "sha256:a32259142aa72f1afaf2d1701f52b875daf4b69d42dcb51311e45d8da732c08b",
+      "request_digest_domain": "determa-inbox-envelope-digest-2",
+      "acceptance_sequence": "0",
+      "terminal_receipt_sequence": "2",
+      "terminal_disposition": "handled"
+    }
+  ],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:e2d0d1de097028d22aa4a66b06cc882a87c5b4073006b66bd9bd26cbe56da044"
+}

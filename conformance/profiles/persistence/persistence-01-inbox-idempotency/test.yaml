@@ -1,59 +1,36 @@
-title: persistence 01 inbox idempotency
+title: native schema-v2 persistence inbox idempotency
 static:
   documents:
-    - file: machine.yaml
-      valid: true
-    - file: target.yaml
-      valid: true
+    - { file: machine.yaml, valid: true }
 artifacts:
   documents:
-    - file: source-aggregate-state.json
-      kind: aggregate_state
-      valid: true
-    - file: expected-aggregate-state.json
-      kind: aggregate_state
-      valid: true
-    - file: migration-descriptor.json
-      kind: migration_descriptor
-      valid: true
-    - file: input-envelope.json
-      kind: json_value
-      valid: true
-    - file: initial-store.json
-      kind: json_value
-      valid: true
-    - file: committed-store.json
-      kind: json_value
-      valid: true
-    - file: quarantined-store.json
-      kind: json_value
-      valid: true
-    - file: resolved-call-log.json
-      kind: json_value
-      valid: true
-    - file: committed-call-log.json
-      kind: json_value
-      valid: true
-    - file: replayed-call-log.json
-      kind: json_value
-      valid: true
-    - file: rolled-back-call-log.json
-      kind: json_value
-      valid: true
-    - file: quarantined-call-log.json
-      kind: json_value
-      valid: true
-persistence_profile:
-  initial_store: initial-store.json
-  steps:
-    - operation: process
-      input_envelope: input-envelope.json
-      target_validated_bundle_fingerprint: sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc
-      migration_route:
-        - sha256:4275074e701103214e66a937345d706e81ccde303a295d8fba85cd873f546125
-      expect_store: committed-store.json
-      expect_call_log: committed-call-log.json
-    - operation: replay
-      input_envelope: input-envelope.json
-      expect_store: committed-store.json
-      expect_call_log: replayed-call-log.json
+    - { file: initial-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: committed-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: quarantined-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: released-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+    - { file: commit-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: replay-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: rollback-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: quarantine-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: release-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+durable_host_vectors:
+  - name: persistence_inbox_first_commit
+    covers: [persistence_inbox_first_commit, exact_persistence_revision_equation]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: committed-store-v2.json
+    call_log: commit-call-log-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
+  - name: persistence_inbox_equal_replay
+    covers: [persistence_inbox_idempotency, persistence_inbox_replay_no_core_call]
+    operation: persistence_process_v2
+    store_before: committed-store-v2.json
+    store_after: committed-store-v2.json
+    call_log: replay-call-log-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0, broker_acknowledged: true }

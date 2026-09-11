@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "16028a33611f6851dd1560b78e5e6de892500e9cc339d92c7f45bed82386e7a7",
+  "registry_sha256": "8f7df88a3abf79394bccbee56be4353634cf838d126787df02b3910b14b20d9d",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -22,21 +22,18 @@
         "injected_pre_commit_failure",
         "invalid_execution_checkpoint",
         "operation_id_conflict",
-        "physical_deletion_unsupported",
         "response_lost_after_commit"
       ]
     },
     {
       "id": "checkpoint_pre_acceptance_failure",
       "codes": [
-        "checkpoint_upgrade_required",
         "delivery_digest_mismatch",
         "duplicate_event_id_in_batch",
         "event_id_conflict",
         "inactive_component_target",
         "invalid_correlation",
         "invalid_delivery_mode",
-        "invalid_delivery_origin",
         "invalid_delivery_source",
         "invalid_event",
         "invalid_instance_target",
@@ -105,7 +102,10 @@
       "id": "execution_store_failure",
       "codes": [
         "injected_pre_commit_failure",
-        "response_lost_after_commit"
+        "invalid_store_scope",
+        "permanent_processing_failure",
+        "response_lost_after_commit",
+        "transient_processing_failure"
       ]
     },
     {

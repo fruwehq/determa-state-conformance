@@ -1,0 +1,23 @@
+{
+  "durable_host_inputs_format": "determa.durable_host.inputs",
+  "durable_host_inputs_schema_version": 2,
+  "requests": {
+    "invalid_uri_scheme": {
+      "operation": "checkpoint_register_adapter_v2",
+      "request_id": "invalid-uri-scheme",
+      "registration": {
+        "adapter_identifier": "vendor-http",
+        "uri_scheme": "vendor_https",
+        "source": "third_party",
+        "configuration_schema": {
+          "type": "object",
+          "additionalProperties": false
+        },
+        "capabilities": [
+          "restart_persistent"
+        ]
+      },
+      "existing_registrations": []
+    }
+  }
+}

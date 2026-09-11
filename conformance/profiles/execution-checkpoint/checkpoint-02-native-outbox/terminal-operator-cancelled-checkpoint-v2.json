@@ -1,0 +1,301 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 2,
+  "root_instance_id": "checkpoint-outbox-root",
+  "revision": "7",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 2,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:db7d4a2d822d97bdc3be1ee57614319c32d6c9c9feb788921f3308ff2f0b44c1",
+      "namespace": "conformance.execution_checkpoint_native_outbox",
+      "root_machine_id": "counter",
+      "root_machine_version": "1",
+      "root_instance_id": "checkpoint-outbox-root",
+      "creation_id": "checkpoint-outbox-create",
+      "root_runtime_id": "sha256:8a005ff374ebdf3843dc6a6b3c60aabbd4d8c4276f92b4350faf709842401dcf",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "2",
+      "next_output_sequence": "5",
+      "next_acceptance_sequence": "1",
+      "next_queue_sequence": "1",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:8a005ff374ebdf3843dc6a6b3c60aabbd4d8c4276f92b4350faf709842401dcf",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:db7d4a2d822d97bdc3be1ee57614319c32d6c9c9feb788921f3308ff2f0b44c1",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_native_outbox",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "checkpoint-outbox-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "checkpoint-outbox-root",
+              "root_runtime_id": "sha256:8a005ff374ebdf3843dc6a6b3c60aabbd4d8c4276f92b4350faf709842401dcf"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:db7d4a2d822d97bdc3be1ee57614319c32d6c9c9feb788921f3308ff2f0b44c1",
+            "machine": {
+              "namespace": "conformance.execution_checkpoint_native_outbox",
+              "machine_id": "counter",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/count",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "0"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:84462c082966ac4c07a77ce326ad18bdd955262a4e34cc48755a90d1ec9cd6ac"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "checkpoint-outbox-create",
+      "request_digest": "sha256:d8808a72785294538fda393ee6175ecb2ff6e602b96386e9213377d51da4a9e8",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:7a48809a36eb0c7759d9c760c1a8561ddc94967cb056445b7622d68805e883cd",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "1",
+      "event_id": "delivery-outputs",
+      "request_digest": "sha256:fa5721fb217ee473e7f24f12bc380e25ec86845b6974ba88c4c1a50541a2f4f4",
+      "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    },
+    {
+      "operation_kind": "event_terminal",
+      "receipt_sequence": "2",
+      "event_id": "delivery-outputs",
+      "request_digest": "sha256:fa5721fb217ee473e7f24f12bc380e25ec86845b6974ba88c4c1a50541a2f4f4",
+      "acceptance_sequence": "0",
+      "final_queue_sequence": "0",
+      "committed_revision": "2",
+      "resulting_aggregate_state_digest": "sha256:84462c082966ac4c07a77ce326ad18bdd955262a4e34cc48755a90d1ec9cd6ac",
+      "outcome": {
+        "disposition": "handled",
+        "status": "running",
+        "fault": null,
+        "rejection": null
+      },
+      "emission_references": [
+        {
+          "kind": "external_outbox",
+          "emission_index": "0",
+          "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf"
+        },
+        {
+          "kind": "external_outbox",
+          "emission_index": "1",
+          "effect_id": "sha256:3a64aeda992befdd9c30c080bfd7826d166349179785066dc611eee53dfdbbc5"
+        },
+        {
+          "kind": "external_outbox",
+          "emission_index": "2",
+          "effect_id": "sha256:20ed8ffae7d3b189515117802a6fff2351b26e32fa77b4afa8841061f47275a7"
+        },
+        {
+          "kind": "external_outbox",
+          "emission_index": "3",
+          "effect_id": "sha256:6e3173f6729d9d6583564f38f4bbee1b2a87e912991701105406929388f5c86e"
+        },
+        {
+          "kind": "external_outbox",
+          "emission_index": "4",
+          "effect_id": "sha256:546e51d05d05b8367582472d6156829b91b20560a1853fdfa0700ed645737b34"
+        }
+      ]
+    }
+  ],
+  "next_operation_receipt_sequence": "3",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [
+    {
+      "intent": {
+        "effect_id": "sha256:6e3173f6729d9d6583564f38f4bbee1b2a87e912991701105406929388f5c86e",
+        "sequence": "3",
+        "event": "output_record",
+        "payload": [
+          "map",
+          [
+            [
+              "index",
+              [
+                "integer",
+                "3"
+              ]
+            ]
+          ]
+        ],
+        "correlation_id": "batch-3"
+      },
+      "state_revision": "2",
+      "delivery_state": {
+        "status": "not_attempted"
+      }
+    },
+    {
+      "intent": {
+        "effect_id": "sha256:546e51d05d05b8367582472d6156829b91b20560a1853fdfa0700ed645737b34",
+        "sequence": "4",
+        "event": "output_record",
+        "payload": [
+          "map",
+          [
+            [
+              "index",
+              [
+                "integer",
+                "4"
+              ]
+            ]
+          ]
+        ],
+        "correlation_id": "batch-4"
+      },
+      "state_revision": "2",
+      "delivery_state": {
+        "status": "not_attempted"
+      }
+    }
+  ],
+  "next_outbox_terminal_sequence": "3",
+  "terminal_outbox_records": [
+    {
+      "terminal_sequence": "0",
+      "intent": {
+        "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+        "sequence": "0",
+        "event": "output_record",
+        "payload": [
+          "map",
+          [
+            [
+              "index",
+              [
+                "integer",
+                "0"
+              ]
+            ]
+          ]
+        ],
+        "correlation_id": "batch-0"
+      },
+      "committed_revision": "5",
+      "outcome": {
+        "status": "confirmed"
+      }
+    },
+    {
+      "terminal_sequence": "1",
+      "intent": {
+        "effect_id": "sha256:3a64aeda992befdd9c30c080bfd7826d166349179785066dc611eee53dfdbbc5",
+        "sequence": "1",
+        "event": "output_record",
+        "payload": [
+          "map",
+          [
+            [
+              "index",
+              [
+                "integer",
+                "1"
+              ]
+            ]
+          ]
+        ],
+        "correlation_id": "batch-1"
+      },
+      "committed_revision": "6",
+      "outcome": {
+        "status": "permanently_rejected",
+        "reason_code": "permanently_rejected_policy"
+      }
+    },
+    {
+      "terminal_sequence": "2",
+      "intent": {
+        "effect_id": "sha256:20ed8ffae7d3b189515117802a6fff2351b26e32fa77b4afa8841061f47275a7",
+        "sequence": "2",
+        "event": "output_record",
+        "payload": [
+          "map",
+          [
+            [
+              "index",
+              [
+                "integer",
+                "2"
+              ]
+            ]
+          ]
+        ],
+        "correlation_id": "batch-2"
+      },
+      "committed_revision": "7",
+      "outcome": {
+        "status": "operator_cancelled",
+        "reason_code": "operator_cancelled_policy"
+      }
+    }
+  ],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:80740f813f999d31746c3d0bd0eac604a100c10c33a743feb3d7e4c46522f460"
+}

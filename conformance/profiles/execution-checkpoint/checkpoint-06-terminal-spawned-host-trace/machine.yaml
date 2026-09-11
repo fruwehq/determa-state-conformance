@@ -1,8 +1,7 @@
 format: 1
-namespace: conformance.terminal_spawn_trace
+namespace: conformance.case_29_owned_spawn
 events:
-  start:
-    direction: input
+  start: { direction: input }
   pay:
     direction: input
     payload:
@@ -14,11 +13,7 @@ machines:
       type: composite
       variables:
         total: { type: int, init: 100 }
-        payment_reference:
-          type: instance_reference
-          machine_id: payment
-          nullable: true
-          init: null
+        payment_reference: { type: instance_reference, machine_id: payment, nullable: true, init: null }
       initial: { transition_to: idle }
       states:
         idle:
@@ -28,9 +23,7 @@ machines:
               action:
                 - spawn:
                     machine_id: payment
-                    bindings:
-                      input:
-                        due: "total"
+                    bindings: { input: { due: "total" } }
                     bind_to: payment_reference
         checkout:
           on_events:

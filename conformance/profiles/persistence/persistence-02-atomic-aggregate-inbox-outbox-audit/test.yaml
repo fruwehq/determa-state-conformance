@@ -1,52 +1,37 @@
-title: persistence 02 atomic aggregate inbox outbox audit
+title: native schema-v2 atomic aggregate inbox outbox audit and application commit
 static:
   documents:
-    - file: machine.yaml
-      valid: true
-    - file: target.yaml
-      valid: true
+    - { file: machine.yaml, valid: true }
 artifacts:
   documents:
-    - file: source-aggregate-state.json
-      kind: aggregate_state
-      valid: true
-    - file: expected-aggregate-state.json
-      kind: aggregate_state
-      valid: true
-    - file: migration-descriptor.json
-      kind: migration_descriptor
-      valid: true
-    - file: input-envelope.json
-      kind: json_value
-      valid: true
-    - file: initial-store.json
-      kind: json_value
-      valid: true
-    - file: committed-store.json
-      kind: json_value
-      valid: true
-    - file: committed-call-log.json
-      kind: json_value
-      valid: true
-    - file: rolled-back-call-log.json
-      kind: json_value
-      valid: true
-persistence_profile:
-  initial_store: initial-store.json
-  steps:
-    - operation: inject_failure
-      input_envelope: input-envelope.json
-      target_validated_bundle_fingerprint: sha256:a13184037127c70d70731c81fd3217f0d22f25b7abcbee97d8a5c98d86b530a2
-      migration_route:
-        - sha256:b444c51891102761b367ab8c9ab9a9e74286d259c54ee632a00df4c44b977862
-      failure_boundary: before_commit
-      failure_class: crash
-      expect_store: initial-store.json
-      expect_call_log: rolled-back-call-log.json
-    - operation: process
-      input_envelope: input-envelope.json
-      target_validated_bundle_fingerprint: sha256:a13184037127c70d70731c81fd3217f0d22f25b7abcbee97d8a5c98d86b530a2
-      migration_route:
-        - sha256:b444c51891102761b367ab8c9ab9a9e74286d259c54ee632a00df4c44b977862
-      expect_store: committed-store.json
-      expect_call_log: committed-call-log.json
+    - { file: initial-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: committed-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: quarantined-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: released-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+    - { file: commit-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: replay-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: rollback-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: quarantine-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: release-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+durable_host_vectors:
+  - name: persistence_atomic_precommit_rollback
+    covers: [persistence_atomic_precommit_rollback]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: initial-store-v2.json
+    call_log: rollback-call-log-v2.json
+    failure_boundary: before_commit
+    request: { file: inputs-v2.json, pointer: /requests/process_precommit_failure }
+    result: { file: results-v2.json, pointer: /results/crashed }
+    expect: { result: crashed, code: injected_pre_commit_failure, mutation: none, core_calls: 1 }
+  - name: persistence_atomic_full_commit
+    covers: [persistence_atomic_aggregate_inbox_outbox_audit, persistence_atomic_application_rows]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: committed-store-v2.json
+    call_log: commit-call-log-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
