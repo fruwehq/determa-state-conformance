@@ -74,6 +74,7 @@
         "checkpoint_before": {
           "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
         },
+        "checkpoint_after": { "$ref": "#/$defs/jsonFile" },
         "source_checkpoint_v1": { "$ref": "#/$defs/jsonFile" },
         "request_file": { "$ref": "#/$defs/jsonFile" },
         "request_pointer": {
@@ -86,7 +87,22 @@
           "items": { "$ref": "#/$defs/jsonFile" }
         },
         "expect": { "oneOf": [{ "$ref": "#/$defs/success" }, { "$ref": "#/$defs/failure" }] }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": { "const": "checkpoint_migrate_v2" },
+              "expect": {
+                "properties": { "result": { "const": "success" } },
+                "required": ["result"]
+              }
+            },
+            "required": ["operation", "expect"]
+          },
+          "then": { "required": ["checkpoint_after"] }
+        }
+      ]
     }
   }
 }

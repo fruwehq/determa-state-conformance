@@ -83,7 +83,8 @@ Coverage is intentionally grouped into five scenario directories:
   checkpoint serialization, checkpoint digest, and effect identities after both
   operations.
 - `checkpoint-03-retention-and-root-lifecycle` covers empty, one-hop, and two-hop keyed
-  maintenance transactions with exact public receipts and ordered audits, post-commit
+  schema-version-1 compatibility maintenance transactions with exact public receipts
+  and ordered audits, post-commit
   response loss and replay-before-CAS, operation conflict, stale-writer rejection, permanent
   retention, irreversible bounded retention in both directions, dependency-safe
   pruning, stale pruning/tombstoning, completed-root tombstoning/replay, root identity
@@ -94,9 +95,11 @@ Coverage is intentionally grouped into five scenario directories:
 - `checkpoint-04-version2-mailboxes` covers explicit checkpoint version conversion,
   aggregate-owned admission, acceptance versus terminal evidence, single and batched
   replay, mixed replay/new admission, wrapped legacy replay, dependency-closed
-  compaction, tombstone replay, and version-2 artifact rejection. It uses the
-  repository-level `version2_vectors` driver and does not alter any released
-  version-1 checkpoint vector.
+  compaction, tombstone replay, native schema-version-2 empty, one-hop, and two-hop
+  keyed maintenance migration, replay-before-CAS, operation conflict, stale-writer
+  rejection, retained historical no-op receipt identity, and version-2 artifact
+  rejection. It uses the repository-level `version2_vectors` driver and does not alter
+  any released version-1 checkpoint vector.
 - `checkpoint-05-spawned-host-trace` derives creation, foreground spawn, and delayed
   spawned-child acceptance checkpoints from one complete Python-host trace against the
   pinned implementation. Its creation request uses the exact SPEC section 17 digest.

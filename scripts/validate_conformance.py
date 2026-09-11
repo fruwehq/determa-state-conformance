@@ -301,6 +301,13 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "processed_legacy_internal_producer_reference",
         "native_internal_handler_provenance",
         "native_internal_handler_admission",
+        "native_v2_maintenance_empty_route",
+        "native_v2_maintenance_one_hop",
+        "native_v2_maintenance_two_hop",
+        "native_v2_maintenance_replay_before_cas",
+        "native_v2_maintenance_operation_conflict",
+        "native_v2_maintenance_stale_writer",
+        "native_v2_maintenance_historical_noop_identity",
         "migration_backlog_independent_descriptor",
         "migration_audit_exact_order_content",
         "migration_capacity_totality",
@@ -2391,6 +2398,166 @@ def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None
     audit_sequences = require_sequence_order(
         document["migration_audit_records"], "migration_sequence", "migration audit sequence"
     )
+    audits_by_sequence = {
+        item["migration_sequence"]: item
+        for item in document["migration_audit_records"]
+    }
+    expected_audit_root_runtime_id = (
+        root_record["aggregate_state"]["root_runtime_id"]
+        if root_record["status"] == "retained"
+        else None
+    )
+    for audit in document["migration_audit_records"]:
+        if audit["root_instance_id"] != document["root_instance_id"] or (
+            expected_audit_root_runtime_id is not None
+            and audit["root_runtime_id"] != expected_audit_root_runtime_id
+        ):
+            raise ValidationFailure("checkpoint v2: migration audit root mismatch")
+    fingerprints_by_aggregate_digest: dict[str, set[str]] = {}
+
+    def remember_fingerprint(aggregate_digest: str, fingerprint: str) -> None:
+        fingerprints_by_aggregate_digest.setdefault(
+            aggregate_digest, set()
+        ).add(fingerprint)
+
+    for audit in document["migration_audit_records"]:
+        remember_fingerprint(
+            audit["source_aggregate_state_digest"],
+            audit["source_validated_bundle_fingerprint"],
+        )
+        remember_fingerprint(
+            audit["target_aggregate_state_digest"],
+            audit["target_validated_bundle_fingerprint"],
+        )
+    if root_record["status"] == "retained":
+        retained_aggregate = root_record["aggregate_state"]
+        if audit_sequences and canonical_decimal(
+            retained_aggregate["migration_sequence"],
+            "retained aggregate migration sequence",
+        ) < max(audit_sequences):
+            raise ValidationFailure(
+                "checkpoint v2: aggregate migration counter trails retained audit"
+            )
+        remember_fingerprint(
+            retained_aggregate["aggregate_state_digest"],
+            retained_aggregate["validated_bundle_fingerprint"],
+        )
+        identity_fingerprint = next(
+            runtime
+            for runtime in retained_aggregate["runtimes"]
+            if runtime["relation"]["kind"] == "root"
+        )["identity_origin"]["definition"]["validated_bundle_fingerprint"]
+        remember_fingerprint(
+            creation_receipt["resulting_aggregate_state_digest"],
+            identity_fingerprint,
+        )
+
+    maintenance_operation_ids: set[str] = set()
+    referenced_audit_sequences: list[str] = []
+    for receipt in receipts:
+        if receipt["operation_kind"] != "maintenance_migration":
+            continue
+        operation_id = receipt["operation_id"]
+        if canonical_decimal(
+            receipt["committed_revision"],
+            "maintenance committed revision",
+        ) == 0:
+            raise ValidationFailure(
+                "checkpoint v2: creation is the sole revision-zero receipt"
+            )
+        if operation_id in maintenance_operation_ids:
+            raise ValidationFailure(
+                "checkpoint v2: duplicate maintenance operation identity"
+            )
+        maintenance_operation_ids.add(operation_id)
+        sequences_for_receipt = receipt["migration_sequences"]
+        selected_audits = [
+            audits_by_sequence.get(sequence) for sequence in sequences_for_receipt
+        ]
+        if any(item is None for item in selected_audits):
+            raise ValidationFailure(
+                "checkpoint v2: maintenance receipt has dangling audit"
+            )
+        selected = [item for item in selected_audits if item is not None]
+        referenced_audit_sequences.extend(sequences_for_receipt)
+        if receipt["result_code"] == "migration_no_operation":
+            if (
+                sequences_for_receipt
+                or receipt["source_aggregate_state_digest"]
+                != receipt["resulting_aggregate_state_digest"]
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: malformed maintenance no-operation receipt"
+                )
+            candidate_fingerprints = fingerprints_by_aggregate_digest.get(
+                receipt["source_aggregate_state_digest"], set()
+            )
+            if len(candidate_fingerprints) != 1:
+                raise ValidationFailure(
+                    "checkpoint v2: historical no-operation identity is unresolved"
+                )
+            target_fingerprint = next(iter(candidate_fingerprints))
+            descriptor_route: list[str] = []
+        else:
+            if not selected:
+                raise ValidationFailure(
+                    "checkpoint v2: applied maintenance receipt lacks audits"
+                )
+            if (
+                [item["migration_sequence"] for item in selected]
+                != sequences_for_receipt
+                or any(
+                    int(right["migration_sequence"])
+                    != int(left["migration_sequence"]) + 1
+                    for left, right in zip(selected, selected[1:])
+                )
+                or selected[0]["source_aggregate_state_digest"]
+                != receipt["source_aggregate_state_digest"]
+                or selected[-1]["target_aggregate_state_digest"]
+                != receipt["resulting_aggregate_state_digest"]
+                or any(
+                    left["target_aggregate_state_digest"]
+                    != right["source_aggregate_state_digest"]
+                    for left, right in zip(selected, selected[1:])
+                )
+                or any(
+                    left["target_validated_bundle_fingerprint"]
+                    != right["source_validated_bundle_fingerprint"]
+                    for left, right in zip(selected, selected[1:])
+                )
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: maintenance audit chain is inconsistent"
+                )
+            target_fingerprint = selected[-1][
+                "target_validated_bundle_fingerprint"
+            ]
+            descriptor_route = [
+                item["migration_descriptor_digest"] for item in selected
+            ]
+        possible_request_digests = {
+            hash_value(
+                [
+                    "determa-maintenance-migration-request-digest-1",
+                    "1",
+                    document["root_instance_id"],
+                    operation_id,
+                    receipt["source_aggregate_state_digest"],
+                    target_fingerprint,
+                    descriptor_route,
+                    maintenance_mode,
+                ]
+            )
+            for maintenance_mode in (False, True)
+        }
+        if receipt["request_digest"] not in possible_request_digests:
+            raise ValidationFailure(
+                "checkpoint v2: maintenance request digest is not canonical"
+            )
+    if len(referenced_audit_sequences) != len(set(referenced_audit_sequences)):
+        raise ValidationFailure(
+            "checkpoint v2: maintenance audit ownership is inconsistent"
+        )
     if terminal_outbox_sequences & tombstone_outbox_sequences:
         raise ValidationFailure("checkpoint v2: outbox terminal sequence overlap")
     next_terminal = canonical_decimal(
@@ -4808,6 +4975,7 @@ def validate_version2_vectors(
             if "descriptor_files" in vector
             else ([vector["descriptor_file"]] if "descriptor_file" in vector else [])
         )
+        descriptors: list[dict[str, Any]] = []
         if operation == "create_v2" and "bundle" not in vector:
             raise ValidationFailure(f"{location}: create_v2 requires bundle")
         if operation in state_operations and "state_before" not in vector:
@@ -4832,6 +5000,7 @@ def validate_version2_vectors(
         for field in (
             "state_before",
             "checkpoint_before",
+            "checkpoint_after",
             "source_checkpoint_v1",
             "request_file",
             "descriptor_file",
@@ -4934,6 +5103,47 @@ def validate_version2_vectors(
             "downgrade_checkpoint_v2_to_v1",
         }:
             checkpoint_before = artifact(vector["checkpoint_before"]).document
+            maintenance_receipt = None
+            maintenance_replay = False
+            maintenance_conflict = False
+            if operation == "checkpoint_migrate_v2":
+                expected_request_digest = hash_value(
+                    [
+                        "determa-maintenance-migration-request-digest-1",
+                        "1",
+                        checkpoint_before["root_instance_id"],
+                        selected["operation_id"],
+                        checkpoint_before["root_record"]["aggregate_state"][
+                            "aggregate_state_digest"
+                        ],
+                        selected["target_bundle"][
+                            "validated_bundle_fingerprint"
+                        ],
+                        selected["migration_descriptor_digest_route"],
+                        selected["maintenance_mode"],
+                    ]
+                )
+                if selected["request_digest"] != expected_request_digest:
+                    raise ValidationFailure(
+                        f"{location}: maintenance request digest is not canonical"
+                    )
+                maintenance_receipt = next(
+                    (
+                        receipt
+                        for receipt in checkpoint_before["operation_receipts"]
+                        if receipt["operation_kind"] == "maintenance_migration"
+                        and receipt["operation_id"] == selected["operation_id"]
+                    ),
+                    None,
+                )
+                maintenance_replay = (
+                    maintenance_receipt is not None
+                    and maintenance_receipt["request_digest"]
+                    == selected["request_digest"]
+                )
+                maintenance_conflict = (
+                    maintenance_receipt is not None and not maintenance_replay
+                )
             cas_matches = (
                 selected.get("expected_revision")
                 == checkpoint_before["revision"]
@@ -4971,7 +5181,12 @@ def validate_version2_vectors(
                 )
             if (
                 not cas_matches
-                and not (all_replay or equal_prune_replay)
+                and not (
+                    all_replay
+                    or equal_prune_replay
+                    or maintenance_replay
+                    or maintenance_conflict
+                )
                 and expectation.get("code") != "checkpoint_revision_conflict"
             ):
                 raise ValidationFailure(
@@ -4979,7 +5194,13 @@ def validate_version2_vectors(
                 )
             if (
                 expectation.get("code") == "checkpoint_revision_conflict"
-                and (cas_matches or all_replay or equal_prune_replay)
+                and (
+                    cas_matches
+                    or all_replay
+                    or equal_prune_replay
+                    or maintenance_replay
+                    or maintenance_conflict
+                )
             ):
                 raise ValidationFailure(
                     f"{location}: checkpoint revision rejection lacks a distinct stale write"
@@ -4987,9 +5208,29 @@ def validate_version2_vectors(
             if (
                 expectation.get("code") == "checkpoint_revision_conflict"
                 and not cas_matches
-                and not (all_replay or equal_prune_replay)
+                and not (
+                    all_replay
+                    or equal_prune_replay
+                    or maintenance_replay
+                    or maintenance_conflict
+                )
             ):
                 failure_evidence.add("checkpoint_revision_conflict")
+            if operation == "checkpoint_migrate_v2":
+                if maintenance_conflict:
+                    if expectation.get("code") != "operation_id_conflict":
+                        raise ValidationFailure(
+                            f"{location}: maintenance identity conflict lacks exact rejection"
+                        )
+                    failure_evidence.add("operation_id_conflict")
+                elif expectation.get("code") == "operation_id_conflict":
+                    raise ValidationFailure(
+                        f"{location}: maintenance conflict lacks retained conflicting identity"
+                    )
+                if maintenance_replay and expectation["result"] != "success":
+                    raise ValidationFailure(
+                        f"{location}: exact maintenance replay must precede stale CAS"
+                    )
             if "terminal_replay_precedes_stale_cas" in covers:
                 original_request = request.document["admit"]
                 if (
@@ -5648,12 +5889,145 @@ def validate_version2_vectors(
             expected_kinds = (
                 {"aggregate_state_v2"} if operation in {"create_v2", "upgrade_aggregate_v1_to_v2"}
                 else {"core_step_result_v2"} if operation == "step_v2"
-                else {"execution_checkpoint_v2"} if operation in {"upgrade_checkpoint_v1_to_v2", "checkpoint_step_v2", "checkpoint_prune_v2", "checkpoint_tombstone_v2", "checkpoint_migrate_v2"}
+                else {"execution_checkpoint_v2"} if operation in {"upgrade_checkpoint_v1_to_v2", "checkpoint_step_v2", "checkpoint_prune_v2", "checkpoint_tombstone_v2"}
+                else {"version2_operation_result"} if operation == "checkpoint_migrate_v2"
                 else {"execution_checkpoint_v2", "version2_operation_result"} if operation == "checkpoint_admit_v2"
                 else {"version2_operation_result"}
             )
             if manifests[result_file]["kind"] not in expected_kinds:
                 raise ValidationFailure(f"{location}: result artifact kind is not closed for {operation}")
+            if operation == "checkpoint_migrate_v2":
+                checkpoint_after_name = vector.get("checkpoint_after")
+                if checkpoint_after_name is None:
+                    raise ValidationFailure(
+                        f"{location}: successful maintenance migration lacks checkpoint_after"
+                    )
+                checkpoint_after_manifest = manifests.get(checkpoint_after_name)
+                if (
+                    checkpoint_after_manifest is None
+                    or checkpoint_after_manifest["kind"] != "execution_checkpoint_v2"
+                    or not checkpoint_after_manifest["valid"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: maintenance checkpoint_after is not a valid v2 checkpoint"
+                    )
+                checkpoint_after = artifact(checkpoint_after_name).document
+                validate_embedded_checkpoint(checkpoint_after, location)
+                if maintenance_replay:
+                    if (
+                        checkpoint_after != checkpoint_before
+                        or maintenance_receipt is None
+                        or result_document
+                        != {"result": "committed", "receipt": maintenance_receipt}
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: maintenance replay changed state or receipt"
+                        )
+                else:
+                    projected_aggregate = copy.deepcopy(prior_aggregate)
+                    expected_audits: list[dict[str, Any]] = []
+                    for descriptor in descriptors:
+                        source_aggregate = projected_aggregate
+                        target_fingerprint = descriptor["base_descriptor"][
+                            "target_validated_bundle_fingerprint"
+                        ]
+                        projected_aggregate = copy.deepcopy(source_aggregate)
+                        projected_aggregate["validated_bundle_fingerprint"] = (
+                            target_fingerprint
+                        )
+                        projected_aggregate["migration_sequence"] = str(
+                            int(source_aggregate["migration_sequence"]) + 1
+                        )
+                        for runtime in projected_aggregate["runtimes"]:
+                            runtime["current_definition"][
+                                "validated_bundle_fingerprint"
+                            ] = target_fingerprint
+                        projected_aggregate.pop("aggregate_state_digest", None)
+                        projected_aggregate["aggregate_state_digest"] = hash_value(
+                            ["determa-aggregate-state-digest-2", projected_aggregate]
+                        )
+                        expected_audits.append(
+                            {
+                                "migration_audit_record_schema_version": 1,
+                                "root_instance_id": source_aggregate[
+                                    "root_instance_id"
+                                ],
+                                "root_runtime_id": source_aggregate[
+                                    "root_runtime_id"
+                                ],
+                                "migration_sequence": projected_aggregate[
+                                    "migration_sequence"
+                                ],
+                                "source_validated_bundle_fingerprint": source_aggregate[
+                                    "validated_bundle_fingerprint"
+                                ],
+                                "target_validated_bundle_fingerprint": target_fingerprint,
+                                "migration_descriptor_digest": descriptor[
+                                    "migration_descriptor_digest"
+                                ],
+                                "source_aggregate_state_digest": source_aggregate[
+                                    "aggregate_state_digest"
+                                ],
+                                "target_aggregate_state_digest": projected_aggregate[
+                                    "aggregate_state_digest"
+                                ],
+                                "result_code": "migration_applied",
+                            }
+                        )
+                    receipt_sequence = checkpoint_before[
+                        "next_operation_receipt_sequence"
+                    ]
+                    expected_receipt = {
+                        "operation_kind": "maintenance_migration",
+                        "receipt_sequence": receipt_sequence,
+                        "operation_id": selected["operation_id"],
+                        "request_digest": selected["request_digest"],
+                        "committed_revision": str(
+                            int(checkpoint_before["revision"]) + 1
+                        ),
+                        "source_aggregate_state_digest": prior_aggregate[
+                            "aggregate_state_digest"
+                        ],
+                        "resulting_aggregate_state_digest": projected_aggregate[
+                            "aggregate_state_digest"
+                        ],
+                        "migration_sequences": [
+                            audit["migration_sequence"] for audit in expected_audits
+                        ],
+                        "result_code": (
+                            "migration_applied"
+                            if expected_audits
+                            else "migration_no_operation"
+                        ),
+                    }
+                    expected_checkpoint = copy.deepcopy(checkpoint_before)
+                    expected_checkpoint["revision"] = expected_receipt[
+                        "committed_revision"
+                    ]
+                    expected_checkpoint["root_record"]["aggregate_state"] = (
+                        projected_aggregate
+                    )
+                    expected_checkpoint["operation_receipts"].append(
+                        expected_receipt
+                    )
+                    expected_checkpoint["next_operation_receipt_sequence"] = str(
+                        int(receipt_sequence) + 1
+                    )
+                    expected_checkpoint["migration_audit_records"].extend(
+                        expected_audits
+                    )
+                    expected_checkpoint.pop("execution_checkpoint_digest", None)
+                    expected_checkpoint["execution_checkpoint_digest"] = hash_value(
+                        ["determa-execution-checkpoint-digest-2", expected_checkpoint]
+                    )
+                    if (
+                        checkpoint_after != expected_checkpoint
+                        or result_document
+                        != {"result": "committed", "receipt": expected_receipt}
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: maintenance transaction projection is not exact"
+                        )
             if operation == "admit_v2":
                 assert prior_aggregate is not None
                 deliveries = selected["deliveries"]
