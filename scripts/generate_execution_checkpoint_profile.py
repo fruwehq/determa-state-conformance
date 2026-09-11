@@ -1034,11 +1034,6 @@ def generate_delivery() -> dict[Path, bytes]:
                 accepted,
                 "stale-process",
             ),
-            "malformed": admission_request(
-                processed,
-                "malformed-placeholder",
-                delivery_mode="unsupported",
-            ),
             "wrong_root": admission_batch_request(
                 processed,
                 "wrong-root",
@@ -1664,6 +1659,12 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
         payload={"amount": 1},
         expected_from=created,
     )
+    stale_replay_conflict = admission_request(
+        handled,
+        "complete-increment",
+        payload={"amount": 2},
+        expected_from=created,
+    )
     global_batch_precedence = admission_batch_request(
         created,
         "global-batch-precedence",
@@ -1731,6 +1732,7 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
         "invalid_digest": invalid_digest,
         "replay_conflict": replay_conflict,
         "replay_committed": replay_committed,
+        "stale_replay_conflict": stale_replay_conflict,
         "ordered_batch": admission_batch_request(
             created, "ordered-batch", ordered_members
         ),
@@ -1748,10 +1750,6 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
                 mixed_new_member,
             ],
         ),
-        "malformed_batch": {
-            **copy.deepcopy(global_batch_precedence),
-            "request_id": "malformed-batch",
-        },
         "global_batch_precedence": global_batch_precedence,
         "duplicate_event_id_batch": admission_batch_request(
             handled,

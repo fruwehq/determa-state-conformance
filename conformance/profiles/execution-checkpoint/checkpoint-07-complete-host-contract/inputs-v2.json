@@ -417,6 +417,53 @@
         }
       ]
     },
+    "stale_replay_conflict": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "complete-increment",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "2"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:24c01daaaeab88aae88ad9941bcbeb2c4a79eba5a6c9472dda8d3860ea7b678c"
+        }
+      ]
+    },
     "ordered_batch": {
       "operation": "checkpoint_admit_v2",
       "request_id": "ordered-batch",
@@ -645,83 +692,6 @@
             ]
           },
           "envelope_digest": "sha256:2d1183648f27ac654b48f77f0e3f2c26438bdd8d72d86e28653324453f3ff1d8"
-        }
-      ]
-    },
-    "malformed_batch": {
-      "operation": "checkpoint_admit_v2",
-      "request_id": "malformed-batch",
-      "scope": {
-        "scope_id": "primary",
-        "ownership_binding": "owner:primary",
-        "principal": "conformance-host",
-        "authorization": "authorized"
-      },
-      "expected_checkpoint": {
-        "root_instance_id": "complete-host-root",
-        "revision": "0",
-        "digest": "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325"
-      },
-      "envelopes": [
-        {
-          "delivery_mode": "input",
-          "envelope": {
-            "event": "work_completed",
-            "event_id": "invalid-payload-before-mode",
-            "cause_id": "invalid-payload-before-mode",
-            "source": {
-              "host": true
-            },
-            "target": {
-              "root": {
-                "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
-              }
-            },
-            "payload": [
-              "map",
-              [
-                [
-                  "unexpected",
-                  [
-                    "string",
-                    "field"
-                  ]
-                ]
-              ]
-            ]
-          },
-          "envelope_digest": "sha256:4a397e1dc2d2b21af9a6479a012f85593ce5e0d43550ccb812ff5fc270a64782"
-        },
-        {
-          "delivery_mode": "unsupported",
-          "envelope": {
-            "event": "increment",
-            "event_id": "later-invalid-mode",
-            "cause_id": "later-invalid-mode",
-            "source": {
-              "host": true
-            },
-            "target": {
-              "root": {
-                "root_instance_id": "complete-host-root",
-                "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
-              }
-            },
-            "payload": [
-              "map",
-              [
-                [
-                  "amount",
-                  [
-                    "integer",
-                    "1"
-                  ]
-                ]
-              ]
-            ]
-          },
-          "envelope_digest": "sha256:5ddbd771be6a8aed5b9bd3b4bd9dc15255970214031aa2d18ad72c1b6f42c3e7"
         }
       ]
     },

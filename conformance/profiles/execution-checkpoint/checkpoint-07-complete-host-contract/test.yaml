@@ -127,13 +127,31 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/committed }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: malformed_batch
-    covers: [ordered_batch_malformed_failure, malformed_probe_precedes_normalized_batch]
+    covers: [ordered_batch_malformed_failure, raw_malformed_member_precedes_normalized_failures]
     operation: checkpoint_admit_v2
     checkpoint_before: created-checkpoint-v2.json
     checkpoint_after: created-checkpoint-v2.json
-    request: { file: inputs-v2.json, pointer: /requests/malformed_batch }
+    raw_admission_request:
+      operation: checkpoint_admit_v2
+      request_id: malformed-member-before-invalid-mode
+      scope: { scope_id: primary, ownership_binding: "owner:primary", principal: conformance-host, authorization: authorized }
+      expected_checkpoint: { root_instance_id: complete-host-root, revision: "0", digest: "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325" }
+      ordered_member_sources:
+        - utf8_json: '{"delivery_mode":"input"'
+        - json_value:
+            delivery_mode: unsupported
+            envelope:
+              event: increment
+              event_id: later-invalid-mode
+              cause_id: later-invalid-mode
+              source: { host: true }
+              target:
+                root:
+                  root_instance_id: complete-host-root
+                  root_runtime_id: "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              payload: [map, [[amount, [integer, "1"]]]]
+            envelope_digest: "sha256:5ddbd771be6a8aed5b9bd3b4bd9dc15255970214031aa2d18ad72c1b6f42c3e7"
     result: { file: results-v2.json, pointer: /results/malformed_delivery }
-    pre_acceptance_probe: { malformed_member_indices: [0] }
     expect: { result: rejected, code: malformed_delivery, mutation: none, core_calls: 0 }
   - name: global_batch_precedence
     covers: [batch_global_validation_precedence]
@@ -208,13 +226,23 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/event_conflict }
     expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
   - name: committed_replay_read_only
-    covers: [committed_replay_precedes_stale_writer, exact_committed_replay_identity_precedes_cas]
+    covers: [committed_replay_precedes_stale_writer, exact_committed_replay_identity_precedes_cas, stale_replay_historical_checkpoint_binding]
     operation: checkpoint_admit_v2
     checkpoint_before: handled-checkpoint-v2.json
     checkpoint_after: handled-checkpoint-v2.json
+    historical_checkpoint: created-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/replay_committed }
     result: { file: results-v2.json, pointer: /results/replayed }
     expect: { result: replayed, mutation: none, core_calls: 0 }
+  - name: stale_same_identity_conflict
+    covers: [stale_same_identity_conflict_precedes_cas]
+    operation: checkpoint_admit_v2
+    checkpoint_before: handled-checkpoint-v2.json
+    checkpoint_after: handled-checkpoint-v2.json
+    historical_checkpoint: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/stale_replay_conflict }
+    result: { file: results-v2.json, pointer: /results/event_conflict }
+    expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
   - name: concurrent_writer_winner
     covers: [concurrent_one_winner]
     operation: checkpoint_admit_v2

@@ -80,9 +80,27 @@ durable_host_vectors:
     operation: checkpoint_admit_v2
     checkpoint_before: processed-checkpoint-v2.json
     checkpoint_after: processed-checkpoint-v2.json
-    request: { file: inputs-v2.json, pointer: /requests/malformed }
+    raw_admission_request:
+      operation: checkpoint_admit_v2
+      request_id: malformed-member-before-wrong-root
+      scope: { scope_id: primary, ownership_binding: "owner:primary", principal: conformance-host, authorization: authorized }
+      expected_checkpoint: { root_instance_id: checkpoint-lifecycle-root, revision: "2", digest: "sha256:5a5e129eb6659e694af30e3dcb94b8d3f54671c3c39b37d4e4793c4dc11f774a" }
+      ordered_member_sources:
+        - utf8_json: '{"delivery_mode":"input"'
+        - json_value:
+            delivery_mode: input
+            envelope:
+              event: increment
+              event_id: wrong-root-after-malformed
+              cause_id: wrong-root-after-malformed
+              source: { host: true }
+              target:
+                root:
+                  root_instance_id: foreign-root
+                  root_runtime_id: "sha256:5b5dc7bb5fffe1c44b07b273c3ec57cb86628cec6326a75d7fe394cab5dee913"
+              payload: [map, [[amount, [integer, "1"]]]]
+            envelope_digest: "sha256:99c61dd6fb3c9ae7ed84c72bb4707afdc9329c4664e2135b15e51fad0b44c045"
     result: { file: results-v2.json, pointer: /results/malformed }
-    pre_acceptance_probe: { malformed_member_indices: [0] }
     expect: { result: rejected, code: malformed_delivery, mutation: none, core_calls: 0 }
   - name: checkpoint_wrong_root_admission
     covers: [admission_wrong_root_precedence]

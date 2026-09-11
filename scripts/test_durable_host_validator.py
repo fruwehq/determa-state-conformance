@@ -14,6 +14,7 @@ from validate_conformance import (
     ValidationFailure,
     host_profile_failure_code,
     load_fixture_document,
+    normalize_raw_admission_request,
     validate_cross_scope_pair,
     validate_durable_host_vectors,
     validate_request_checkpoint_binding,
@@ -32,19 +33,60 @@ class DurableHostValidatorTests(unittest.TestCase):
         case = PROFILE / "checkpoint-07-complete-host-contract"
         request = load(case / "inputs-v2.json")["requests"]["replay_committed"]
         handled = load(case / "handled-checkpoint-v2.json")
+        created = load(case / "created-checkpoint-v2.json")
 
-        validate_request_checkpoint_binding(request, handled, {}, "exact replay")
+        validate_request_checkpoint_binding(
+            request, handled, {}, "exact replay", created
+        )
         non_replay = copy.deepcopy(request)
         non_replay["envelopes"][0]["envelope"]["event_id"] = "not-committed"
         with self.assertRaisesRegex(
             ValidationFailure, "differs from checkpoint_before"
         ):
-            validate_request_checkpoint_binding(non_replay, handled, {}, "stale non-replay")
+            validate_request_checkpoint_binding(
+                non_replay, handled, {}, "stale non-replay", created
+            )
         self._assert_complete_case_mutation_fails(
             lambda requests: requests["replay_committed"]["envelopes"][0][
                 "envelope"
             ].update(event_id="not-committed"),
             "differs from checkpoint_before",
+        )
+
+    def test_stale_replay_checkpoint_identity_must_be_historical(self) -> None:
+        mutations = (
+            ("root_instance_id", "unrelated-root"),
+            ("revision", "9"),
+            ("digest", "sha256:" + "0" * 64),
+        )
+        for field, value in mutations:
+            with self.subTest(field=field):
+                self._assert_complete_case_mutation_fails(
+                    lambda requests, field=field, value=value: requests[
+                        "replay_committed"
+                    ]["expected_checkpoint"].update({field: value}),
+                    "differs from checkpoint_before",
+                )
+        self._assert_complete_test_mutation_fails(
+            lambda test: next(
+                vector
+                for vector in test["durable_host_vectors"]
+                if vector["name"] == "committed_replay_read_only"
+            ).update(historical_checkpoint="accepted-checkpoint-v2.json"),
+            "differs from checkpoint_before",
+        )
+
+    def test_changed_stale_same_identity_reaches_conflict_precedence(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        requests = load(case / "inputs-v2.json")["requests"]
+        handled = load(case / "handled-checkpoint-v2.json")
+        created = load(case / "created-checkpoint-v2.json")
+        validate_request_checkpoint_binding(
+            requests["stale_replay_conflict"],
+            handled,
+            {},
+            "stale identity conflict",
+            created,
         )
 
     def test_batch_precedence_is_global_across_members(self) -> None:
@@ -55,13 +97,20 @@ class DurableHostValidatorTests(unittest.TestCase):
             "admission failure is not request-derived",
         )
 
-    def test_malformed_driver_probe_precedes_normalized_members(self) -> None:
+    def test_raw_malformed_member_precedes_normalized_members(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        test = load_fixture_document(case / "test.yaml")
+        vector = next(
+            item
+            for item in test["durable_host_vectors"]
+            if item["name"] == "malformed_batch"
+        )
+        _, malformed = normalize_raw_admission_request(
+            vector["raw_admission_request"], "raw baseline"
+        )
+        self.assertTrue(malformed)
         self._assert_complete_test_mutation_fails(
-            lambda test: next(
-                vector
-                for vector in test["durable_host_vectors"]
-                if vector["name"] == "malformed_batch"
-            ).pop("pre_acceptance_probe"),
+            self._substitute_valid_raw_member,
             "admission failure is not request-derived",
         )
 
@@ -181,6 +230,26 @@ class DurableHostValidatorTests(unittest.TestCase):
                 validate_durable_host_vectors(
                     mutated_case, test, set(mutated_case.glob("*.json"))
                 )
+
+    @staticmethod
+    def _substitute_valid_raw_member(test: dict) -> None:
+        vector = next(
+            item
+            for item in test["durable_host_vectors"]
+            if item["name"] == "malformed_batch"
+        )
+        sources = vector["raw_admission_request"]["ordered_member_sources"]
+        replacement = copy.deepcopy(sources[1])
+        member = replacement["json_value"]
+        member["delivery_mode"] = "input"
+        member["envelope"]["event_id"] = "valid-substituted-member"
+        member["envelope"]["cause_id"] = "valid-substituted-member"
+        sources[0] = replacement
+        _, malformed = normalize_raw_admission_request(
+            vector["raw_admission_request"], "valid substitution"
+        )
+        if malformed:
+            raise AssertionError("valid raw member substitution remained malformed")
 
 
 if __name__ == "__main__":

@@ -267,7 +267,7 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "ordered_batch_single_revision",
         "ordered_batch_caller_order",
         "ordered_batch_malformed_failure",
-        "malformed_probe_precedes_normalized_batch",
+        "raw_malformed_member_precedes_normalized_failures",
         "all_replay_batch_read_only",
         "mixed_replay_new_batch",
         "checkpoint_request_exact_before_identity",
@@ -300,6 +300,8 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "shared_transaction_profile_positive",
         "sqlite_capability_boundary",
         "stale_tombstoning_rejected",
+        "stale_same_identity_conflict_precedes_cas",
+        "stale_replay_historical_checkpoint_binding",
         "strict_outbox_profile_negative",
         "strict_outbox_profile_positive",
         "third_party_public_registration",
@@ -5315,6 +5317,7 @@ def validate_request_checkpoint_binding(
     checkpoint_before: dict[str, Any],
     artifacts: dict[str, Any],
     location: str,
+    historical_checkpoint: dict[str, Any] | None = None,
 ) -> None:
     expected = operation_input.get("expected_checkpoint") or operation_input.get(
         "existing_checkpoint"
@@ -5322,11 +5325,15 @@ def validate_request_checkpoint_binding(
     if expected is None:
         return
     del artifacts
-    if (
-        expected != checkpoint_identity(checkpoint_before)
-        and not is_exact_committed_admission_replay(
-            operation_input, checkpoint_before
-        )
+    if expected == checkpoint_identity(checkpoint_before):
+        if historical_checkpoint is None:
+            return
+    elif retained_admission_precedes_cas(
+        operation_input, checkpoint_before, historical_checkpoint
+    ):
+        return
+    if historical_checkpoint is not None or expected != checkpoint_identity(
+        checkpoint_before
     ):
         raise ValidationFailure(
             f"{location}: request checkpoint identity differs from checkpoint_before"
@@ -5353,18 +5360,19 @@ def retained_admission_digests(
     return retained
 
 
-def is_exact_committed_admission_replay(
+def retained_admission_identity_disposition(
     operation_input: dict[str, Any], checkpoint: dict[str, Any]
-) -> bool:
+) -> str | None:
     if operation_input.get("operation") != "checkpoint_admit_v2":
-        return False
+        return None
     deliveries = operation_input.get("envelopes")
     if not isinstance(deliveries, list) or not deliveries:
-        return False
+        return None
     event_ids = [delivery["envelope"]["event_id"] for delivery in deliveries]
     if len(event_ids) != len(set(event_ids)):
-        return False
+        return None
     retained = retained_admission_digests(checkpoint)
+    disposition = "replayed"
     for delivery in deliveries:
         envelope = delivery["envelope"]
         target_root = next(iter(envelope["target"].values()))["root_instance_id"]
@@ -5377,12 +5385,133 @@ def is_exact_committed_admission_replay(
                 envelope,
             ]
         )
-        if (
-            target_root != checkpoint["root_instance_id"]
-            or delivery["envelope_digest"] != canonical_digest
-            or canonical_digest not in retained.get(envelope["event_id"], set())
+        known = retained.get(envelope["event_id"], set())
+        if target_root != checkpoint["root_instance_id"] or not known:
+            return None
+        if canonical_digest not in known:
+            disposition = "event_id_conflict"
+        elif delivery["envelope_digest"] != canonical_digest:
+            return None
+    return disposition
+
+
+def retained_admission_precedes_cas(
+    operation_input: dict[str, Any],
+    checkpoint: dict[str, Any],
+    historical_checkpoint: dict[str, Any] | None,
+) -> bool:
+    disposition = retained_admission_identity_disposition(
+        operation_input, checkpoint
+    )
+    if disposition is None or historical_checkpoint is None:
+        return False
+    expected = operation_input["expected_checkpoint"]
+    if (
+        expected != checkpoint_identity(historical_checkpoint)
+        or historical_checkpoint["root_instance_id"] != checkpoint["root_instance_id"]
+        or int(historical_checkpoint["revision"]) >= int(checkpoint["revision"])
+    ):
+        return False
+    retained_before = retained_admission_digests(historical_checkpoint)
+    expected_accepted_revision = str(int(historical_checkpoint["revision"]) + 1)
+    for delivery in operation_input["envelopes"]:
+        event_id = delivery["envelope"]["event_id"]
+        if event_id in retained_before:
+            return False
+        acceptance_receipts = [
+            receipt
+            for receipt in checkpoint["operation_receipts"]
+            if receipt["operation_kind"] == "acceptance"
+            and receipt["event_id"] == event_id
+            and receipt["accepted_revision"] == expected_accepted_revision
+        ]
+        if len(acceptance_receipts) != 1:
+            return False
+        if disposition == "replayed" and (
+            acceptance_receipts[0]["request_digest"]
+            != delivery["envelope_digest"]
         ):
             return False
+    return True
+
+
+def normalize_raw_admission_request(
+    raw_request: dict[str, Any],
+    location: str,
+    input_validator: Draft202012Validator | None = None,
+) -> tuple[dict[str, Any], bool]:
+    operation_input = {
+        key: copy.deepcopy(value)
+        for key, value in raw_request.items()
+        if key != "ordered_member_sources"
+    }
+    normalized: list[dict[str, Any]] = []
+    malformed = False
+    for source in raw_request["ordered_member_sources"]:
+        if "utf8_json" in source:
+            try:
+                member = json.loads(source["utf8_json"])
+            except json.JSONDecodeError:
+                malformed = True
+                continue
+            if input_validator is None:
+                normalized_shape = raw_admission_member_has_normalized_shape(member)
+            else:
+                candidate = {
+                    "durable_host_input_schema_version": 2,
+                    "requests": {
+                        "raw_member": {**operation_input, "envelopes": [member]}
+                    },
+                }
+                normalized_shape = next(
+                    input_validator.iter_errors(candidate), None
+                ) is None
+            if not normalized_shape:
+                malformed = True
+                continue
+        else:
+            member = copy.deepcopy(source["json_value"])
+        normalized.append(member)
+    operation_input["envelopes"] = normalized
+    if not normalized and not malformed:
+        raise ValidationFailure(f"{location}: raw admission request has no members")
+    return operation_input, malformed
+
+
+def raw_admission_member_has_normalized_shape(member: Any) -> bool:
+    if not isinstance(member, dict) or set(member) != {
+        "delivery_mode",
+        "envelope",
+        "envelope_digest",
+    }:
+        return False
+    envelope = member["envelope"]
+    required_envelope = {
+        "event",
+        "event_id",
+        "cause_id",
+        "source",
+        "target",
+        "payload",
+    }
+    if (
+        not isinstance(member["delivery_mode"], str)
+        or not member["delivery_mode"]
+        or not isinstance(member["envelope_digest"], str)
+        or re.fullmatch(r"sha256:[0-9a-f]{64}", member["envelope_digest"])
+        is None
+        or not isinstance(envelope, dict)
+        or not required_envelope <= set(envelope)
+        or set(envelope) - (required_envelope | {"correlation_id"})
+        or not all(
+            isinstance(envelope[field], str) and envelope[field]
+            for field in ("event", "event_id", "cause_id")
+        )
+        or not isinstance(envelope["source"], dict)
+        or not isinstance(envelope["target"], dict)
+        or not isinstance(envelope["payload"], list)
+    ):
+        return False
     return True
 
 
@@ -5545,7 +5674,7 @@ def validate_checkpoint_derivation(
     checkpoint_after: dict[str, Any],
     location: str,
     bundle_path: Path,
-    pre_acceptance_probe: dict[str, Any] | None = None,
+    raw_member_malformed: bool = False,
 ) -> None:
     operation = operation_input["operation"]
     mutates = operation_result["mutation"] == "atomic"
@@ -5582,17 +5711,8 @@ def validate_checkpoint_derivation(
         return
     if operation == "checkpoint_admit_v2":
         deliveries = operation_input["envelopes"]
-        malformed_indices = (
-            pre_acceptance_probe.get("malformed_member_indices", [])
-            if pre_acceptance_probe is not None
-            else []
-        )
-        if any(index >= len(deliveries) for index in malformed_indices):
-            raise ValidationFailure(
-                f"{location}: malformed member probe index is outside the ordered batch"
-            )
         expected_code = None
-        if malformed_indices:
+        if raw_member_malformed:
             expected_code = "malformed_delivery"
         if expected_code is None:
             roots = []
@@ -6041,7 +6161,10 @@ def validate_cross_scope_pair(
 
 
 def validate_durable_host_vectors(
-    case: Path, test: dict[str, Any], artifact_paths: set[Path]
+    case: Path,
+    test: dict[str, Any],
+    artifact_paths: set[Path],
+    input_validator: Draft202012Validator | None = None,
 ) -> set[str]:
     """Validate the closed schema-v2 durable host profile table."""
     manifests = {entry["file"]: entry for entry in test["artifacts"]["documents"]}
@@ -6068,9 +6191,19 @@ def validate_durable_host_vectors(
             raise ValidationFailure(f"{location}: duplicate coverage {sorted(duplicate)}")
         coverage.update(vector["covers"])
 
-        request_ref = vector["request"]
-        request_document = require_kind(request_ref["file"], "durable_host_inputs_v2", location)
-        operation_input = resolve_artifact_pointer(request_document, request_ref["pointer"], location)
+        raw_member_malformed = False
+        if "raw_admission_request" in vector:
+            operation_input, raw_member_malformed = normalize_raw_admission_request(
+                vector["raw_admission_request"], location, input_validator
+            )
+        else:
+            request_ref = vector["request"]
+            request_document = require_kind(
+                request_ref["file"], "durable_host_inputs_v2", location
+            )
+            operation_input = resolve_artifact_pointer(
+                request_document, request_ref["pointer"], location
+            )
         if operation_input["operation"] != vector["operation"]:
             raise ValidationFailure(f"{location}: operation input does not match vector")
         if {
@@ -6111,8 +6244,22 @@ def validate_durable_host_vectors(
                     raise ValidationFailure(f"{location}: creation must commit revision zero")
             else:
                 checkpoint_before = require_kind(before_name, "execution_checkpoint_v2", location)
+                historical_checkpoint = None
+                if "historical_checkpoint" in vector:
+                    historical_checkpoint = require_kind(
+                        vector["historical_checkpoint"],
+                        "execution_checkpoint_v2",
+                        location,
+                    )
+                    validate_execution_checkpoint_v2_semantics(
+                        historical_checkpoint
+                    )
                 validate_request_checkpoint_binding(
-                    operation_input, checkpoint_before, artifacts, location
+                    operation_input,
+                    checkpoint_before,
+                    artifacts,
+                    location,
+                    historical_checkpoint,
                 )
                 if vector["expect"]["mutation"] == "none":
                     stale_conflict = (
@@ -6137,7 +6284,7 @@ def validate_durable_host_vectors(
                 checkpoint_after,
                 location,
                 case / "machine.yaml",
-                vector.get("pre_acceptance_probe"),
+                raw_member_malformed,
             )
         elif vector["operation"] == "checkpoint_create_v2":
             if (
@@ -6732,7 +6879,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             version2_vectors += len(test["version2_vectors"])
         elif "durable_host_vectors" in test:
             case_coverage = validate_durable_host_vectors(
-                case, test, referenced_artifacts
+                case,
+                test,
+                referenced_artifacts,
+                artifact_validators["durable_host_inputs_v2"],
             )
             duplicate_coverage = durable_host_coverage & case_coverage
             if duplicate_coverage:
