@@ -43,8 +43,11 @@ containing both the writer-presented checkpoint identity and the currently store
 checkpoint identity. Their vectors name the complete presented artifact as
 `checkpoint_before` and the complete committed artifact as
 `stored_checkpoint_before`; `checkpoint_after` is the unchanged committed artifact.
-Runners therefore determine compare-and-swap failure from explicit inputs rather than
-from a vector name, coverage label, expected code, or post-operation golden.
+The two identities have the same root and differ by revision, digest, or both. Before
+reporting compare-and-swap failure, runners inspect the stored pending and terminal
+identities so retained replay or identity conflict takes precedence. Runners derive
+all outcomes from these explicit inputs rather than from a vector name, coverage label,
+expected code, or post-operation golden.
 
 The repository validator derives operation-specific invariants from those requests. It
 requires every request checkpoint identity to equal its vector's actual

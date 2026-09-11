@@ -25,6 +25,7 @@ from validate_conformance import (
     validate_durable_host_vectors,
     validate_persistence_derivation,
     validate_request_checkpoint_binding,
+    validate_writer_checkpoint_context,
 )
 from generate_execution_checkpoint_profile import process
 
@@ -166,6 +167,118 @@ class DurableHostValidatorTests(unittest.TestCase):
                 )
             ),
             "writer checkpoint context does not match",
+        )
+
+    def test_stale_step_terminal_replay_precedes_cas(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        requests = load(case / "inputs-v2.json")["requests"]
+        results = load(case / "results-v2.json")["results"]
+        presented = load(case / "accepted-checkpoint-v2.json")
+        stored = load(case / "processed-checkpoint-v2.json")
+        request = copy.deepcopy(requests["stale_process"])
+        request["writer_checkpoint_context"]["stored_checkpoint"] = {
+            "root_instance_id": stored["root_instance_id"],
+            "revision": stored["revision"],
+            "digest": stored["execution_checkpoint_digest"],
+        }
+        with self.assertRaisesRegex(
+            ValidationFailure, "retained identity precedence"
+        ):
+            validate_writer_checkpoint_context(
+                request,
+                results["stale"],
+                presented,
+                stored,
+                stored,
+                "terminal replay precedence",
+            )
+        validate_writer_checkpoint_context(
+            request,
+            results["replayed"],
+            presented,
+            stored,
+            stored,
+            "terminal replay precedence",
+        )
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            inputs_path = mutated_case / "inputs-v2.json"
+            inputs = load(inputs_path)
+            inputs["requests"]["stale_process"] = request
+            inputs_path.write_text(
+                json.dumps(inputs, indent=2, ensure_ascii=True) + "\n",
+                encoding="utf-8",
+            )
+            test = load_fixture_document(mutated_case / "test.yaml")
+            vector = next(
+                item
+                for item in test["durable_host_vectors"]
+                if item["name"] == "checkpoint_stale_writer"
+            )
+            vector["stored_checkpoint_before"] = "processed-checkpoint-v2.json"
+            vector["checkpoint_after"] = "processed-checkpoint-v2.json"
+            with self.assertRaisesRegex(
+                ValidationFailure, "retained identity precedence"
+            ):
+                validate_durable_host_vectors(
+                    mutated_case,
+                    test,
+                    set(mutated_case.glob("*.json")),
+                    self.input_validator,
+                )
+
+    def test_stale_step_identity_conflict_precedes_cas(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        requests = load(case / "inputs-v2.json")["requests"]
+        results = load(case / "results-v2.json")["results"]
+        presented = load(case / "accepted-checkpoint-v2.json")
+        stored = load(case / "processed-checkpoint-v2.json")
+        request = copy.deepcopy(requests["stale_process"])
+        request["envelope_digest"] = "sha256:" + "0" * 64
+        request["writer_checkpoint_context"]["stored_checkpoint"] = {
+            "root_instance_id": stored["root_instance_id"],
+            "revision": stored["revision"],
+            "digest": stored["execution_checkpoint_digest"],
+        }
+        with self.assertRaisesRegex(
+            ValidationFailure, "retained identity precedence"
+        ):
+            validate_writer_checkpoint_context(
+                request,
+                results["stale"],
+                presented,
+                stored,
+                stored,
+                "identity conflict precedence",
+            )
+        validate_writer_checkpoint_context(
+            request,
+            results["event_conflict"],
+            presented,
+            stored,
+            stored,
+            "identity conflict precedence",
+        )
+
+    def test_digest_only_writer_conflict_is_valid(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        request = load(case / "inputs-v2.json")["requests"]["stale_process"]
+        result = load(case / "results-v2.json")["results"]["stale"]
+        presented = load(case / "accepted-checkpoint-v2.json")
+        stored = load(case / "stale-writer-store-checkpoint-v2.json")
+        self.assertEqual(presented["revision"], stored["revision"])
+        self.assertNotEqual(
+            presented["execution_checkpoint_digest"],
+            stored["execution_checkpoint_digest"],
+        )
+        validate_writer_checkpoint_context(
+            request,
+            result,
+            presented,
+            stored,
+            stored,
+            "digest-only conflict",
         )
 
     def test_stale_tombstone_names_explicit_presented_and_stored_states(self) -> None:

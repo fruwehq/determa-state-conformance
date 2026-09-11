@@ -1163,10 +1163,16 @@ def generate_delivery() -> dict[Path, bytes]:
     case = PROFILE / "execution-checkpoint" / "checkpoint-01-native-lifecycle"
     created = create_checkpoint(case, "checkpoint-lifecycle-root", "checkpoint-lifecycle-create")
     accepted = admit(created, "increment", "delivery-increment", {"amount": 2})
+    stale_writer_store = admit(
+        created,
+        "increment",
+        "stale-writer-winner",
+        {"amount": 3},
+    )
     processed = process(accepted)
     stale_process = processing_request(accepted, "stale-process")
     stale_process["writer_checkpoint_context"] = writer_checkpoint_context(
-        accepted, processed
+        accepted, stale_writer_store
     )
     inputs = request_document(
         {
@@ -1238,6 +1244,9 @@ def generate_delivery() -> dict[Path, bytes]:
     return {
         case / "created-checkpoint-v2.json": write_json(case / "x", created),
         case / "accepted-checkpoint-v2.json": write_json(case / "x", accepted),
+        case / "stale-writer-store-checkpoint-v2.json": write_json(
+            case / "x", stale_writer_store
+        ),
         case / "processed-checkpoint-v2.json": write_json(case / "x", processed),
         case / "inputs-v2.json": write_json(case / "x", inputs),
         case / "results-v2.json": write_json(case / "x", results),

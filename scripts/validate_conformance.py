@@ -5502,6 +5502,145 @@ def retained_admission_identity_disposition(
     return disposition
 
 
+def retained_step_identity_disposition(
+    operation_input: dict[str, Any], checkpoint: dict[str, Any]
+) -> str | None:
+    if operation_input.get("operation") != "checkpoint_step_v2":
+        return None
+    event_id = operation_input["event_id"]
+    request_digest = operation_input["envelope_digest"]
+    pending = [
+        entry
+        for entry in checkpoint_mailbox_entries(checkpoint)
+        if entry["envelope"]["event_id"] == event_id
+    ]
+    terminal = [
+        receipt
+        for receipt in checkpoint["operation_receipts"]
+        if receipt["operation_kind"] == "event_terminal"
+        and receipt["event_id"] == event_id
+    ]
+    tombstones = [
+        tombstone
+        for tombstone in checkpoint["event_identity_tombstones"]
+        if tombstone["event_id"] == event_id
+    ]
+    retained = pending + terminal + tombstones
+    if not retained:
+        return None
+    if any(
+        item["request_digest"] != request_digest
+        for item in terminal + tombstones
+    ):
+        return "event_id_conflict"
+    if any(item["envelope_digest"] != request_digest for item in pending):
+        return "event_id_conflict"
+    exact_pending = any(
+        entry["envelope_digest"] == request_digest
+        and entry["envelope"]["target"] == operation_input["target"]
+        and entry["acceptance_sequence"] == operation_input["acceptance_sequence"]
+        and entry["queue_sequence"] == operation_input["queue_sequence"]
+        for entry in pending
+    )
+    exact_terminal = any(
+        receipt["request_digest"] == request_digest
+        and receipt["acceptance_sequence"] == operation_input["acceptance_sequence"]
+        and receipt["final_queue_sequence"] == operation_input["queue_sequence"]
+        for receipt in terminal
+    )
+    exact_tombstone = any(
+        tombstone["request_digest"] == request_digest
+        and tombstone["acceptance_sequence"] == operation_input["acceptance_sequence"]
+        for tombstone in tombstones
+    )
+    return (
+        "replayed"
+        if exact_pending or exact_terminal or exact_tombstone
+        else "event_id_conflict"
+    )
+
+
+def retained_writer_identity_disposition(
+    operation_input: dict[str, Any], checkpoint: dict[str, Any]
+) -> str | None:
+    admission = retained_admission_identity_disposition(operation_input, checkpoint)
+    if admission is not None:
+        return admission
+    step = retained_step_identity_disposition(operation_input, checkpoint)
+    if step is not None:
+        return step
+    if operation_input.get("operation") == "checkpoint_tombstone_v2":
+        root_record = checkpoint["root_record"]
+        if root_record["status"] != "tombstone":
+            return None
+        if (
+            root_record["tombstone_operation_id"]
+            != operation_input["tombstone_operation_id"]
+        ):
+            return None
+        return (
+            "replayed"
+            if root_record["terminal_status"] == operation_input["terminal_status"]
+            else "operation_id_conflict"
+        )
+    return None
+
+
+def validate_writer_checkpoint_context(
+    operation_input: dict[str, Any],
+    operation_result: dict[str, Any],
+    presented_checkpoint: dict[str, Any],
+    stored_checkpoint: dict[str, Any],
+    checkpoint_after: dict[str, Any],
+    location: str,
+) -> None:
+    writer_context = operation_input["writer_checkpoint_context"]
+    if (
+        writer_context["presented_checkpoint"]
+        != checkpoint_identity(presented_checkpoint)
+        or writer_context["stored_checkpoint"]
+        != checkpoint_identity(stored_checkpoint)
+    ):
+        raise ValidationFailure(
+            f"{location}: writer checkpoint context does not match the explicit checkpoints"
+        )
+    if (
+        presented_checkpoint["root_instance_id"]
+        != stored_checkpoint["root_instance_id"]
+        or checkpoint_identity(presented_checkpoint)
+        == checkpoint_identity(stored_checkpoint)
+    ):
+        raise ValidationFailure(
+            f"{location}: writer context does not describe a stale view"
+        )
+    if checkpoint_after != stored_checkpoint:
+        raise ValidationFailure(
+            f"{location}: stale writer changed the committed checkpoint"
+        )
+
+    disposition = retained_writer_identity_disposition(
+        operation_input, stored_checkpoint
+    )
+    if disposition == "replayed":
+        expected_result = "replayed"
+        expected_code = None
+    elif disposition in {"event_id_conflict", "operation_id_conflict"}:
+        expected_result = "rejected"
+        expected_code = disposition
+    else:
+        expected_result = "rejected"
+        expected_code = "checkpoint_revision_conflict"
+    if (
+        operation_result["result"] != expected_result
+        or operation_result.get("code") != expected_code
+        or operation_result["mutation"] != "none"
+        or operation_result["core_calls"] != 0
+    ):
+        raise ValidationFailure(
+            f"{location}: writer result violates retained identity precedence"
+        )
+
+
 def retained_admission_precedes_cas(
     operation_input: dict[str, Any],
     checkpoint: dict[str, Any],
@@ -6676,42 +6815,14 @@ def validate_durable_host_vectors(
                     validate_execution_checkpoint_v2_semantics(
                         stored_checkpoint_before
                     )
-                    if (
-                        writer_context["presented_checkpoint"]
-                        != checkpoint_identity(checkpoint_before)
-                        or writer_context["stored_checkpoint"]
-                        != checkpoint_identity(stored_checkpoint_before)
-                    ):
-                        raise ValidationFailure(
-                            f"{location}: writer checkpoint context does not match "
-                            "the explicit checkpoints"
-                        )
-                    if (
-                        checkpoint_before["root_instance_id"]
-                        != stored_checkpoint_before["root_instance_id"]
-                        or int(checkpoint_before["revision"])
-                        >= int(stored_checkpoint_before["revision"])
-                        or checkpoint_before["execution_checkpoint_digest"]
-                        == stored_checkpoint_before["execution_checkpoint_digest"]
-                    ):
-                        raise ValidationFailure(
-                            f"{location}: writer context does not describe a stale view"
-                        )
-                    if checkpoint_after != stored_checkpoint_before:
-                        raise ValidationFailure(
-                            f"{location}: stale writer changed the committed checkpoint"
-                        )
-                    expected_stale_result = {
-                        "result": "rejected",
-                        "mutation": "none",
-                        "core_calls": 0,
-                        "broker_acknowledged": False,
-                        "code": "checkpoint_revision_conflict",
-                    }
-                    if operation_result != expected_stale_result:
-                        raise ValidationFailure(
-                            f"{location}: stale writer result is not input-derived"
-                        )
+                    validate_writer_checkpoint_context(
+                        operation_input,
+                        operation_result,
+                        checkpoint_before,
+                        stored_checkpoint_before,
+                        checkpoint_after,
+                        location,
+                    )
                 historical_checkpoint = None
                 if "historical_checkpoint" in vector:
                     historical_checkpoint = require_kind(

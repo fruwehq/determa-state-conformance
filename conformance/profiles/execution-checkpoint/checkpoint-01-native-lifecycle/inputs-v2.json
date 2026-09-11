@@ -272,8 +272,8 @@
         },
         "stored_checkpoint": {
           "root_instance_id": "checkpoint-lifecycle-root",
-          "revision": "2",
-          "digest": "sha256:5a5e129eb6659e694af30e3dcb94b8d3f54671c3c39b37d4e4793c4dc11f774a"
+          "revision": "1",
+          "digest": "sha256:f381723a45ee78ae5c2a56d37f7e175059a9a07a3d69b70ea75183a273248472"
         }
       }
     },
