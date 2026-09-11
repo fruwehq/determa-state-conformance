@@ -56,6 +56,13 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /downgrade_prohibited
     expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v2.json }
+  - name: invalid_aggregate_rejected_before_downgrade
+    covers: [invalid_aggregate_artifact_precedes_operation]
+    operation: downgrade_aggregate_v2_to_v1
+    state_before: invalid-counter-aggregate-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /downgrade
+    expect: { result: failure, code: invalid_aggregate_state, unchanged_file: invalid-counter-aggregate-v2.json }
   - name: migration_preserves_compatible_work
     covers:
       - migration_backlog_independent_descriptor

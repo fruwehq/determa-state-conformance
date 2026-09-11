@@ -2313,9 +2313,6 @@ def process_upgraded_unhandled(
     if selected_runtime is None or selected_index is None:
         raise ValueError(f"missing upgraded ready event: {event_id}")
     consumed = selected_runtime["ready_mailbox"].pop(selected_index)
-    aggregate["next_logical_step_sequence"] = str(
-        int(aggregate["next_logical_step_sequence"]) + 1
-    )
     aggregate = seal_aggregate(aggregate)
     result["root_record"]["aggregate_state"] = aggregate
     result["revision"] = str(int(result["revision"]) + 1)
@@ -2345,6 +2342,59 @@ def process_upgraded_unhandled(
     return seal_checkpoint(result)
 
 
+def process_upgraded_internal(checkpoint: dict[str, Any]) -> dict[str, Any]:
+    result = copy.deepcopy(checkpoint)
+    aggregate = result["root_record"]["aggregate_state"]
+    root = next(
+        runtime
+        for runtime in aggregate["runtimes"]
+        if runtime["relation"]["kind"] == "root"
+    )
+    consumed = next(
+        entry
+        for entry in root["ready_mailbox"]
+        if entry["envelope"]["event"] == "internal_increment"
+    )
+    root["ready_mailbox"].remove(consumed)
+    amount = int(consumed["envelope"]["payload"][1][0][1][1])
+    count = next(
+        variable
+        for variable in root["variables"]
+        if variable["variable_declaration_pointer"].endswith("/variables/count")
+    )
+    count["value"][1] = str(int(count["value"][1]) + amount)
+    aggregate["next_logical_step_sequence"] = str(
+        int(aggregate["next_logical_step_sequence"]) + 1
+    )
+    aggregate = seal_aggregate(aggregate)
+    result["root_record"]["aggregate_state"] = aggregate
+    result["revision"] = str(int(result["revision"]) + 1)
+    receipt_sequence = result["next_operation_receipt_sequence"]
+    result["next_operation_receipt_sequence"] = str(int(receipt_sequence) + 1)
+    result["operation_receipts"].append(
+        {
+            "operation_kind": "event_terminal",
+            "receipt_sequence": receipt_sequence,
+            "event_id": consumed["envelope"]["event_id"],
+            "request_digest": consumed["envelope_digest"],
+            "acceptance_sequence": consumed["acceptance_sequence"],
+            "final_queue_sequence": consumed["queue_sequence"],
+            "committed_revision": result["revision"],
+            "resulting_aggregate_state_digest": aggregate[
+                "aggregate_state_digest"
+            ],
+            "outcome": {
+                "status": "running",
+                "disposition": "handled",
+                "fault": None,
+                "rejection": None,
+            },
+            "emission_references": [],
+        }
+    )
+    return seal_checkpoint(result)
+
+
 def produce_checkpoint() -> dict[str, bytes]:
     def with_checkpoint_cas(
         operation: dict[str, Any], checkpoint: dict[str, Any]
@@ -2359,6 +2409,7 @@ def produce_checkpoint() -> dict[str, bytes]:
 
     v1 = load(CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "internal-pending-checkpoint.json")
     upgraded = upgrade_checkpoint(v1)
+    processed_upgraded_internal = process_upgraded_internal(upgraded)
     delivery_trace = CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle"
     created_v1 = load(delivery_trace / "created-checkpoint.json")
     delivery_inputs = load(delivery_trace / "inputs.json")["requests"]
@@ -3193,6 +3244,15 @@ def produce_checkpoint() -> dict[str, bytes]:
             },
             multiple_converted_upgraded_with_metadata,
         ),
+        "process_upgraded_internal": with_checkpoint_cas(
+            {
+                "operation": "checkpoint_step_v2",
+                "target_runtime_id": upgraded["root_record"]["aggregate_state"][
+                    "root_runtime_id"
+                ],
+            },
+            upgraded,
+        ),
         "admit": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
             "delivery_mode": entry["delivery_mode"],
             "envelope": entry["envelope"],
@@ -3394,6 +3454,10 @@ def produce_checkpoint() -> dict[str, bytes]:
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": event_terminal["receipt_sequence"],
         }, compact),
+        "equal_prune_stale_cas": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": event_terminal["receipt_sequence"],
+        }, terminal),
         "lower_prune": with_checkpoint_cas({
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": "1",
@@ -3450,6 +3514,9 @@ def produce_checkpoint() -> dict[str, bytes]:
         ),
         "spawned-tombstoned-checkpoint-v2.json": canonical(spawned_tombstoned),
         "upgraded-checkpoint-v2.json": canonical(upgraded),
+        "processed-upgraded-internal-checkpoint-v2.json": canonical(
+            processed_upgraded_internal
+        ),
         "upgraded-outbox-checkpoint-v2.json": canonical(upgraded_outbox),
         "admitted-checkpoint-v2.json": canonical(admitted),
         "mixed-admitted-checkpoint-v2.json": canonical(mixed_checkpoint),

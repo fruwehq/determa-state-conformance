@@ -26,6 +26,7 @@ artifacts:
     - { file: spawned-tombstoned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: base-outbox-checkpoint-v1.json, kind: execution_checkpoint, valid: true }
     - { file: upgraded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: processed-upgraded-internal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: upgraded-outbox-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: admitted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: mixed-admitted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
@@ -115,6 +116,13 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /process_multiple_converted_with_metadata
     expect: { result: success, exact_result_file: multiple-converted-processed-with-metadata-checkpoint-v2.json }
+  - name: processed_upgraded_legacy_internal_event
+    covers: [processed_legacy_internal_producer_reference]
+    operation: checkpoint_step_v2
+    checkpoint_before: upgraded-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /process_upgraded_internal
+    expect: { result: success, exact_result_file: processed-upgraded-internal-checkpoint-v2.json }
   - name: checkpoint_atomic_admission
     covers: [receipt_acceptance_terminal_distinction]
     operation: checkpoint_admit_v2
@@ -370,6 +378,13 @@ version2_vectors:
     checkpoint_before: compact-checkpoint-v2.json
     request_file: operation-inputs.json
     request_pointer: /equal_prune
+    expect: { result: success, exact_result_file: compact-checkpoint-v2.json }
+  - name: checkpoint_equal_cutoff_precedes_stale_compare_and_swap
+    covers: [version2_equal_pruning_precedes_stale_cas]
+    operation: checkpoint_prune_v2
+    checkpoint_before: compact-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /equal_prune_stale_cas
     expect: { result: success, exact_result_file: compact-checkpoint-v2.json }
   - name: checkpoint_lower_cutoff_is_rejected
     covers: [version2_lower_pruning_cutoff_rejected]
