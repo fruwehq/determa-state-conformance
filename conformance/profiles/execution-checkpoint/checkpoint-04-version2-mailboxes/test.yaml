@@ -5,6 +5,7 @@ static:
     - { file: deferral-machine.yaml, valid: true }
     - { file: spawn-machine.yaml, valid: true }
     - { file: terminal-spawn-machine.yaml, valid: true }
+    - { file: creation-owned-work-machine.yaml, valid: true }
 artifacts:
   documents:
     - { file: base-checkpoint.json, kind: execution_checkpoint_v2, valid: true }
@@ -36,6 +37,11 @@ artifacts:
     - { file: native-internal-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-producer-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: native-internal-terminal-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: native-internal-sequentially-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: creation-internal-before-prune-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: creation-internal-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: creation-external-before-prune-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: creation-external-pruned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: compact-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: compacted-legacy-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: tombstoned-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
@@ -430,6 +436,29 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /native_internal_terminal_prune
     expect: { result: success, exact_result_file: native-internal-terminal-pruned-checkpoint-v2.json }
+  - name: checkpoint_native_internal_sequential_pruning_uses_prior_attestation
+    covers: [version2_native_internal_sequential_pruning]
+    operation: checkpoint_prune_v2
+    checkpoint_before: native-internal-producer-pruned-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /native_internal_sequential_prune
+    expect: { result: success, exact_result_file: native-internal-sequentially-pruned-checkpoint-v2.json }
+  - name: checkpoint_creation_owned_internal_work_does_not_block_unrelated_pruning
+    covers: [version2_creation_internal_dependency_retained]
+    operation: checkpoint_prune_v2
+    bundle: creation-owned-work-machine.yaml
+    checkpoint_before: creation-internal-before-prune-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /creation_internal_unrelated_prune
+    expect: { result: success, exact_result_file: creation-internal-pruned-checkpoint-v2.json }
+  - name: checkpoint_creation_owned_external_work_does_not_block_unrelated_pruning
+    covers: [version2_creation_external_dependency_retained]
+    operation: checkpoint_prune_v2
+    bundle: creation-owned-work-machine.yaml
+    checkpoint_before: creation-external-before-prune-checkpoint-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /creation_external_unrelated_prune
+    expect: { result: success, exact_result_file: creation-external-pruned-checkpoint-v2.json }
   - name: checkpoint_legacy_origin_dependency_pruning_is_rejected
     covers: [version2_legacy_origin_pruning_rejected]
     operation: checkpoint_prune_v2

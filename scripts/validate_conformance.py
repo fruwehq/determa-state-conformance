@@ -345,6 +345,9 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "version2_dependency_pruning_rejected",
         "version2_native_internal_producer_pruned",
         "version2_native_internal_terminal_pruned",
+        "version2_native_internal_sequential_pruning",
+        "version2_creation_internal_dependency_retained",
+        "version2_creation_external_dependency_retained",
         "version2_legacy_origin_pruning_rejected",
         "version2_live_acceptance_pruning_rejected",
         "version2_terminal_pair_pruning_rejected",
@@ -4515,7 +4518,25 @@ def validate_version2_vectors(
                         and reference.get("terminal_receipt_sequence")
                         == receipt["receipt_sequence"]
                     ]
-                    if len(producer_matches) != 1:
+                    prior_cutoff_value = checkpoint["replay_retention"][
+                        "pruned_through_receipt_sequence"
+                    ]
+                    producer_was_attested_pruned = (
+                        not producer_matches
+                        and prior_cutoff_value is not None
+                        and canonical_decimal(
+                            prior_cutoff_value,
+                            "prior pruning cutoff",
+                        )
+                        < canonical_decimal(
+                            receipt["receipt_sequence"],
+                            "native terminal receipt sequence",
+                        )
+                    )
+                    if (
+                        len(producer_matches) != 1
+                        and not producer_was_attested_pruned
+                    ):
                         raise ValidationFailure(
                             "bounded pruning native terminal lacks exact producer"
                         )
@@ -6499,6 +6520,119 @@ def validate_version2_vectors(
                         f"{location}: bounded pruning result is not the exact "
                         "specification projection"
                     )
+                if "version2_native_internal_sequential_pruning" in covers:
+                    retained_terminal = next(
+                        receipt
+                        for receipt in checkpoint_before[
+                            "operation_receipts"
+                        ]
+                        if receipt["receipt_sequence"] == "5"
+                    )
+                    if (
+                        prior_cutoff != 4
+                        or cutoff != 5
+                        or any(
+                            reference.get("event_id")
+                            == retained_terminal["event_id"]
+                            for receipt in checkpoint_before[
+                                "operation_receipts"
+                            ]
+                            for reference in receipt.get(
+                                "emission_references", []
+                            )
+                        )
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: sequential pruning is not based on "
+                            "prior cutoff attestation"
+                        )
+                if "version2_creation_internal_dependency_retained" in covers:
+                    creation = checkpoint_before["operation_receipts"][0]
+                    before_entries = [
+                        entry
+                        for runtime in checkpoint_before["root_record"][
+                            "aggregate_state"
+                        ]["runtimes"]
+                        for entry in runtime["ready_mailbox"]
+                    ]
+                    after_entries = [
+                        entry
+                        for runtime in result_document["root_record"][
+                            "aggregate_state"
+                        ]["runtimes"]
+                        for entry in runtime["ready_mailbox"]
+                    ]
+                    references = creation["legacy_receipt"][
+                        "emission_references"
+                    ]
+                    if (
+                        cutoff != 1
+                        or len(before_entries) != 1
+                        or after_entries != before_entries
+                        or len(references) != 1
+                        or references[0].get("kind")
+                        != "internal_delivery"
+                        or references[0].get("event_id")
+                        != before_entries[0]["envelope"]["event_id"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: creation-owned internal work is not "
+                            "distinguishing"
+                        )
+                if "version2_creation_external_dependency_retained" in covers:
+                    creation = checkpoint_before["operation_receipts"][0]
+                    before_outbox = checkpoint_before[
+                        "pending_outbox_intents"
+                    ]
+                    references = creation["legacy_receipt"][
+                        "emission_references"
+                    ]
+                    if (
+                        cutoff != 1
+                        or len(before_outbox) != 1
+                        or result_document["pending_outbox_intents"]
+                        != before_outbox
+                        or len(references) != 1
+                        or references[0].get("kind") != "external_outbox"
+                        or references[0].get("effect_id")
+                        != before_outbox[0]["intent"]["effect_id"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: creation-owned external work is not "
+                            "distinguishing"
+                        )
+                if covers & {
+                    "version2_creation_internal_dependency_retained",
+                    "version2_creation_external_dependency_retained",
+                }:
+                    creation = checkpoint_before["operation_receipts"][0][
+                        "legacy_receipt"
+                    ]
+                    aggregate = checkpoint_before["root_record"][
+                        "aggregate_state"
+                    ]
+                    expected_creation_digest = hash_value(
+                        [
+                            "determa-creation-request-digest-1",
+                            "1",
+                            validated_bundle_fingerprint(
+                                case / vector["bundle"]
+                            ),
+                            aggregate["namespace"],
+                            aggregate["root_machine_id"],
+                            aggregate["root_machine_version"],
+                            aggregate["root_instance_id"],
+                            aggregate["creation_id"],
+                            encode_typed_value(
+                                {"input": {}, "external": {}}
+                            ),
+                        ]
+                    )
+                    if creation["request_digest"] != expected_creation_digest:
+                        raise ValidationFailure(
+                            f"{location}: creation-owned work trace has an "
+                            "invalid creation request digest"
+                        )
         if operation == "checkpoint_prune_v2" and expectation["result"] == "failure":
             checkpoint_before = artifact(vector["checkpoint_before"]).document
             cutoff = canonical_decimal(
@@ -6587,7 +6721,7 @@ def validate_version2_vectors(
                 producer_sequence = canonical_decimal(
                     producer["receipt_sequence"], "producer receipt sequence"
                 )
-                if producer_sequence > cutoff:
+                if producer_sequence == 0 or producer_sequence > cutoff:
                     continue
                 references = list(producer.get("emission_references", []))
                 legacy = producer.get("legacy_receipt")
@@ -6613,11 +6747,13 @@ def validate_version2_vectors(
             for entry in live_entries:
                 source = entry["envelope"]["source"]
                 legacy_origin = source.get("legacy_v1_internal")
-                if legacy_origin is not None and canonical_decimal(
-                    legacy_origin["producing_receipt_sequence"],
-                    "legacy internal producer sequence",
-                ) <= cutoff:
-                    dependency_reasons.add("internal_producer")
+                if legacy_origin is not None:
+                    producer_sequence = canonical_decimal(
+                        legacy_origin["producing_receipt_sequence"],
+                        "legacy internal producer sequence",
+                    )
+                    if 0 < producer_sequence <= cutoff:
+                        dependency_reasons.add("internal_producer")
             for receipt in receipts:
                 if canonical_decimal(
                     receipt["receipt_sequence"],
@@ -6635,13 +6771,13 @@ def validate_version2_vectors(
                 if (
                     isinstance(origin, dict)
                     and origin.get("kind") == "internal_emission"
-                    and canonical_decimal(
+                ):
+                    producer_sequence = canonical_decimal(
                         origin["producing_receipt_sequence"],
                         "retained legacy origin producer sequence",
                     )
-                    <= cutoff
-                ):
-                    dependency_reasons.add("legacy_origin")
+                    if 0 < producer_sequence <= cutoff:
+                        dependency_reasons.add("legacy_origin")
 
             dependency_invalid = bool(dependency_reasons)
             if expectation.get("code") == "invalid_execution_checkpoint":

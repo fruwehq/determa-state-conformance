@@ -2444,7 +2444,19 @@ def produce_checkpoint() -> dict[str, bytes]:
                         and reference.get("terminal_receipt_sequence")
                         == receipt["receipt_sequence"]
                     ]
-                    assert len(producer_references) == 1
+                    prior_cutoff = checkpoint["replay_retention"][
+                        "pruned_through_receipt_sequence"
+                    ]
+                    producer_was_attested_pruned = (
+                        not producer_references
+                        and prior_cutoff is not None
+                        and int(prior_cutoff)
+                        < int(receipt["receipt_sequence"])
+                    )
+                    assert (
+                        len(producer_references) == 1
+                        or producer_was_attested_pruned
+                    )
                 tombstones.append(
                     {
                         "event_id": receipt["event_id"],
@@ -2498,6 +2510,239 @@ def produce_checkpoint() -> dict[str, bytes]:
         ] = str(cutoff)
         projected["revision"] = str(int(checkpoint["revision"]) + 1)
         return seal_checkpoint(projected)
+
+    def creation_owned_work_checkpoint(
+        machine_id: str, work_kind: str
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        bundle_path = CHECKPOINT / "creation-owned-work-machine.yaml"
+        root_instance_id = f"{work_kind}-creation-root"
+        creation_id = f"{work_kind}-creation"
+        request = {
+            "machine_id": machine_id,
+            "machine_version": "1",
+            "root_instance_id": root_instance_id,
+            "creation_id": creation_id,
+            "bindings": {"input": {}, "external": {}},
+        }
+        creation_aggregate = create_v2_root(bundle_path, request)
+        creation_root = root_runtime(creation_aggregate)
+        creation_references: list[dict[str, Any]] = []
+        pending_outbox: list[dict[str, Any]] = []
+
+        if work_kind == "internal":
+            event_id = digest(
+                [
+                    "determa-event-identity-1",
+                    "1",
+                    root_instance_id,
+                    creation_root["runtime_id"],
+                    creation_root["runtime_id"],
+                    digest(["determa-initialization-cause-1", creation_id]),
+                    "0",
+                    "/machines/0/root/entry/0/send",
+                    "0",
+                ]
+            )
+            entry = envelope_entry(
+                creation_aggregate,
+                creation_root,
+                event="internal_work",
+                event_id=event_id,
+                acceptance_sequence=0,
+                queue_sequence=0,
+                delivery_mode="internal",
+                source={
+                    "legacy_v1_internal": {
+                        "producing_receipt_sequence": "0",
+                        "emission_index": "0",
+                    }
+                },
+            )
+            creation_root["ready_mailbox"] = [entry]
+            creation_aggregate["next_acceptance_sequence"] = "1"
+            creation_aggregate["next_queue_sequence"] = "1"
+            creation_references.append(
+                {
+                    "kind": "internal_delivery",
+                    "emission_index": "0",
+                    "event_id": event_id,
+                    "delivery_sequence": "0",
+                }
+            )
+        else:
+            effect_id = digest(
+                [
+                    "determa-effect-v1",
+                    "1",
+                    root_instance_id,
+                    creation_root["runtime_id"],
+                    "0",
+                    "/machines/1/root/entry/0/send",
+                    "0",
+                ]
+            )
+            creation_references.append(
+                {
+                    "kind": "external_outbox",
+                    "emission_index": "0",
+                    "effect_id": effect_id,
+                }
+            )
+            pending_outbox.append(
+                {
+                    "intent": {
+                        "effect_id": effect_id,
+                        "sequence": "0",
+                        "correlation_id": "creation-work",
+                        "event": "external_work",
+                        "payload": ["map", []],
+                    },
+                    "state_revision": "0",
+                    "delivery_state": {"status": "not_attempted"},
+                }
+            )
+            creation_aggregate["next_output_sequence"] = "1"
+
+        creation_aggregate = seal_aggregate(creation_aggregate)
+        current_aggregate = copy.deepcopy(creation_aggregate)
+        current_root = root_runtime(current_aggregate)
+        current_root["variables"][0]["value"] = ["integer", "1"]
+        current_aggregate["next_logical_step_sequence"] = "2"
+        terminal_acceptance_sequence = (
+            "1" if work_kind == "internal" else "0"
+        )
+        current_aggregate["next_acceptance_sequence"] = str(
+            int(terminal_acceptance_sequence) + 1
+        )
+        current_aggregate = seal_aggregate(current_aggregate)
+        unrelated_request_digest = digest(
+            [
+                "determa-inbox-envelope-digest-1",
+                "1",
+                root_instance_id,
+                "input",
+                "creation-unrelated",
+            ]
+        )
+        receipts: list[dict[str, Any]] = [
+            {
+                "operation_kind": "legacy_v1_creation",
+                "receipt_sequence": "0",
+                "legacy_receipt": {
+                    "operation_kind": "creation",
+                    "receipt_sequence": "0",
+                    "creation_id": creation_id,
+                    "request_digest": digest(
+                        [
+                            "determa-creation-request-digest-1",
+                            "1",
+                            creation_aggregate[
+                                "validated_bundle_fingerprint"
+                            ],
+                            creation_aggregate["namespace"],
+                            machine_id,
+                            "1",
+                            root_instance_id,
+                            creation_id,
+                            typed_value(request["bindings"]),
+                        ]
+                    ),
+                    "committed_revision": "0",
+                    "resulting_aggregate_state_digest": creation_aggregate[
+                        "aggregate_state_digest"
+                    ],
+                    "status": "running",
+                    "fault": None,
+                    "emission_references": creation_references,
+                },
+            },
+            {
+                "operation_kind": "legacy_v1_operation",
+                "receipt_sequence": "1",
+                "legacy_receipt": {
+                    "operation_kind": "delivery",
+                    "receipt_sequence": "1",
+                    "event_id": "creation-unrelated",
+                    "request_digest": unrelated_request_digest,
+                    "accepted_delivery_sequence": terminal_acceptance_sequence,
+                    "accepted_revision": "1",
+                    "delivery_mode": "input",
+                    "origin": {"kind": "host_input"},
+                    "committed_revision": "1",
+                    "resulting_aggregate_state_digest": current_aggregate[
+                        "aggregate_state_digest"
+                    ],
+                    "outcome": {
+                        "status": "running",
+                        "disposition": "handled",
+                        "fault": None,
+                        "rejection": None,
+                    },
+                    "emission_references": [],
+                },
+            },
+        ]
+        if work_kind == "internal":
+            legacy_envelope = copy.deepcopy(entry["envelope"])
+            legacy_envelope.pop("cause_id")
+            legacy_envelope.pop("source")
+            receipts.append(
+                {
+                    "operation_kind": "acceptance",
+                    "receipt_sequence": "2",
+                    "event_id": entry["envelope"]["event_id"],
+                    "request_digest": entry["envelope_digest"],
+                    "acceptance_sequence": entry["acceptance_sequence"],
+                    "accepted_revision": "0",
+                    "delivery_mode": "internal",
+                    "legacy_v1_delivery": {
+                        "delivery_sequence": "0",
+                        "envelope_digest": digest(
+                            [
+                                "determa-inbox-envelope-digest-1",
+                                "1",
+                                root_instance_id,
+                                "internal",
+                                legacy_envelope,
+                            ]
+                        ),
+                        "origin": {
+                            "kind": "internal_emission",
+                            "producing_receipt_sequence": "0",
+                            "emission_index": "0",
+                        },
+                    },
+                }
+            )
+        checkpoint = seal_checkpoint(
+            {
+                "execution_checkpoint_format": (
+                    "determa.execution_checkpoint"
+                ),
+                "execution_checkpoint_schema_version": 2,
+                "root_instance_id": root_instance_id,
+                "revision": "2",
+                "root_record": {
+                    "status": "retained",
+                    "aggregate_state": current_aggregate,
+                },
+                "operation_receipts": receipts,
+                "next_operation_receipt_sequence": str(len(receipts)),
+                "pending_outbox_intents": pending_outbox,
+                "terminal_outbox_records": [],
+                "outbox_effect_tombstones": [],
+                "next_outbox_terminal_sequence": "0",
+                "migration_audit_records": [],
+                "event_identity_tombstones": [],
+                "replay_retention": {
+                    "mode": "bounded",
+                    "permanent_replay_eligible": False,
+                    "pruned_through_receipt_sequence": None,
+                    "policy_identifier": "bounded-test-v1",
+                },
+            }
+        )
+        return checkpoint, prune_checkpoint(checkpoint, 1)
 
     v1 = load(CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "internal-pending-checkpoint.json")
     upgraded = upgrade_checkpoint(v1)
@@ -2827,6 +3072,17 @@ def produce_checkpoint() -> dict[str, bytes]:
 
     native_internal_producer_pruned = prune_checkpoint(native_terminal, 4)
     native_internal_terminal_pruned = prune_checkpoint(native_terminal, 5)
+    native_internal_sequentially_pruned = prune_checkpoint(
+        native_internal_producer_pruned, 5
+    )
+    (
+        creation_internal_before,
+        creation_internal_pruned,
+    ) = creation_owned_work_checkpoint("internal_creator", "internal")
+    (
+        creation_external_before,
+        creation_external_pruned,
+    ) = creation_owned_work_checkpoint("external_creator", "external")
 
     compact = copy.deepcopy(terminal)
     acceptance = compact["operation_receipts"].pop(-2)
@@ -3577,6 +3833,18 @@ def produce_checkpoint() -> dict[str, bytes]:
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": "5",
         }, native_terminal),
+        "native_internal_sequential_prune": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": "5",
+        }, native_internal_producer_pruned),
+        "creation_internal_unrelated_prune": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": "1",
+        }, creation_internal_before),
+        "creation_external_unrelated_prune": with_checkpoint_cas({
+            "operation": "checkpoint_prune_v2",
+            "cutoff_receipt_sequence": "1",
+        }, creation_external_before),
         "legacy_origin_dependency_prune": with_checkpoint_cas({
             "operation": "checkpoint_prune_v2",
             "cutoff_receipt_sequence": "2",
@@ -3651,6 +3919,21 @@ def produce_checkpoint() -> dict[str, bytes]:
         ),
         "native-internal-terminal-pruned-checkpoint-v2.json": canonical(
             native_internal_terminal_pruned
+        ),
+        "native-internal-sequentially-pruned-checkpoint-v2.json": canonical(
+            native_internal_sequentially_pruned
+        ),
+        "creation-internal-before-prune-checkpoint-v2.json": canonical(
+            creation_internal_before
+        ),
+        "creation-internal-pruned-checkpoint-v2.json": canonical(
+            creation_internal_pruned
+        ),
+        "creation-external-before-prune-checkpoint-v2.json": canonical(
+            creation_external_before
+        ),
+        "creation-external-pruned-checkpoint-v2.json": canonical(
+            creation_external_pruned
         ),
         "compact-checkpoint-v2.json": canonical(compact),
         "compacted-legacy-checkpoint-v2.json": canonical(compacted_legacy),
