@@ -859,7 +859,27 @@ def process(
         handler = machine["root"].get("on_events", {}).get(
             entry["envelope"]["event"]
         )
-        transitions = handler if isinstance(handler, list) else [handler]
+        handler_candidates = handler if isinstance(handler, list) else [handler]
+        has_external_send = any(
+            isinstance(candidate, dict)
+            and any(
+                isinstance(action, dict)
+                and isinstance(action.get("send"), dict)
+                and action["send"].get("to") == {"external": True}
+                for action in candidate.get("action", [])
+            )
+            for candidate in handler_candidates
+        )
+        if has_external_send and (
+            isinstance(handler, list)
+            or not isinstance(handler, dict)
+            or "guard" in handler
+        ):
+            raise RuntimeError(
+                "durable profile generator cannot select guarded or alternative "
+                "external-output handlers"
+            )
+        transitions = handler_candidates
         for transition_index, transition in enumerate(transitions):
             if not isinstance(transition, dict):
                 continue

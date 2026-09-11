@@ -1083,14 +1083,41 @@ def validate_aggregate_against_bundle(
                     raise ValidationFailure(
                         "aggregate v2: instance reference fields are not canonical"
                     )
-                if encoded_fields["machine_version"][0] != "integer":
+                for field in ("root_instance_id", "instance_id", "machine_id"):
+                    encoded = encoded_fields[field]
+                    if (
+                        not isinstance(encoded, list)
+                        or len(encoded) != 2
+                        or encoded[0] != "string"
+                        or not isinstance(encoded[1], str)
+                        or not encoded[1]
+                    ):
+                        raise ValidationFailure(
+                            f"aggregate v2: instance reference {field} is not a "
+                            "non-empty string"
+                        )
+                if re.fullmatch(
+                    r"[A-Za-z_][A-Za-z0-9_]*", encoded_fields["machine_id"][1]
+                ) is None:
                     raise ValidationFailure(
-                        "aggregate v2: instance reference machine_version is not an integer"
+                        "aggregate v2: instance reference machine_id is not an identifier"
+                    )
+                encoded_version = encoded_fields["machine_version"]
+                if (
+                    not isinstance(encoded_version, list)
+                    or len(encoded_version) != 2
+                    or encoded_version[0] != "integer"
+                    or not isinstance(encoded_version[1], str)
+                    or re.fullmatch(r"[1-9][0-9]*", encoded_version[1]) is None
+                ):
+                    raise ValidationFailure(
+                        "aggregate v2: instance reference machine_version is not a "
+                        "canonical positive integer"
                     )
                 decoded_reference = decode_typed_value(value)
                 if (
-                    isinstance(decoded_reference["machine_version"], bool)
-                    or decoded_reference["machine_version"] < 1
+                    decoded_reference["root_instance_id"]
+                    != aggregate["root_instance_id"]
                     or (
                         declaration.get("machine_id") is not None
                         and decoded_reference["machine_id"]
@@ -5930,7 +5957,26 @@ def validate_checkpoint_derivation(
         handler = machine["root"].get("on_events", {}).get(
             before_entry["envelope"]["event"]
         )
-        transitions = handler if isinstance(handler, list) else [handler]
+        handler_candidates = handler if isinstance(handler, list) else [handler]
+        has_external_send = any(
+            isinstance(candidate, dict)
+            and any(
+                isinstance(action, dict)
+                and isinstance(action.get("send"), dict)
+                and action["send"].get("to") == {"external": True}
+                for action in candidate.get("action", [])
+            )
+            for candidate in handler_candidates
+        )
+        if has_external_send and (
+            isinstance(handler, list)
+            or not isinstance(handler, dict)
+            or "guard" in handler
+        ):
+            raise ValidationFailure(
+                f"{location}: external effect handler selection is unsupported"
+            )
+        transitions = handler_candidates
         external_actions: list[tuple[str, dict[str, Any]]] = []
         for transition_index, transition in enumerate(transitions):
             if not isinstance(transition, dict):

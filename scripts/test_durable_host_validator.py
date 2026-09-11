@@ -26,6 +26,7 @@ from validate_conformance import (
     validate_persistence_derivation,
     validate_request_checkpoint_binding,
 )
+from generate_execution_checkpoint_profile import process
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance" / "profiles" / "execution-checkpoint"
@@ -261,9 +262,44 @@ class DurableHostValidatorTests(unittest.TestCase):
         fields["machine_version"] = ["string", "1"]
         reference[1] = [[name, fields[name]] for name, _ in reference[1]]
         with self.assertRaisesRegex(
-            ValidationFailure, "machine_version is not an integer"
+            ValidationFailure, "machine_version is not a canonical positive integer"
         ):
             validate_aggregate_against_bundle(aggregate, case / "machine.yaml")
+
+    def test_every_stale_instance_reference_field_is_validated(self) -> None:
+        case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
+        checkpoint = load(case / "spawned-child-terminal-checkpoint-v2.json")
+        baseline = checkpoint["root_record"]["aggregate_state"]
+        mutations = {
+            "root_instance_id": ["integer", "42"],
+            "instance_id": ["string", ""],
+            "machine_id": ["boolean", True],
+            "machine_version": ["integer", "01"],
+        }
+        for field, replacement in mutations.items():
+            with self.subTest(field=field):
+                aggregate = copy.deepcopy(baseline)
+                owner = next(
+                    runtime
+                    for runtime in aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                reference = next(
+                    variable
+                    for variable in owner["variables"]
+                    if variable["variable_declaration_pointer"].endswith(
+                        "/payment_reference"
+                    )
+                )["value"]
+                fields = dict(reference[1])
+                fields[field] = replacement
+                reference[1] = [[name, fields[name]] for name, _ in reference[1]]
+                with self.assertRaisesRegex(
+                    ValidationFailure, f"instance reference {field}"
+                ):
+                    validate_aggregate_against_bundle(
+                        aggregate, case / "machine.yaml"
+                    )
 
     def test_outbox_effects_are_derived_from_machine_actions(self) -> None:
         case = PROFILE / "checkpoint-02-native-outbox"
@@ -282,6 +318,39 @@ class DurableHostValidatorTests(unittest.TestCase):
             validate_checkpoint_derivation(
                 request, result, before, after, "effect mutation", case / "machine.yaml"
             )
+
+    def test_external_effect_derivation_fails_closed_on_guarded_handler(self) -> None:
+        case = PROFILE / "checkpoint-02-native-outbox"
+        with tempfile.TemporaryDirectory() as temporary:
+            machine_path = Path(temporary) / "machine.yaml"
+            machine_path.write_text(
+                (case / "machine.yaml").read_text(encoding="utf-8").replace(
+                    "        emit_outputs:\n",
+                    '        emit_outputs:\n          guard: "false"\n',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            before = load(case / "accepted-checkpoint-v2.json")
+            with self.assertRaisesRegex(RuntimeError, "cannot select guarded"):
+                process(before, bundle_path=machine_path)
+
+            request = load(case / "inputs-v2.json")["requests"]["pending"]
+            result = load(case / "results-v2.json")["results"][
+                "processing_committed"
+            ]
+            after = load(case / "pending-checkpoint-v2.json")
+            with self.assertRaisesRegex(
+                ValidationFailure, "handler selection is unsupported"
+            ):
+                validate_checkpoint_derivation(
+                    request,
+                    result,
+                    before,
+                    after,
+                    "guard mutation",
+                    machine_path,
+                )
 
     def test_deletion_probe_requires_a_retained_referenced_effect(self) -> None:
         case = PROFILE / "checkpoint-02-native-outbox"
