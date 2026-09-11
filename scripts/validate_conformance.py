@@ -281,6 +281,7 @@ REQUIRED_VERSION2_COVERAGE = frozenset(
         "faulted_root_descendant_step_rejection",
         "faulted_root_admission_rejection",
         "internal_emission_active_target",
+        "internal_emission_chained_provenance",
         "internal_emission_disposed_target",
         "internal_emission_retained_faulted_target",
         "internal_emission_rollback",
@@ -5672,6 +5673,7 @@ def validate_version2_vectors(
                     "internal_emission_retained_faulted_target": ("enter_faulty", "handled"),
                     "lifecycle_cancellation_disposal": ("cancel_after_send", "handled"),
                     "lifecycle_natural_completion_disposal": ("component_finish", "handled"),
+                    "internal_emission_chained_provenance": ("component_finish", "handled"),
                     "lifecycle_aggregate_completion_disposal": ("aggregate_finish", "handled"),
                     "cleanup_fault_rollback": ("cleanup_rollback", "faulted"),
                     "reserved_events_not_deferrable": ("determa.component_completed", "handled"),
@@ -5875,6 +5877,111 @@ def validate_version2_vectors(
                     ):
                         raise ValidationFailure(
                             f"{location}: completion provenance or disposal digest is not exact"
+                        )
+                if "internal_emission_chained_provenance" in covers:
+                    delivered_runtime = target_runtime(prior_aggregate, target_id)
+                    assert delivered_runtime is not None
+                    delivered = delivered_runtime["ready_mailbox"][0]["envelope"]
+                    owner = next(
+                        runtime
+                        for runtime in prior_aggregate["runtimes"]
+                        if runtime["relation"]["kind"] == "root"
+                    )
+                    inherited_cause_id = delivered["cause_id"]
+                    first_generation_event_id = hash_value(
+                        [
+                            "determa-event-identity-1",
+                            "1",
+                            prior_aggregate["root_instance_id"],
+                            owner["runtime_id"],
+                            delivered_runtime["runtime_id"],
+                            inherited_cause_id,
+                            str(
+                                int(
+                                    prior_aggregate[
+                                        "next_logical_step_sequence"
+                                    ]
+                                )
+                                - 1
+                            ),
+                            "/machines/0/root/states/processing/on_events/"
+                            "finish_left/action/0/send",
+                            "0",
+                        ]
+                    )
+                    behavior_cause_id = delivered["event_id"]
+                    self_locator = (
+                        "/machines/0/root/states/processing/components/0/root/"
+                        "states/running/on_events/component_finish/action/0/send"
+                    )
+                    second_generation_event_id = hash_value(
+                        [
+                            "determa-event-identity-1",
+                            "1",
+                            prior_aggregate["root_instance_id"],
+                            delivered_runtime["runtime_id"],
+                            delivered_runtime["runtime_id"],
+                            behavior_cause_id,
+                            prior_aggregate["next_logical_step_sequence"],
+                            self_locator,
+                            "0",
+                        ]
+                    )
+                    second_generation_envelope = {
+                        "event": "component_work",
+                        "event_id": second_generation_event_id,
+                        "cause_id": behavior_cause_id,
+                        "source": {
+                            "runtime": delivered_runtime["target_identity"]
+                        },
+                        "target": delivered_runtime["target_identity"],
+                        "payload": ["map", []],
+                    }
+                    disposal_digest = hash_value(
+                        [
+                            "determa-inbox-envelope-digest-2",
+                            "2",
+                            prior_aggregate["root_instance_id"],
+                            "internal",
+                            second_generation_envelope,
+                        ]
+                    )
+                    result_owner = next(
+                        runtime
+                        for runtime in result_state["runtimes"]
+                        if runtime["relation"]["kind"] == "root"
+                    )
+                    completion = result_owner["ready_mailbox"][0]["envelope"]
+                    completion_event_id = hash_value(
+                        [
+                            "determa-event-identity-1",
+                            "1",
+                            prior_aggregate["root_instance_id"],
+                            delivered_runtime["runtime_id"],
+                            result_owner["runtime_id"],
+                            behavior_cause_id,
+                            prior_aggregate["next_logical_step_sequence"],
+                            "system:component_completion",
+                            "0",
+                        ]
+                    )
+                    if (
+                        delivered["event_id"] != first_generation_event_id
+                        or delivered["event_id"] == inherited_cause_id
+                        or result_document["emissions"][0]["event_id"]
+                        != second_generation_event_id
+                        or result_document["lifecycle_dispositions"][0][
+                            "request_digest"
+                        ]
+                        != disposal_digest
+                        or completion["event_id"] != completion_event_id
+                        or completion["cause_id"] != behavior_cause_id
+                        or completion["cause_id"] == inherited_cause_id
+                        or completion["source"]
+                        != {"system": "system:component_completion"}
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: chained internal emission reused inherited cause"
                         )
                 if "lifecycle_aggregate_completion_disposal" in covers and (
                     result_document["status"] != "completed"
@@ -7545,6 +7652,87 @@ def validate_version2_vectors(
             "internal-emission-active-result.json": reseal_core_result(
                 self_cause
             )
+        }
+        chained_prior = artifact("chained-internal-before.json").document
+        chained_bad = copy.deepcopy(
+            artifact("chained-internal-result.json").document
+        )
+        chained_source = next(
+            runtime
+            for runtime in chained_prior["runtimes"]
+            if runtime["relation"].get("component_id") == "left"
+        )
+        inherited_cause_id = chained_source["ready_mailbox"][0]["envelope"][
+            "cause_id"
+        ]
+        wrong_second_event_id = hash_value(
+            [
+                "determa-event-identity-1",
+                "1",
+                chained_prior["root_instance_id"],
+                chained_source["runtime_id"],
+                chained_source["runtime_id"],
+                inherited_cause_id,
+                chained_prior["next_logical_step_sequence"],
+                "/machines/0/root/states/processing/components/0/root/"
+                "states/running/on_events/component_finish/action/0/send",
+                "0",
+            ]
+        )
+        wrong_disposed_envelope = {
+            "event": "component_work",
+            "event_id": wrong_second_event_id,
+            "cause_id": inherited_cause_id,
+            "source": {"runtime": chained_source["target_identity"]},
+            "target": chained_source["target_identity"],
+            "payload": ["map", []],
+        }
+        chained_bad["emissions"][0]["event_id"] = wrong_second_event_id
+        chained_bad["lifecycle_dispositions"][0][
+            "event_id"
+        ] = wrong_second_event_id
+        chained_bad["lifecycle_dispositions"][0]["request_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                chained_prior["root_instance_id"],
+                "internal",
+                wrong_disposed_envelope,
+            ]
+        )
+        chained_result_root = next(
+            runtime
+            for runtime in chained_bad["state"]["runtimes"]
+            if runtime["relation"]["kind"] == "root"
+        )
+        wrong_completion_event_id = hash_value(
+            [
+                "determa-event-identity-1",
+                "1",
+                chained_prior["root_instance_id"],
+                chained_source["runtime_id"],
+                chained_result_root["runtime_id"],
+                inherited_cause_id,
+                chained_prior["next_logical_step_sequence"],
+                "system:component_completion",
+                "0",
+            ]
+        )
+        wrong_completion = chained_result_root["ready_mailbox"][0]
+        wrong_completion["envelope"]["event_id"] = wrong_completion_event_id
+        wrong_completion["envelope"]["cause_id"] = inherited_cause_id
+        wrong_completion["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                chained_prior["root_instance_id"],
+                "internal",
+                wrong_completion["envelope"],
+            ]
+        )
+        chained_bad["emissions"][1]["event_id"] = wrong_completion_event_id
+        probes["chained emission inherited cause substitution"] = {
+            "chained-internal-result.json": reseal_core_result(chained_bad)
         }
         numeric_activation = copy.deepcopy(
             artifact("internal-emission-active-result.json").document
