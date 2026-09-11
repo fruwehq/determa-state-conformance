@@ -27,3 +27,6 @@ machines:
         increment:
           action:
             - assign: { count: "count + event.payload.amount" }
+        fail:
+          action:
+            - assign: { count: "count / 0" }

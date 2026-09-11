@@ -2,6 +2,32 @@
   "durable_host_inputs_format": "determa.durable_host.inputs",
   "durable_host_inputs_schema_version": 2,
   "requests": {
+    "complete_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "complete-process",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-retention-root",
+        "revision": "4",
+        "digest": "sha256:bae4f58a7576e69e976d738df96549249e233fc8039dfa9e066ac41c3ba929eb"
+      },
+      "event_id": "retention-complete",
+      "envelope_digest": "sha256:3bae89acd60d9aa2ae0a3e97a9c4ccfe3523131821c5511a62392972eeb106bd",
+      "target": {
+        "root": {
+          "root_instance_id": "checkpoint-retention-root",
+          "root_runtime_id": "sha256:c0f8188724d18531df9609951b3916890e775f0149a51df158a5c7153bf624d4"
+        }
+      },
+      "processing_mode": "delayed",
+      "acceptance_sequence": "1",
+      "queue_sequence": "1"
+    },
     "prune": {
       "operation": "checkpoint_prune_v2",
       "request_id": "prune",
@@ -14,7 +40,7 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
         "revision": "2",
-        "digest": "sha256:ebb370999658290a05778c3cc10216a3f7e3dc56b01c1104f1cb61a46c9ffb70"
+        "digest": "sha256:c680e4124961b577784448ea0db34a9cf01c320fc8623206edd63f0e028ef39c"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "bounded",
@@ -34,7 +60,7 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
         "revision": "3",
-        "digest": "sha256:28e78de21c36bb8af7d001e86be85197636c58fa107c3f0d18257be484a71411"
+        "digest": "sha256:69bdb9050b6697f17c01bff68dec204acd7043b2f546f2b9db985a36044d7162"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "bounded",
@@ -54,7 +80,7 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
         "revision": "3",
-        "digest": "sha256:28e78de21c36bb8af7d001e86be85197636c58fa107c3f0d18257be484a71411"
+        "digest": "sha256:69bdb9050b6697f17c01bff68dec204acd7043b2f546f2b9db985a36044d7162"
       },
       "cutoff_receipt_sequence": "1",
       "target_mode": "bounded",
@@ -73,10 +99,10 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
-        "revision": "2",
-        "digest": "sha256:ebb370999658290a05778c3cc10216a3f7e3dc56b01c1104f1cb61a46c9ffb70"
+        "revision": "3",
+        "digest": "sha256:69bdb9050b6697f17c01bff68dec204acd7043b2f546f2b9db985a36044d7162"
       },
-      "cutoff_receipt_sequence": "2",
+      "cutoff_receipt_sequence": "4",
       "target_mode": "bounded",
       "policy_identifier": "bounded-native-v2",
       "dependency_receipt_sequences": [],
@@ -93,10 +119,28 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
-        "revision": "3",
-        "digest": "sha256:28e78de21c36bb8af7d001e86be85197636c58fa107c3f0d18257be484a71411"
+        "revision": "5",
+        "digest": "sha256:3ca6013ed1f4fe5d1b17e2fe726573ef3f9ce2303af155dbc52e5be0269e388a"
       },
       "tombstone_operation_id": "root-tombstone",
+      "terminal_status": "completed",
+      "retention_mode": "bounded"
+    },
+    "tombstone_running": {
+      "operation": "checkpoint_tombstone_v2",
+      "request_id": "root-tombstone-running",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "checkpoint-retention-root",
+        "revision": "3",
+        "digest": "sha256:69bdb9050b6697f17c01bff68dec204acd7043b2f546f2b9db985a36044d7162"
+      },
+      "tombstone_operation_id": "root-tombstone-running",
       "terminal_status": "completed",
       "retention_mode": "bounded"
     },
@@ -111,8 +155,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
-        "revision": "4",
-        "digest": "sha256:e2d0d1de097028d22aa4a66b06cc882a87c5b4073006b66bd9bd26cbe56da044"
+        "revision": "6",
+        "digest": "sha256:b083ed7761155f6d1540794cb6676bb21363d54613b46476781c99e24d053cae"
       },
       "tombstone_operation_id": "root-tombstone",
       "terminal_status": "completed",
@@ -129,7 +173,7 @@
       },
       "bundle": {
         "file": "machine.yaml",
-        "validated_bundle_fingerprint": "sha256:f4a0ec077d53a0d235bccf4f97c80592d2f73572c15591f330e70b3ad4dad134"
+        "validated_bundle_fingerprint": "sha256:dd1beacb40c82fe15cecec782145ef3ea85d0b1b8e3bf003803ab5f989769b58"
       },
       "machine": {
         "namespace": "conformance.execution_checkpoint_native_retention",
@@ -146,13 +190,14 @@
       "retention_mode": "permanent",
       "existing_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
-        "revision": "4",
-        "digest": "sha256:e2d0d1de097028d22aa4a66b06cc882a87c5b4073006b66bd9bd26cbe56da044"
+        "revision": "6",
+        "digest": "sha256:b083ed7761155f6d1540794cb6676bb21363d54613b46476781c99e24d053cae"
       }
     },
     "delete": {
-      "operation": "checkpoint_tombstone_v2",
-      "request_id": "delete",
+      "operation": "checkpoint_delete_retained_record_v2",
+      "request_id": "delete-root-identity",
+      "deletion_operation_id": "delete-root-identity",
       "scope": {
         "scope_id": "primary",
         "ownership_binding": "owner:primary",
@@ -161,12 +206,13 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
-        "revision": "4",
-        "digest": "sha256:e2d0d1de097028d22aa4a66b06cc882a87c5b4073006b66bd9bd26cbe56da044"
+        "revision": "6",
+        "digest": "sha256:b083ed7761155f6d1540794cb6676bb21363d54613b46476781c99e24d053cae"
       },
-      "tombstone_operation_id": "delete",
-      "terminal_status": "completed",
-      "retention_mode": "bounded"
+      "target": {
+        "kind": "root_identity",
+        "root_instance_id": "checkpoint-retention-root"
+      }
     },
     "resolve_adapter": {
       "operation": "checkpoint_resolve_adapter_v2",

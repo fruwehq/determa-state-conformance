@@ -135,6 +135,5 @@
     "event_id": "persistence-5-event",
     "reason_code": "permanent_processing_failure",
     "released": false
-  },
-  "broker_acknowledged": false
+  }
 }

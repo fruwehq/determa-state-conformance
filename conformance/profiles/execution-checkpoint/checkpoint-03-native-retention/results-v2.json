@@ -8,6 +8,12 @@
       "core_calls": 0,
       "broker_acknowledged": false
     },
+    "processing_committed": {
+      "result": "committed",
+      "mutation": "atomic",
+      "core_calls": 1,
+      "broker_acknowledged": false
+    },
     "replayed": {
       "result": "replayed",
       "mutation": "none",
@@ -27,6 +33,13 @@
       "core_calls": 0,
       "broker_acknowledged": false,
       "code": "checkpoint_revision_conflict"
+    },
+    "running_root": {
+      "result": "rejected",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false,
+      "code": "invalid_execution_checkpoint"
     },
     "no_reuse": {
       "result": "rejected",

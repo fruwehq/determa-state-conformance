@@ -2,8 +2,10 @@ title: native schema-v2 atomic aggregate inbox outbox audit and application comm
 static:
   documents:
     - { file: machine.yaml, valid: true }
+    - { file: target-machine.yaml, valid: true }
 artifacts:
   documents:
+    - { file: migration-descriptor-v2.json, kind: migration_descriptor_v2, valid: true }
     - { file: initial-store-v2.json, kind: durable_host_store_v2, valid: true }
     - { file: committed-store-v2.json, kind: durable_host_store_v2, valid: true }
     - { file: quarantined-store-v2.json, kind: durable_host_store_v2, valid: true }

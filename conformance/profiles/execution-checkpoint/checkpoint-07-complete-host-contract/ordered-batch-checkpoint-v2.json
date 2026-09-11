@@ -9,13 +9,13 @@
       "aggregate_state_format": "determa.aggregate_state",
       "aggregate_state_schema_version": 2,
       "machine_format": 1,
-      "validated_bundle_fingerprint": "sha256:0220d281a519af24f180206a551c5e57fcd4f45d3b4ea98f26ab31f3e336a2bc",
+      "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
       "namespace": "conformance.execution_checkpoint_complete_host_contract",
       "root_machine_id": "counter",
       "root_machine_version": "1",
       "root_instance_id": "complete-host-root",
       "creation_id": "complete-host-create",
-      "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620",
+      "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e",
       "migration_sequence": "0",
       "next_logical_step_sequence": "1",
       "next_output_sequence": "0",
@@ -23,11 +23,11 @@
       "next_queue_sequence": "2",
       "runtimes": [
         {
-          "runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620",
+          "runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e",
           "identity_origin": {
             "kind": "root",
             "definition": {
-              "validated_bundle_fingerprint": "sha256:0220d281a519af24f180206a551c5e57fcd4f45d3b4ea98f26ab31f3e336a2bc",
+              "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
               "machine": {
                 "namespace": "conformance.execution_checkpoint_complete_host_contract",
                 "machine_id": "counter",
@@ -40,11 +40,11 @@
           "target_identity": {
             "root": {
               "root_instance_id": "complete-host-root",
-              "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+              "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
             }
           },
           "current_definition": {
-            "validated_bundle_fingerprint": "sha256:0220d281a519af24f180206a551c5e57fcd4f45d3b4ea98f26ab31f3e336a2bc",
+            "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
             "machine": {
               "namespace": "conformance.execution_checkpoint_complete_host_contract",
               "machine_id": "counter",
@@ -97,7 +97,7 @@
                 "target": {
                   "root": {
                     "root_instance_id": "complete-host-root",
-                    "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                    "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
                   }
                 },
                 "payload": [
@@ -113,7 +113,7 @@
                   ]
                 ]
               },
-              "envelope_digest": "sha256:164f3f3a828459d44ecbb52f7de3afee00aea995e09808b3fd11d23e5e573cbc",
+              "envelope_digest": "sha256:33254b57c926c57b3941642d4ccdc0dc5f1704072997dfb958dbdf399ba81c3c",
               "delivery_mode": "input",
               "acceptance_sequence": "0",
               "queue_sequence": "0",
@@ -130,7 +130,7 @@
                 "target": {
                   "root": {
                     "root_instance_id": "complete-host-root",
-                    "root_runtime_id": "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                    "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
                   }
                 },
                 "payload": [
@@ -146,7 +146,7 @@
                   ]
                 ]
               },
-              "envelope_digest": "sha256:b36e18e76bb74a7629ae0b8b4d3545984033e9955e91bdfbd65d1c595d79bf64",
+              "envelope_digest": "sha256:c7afce676187cf7bf5cbdfa71f0861a07960e40dd20c93843133117bb45bef37",
               "delivery_mode": "input",
               "acceptance_sequence": "1",
               "queue_sequence": "1",
@@ -156,7 +156,7 @@
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:a070ca19df3ffaabb5557e0de198b5be665b6f26e2d84f86f33a40ef67cd4878"
+      "aggregate_state_digest": "sha256:179d2a70a2a97c96325a5237bf08cbe4fbd17fad8c10a0aa3d842e5b0805c141"
     }
   },
   "operation_receipts": [
@@ -164,9 +164,9 @@
       "operation_kind": "creation",
       "receipt_sequence": "0",
       "creation_id": "complete-host-create",
-      "request_digest": "sha256:85a72748e7eb9f10658dff76be4090e74daedc5f71512d5452a32f66b9c84863",
+      "request_digest": "sha256:0ecdfba3037b55b8ebf2898e04d617a5d434095dc48a36b250de416ceb9f3762",
       "committed_revision": "0",
-      "resulting_aggregate_state_digest": "sha256:4848e17fb23b240c737da4b4f3d07dac7602c36e1566860edd95c59a55f98c27",
+      "resulting_aggregate_state_digest": "sha256:790dcce1d676e3f08b13bed5ac2d60fe3983007332a8c07e46f39d4f2682fce4",
       "status": "running",
       "fault": null,
       "emission_references": []
@@ -175,7 +175,7 @@
       "operation_kind": "acceptance",
       "receipt_sequence": "1",
       "event_id": "batch-first",
-      "request_digest": "sha256:164f3f3a828459d44ecbb52f7de3afee00aea995e09808b3fd11d23e5e573cbc",
+      "request_digest": "sha256:33254b57c926c57b3941642d4ccdc0dc5f1704072997dfb958dbdf399ba81c3c",
       "acceptance_sequence": "0",
       "accepted_revision": "1",
       "delivery_mode": "input"
@@ -184,7 +184,7 @@
       "operation_kind": "acceptance",
       "receipt_sequence": "2",
       "event_id": "batch-second",
-      "request_digest": "sha256:b36e18e76bb74a7629ae0b8b4d3545984033e9955e91bdfbd65d1c595d79bf64",
+      "request_digest": "sha256:c7afce676187cf7bf5cbdfa71f0861a07960e40dd20c93843133117bb45bef37",
       "acceptance_sequence": "1",
       "accepted_revision": "1",
       "delivery_mode": "input"
@@ -203,5 +203,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:575a539d6980ab83cb81acde8976afc866c882e89fb94e05a09769a0abf54bdc"
+  "execution_checkpoint_digest": "sha256:55f4c4ea97844931aa8be0cd1cc872fde9a80de4911b0fbbe9bd7ec72ad8771e"
 }

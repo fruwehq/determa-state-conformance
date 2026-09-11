@@ -10,6 +10,7 @@ artifacts:
     - { file: spawned-child-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-root-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-child-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-owner-event-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
     - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
@@ -63,10 +64,18 @@ durable_host_vectors:
     result: { file: results-v2.json, pointer: /results/committed }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: terminal_spawned_root_processing
-    covers: [terminal_spawned_root_processing]
+    covers: [terminal_spawned_root_processing, terminal_spawned_unhandled_allocates_no_logical_step]
     operation: checkpoint_step_v2
     checkpoint_before: spawned-child-terminal-checkpoint-v2.json
-    checkpoint_after: spawned-terminal-checkpoint-v2.json
+    checkpoint_after: spawned-owner-event-terminal-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/root_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_done_processing
+    covers: [terminal_spawned_done_processing, terminal_spawned_completion_reports_aggregate_status]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-owner-event-terminal-checkpoint-v2.json
+    checkpoint_after: spawned-terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/done_process }
     result: { file: results-v2.json, pointer: /results/committed }
     expect: { result: committed, mutation: atomic, core_calls: 1 }

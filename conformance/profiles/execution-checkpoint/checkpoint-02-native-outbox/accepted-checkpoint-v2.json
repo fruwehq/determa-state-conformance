@@ -1,7 +1,7 @@
 {
   "execution_checkpoint_format": "determa.execution_checkpoint",
   "execution_checkpoint_schema_version": 2,
-  "root_instance_id": "complete-host-root",
+  "root_instance_id": "checkpoint-outbox-root",
   "revision": "1",
   "root_record": {
     "status": "retained",
@@ -9,13 +9,13 @@
       "aggregate_state_format": "determa.aggregate_state",
       "aggregate_state_schema_version": 2,
       "machine_format": 1,
-      "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
-      "namespace": "conformance.execution_checkpoint_complete_host_contract",
+      "validated_bundle_fingerprint": "sha256:27ff7b4351eda0ecdf5d622fa513c4b2a2fb6bb26a547bd7d4291c21918d55e9",
+      "namespace": "conformance.execution_checkpoint_native_outbox",
       "root_machine_id": "counter",
       "root_machine_version": "1",
-      "root_instance_id": "complete-host-root",
-      "creation_id": "complete-host-create",
-      "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e",
+      "root_instance_id": "checkpoint-outbox-root",
+      "creation_id": "checkpoint-outbox-create",
+      "root_runtime_id": "sha256:4ec9ca5ff79dbe8b50d39e7160bf663fe19efb36292b1c315db62cf2f238e802",
       "migration_sequence": "0",
       "next_logical_step_sequence": "1",
       "next_output_sequence": "0",
@@ -23,30 +23,30 @@
       "next_queue_sequence": "1",
       "runtimes": [
         {
-          "runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e",
+          "runtime_id": "sha256:4ec9ca5ff79dbe8b50d39e7160bf663fe19efb36292b1c315db62cf2f238e802",
           "identity_origin": {
             "kind": "root",
             "definition": {
-              "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+              "validated_bundle_fingerprint": "sha256:27ff7b4351eda0ecdf5d622fa513c4b2a2fb6bb26a547bd7d4291c21918d55e9",
               "machine": {
-                "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                "namespace": "conformance.execution_checkpoint_native_outbox",
                 "machine_id": "counter",
                 "machine_version": "1",
                 "root_definition_pointer": "/machines/0/root"
               }
             },
-            "root_instance_id": "complete-host-root"
+            "root_instance_id": "checkpoint-outbox-root"
           },
           "target_identity": {
             "root": {
-              "root_instance_id": "complete-host-root",
-              "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
+              "root_instance_id": "checkpoint-outbox-root",
+              "root_runtime_id": "sha256:4ec9ca5ff79dbe8b50d39e7160bf663fe19efb36292b1c315db62cf2f238e802"
             }
           },
           "current_definition": {
-            "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+            "validated_bundle_fingerprint": "sha256:27ff7b4351eda0ecdf5d622fa513c4b2a2fb6bb26a547bd7d4291c21918d55e9",
             "machine": {
-              "namespace": "conformance.execution_checkpoint_complete_host_contract",
+              "namespace": "conformance.execution_checkpoint_native_outbox",
               "machine_id": "counter",
               "machine_version": "1",
               "root_definition_pointer": "/machines/0/root"
@@ -88,32 +88,32 @@
           "ready_mailbox": [
             {
               "envelope": {
-                "event": "increment",
-                "event_id": "complete-increment",
-                "cause_id": "complete-increment",
+                "event": "emit_outputs",
+                "event_id": "delivery-outputs",
+                "cause_id": "delivery-outputs",
                 "source": {
                   "host": true
                 },
                 "target": {
                   "root": {
-                    "root_instance_id": "complete-host-root",
-                    "root_runtime_id": "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
+                    "root_instance_id": "checkpoint-outbox-root",
+                    "root_runtime_id": "sha256:4ec9ca5ff79dbe8b50d39e7160bf663fe19efb36292b1c315db62cf2f238e802"
                   }
                 },
                 "payload": [
                   "map",
                   [
                     [
-                      "amount",
+                      "batch_id",
                       [
-                        "integer",
-                        "1"
+                        "string",
+                        "batch"
                       ]
                     ]
                   ]
                 ]
               },
-              "envelope_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a",
+              "envelope_digest": "sha256:62f2c1135b2ac2027aa4bdfd5a53bbc797b90cfdcaa663d6449fe60e52987eb7",
               "delivery_mode": "input",
               "acceptance_sequence": "0",
               "queue_sequence": "0",
@@ -123,17 +123,17 @@
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:ed7fb8b7e815660bb9f0a01b25c9e6f10d903302266047fd9a65ee29ce297650"
+      "aggregate_state_digest": "sha256:b6dc7d5bab04cbb29a29759b2118ffb84071b254fd41b1e9e72516a2d2012712"
     }
   },
   "operation_receipts": [
     {
       "operation_kind": "creation",
       "receipt_sequence": "0",
-      "creation_id": "complete-host-create",
-      "request_digest": "sha256:0ecdfba3037b55b8ebf2898e04d617a5d434095dc48a36b250de416ceb9f3762",
+      "creation_id": "checkpoint-outbox-create",
+      "request_digest": "sha256:28fa2b16718eb4ea9137392c9a2aca24b39b629f83ce5718c87956c494b333c9",
       "committed_revision": "0",
-      "resulting_aggregate_state_digest": "sha256:790dcce1d676e3f08b13bed5ac2d60fe3983007332a8c07e46f39d4f2682fce4",
+      "resulting_aggregate_state_digest": "sha256:153270dc9e31d800039c76912532a6b07425bc0d8f6de859777c1e96459d46d7",
       "status": "running",
       "fault": null,
       "emission_references": []
@@ -141,8 +141,8 @@
     {
       "operation_kind": "acceptance",
       "receipt_sequence": "1",
-      "event_id": "complete-increment",
-      "request_digest": "sha256:76676491211e991d728d54e2c94ea121ace5ae5ac58e9a8a7edb89cc2b0b588a",
+      "event_id": "delivery-outputs",
+      "request_digest": "sha256:62f2c1135b2ac2027aa4bdfd5a53bbc797b90cfdcaa663d6449fe60e52987eb7",
       "acceptance_sequence": "0",
       "accepted_revision": "1",
       "delivery_mode": "input"
@@ -161,5 +161,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:5f671cf8193dc3ed22a9eccfeecc16ebf9b3fc9c44bf1183c79d6935ec1938ab"
+  "execution_checkpoint_digest": "sha256:7bb55d45e3e4894a5ca0c78f8b0a481c9d4ba8191afbc6de6bee3848737851bd"
 }

@@ -135,7 +135,7 @@ durable_host_vectors:
       operation: checkpoint_admit_v2
       request_id: malformed-member-before-invalid-mode
       scope: { scope_id: primary, ownership_binding: "owner:primary", principal: conformance-host, authorization: authorized }
-      expected_checkpoint: { root_instance_id: complete-host-root, revision: "0", digest: "sha256:d601106db7983ceb3bdccf94bbfb8b30688cc4241adf79c66a8cb73a85ed1325" }
+      expected_checkpoint: { root_instance_id: complete-host-root, revision: "0", digest: "sha256:e13cdcf71a0ba3ca29af0f9affdff0e7e2e2de3368fc329c40f2919fbce9122e" }
       ordered_member_sources:
         - utf8_json: '{"delivery_mode":"input"'
         - json_value:
@@ -148,7 +148,7 @@ durable_host_vectors:
               target:
                 root:
                   root_instance_id: complete-host-root
-                  root_runtime_id: "sha256:2ea9e06d6f465e8f89cbfc9ac4dc9f23b59c9fe7e43a27765e80418761755620"
+                  root_runtime_id: "sha256:e2ebbbcc24b70c6f67e6ce5b00990ee3bbc9139c270240c9f59964e7ea84e91e"
               payload: [map, [[amount, [integer, "1"]]]]
             envelope_digest: "sha256:5ddbd771be6a8aed5b9bd3b4bd9dc15255970214031aa2d18ad72c1b6f42c3e7"
     result: { file: results-v2.json, pointer: /results/malformed_delivery }

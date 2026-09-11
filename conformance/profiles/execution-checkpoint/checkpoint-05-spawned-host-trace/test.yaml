@@ -10,6 +10,8 @@ artifacts:
     - { file: spawned-child-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-root-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: spawned-child-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-owner-event-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-owner-done-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
     - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
 durable_host_vectors:
@@ -59,5 +61,21 @@ durable_host_vectors:
     checkpoint_before: spawned-root-pending-checkpoint-v2.json
     checkpoint_after: spawned-child-terminal-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/child_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: spawned_owner_queue_order
+    covers: [spawned_owner_queue_order, spawned_unhandled_allocates_no_logical_step]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-child-terminal-checkpoint-v2.json
+    checkpoint_after: spawned-owner-event-terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/root_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: spawned_owner_done_processing
+    covers: [spawned_owner_done_processing, spawned_completion_reports_aggregate_status]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-owner-event-terminal-checkpoint-v2.json
+    checkpoint_after: spawned-owner-done-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/done_process }
     result: { file: results-v2.json, pointer: /results/committed }
     expect: { result: committed, mutation: atomic, core_calls: 1 }

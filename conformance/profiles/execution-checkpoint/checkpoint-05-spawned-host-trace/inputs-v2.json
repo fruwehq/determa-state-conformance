@@ -120,10 +120,10 @@
             },
             "target": {
               "spawned_instance": {
+                "root_instance_id": "owned-migration-root",
                 "instance_id": "sha256:49505d9f32be464a974ec0a1231a10a350ea755fce6bd2f045f4487567c9c279",
                 "machine_id": "payment",
-                "machine_version": "1",
-                "root_instance_id": "owned-migration-root"
+                "machine_version": "1"
               }
             },
             "payload": [
@@ -200,10 +200,10 @@
       "envelope_digest": "sha256:a5061de8f26ee25138a9332b19ed194537aa60fa6dac6b88f31550a110efd5b6",
       "target": {
         "spawned_instance": {
+          "root_instance_id": "owned-migration-root",
           "instance_id": "sha256:49505d9f32be464a974ec0a1231a10a350ea755fce6bd2f045f4487567c9c279",
           "machine_id": "payment",
-          "machine_version": "1",
-          "root_instance_id": "owned-migration-root"
+          "machine_version": "1"
         }
       },
       "processing_mode": "delayed",
@@ -222,7 +222,7 @@
       "expected_checkpoint": {
         "root_instance_id": "owned-migration-root",
         "revision": "5",
-        "digest": "sha256:2b535ca2b558a9951d5006b786531fe8d371162cf636775eed69b283337570b4"
+        "digest": "sha256:6b24e289c8cff6442876c2622f5e87c128854a5b971101e8f2273094aa6250bb"
       },
       "event_id": "spawned-root-followup",
       "envelope_digest": "sha256:78b140680cf6017300e79b5fee981ba908892a50cc186286bf6d140a67e4d20b",
@@ -235,6 +235,32 @@
       "processing_mode": "delayed",
       "acceptance_sequence": "2",
       "queue_sequence": "2"
+    },
+    "done_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "checkpoint-05-spawned-host-trace-done-process",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "owned-migration-root",
+        "revision": "6",
+        "digest": "sha256:182f46a1f33031eb5085b2f24935823bc0d4a4dc979c693455b388bc4ca4d2c2"
+      },
+      "event_id": "sha256:0d260575ca7bf60825f14c27feece49b99d1826d292a868eef2392b2350bc59e",
+      "envelope_digest": "sha256:38e254499739357cd19928842907c462e8286114156baeb65979403626168c0a",
+      "target": {
+        "root": {
+          "root_instance_id": "owned-migration-root",
+          "root_runtime_id": "sha256:5293c0887061d9a8b83471697151f29f16284cf75e0706e36f7d5ca591654030"
+        }
+      },
+      "processing_mode": "delayed",
+      "acceptance_sequence": "3",
+      "queue_sequence": "3"
     }
   }
 }

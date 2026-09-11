@@ -19,13 +19,18 @@ from validate_conformance import (
     host_profile_failure_code,
     load_fixture_document,
     normalize_raw_admission_request,
+    validate_aggregate_against_bundle,
+    validate_checkpoint_derivation,
     validate_cross_scope_pair,
     validate_durable_host_vectors,
+    validate_persistence_derivation,
     validate_request_checkpoint_binding,
 )
+from generate_execution_checkpoint_profile import process
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance" / "profiles" / "execution-checkpoint"
+PERSISTENCE_PROFILE = ROOT / "conformance" / "profiles" / "persistence"
 
 
 def load(path: Path) -> dict:
@@ -134,6 +139,303 @@ class DurableHostValidatorTests(unittest.TestCase):
             ),
             "admission failure is not request-derived",
         )
+
+    def test_correlation_requires_presence_not_retained_effect_lookup(self) -> None:
+        self._assert_complete_case_mutation_fails(
+            lambda requests: requests["invalid_correlation"]["envelopes"][0][
+                "envelope"
+            ].update(correlation_id="caller-owned-correlation"),
+            "admission failure is not request-derived",
+        )
+
+    def test_unhandled_delivery_allocates_no_logical_step(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        request = load(case / "inputs-v2.json")["requests"]["unhandled"]
+        result = load(case / "results-v2.json")["results"]["committed"]
+        before = load(case / "unhandled-accepted-checkpoint-v2.json")
+        after = load(case / "unhandled-checkpoint-v2.json")
+        after["root_record"]["aggregate_state"]["next_logical_step_sequence"] = "2"
+        with self.assertRaisesRegex(ValidationFailure, "logical step count"):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                before,
+                after,
+                "unhandled mutation",
+                case / "machine.yaml",
+            )
+
+    def test_stale_pruning_must_have_a_newer_cutoff(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["prune_stale"]
+        request["cutoff_receipt_sequence"] = "2"
+        result = load(case / "results-v2.json")["results"]["stale"]
+        current = load(case / "completed-checkpoint-v2.json")
+        with self.assertRaisesRegex(ValidationFailure, "newer mutation"):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                current,
+                current,
+                "stale prune mutation",
+                case / "machine.yaml",
+            )
+
+    def test_running_root_is_required_for_tombstone_rejection(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["tombstone_running"]
+        result = load(case / "results-v2.json")["results"]["running_root"]
+        completed = load(case / "completed-checkpoint-v2.json")
+        with self.assertRaisesRegex(ValidationFailure, "running root"):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                completed,
+                completed,
+                "terminal tombstone mutation",
+                case / "machine.yaml",
+            )
+
+    def test_combined_persistence_transaction_uses_one_revision(self) -> None:
+        case = (
+            PERSISTENCE_PROFILE
+            / "persistence-02-atomic-aggregate-inbox-outbox-audit"
+        )
+        request = load(case / "inputs-v2.json")["requests"]["process"]
+        result = load(case / "results-v2.json")["results"]["committed"]
+        before = load(case / "initial-store-v2.json")
+        after = load(case / "committed-store-v2.json")
+        after["checkpoint"]["revision"] = "2"
+        descriptor = load(case / "migration-descriptor-v2.json")
+        with self.assertRaisesRegex(ValidationFailure, "exactly once"):
+            validate_persistence_derivation(
+                request,
+                result,
+                before,
+                after,
+                "combined persistence mutation",
+                {"migration-descriptor-v2.json": descriptor},
+            )
+
+    def test_spawned_completion_disposes_the_child(self) -> None:
+        case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
+
+        def retain_completed_child(document: dict) -> None:
+            before = load(case / "spawned-root-pending-checkpoint-v2.json")
+            child = next(
+                copy.deepcopy(runtime)
+                for runtime in before["root_record"]["aggregate_state"]["runtimes"]
+                if runtime["relation"]["kind"] == "owned_spawned_instance"
+            )
+            child["status"] = "completed"
+            child["active_leaf_state_definition_pointers"] = []
+            child["active_state_activations"] = []
+            child["variables"] = []
+            child["ready_mailbox"] = []
+            document["root_record"]["aggregate_state"]["runtimes"].append(child)
+
+        self._assert_case_artifact_mutation_fails(
+            case,
+            "spawned-child-terminal-checkpoint-v2.json",
+            retain_completed_child,
+            "spawned completion disposal",
+        )
+
+    def test_instance_reference_machine_version_is_logically_integer(self) -> None:
+        case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
+        checkpoint = load(case / "spawned-root-pending-checkpoint-v2.json")
+        aggregate = checkpoint["root_record"]["aggregate_state"]
+        owner = next(
+            runtime
+            for runtime in aggregate["runtimes"]
+            if runtime["relation"]["kind"] == "root"
+        )
+        reference = next(
+            variable
+            for variable in owner["variables"]
+            if variable["variable_declaration_pointer"].endswith(
+                "/payment_reference"
+            )
+        )["value"]
+        fields = dict(reference[1])
+        self.assertEqual(fields["machine_version"], ["integer", "1"])
+        fields["machine_version"] = ["string", "1"]
+        reference[1] = [[name, fields[name]] for name, _ in reference[1]]
+        with self.assertRaisesRegex(
+            ValidationFailure, "machine_version is not a canonical positive integer"
+        ):
+            validate_aggregate_against_bundle(aggregate, case / "machine.yaml")
+
+    def test_every_stale_instance_reference_field_is_validated(self) -> None:
+        case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
+        checkpoint = load(case / "spawned-child-terminal-checkpoint-v2.json")
+        baseline = checkpoint["root_record"]["aggregate_state"]
+        mutations = {
+            "root_instance_id": ["integer", "42"],
+            "instance_id": ["string", ""],
+            "machine_id": ["boolean", True],
+            "machine_version": ["integer", "01"],
+        }
+        for field, replacement in mutations.items():
+            with self.subTest(field=field):
+                aggregate = copy.deepcopy(baseline)
+                owner = next(
+                    runtime
+                    for runtime in aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                reference = next(
+                    variable
+                    for variable in owner["variables"]
+                    if variable["variable_declaration_pointer"].endswith(
+                        "/payment_reference"
+                    )
+                )["value"]
+                fields = dict(reference[1])
+                fields[field] = replacement
+                reference[1] = [[name, fields[name]] for name, _ in reference[1]]
+                with self.assertRaisesRegex(
+                    ValidationFailure, f"instance reference {field}"
+                ):
+                    validate_aggregate_against_bundle(
+                        aggregate, case / "machine.yaml"
+                    )
+
+    def test_outbox_effects_are_derived_from_machine_actions(self) -> None:
+        case = PROFILE / "checkpoint-02-native-outbox"
+        request = load(case / "inputs-v2.json")["requests"]["pending"]
+        result = load(case / "results-v2.json")["results"][
+            "processing_committed"
+        ]
+        before = load(case / "accepted-checkpoint-v2.json")
+        after = load(case / "pending-checkpoint-v2.json")
+        after["pending_outbox_intents"][0]["intent"]["effect_id"] = (
+            "sha256:" + "0" * 64
+        )
+        with self.assertRaisesRegex(
+            ValidationFailure, "external effects are not machine-derived"
+        ):
+            validate_checkpoint_derivation(
+                request, result, before, after, "effect mutation", case / "machine.yaml"
+            )
+
+    def test_external_effect_derivation_fails_closed_on_guarded_handler(self) -> None:
+        case = PROFILE / "checkpoint-02-native-outbox"
+        with tempfile.TemporaryDirectory() as temporary:
+            machine_path = Path(temporary) / "machine.yaml"
+            machine_path.write_text(
+                (case / "machine.yaml").read_text(encoding="utf-8").replace(
+                    "        emit_outputs:\n",
+                    '        emit_outputs:\n          guard: "false"\n',
+                    1,
+                ),
+                encoding="utf-8",
+            )
+            before = load(case / "accepted-checkpoint-v2.json")
+            with self.assertRaisesRegex(RuntimeError, "cannot select guarded"):
+                process(before, bundle_path=machine_path)
+
+            request = load(case / "inputs-v2.json")["requests"]["pending"]
+            result = load(case / "results-v2.json")["results"][
+                "processing_committed"
+            ]
+            after = load(case / "pending-checkpoint-v2.json")
+            with self.assertRaisesRegex(
+                ValidationFailure, "handler selection is unsupported"
+            ):
+                validate_checkpoint_derivation(
+                    request,
+                    result,
+                    before,
+                    after,
+                    "guard mutation",
+                    machine_path,
+                )
+
+    def test_deletion_probe_requires_a_retained_referenced_effect(self) -> None:
+        case = PROFILE / "checkpoint-02-native-outbox"
+        request = load(case / "inputs-v2.json")["requests"]["delete"]
+        result = load(case / "results-v2.json")["results"]["deletion_rejected"]
+        checkpoint = load(case / "effect-tombstone-checkpoint-v2.json")
+        request["target"]["effect_id"] = "sha256:" + "0" * 64
+        with self.assertRaisesRegex(
+            ValidationFailure, "deletion target is not retained and referenced"
+        ):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                checkpoint,
+                checkpoint,
+                "effect deletion mutation",
+                case / "machine.yaml",
+            )
+
+    def test_deletion_probe_requires_the_checkpoint_root_identity(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["delete"]
+        result = load(case / "results-v2.json")["results"][
+            "deletion_unsupported"
+        ]
+        checkpoint = load(case / "root-tombstone-checkpoint-v2.json")
+        request["target"]["root_instance_id"] = "different-root"
+        with self.assertRaisesRegex(
+            ValidationFailure, "does not identify this checkpoint"
+        ):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                checkpoint,
+                checkpoint,
+                "root deletion mutation",
+                case / "machine.yaml",
+            )
+
+    def test_deletion_probe_operation_identity_cannot_conflict_with_history(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["delete"]
+        result = load(case / "results-v2.json")["results"][
+            "deletion_unsupported"
+        ]
+        checkpoint = load(case / "root-tombstone-checkpoint-v2.json")
+        request["request_id"] = "root-tombstone"
+        request["deletion_operation_id"] = "root-tombstone"
+        with self.assertRaisesRegex(
+            ValidationFailure, "conflicts with retained history"
+        ):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                checkpoint,
+                checkpoint,
+                "deletion identity mutation",
+                case / "machine.yaml",
+            )
+
+    def test_completed_transition_allocates_final_state_activation(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["complete_process"]
+        result = load(case / "results-v2.json")["results"][
+            "processing_committed"
+        ]
+        before = load(case / "completion-accepted-checkpoint-v2.json")
+        after = load(case / "completed-checkpoint-v2.json")
+        runtime = after["root_record"]["aggregate_state"]["runtimes"][0]
+        runtime["next_state_activation_sequences"] = [
+            item
+            for item in runtime["next_state_activation_sequences"]
+            if not item["definition_pointer"].endswith("/states/finished")
+        ]
+        with self.assertRaisesRegex(
+            ValidationFailure, "did not allocate its state activation"
+        ):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                before,
+                after,
+                "completion mutation",
+                case / "machine.yaml",
+            )
 
     def test_raw_malformed_member_precedes_normalized_members(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
@@ -266,6 +568,28 @@ class DurableHostValidatorTests(unittest.TestCase):
             mutate(inputs["requests"])
             inputs_path.write_text(
                 json.dumps(inputs, indent=2, ensure_ascii=True) + "\n",
+                encoding="utf-8",
+            )
+            test = load_fixture_document(mutated_case / "test.yaml")
+            with self.assertRaisesRegex(ValidationFailure, pattern):
+                validate_durable_host_vectors(
+                    mutated_case,
+                    test,
+                    set(mutated_case.glob("*.json")),
+                    self.input_validator,
+                )
+
+    def _assert_case_artifact_mutation_fails(
+        self, case: Path, filename: str, mutate, pattern: str
+    ) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            artifact_path = mutated_case / filename
+            document = load(artifact_path)
+            mutate(document)
+            artifact_path.write_text(
+                json.dumps(document, indent=2, ensure_ascii=True) + "\n",
                 encoding="utf-8",
             )
             test = load_fixture_document(mutated_case / "test.yaml")

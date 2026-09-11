@@ -2,7 +2,8 @@
 
 This profile fixes the transaction trace required by SPEC sections 16.12 and 17.9.
 Each case names exact schema-version-2 store snapshots, operation inputs, outcomes, and
-ordered host calls. Store metadata remains outside portable checkpoint bytes.
+ordered host calls. Broker acknowledgement is an operation/call-trace observation after
+commit, never a member of the durable store snapshot or portable checkpoint bytes.
 
 The six required cases are:
 
@@ -31,5 +32,8 @@ capabilities, exact composed host profile, and failure policy. Profile requireme
 derived from the selected profile rather than accepted as caller claims. Validation binds those fields
 to the before/after store snapshots and requires inbox identity, checkpoint revisions,
 outbox and audit state, and application rows to commit as one request-derived result.
+Every changing combined transaction advances the checkpoint revision exactly once,
+regardless of how many aggregate, inbox, outbox, audit, and application records it
+commits.
 Quarantine release requests name the retained event, digest, reason, scope, and release
 authorization.
