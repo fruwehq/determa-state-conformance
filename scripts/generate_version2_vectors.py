@@ -564,6 +564,7 @@ def envelope_entry(
     acceptance_sequence: int,
     queue_sequence: int,
     delivery_mode: str = "input",
+    cause_id: str | None = None,
     source: dict[str, Any] | None = None,
     payload: list[Any] | None = None,
     deferral_count: int = 0,
@@ -571,7 +572,7 @@ def envelope_entry(
     envelope = {
         "event": event,
         "event_id": event_id,
-        "cause_id": event_id,
+        "cause_id": event_id if cause_id is None else cause_id,
         "source": {"host": True} if source is None else source,
         "target": copy.deepcopy(runtime["target_identity"]),
         "payload": ["map", []] if payload is None else payload,
@@ -937,9 +938,6 @@ def produce_mailbox() -> dict[str, bytes]:
     outputs["spawn-isolation-aggregate.json"] = spawned
     spawned_after = copy.deepcopy(spawned)
     spawned_runtimes(spawned_after)[0]["ready_mailbox"].pop(0)
-    spawned_after["next_logical_step_sequence"] = str(
-        int(spawned_after["next_logical_step_sequence"]) + 1
-    )
     spawned_after = seal_aggregate(spawned_after)
     outputs["spawn-isolation-result.json"] = step_result(
         spawned_after, "unhandled"
@@ -1013,6 +1011,7 @@ def produce_mailbox() -> dict[str, bytes]:
             acceptance_sequence=int(lifecycle_before["next_acceptance_sequence"]) + ordinal,
             queue_sequence=int(lifecycle_before["next_queue_sequence"]) + ordinal,
             delivery_mode="internal",
+            cause_id=source_entry["envelope"]["cause_id"],
             source={"runtime": copy.deepcopy(source_runtime["target_identity"])},
         )
         emitted_entries.append(emitted_entry)
@@ -1174,6 +1173,7 @@ def produce_mailbox() -> dict[str, bytes]:
         acceptance_sequence=int(retained_before["next_acceptance_sequence"]),
         queue_sequence=int(retained_before["next_queue_sequence"]),
         delivery_mode="internal",
+        cause_id=retained_source["envelope"]["cause_id"],
         source={"runtime": copy.deepcopy(retained_root["target_identity"])},
     )
     faulty_template["ready_mailbox"] = [pending_entry]
@@ -1236,7 +1236,8 @@ def produce_mailbox() -> dict[str, bytes]:
         acceptance_sequence=int(retained_faulted["next_acceptance_sequence"]) + 1,
         queue_sequence=int(retained_faulted["next_queue_sequence"]) + 1,
         delivery_mode="internal",
-        source={"runtime": copy.deepcopy(faulty_template["target_identity"])},
+        cause_id=initialization_cause_id,
+        source={"system": "system:component_failure"},
         payload=typed_value(
             {
                 "component_id": "faulty",
@@ -1309,6 +1310,7 @@ def produce_mailbox() -> dict[str, bytes]:
         acceptance_sequence=int(cancellation_before["next_acceptance_sequence"]),
         queue_sequence=int(cancellation_before["next_queue_sequence"]),
         delivery_mode="internal",
+        cause_id=cancellation_source["envelope"]["cause_id"],
         source={"runtime": copy.deepcopy(cancellation_root["target_identity"])},
     )
     cancelled = copy.deepcopy(cancellation_before)
@@ -1364,6 +1366,7 @@ def produce_mailbox() -> dict[str, bytes]:
     self_entry = envelope_entry(
         natural_before, natural_target, event="component_work", event_id=self_event_id,
         acceptance_sequence=3, queue_sequence=3, delivery_mode="internal",
+        cause_id=natural_cause["envelope"]["cause_id"],
         source={"runtime": copy.deepcopy(natural_target["target_identity"])},
     )
     completion_event_id = digest(
@@ -1376,7 +1379,8 @@ def produce_mailbox() -> dict[str, bytes]:
         natural_before, natural_root, event="determa.component_completed",
         event_id=completion_event_id, acceptance_sequence=4, queue_sequence=4,
         delivery_mode="internal",
-        source={"runtime": copy.deepcopy(natural_target["target_identity"])},
+        cause_id=natural_cause["envelope"]["cause_id"],
+        source={"system": "system:component_completion"},
         payload=typed_value({"component_id": "left", "component_runtime_id": natural_target["runtime_id"]}),
     )
     naturally_completed = copy.deepcopy(natural_before)
@@ -1442,6 +1446,7 @@ def produce_mailbox() -> dict[str, bytes]:
     aggregate_entry = envelope_entry(
         aggregate_before, aggregate_root, event="component_work", event_id=aggregate_event_id,
         acceptance_sequence=3, queue_sequence=3, delivery_mode="internal",
+        cause_id=aggregate_cause["envelope"]["cause_id"],
         source={"runtime": copy.deepcopy(aggregate_root["target_identity"])},
     )
     aggregate_completed = copy.deepcopy(aggregate_before)
@@ -1708,11 +1713,12 @@ def produce_mailbox() -> dict[str, bytes]:
         reserved_admission_before,
         reserved_target,
         event="determa.component_completed",
-        event_id="reserved-component-completed-admission",
+        event_id=completion_event_id,
         acceptance_sequence=int(reserved_admission_before["next_acceptance_sequence"]),
         queue_sequence=int(reserved_admission_before["next_queue_sequence"]),
         delivery_mode="internal",
-        source={"runtime": copy.deepcopy(reserved_source["target_identity"])},
+        cause_id=natural_cause["envelope"]["cause_id"],
+        source={"system": "system:component_completion"},
         payload=typed_value(
             {
                 "component_id": reserved_source["relation"]["component_id"],
@@ -3017,6 +3023,7 @@ def produce_checkpoint() -> dict[str, bytes]:
         native_aggregate, native_root, event="internal_increment", event_id=native_event_id,
         acceptance_sequence=int(native_aggregate["next_acceptance_sequence"]),
         queue_sequence=int(native_aggregate["next_queue_sequence"]), delivery_mode="internal",
+        cause_id=native_host_cause["envelope"]["cause_id"],
         source={"runtime": copy.deepcopy(native_root["target_identity"])},
         payload=typed_value({"amount": 5}),
     )
