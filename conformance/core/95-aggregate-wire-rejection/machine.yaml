@@ -1,5 +1,0 @@
-format: 1
-namespace: example.persistence
-machines:
-  - machine_id: job
-    root: {}

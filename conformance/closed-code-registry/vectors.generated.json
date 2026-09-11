@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "16028a33611f6851dd1560b78e5e6de892500e9cc339d92c7f45bed82386e7a7",
+  "registry_sha256": "00400702564d69cd1243b230f1310feab0f5a890bade20763ffeabdc38b93f9b",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -22,14 +22,12 @@
         "injected_pre_commit_failure",
         "invalid_execution_checkpoint",
         "operation_id_conflict",
-        "physical_deletion_unsupported",
         "response_lost_after_commit"
       ]
     },
     {
       "id": "checkpoint_pre_acceptance_failure",
       "codes": [
-        "checkpoint_upgrade_required",
         "delivery_digest_mismatch",
         "duplicate_event_id_in_batch",
         "event_id_conflict",

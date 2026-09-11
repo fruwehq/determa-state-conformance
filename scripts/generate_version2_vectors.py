@@ -8,7 +8,6 @@ import copy
 import hashlib
 import json
 import struct
-import tempfile
 from pathlib import Path
 from typing import Any
 
@@ -17,7 +16,6 @@ from ruamel.yaml import YAML
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MAILBOX = ROOT / "conformance" / "core" / "117-version2-mailboxes"
 PERSISTENCE = ROOT / "conformance" / "core" / "118-version2-persistence"
 CHECKPOINT = (
     ROOT
@@ -388,24 +386,8 @@ def seal_aggregate(value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
-def seal_aggregate_v1(value: dict[str, Any]) -> dict[str, Any]:
-    value = copy.deepcopy(value)
-    value.pop("aggregate_state_digest", None)
-    value["aggregate_state_digest"] = digest(
-        ["determa-aggregate-state-digest-1", value]
-    )
-    return value
 
 
-def project_aggregate_v1(value: dict[str, Any]) -> dict[str, Any]:
-    result = copy.deepcopy(value)
-    result["aggregate_state_schema_version"] = 1
-    result.pop("next_acceptance_sequence")
-    result.pop("next_queue_sequence")
-    for runtime in result["runtimes"]:
-        runtime.pop("ready_mailbox")
-        runtime.pop("deferred_mailbox")
-    return seal_aggregate_v1(result)
 
 
 def reseal_aggregate_without_normalizing(value: dict[str, Any]) -> dict[str, Any]:
@@ -436,8 +418,8 @@ def maintenance_request_digest(
 ) -> str:
     return digest(
         [
-            "determa-maintenance-migration-request-digest-1",
-            "1",
+            "determa-maintenance-migration-request-digest-2",
+            "2",
             root_instance_id,
             operation_id,
             source_aggregate_state_digest,
@@ -455,8 +437,8 @@ def native_v2_checkpoint(
     aggregate = create_v2_root(bundle_path, request)
     creation_request_digest = digest(
         [
-            "determa-creation-request-digest-1",
-            "1",
+            "determa-creation-request-digest-2",
+            "2",
             aggregate["validated_bundle_fingerprint"],
             aggregate["namespace"],
             aggregate["root_machine_id"],
@@ -510,9 +492,7 @@ def migrate_compatible_aggregate(
     source: dict[str, Any], descriptor: dict[str, Any]
 ) -> dict[str, Any]:
     result = copy.deepcopy(source)
-    target_fingerprint = descriptor["base_descriptor"][
-        "target_validated_bundle_fingerprint"
-    ]
+    target_fingerprint = descriptor["target_validated_bundle_fingerprint"]
     result["validated_bundle_fingerprint"] = target_fingerprint
     result["migration_sequence"] = str(int(result["migration_sequence"]) + 1)
     for runtime in result["runtimes"]:
@@ -528,7 +508,7 @@ def v2_migration_audit_record(
     descriptor: dict[str, Any],
 ) -> dict[str, Any]:
     return {
-        "migration_audit_record_schema_version": 1,
+        "migration_audit_record_schema_version": 2,
         "root_instance_id": source["root_instance_id"],
         "root_runtime_id": source["root_runtime_id"],
         "migration_sequence": target["migration_sequence"],
@@ -568,6 +548,9 @@ def commit_v2_maintenance_migration(
         "source_aggregate_state_digest": checkpoint["root_record"][
             "aggregate_state"
         ]["aggregate_state_digest"],
+        "target_validated_bundle_fingerprint": operation["target_bundle"][
+            "validated_bundle_fingerprint"
+        ],
         "resulting_aggregate_state_digest": resulting_aggregate[
             "aggregate_state_digest"
         ],
@@ -586,13 +569,6 @@ def commit_v2_maintenance_migration(
     return seal_checkpoint(result), receipt
 
 
-def seal_checkpoint_v1(value: dict[str, Any]) -> dict[str, Any]:
-    value = copy.deepcopy(value)
-    value.pop("execution_checkpoint_digest", None)
-    value["execution_checkpoint_digest"] = digest(
-        ["determa-execution-checkpoint-digest-1", value]
-    )
-    return value
 
 
 def rebind_single_root(
@@ -641,170 +617,16 @@ def rebind_single_root(
     return seal_aggregate(result)
 
 
-def rebind_component_aggregate(
-    value: dict[str, Any], bundle_path: Path
-) -> dict[str, Any]:
-    result = copy.deepcopy(value)
-    fingerprint = bundle_fingerprint(bundle_path)
-    old_root_id = result["root_runtime_id"]
-    root_id = digest(
-        [
-            "determa-root-runtime-identity-2",
-            "1",
-            fingerprint,
-            result["namespace"],
-            result["root_machine_id"],
-            result["root_machine_version"],
-            result["root_instance_id"],
-        ]
-    )
-    replacements = {old_root_id: root_id}
-    root_runtime = next(
-        runtime for runtime in result["runtimes"] if runtime["relation"]["kind"] == "root"
-    )
-    for runtime in result["runtimes"]:
-        relation = runtime["relation"]
-        if relation["kind"] != "component":
-            continue
-        replacements[runtime["runtime_id"]] = digest(
-            [
-                "determa-component-runtime-identity-1",
-                "1",
-                result["root_instance_id"],
-                root_id,
-                relation["current_component_definition_pointer"],
-                relation["activation_sequence"],
-                result["namespace"],
-                result["root_machine_id"],
-                result["root_machine_version"],
-            ]
-        )
-
-    def replace(value: Any) -> Any:
-        if isinstance(value, str):
-            return replacements.get(value, value)
-        if isinstance(value, list):
-            return [replace(item) for item in value]
-        if isinstance(value, dict):
-            return {key: replace(item) for key, item in value.items()}
-        return value
-
-    result = replace(result)
-    result["validated_bundle_fingerprint"] = fingerprint
-    result["root_runtime_id"] = root_id
-    for runtime in result["runtimes"]:
-        runtime["current_definition"]["validated_bundle_fingerprint"] = fingerprint
-        runtime["identity_origin"]["definition"][
-            "validated_bundle_fingerprint"
-        ] = fingerprint
-    root_runtime = next(
-        runtime for runtime in result["runtimes"] if runtime["relation"]["kind"] == "root"
-    )
-    assert root_runtime["runtime_id"] == root_id
-    return seal_aggregate(result)
 
 
-def upgrade_aggregate(value: dict[str, Any]) -> dict[str, Any]:
-    result = copy.deepcopy(value)
-    result["aggregate_state_schema_version"] = 2
-    result["next_acceptance_sequence"] = "0"
-    result["next_queue_sequence"] = "0"
-    for runtime in result["runtimes"]:
-        runtime["ready_mailbox"] = []
-        runtime["deferred_mailbox"] = []
-    return seal_aggregate(result)
 
 
-def envelope_entry(
-    aggregate: dict[str, Any],
-    runtime: dict[str, Any],
-    *,
-    event: str,
-    event_id: str,
-    acceptance_sequence: int,
-    queue_sequence: int,
-    delivery_mode: str = "input",
-    cause_id: str | None = None,
-    source: dict[str, Any] | None = None,
-    payload: list[Any] | None = None,
-    deferral_count: int = 0,
-) -> dict[str, Any]:
-    envelope = {
-        "event": event,
-        "event_id": event_id,
-        "cause_id": event_id if cause_id is None else cause_id,
-        "source": {"host": True} if source is None else source,
-        "target": copy.deepcopy(runtime["target_identity"]),
-        "payload": ["map", []] if payload is None else payload,
-    }
-    envelope_digest = digest(
-        [
-            "determa-inbox-envelope-digest-2",
-            "2",
-            aggregate["root_instance_id"],
-            delivery_mode,
-            envelope,
-        ]
-    )
-    return {
-        "acceptance_sequence": str(acceptance_sequence),
-        "queue_sequence": str(queue_sequence),
-        "delivery_mode": delivery_mode,
-        "envelope": envelope,
-        "envelope_digest": envelope_digest,
-        "deferral_count": str(deferral_count),
-    }
 
 
-def step_result(
-    state: dict[str, Any],
-    disposition: str,
-    *,
-    status: str | None = None,
-    fault: dict[str, Any] | None = None,
-    rejection: str | None = None,
-    emissions: list[Any] | None = None,
-    lifecycle_dispositions: list[Any] | None = None,
-) -> dict[str, Any]:
-    root_runtime = next(
-        runtime for runtime in state["runtimes"] if runtime["relation"]["kind"] == "root"
-    )
-    return {
-        "core_step_result_format": "determa.core_step_result",
-        "core_step_result_schema_version": 2,
-        "status": root_runtime["status"] if status is None else status,
-        "disposition": disposition,
-        "state": state,
-        "emissions": [] if emissions is None else emissions,
-        "lifecycle_dispositions": (
-            [] if lifecycle_dispositions is None else lifecycle_dispositions
-        ),
-        "fault": fault,
-        "rejection": None if rejection is None else {"code": rejection},
-    }
 
 
-def lifecycle_disposition(
-    entry: dict[str, Any], target_runtime_id: str, reason: str
-) -> dict[str, Any]:
-    return {
-        "event_id": entry["envelope"]["event_id"],
-        "request_digest": entry["envelope_digest"],
-        "acceptance_sequence": entry["acceptance_sequence"],
-        "final_queue_sequence": entry["queue_sequence"],
-        "target_runtime_id": target_runtime_id,
-        "reason": reason,
-    }
 
 
-def internal_disposed_emission(entry: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "kind": "internal_disposed",
-        "emission_index": "0",
-        "event_id": entry["envelope"]["event_id"],
-        "acceptance_sequence": entry["acceptance_sequence"],
-        "lifecycle_disposition_index": "0",
-    }
 
 
 def root_runtime(aggregate: dict[str, Any]) -> dict[str, Any]:
@@ -815,1415 +637,11 @@ def root_runtime(aggregate: dict[str, Any]) -> dict[str, Any]:
     )
 
 
-def component_runtimes(aggregate: dict[str, Any]) -> list[dict[str, Any]]:
-    return sorted(
-        (
-            runtime
-            for runtime in aggregate["runtimes"]
-            if runtime["relation"]["kind"] == "component"
-        ),
-        key=lambda runtime: int(runtime["relation"]["declaration_index"]),
-    )
 
 
-def spawned_runtimes(aggregate: dict[str, Any]) -> list[dict[str, Any]]:
-    return sorted(
-        (
-            runtime
-            for runtime in aggregate["runtimes"]
-            if runtime["relation"]["kind"] == "owned_spawned_instance"
-        ),
-        key=lambda runtime: int(runtime["relation"]["spawn_sequence"]),
-    )
-
-
-def produce_mailbox() -> dict[str, bytes]:
-    machine_path = MAILBOX / "machine.yaml"
-    create_input = {
-        "operation": "create_v2",
-        "bundle": bundle_binding(machine_path),
-        "machine_id": "transaction_server",
-        "machine_version": "1",
-        "root_instance_id": "server-1",
-        "creation_id": "create-server-1",
-        "bindings": {"input": {}, "external": {}},
-    }
-    empty = create_v2_root(machine_path, create_input)
-    outputs: dict[str, Any] = {}
-    outputs["empty-aggregate-v2.json"] = empty
-    root = empty["runtimes"][0]
-
-    base = copy.deepcopy(empty)
-    base_root = base["runtimes"][0]
-    base_root["active_leaf_state_definition_pointers"] = [
-        "/machines/0/root/states/busy/states/receiving"
-    ]
-    base_root["active_state_activations"] = [
-        {"state_definition_pointer": "/machines/0/root", "activation_sequence": "0"},
-        {"state_definition_pointer": "/machines/0/root/states/busy", "activation_sequence": "0"},
-        {"state_definition_pointer": "/machines/0/root/states/busy/states/receiving", "activation_sequence": "0"},
-    ]
-    base_root["next_state_activation_sequences"] = [
-        {"definition_pointer": "/machines/0/root", "next_sequence": "1"},
-        {"definition_pointer": "/machines/0/root/states/idle", "next_sequence": "1"},
-        {"definition_pointer": "/machines/0/root/states/busy", "next_sequence": "1"},
-        {"definition_pointer": "/machines/0/root/states/busy/states/receiving", "next_sequence": "1"},
-    ]
-    base["next_logical_step_sequence"] = "2"
-    received = envelope_entry(
-        base,
-        base_root,
-        event="received",
-        event_id="received-1",
-        acceptance_sequence=0,
-        queue_sequence=0,
-    )
-    authorized = envelope_entry(
-        base,
-        base_root,
-        event="authorized",
-        event_id="authorized-competitor",
-        acceptance_sequence=1,
-        queue_sequence=1,
-    )
-    deferred_retry = envelope_entry(
-        base,
-        base_root,
-        event="retry",
-        event_id="retry-guarded-recall",
-        acceptance_sequence=2,
-        queue_sequence=2,
-        deferral_count=1,
-    )
-    deferred_held = envelope_entry(
-        base,
-        base_root,
-        event="held_request",
-        event_id="held-stays-deferred",
-        acceptance_sequence=3,
-        queue_sequence=3,
-        deferral_count=1,
-    )
-    base_root["ready_mailbox"] = [received, authorized]
-    base_root["deferred_mailbox"] = [deferred_retry, deferred_held]
-    base["next_acceptance_sequence"] = "4"
-    base["next_queue_sequence"] = "4"
-    base = seal_aggregate(base)
-    outputs["base-aggregate.json"] = base
-    outputs["base-aggregate.canonical.json"] = base
-
-    handled = copy.deepcopy(base)
-    handled_root = handled["runtimes"][0]
-    handled_root["ready_mailbox"].pop(0)
-    recalled = handled_root["deferred_mailbox"].pop(0)
-    recalled["queue_sequence"] = "4"
-    handled_root["ready_mailbox"].append(recalled)
-    handled_root["active_leaf_state_definition_pointers"] = [
-        "/machines/0/root/states/busy/states/authorizing"
-    ]
-    handled_root["active_state_activations"][-1] = {
-        "state_definition_pointer": "/machines/0/root/states/busy/states/authorizing",
-        "activation_sequence": "0",
-    }
-    handled_root["next_state_activation_sequences"].append(
-        {
-            "definition_pointer": "/machines/0/root/states/busy/states/authorizing",
-            "next_sequence": "1",
-        }
-    )
-    handled["next_logical_step_sequence"] = "3"
-    handled["next_queue_sequence"] = "5"
-    handled = seal_aggregate(handled)
-    outputs["handled-recall-result.json"] = step_result(handled, "handled")
-
-    deferred_only = copy.deepcopy(base)
-    deferred_only["runtimes"][0]["ready_mailbox"] = []
-    deferred_only = seal_aggregate(deferred_only)
-    outputs["deferred-only-aggregate-v2.json"] = deferred_only
-    outputs["not-runnable-result.json"] = step_result(
-        deferred_only, "not_runnable"
-    )
-
-    repeated_before = copy.deepcopy(base)
-    repeated_root = repeated_before["runtimes"][0]
-    repeated_root["ready_mailbox"] = []
-    repeated_root["deferred_mailbox"] = []
-    repeated = envelope_entry(
-        repeated_before,
-        repeated_root,
-        event="new_request",
-        event_id="request-repeated",
-        acceptance_sequence=0,
-        queue_sequence=0,
-        payload=["map", [["transaction_id", ["string", "transaction-r"]]]],
-        deferral_count=1,
-    )
-    repeated_root["ready_mailbox"] = [repeated]
-    repeated_before["next_acceptance_sequence"] = "1"
-    repeated_before["next_queue_sequence"] = "1"
-    repeated_before = seal_aggregate(repeated_before)
-    outputs["repeated-before.json"] = repeated_before
-    repeated_after = copy.deepcopy(repeated_before)
-    repeated_entry = repeated_after["runtimes"][0]["ready_mailbox"].pop(0)
-    repeated_entry["queue_sequence"] = "1"
-    repeated_entry["deferral_count"] = "2"
-    repeated_after["runtimes"][0]["deferred_mailbox"] = [repeated_entry]
-    repeated_after["next_logical_step_sequence"] = str(
-        int(repeated_before["next_logical_step_sequence"]) + 1
-    )
-    repeated_after["next_queue_sequence"] = "2"
-    repeated_after = seal_aggregate(repeated_after)
-    outputs["repeated-deferral-result.json"] = step_result(
-        repeated_after, "deferred"
-    )
-
-    component_v1 = load(
-        ROOT
-        / "conformance/core/94-aggregate-wire-round-trip/component-target-aggregate-state.json"
-    )
-    component = upgrade_aggregate(component_v1)
-    component = rebind_component_aggregate(
-        component, MAILBOX / "component-machine.yaml"
-    )
-    component_root = root_runtime(component)
-    for index, runtime in enumerate(component["runtimes"]):
-        runtime["ready_mailbox"] = [
-            envelope_entry(
-                component,
-                runtime,
-                event="component_work" if runtime["relation"]["kind"] == "component" else "fanout",
-                event_id=f"isolated-component-{index}",
-                acceptance_sequence=index,
-                queue_sequence=index,
-                delivery_mode=(
-                    "internal" if runtime["relation"]["kind"] == "component" else "input"
-                ),
-                source=(
-                    {"runtime": copy.deepcopy(component_root["target_identity"])}
-                    if runtime["relation"]["kind"] == "component"
-                    else {"host": True}
-                ),
-            )
-        ]
-    component["next_acceptance_sequence"] = "3"
-    component["next_queue_sequence"] = "3"
-    component = seal_aggregate(component)
-    outputs["component-isolation-aggregate.json"] = component
-    invalid_runtime_order = copy.deepcopy(component)
-    invalid_runtime_order["runtimes"].reverse()
-    outputs["invalid-canonical-order-aggregate-v2.json"] = (
-        reseal_aggregate_without_normalizing(invalid_runtime_order)
-    )
-    component_after = copy.deepcopy(component)
-    left = component_runtimes(component_after)[0]
-    left["ready_mailbox"].pop(0)
-    left["variables"][0]["value"] = ["list", [["string", "left"]]]
-    component_after["next_logical_step_sequence"] = str(
-        int(component_after["next_logical_step_sequence"]) + 1
-    )
-    component_after = seal_aggregate(component_after)
-    outputs["component-isolation-result.json"] = step_result(
-        component_after, "handled"
-    )
-
-    completed_component = copy.deepcopy(component)
-    completed_target = component_runtimes(completed_component)[0]
-    completed_target["status"] = "completed"
-    completed_target["active_leaf_state_definition_pointers"] = []
-    completed_target["active_state_activations"] = []
-    completed_target["variables"] = []
-    completed_target["ready_mailbox"] = []
-    completed_target["deferred_mailbox"] = []
-    completed_component = seal_aggregate(completed_component)
-    outputs["completed-component-aggregate.json"] = completed_component
-    outputs["completed-component-step-result.json"] = step_result(
-        completed_component, "rejected", rejection="inactive_component_target"
-    )
-
-    faulted_component = copy.deepcopy(component)
-    faulted_target = component_runtimes(faulted_component)[0]
-    faulted_target["ready_mailbox"] = []
-    faulted_target["deferred_mailbox"] = []
-    faulted_target["status"] = "faulted"
-    faulted_target["fault"] = {
-        "definition_fingerprint": faulted_component["validated_bundle_fingerprint"],
-        "runtime_id": faulted_target["runtime_id"],
-        "cause_id": "retained-fault-cause",
-        "code": "action_fault",
-        "step_sequence": faulted_component["next_logical_step_sequence"],
-        "source_locator": "/machines/0/root/states/processing/components/0/root/states/running/on_events/component_work/action/0/assign/trace",
-    }
-    faulted_component = seal_aggregate(faulted_component)
-    outputs["faulted-component-aggregate.json"] = faulted_component
-    outputs["faulted-component-step-result.json"] = step_result(
-        faulted_component, "rejected", rejection="inactive_component_target"
-    )
-
-    disposed_component = copy.deepcopy(component)
-    disposed_target = component_runtimes(disposed_component)[0]
-    disposed_target_id = disposed_target["runtime_id"]
-    disposed_component["runtimes"] = [
-        runtime for runtime in disposed_component["runtimes"] if runtime["runtime_id"] != disposed_target_id
-    ]
-    disposed_component = seal_aggregate(disposed_component)
-    outputs["disposed-component-aggregate.json"] = disposed_component
-    outputs["disposed-component-step-result.json"] = step_result(
-        disposed_component, "rejected", rejection="invalid_instance_target"
-    )
-
-    spawned_v1 = load(
-        ROOT
-        / "conformance/core/94-aggregate-wire-round-trip/spawned_instance-target-aggregate-state.json"
-    )
-    spawned = upgrade_aggregate(spawned_v1)
-    for index, runtime in enumerate(spawned["runtimes"]):
-        runtime["ready_mailbox"] = [
-            envelope_entry(
-                spawned,
-                runtime,
-                event="pay" if runtime["relation"]["kind"] == "owned_spawned_instance" else "start",
-                event_id=f"isolated-spawn-{index}",
-                acceptance_sequence=index,
-                queue_sequence=index,
-                payload=(
-                    ["map", [["amount", ["integer", "50"]]]]
-                    if runtime["relation"]["kind"] == "owned_spawned_instance"
-                    else ["map", []]
-                ),
-            )
-        ]
-    spawned["next_acceptance_sequence"] = "2"
-    spawned["next_queue_sequence"] = "2"
-    spawned = seal_aggregate(spawned)
-    outputs["spawn-isolation-aggregate.json"] = spawned
-    spawned_after = copy.deepcopy(spawned)
-    spawned_runtimes(spawned_after)[0]["ready_mailbox"].pop(0)
-    spawned_after = seal_aggregate(spawned_after)
-    outputs["spawn-isolation-result.json"] = step_result(
-        spawned_after, "unhandled"
-    )
-
-    outputs["invalid-target-result.json"] = step_result(
-        empty, "rejected", rejection="invalid_instance_target"
-    )
-
-    zero_before = copy.deepcopy(repeated_before)
-    zero_before = rebind_single_root(
-        zero_before,
-        bundle_fingerprint(MAILBOX / "zero-capacity-machine.yaml"),
-    )
-    zero_root = zero_before["runtimes"][0]
-    zero_entry = zero_root["ready_mailbox"][0]
-    zero_before = seal_aggregate(zero_before)
-    outputs["zero-capacity-before.json"] = zero_before
-    overflow = copy.deepcopy(zero_before)
-    overflow_root = overflow["runtimes"][0]
-    causal = overflow_root["ready_mailbox"].pop(0)
-    fault = {
-        "definition_fingerprint": overflow["validated_bundle_fingerprint"],
-        "runtime_id": overflow_root["runtime_id"],
-        "cause_id": causal["envelope"]["cause_id"],
-        "code": "deferred_event_capacity_exceeded",
-        "step_sequence": overflow["next_logical_step_sequence"],
-        "source_locator": "system:deferred_event_capacity",
-    }
-    overflow_root["status"] = "faulted"
-    overflow_root["fault"] = fault
-    overflow["next_logical_step_sequence"] = str(
-        int(overflow["next_logical_step_sequence"]) + 1
-    )
-    overflow = seal_aggregate(overflow)
-    outputs["overflow-result.json"] = step_result(
-        overflow, "faulted", status="faulted", fault=fault
-    )
-
-    lifecycle_before = copy.deepcopy(component)
-    for runtime in component_runtimes(lifecycle_before):
-        runtime["ready_mailbox"] = []
-        runtime["deferred_mailbox"] = []
-    lifecycle_before = seal_aggregate(lifecycle_before)
-    outputs["lifecycle-before.json"] = lifecycle_before
-
-    source_runtime = root_runtime(lifecycle_before)
-    target_runtimes = component_runtimes(lifecycle_before)
-    source_entry = source_runtime["ready_mailbox"][0]
-    emitted_entries = []
-    mailbox_emissions = []
-    for ordinal, target_runtime in enumerate(target_runtimes):
-        internal_event_id = digest(
-            [
-                "determa-event-identity-1",
-                "1",
-                lifecycle_before["root_instance_id"],
-                source_runtime["runtime_id"],
-                target_runtime["runtime_id"],
-                source_entry["envelope"]["cause_id"],
-                lifecycle_before["next_logical_step_sequence"],
-                "/machines/0/root/states/processing/on_events/fanout/action/0/send",
-                str(ordinal),
-            ]
-        )
-        emitted_entry = envelope_entry(
-            lifecycle_before,
-            target_runtime,
-            event="component_work",
-            event_id=internal_event_id,
-            acceptance_sequence=int(lifecycle_before["next_acceptance_sequence"]) + ordinal,
-            queue_sequence=int(lifecycle_before["next_queue_sequence"]) + ordinal,
-            delivery_mode="internal",
-            cause_id=source_entry["envelope"]["cause_id"],
-            source={"runtime": copy.deepcopy(source_runtime["target_identity"])},
-        )
-        emitted_entries.append(emitted_entry)
-        mailbox_emissions.append(
-            {
-                "kind": "internal_mailbox",
-                "emission_index": str(ordinal),
-                "event_id": internal_event_id,
-                "acceptance_sequence": emitted_entry["acceptance_sequence"],
-                "queue_sequence": emitted_entry["queue_sequence"],
-            }
-        )
-    active = copy.deepcopy(lifecycle_before)
-    root_runtime(active)["ready_mailbox"] = []
-    for runtime, emitted_entry in zip(
-        component_runtimes(active), emitted_entries, strict=True
-    ):
-        runtime["ready_mailbox"] = [emitted_entry]
-    active["next_acceptance_sequence"] = str(
-        int(active["next_acceptance_sequence"]) + len(emitted_entries)
-    )
-    active["next_queue_sequence"] = str(
-        int(active["next_queue_sequence"]) + len(emitted_entries)
-    )
-    active["next_logical_step_sequence"] = str(
-        int(active["next_logical_step_sequence"]) + 1
-    )
-    active = seal_aggregate(active)
-    outputs["internal-emission-active-result.json"] = step_result(
-        active, "handled", emissions=mailbox_emissions
-    )
-
-    def root_event_before(event: str, event_id: str) -> dict[str, Any]:
-        before = copy.deepcopy(lifecycle_before)
-        before_root = root_runtime(before)
-        entry = before_root["ready_mailbox"][0]
-        entry["envelope"]["event"] = event
-        entry["envelope"]["event_id"] = event_id
-        entry["envelope"]["cause_id"] = event_id
-        entry["envelope_digest"] = digest(
-            [
-                "determa-inbox-envelope-digest-2",
-                "2",
-                before["root_instance_id"],
-                entry["delivery_mode"],
-                entry["envelope"],
-            ]
-        )
-        return seal_aggregate(before)
-
-    retained_before = root_event_before("enter_faulty", "enter-faulty-1")
-    outputs["retained-faulted-before.json"] = retained_before
-    retained_faulted = copy.deepcopy(retained_before)
-    retained_root = root_runtime(retained_faulted)
-    retained_source = retained_root["ready_mailbox"].pop(0)
-    faulty_pointer = "/machines/0/root/states/faulty_processing/components/0"
-    faulty_runtime_id = digest(
-        [
-            "determa-component-runtime-identity-1",
-            "1",
-            retained_before["root_instance_id"],
-            retained_root["runtime_id"],
-            faulty_pointer,
-            "0",
-            retained_before["namespace"],
-            retained_before["root_machine_id"],
-            retained_before["root_machine_version"],
-        ]
-    )
-    faulty_target = {
-        "component": {
-            "root_instance_id": retained_before["root_instance_id"],
-            "owner_runtime_id": retained_root["runtime_id"],
-            "component_id": "faulty",
-            "activation_sequence": "0",
-            "component_runtime_id": faulty_runtime_id,
-        }
-    }
-    entry_event_id = digest(
-        [
-            "determa-event-identity-1",
-            "1",
-            retained_before["root_instance_id"],
-            retained_root["runtime_id"],
-            faulty_runtime_id,
-            retained_source["envelope"]["cause_id"],
-            retained_before["next_logical_step_sequence"],
-            "/machines/0/root/states/faulty_processing/entry/0/send",
-            "0",
-        ]
-    )
-    faulty_template = copy.deepcopy(component_runtimes(retained_faulted)[0])
-    faulty_template["runtime_id"] = faulty_runtime_id
-    faulty_template["identity_origin"] = {
-        "kind": "component",
-        "definition": {
-            "validated_bundle_fingerprint": retained_before["validated_bundle_fingerprint"],
-            "machine": {
-                "namespace": retained_before["namespace"],
-                "machine_id": retained_before["root_machine_id"],
-                "machine_version": retained_before["root_machine_version"],
-                "root_definition_pointer": f"{faulty_pointer}/root",
-            },
-        },
-        "owner_runtime_id": retained_root["runtime_id"],
-        "component_definition_pointer": faulty_pointer,
-        "declaration_index": "0",
-        "activation_sequence": "0",
-    }
-    faulty_template["target_identity"] = copy.deepcopy(faulty_target)
-    faulty_template["current_definition"] = copy.deepcopy(
-        faulty_template["identity_origin"]["definition"]
-    )
-    faulty_template["relation"] = {
-        "kind": "component",
-        "owner_runtime_id": retained_root["runtime_id"],
-        "current_component_definition_pointer": faulty_pointer,
-        "component_id": "faulty",
-        "declaration_index": "0",
-        "activation_sequence": "0",
-    }
-    faulty_template["status"] = "running"
-    faulty_template["active_leaf_state_definition_pointers"] = []
-    faulty_template["active_state_activations"] = []
-    faulty_template["variables"] = []
-    faulty_template["history"] = []
-    faulty_template["next_spawn_sequence"] = "0"
-    faulty_template["next_state_activation_sequences"] = []
-    faulty_template["next_component_activation_sequences"] = []
-    initialization_cause_id = digest(
-        [
-            "determa-cause-identity-1",
-            "1",
-            "component_initialization",
-            retained_faulted["root_instance_id"],
-            retained_root["runtime_id"],
-            faulty_runtime_id,
-            retained_source["envelope"]["cause_id"],
-            retained_faulted["next_logical_step_sequence"],
-            faulty_pointer,
-            "0",
-        ]
-    )
-    faulty_fault = {
-        "definition_fingerprint": retained_faulted["validated_bundle_fingerprint"],
-        "runtime_id": faulty_runtime_id,
-        "cause_id": initialization_cause_id,
-        "code": "action_fault",
-        "step_sequence": retained_faulted["next_logical_step_sequence"],
-        "source_locator": f"{faulty_pointer}/root/entry/0/assign/count",
-    }
-    faulty_template["status"] = "faulted"
-    faulty_template["fault"] = faulty_fault
-    pending_entry = envelope_entry(
-        retained_before,
-        faulty_template,
-        event="component_work",
-        event_id=entry_event_id,
-        acceptance_sequence=int(retained_before["next_acceptance_sequence"]),
-        queue_sequence=int(retained_before["next_queue_sequence"]),
-        delivery_mode="internal",
-        cause_id=retained_source["envelope"]["cause_id"],
-        source={"runtime": copy.deepcopy(retained_root["target_identity"])},
-    )
-    faulty_template["ready_mailbox"] = [pending_entry]
-    faulty_template["deferred_mailbox"] = []
-    observer_pointer = "/machines/0/root/states/faulty_processing/components/1"
-    observer_runtime_id = digest([
-        "determa-component-runtime-identity-1", "1", retained_before["root_instance_id"],
-        retained_root["runtime_id"], observer_pointer, "0", retained_before["namespace"],
-        retained_before["root_machine_id"], retained_before["root_machine_version"],
-    ])
-    observer = copy.deepcopy(faulty_template)
-    observer_text = json.dumps(observer).replace(faulty_runtime_id, observer_runtime_id).replace(faulty_pointer, observer_pointer)
-    observer = json.loads(observer_text)
-    observer["identity_origin"]["declaration_index"] = "1"
-    observer["relation"]["declaration_index"] = "1"
-    observer["relation"]["component_id"] = "observer"
-    observer["target_identity"]["component"]["component_id"] = "observer"
-    observer["active_leaf_state_definition_pointers"] = [f"{observer_pointer}/root"]
-    observer["active_state_activations"] = [
-        {"state_definition_pointer": f"{observer_pointer}/root", "activation_sequence": "0"}
-    ]
-    observer["variables"] = []
-    observer["next_state_activation_sequences"] = [
-        {"definition_pointer": f"{observer_pointer}/root", "next_sequence": "1"}
-    ]
-    observer["ready_mailbox"] = []
-    observer["status"] = "running"
-    observer["fault"] = None
-    retained_root["active_leaf_state_definition_pointers"] = ["/machines/0/root/states/faulty_processing"]
-    retained_root["active_state_activations"] = [
-        {"state_definition_pointer": "/machines/0/root", "activation_sequence": "0"},
-        {"state_definition_pointer": "/machines/0/root/states/faulty_processing", "activation_sequence": "0"},
-    ]
-    retained_root["next_state_activation_sequences"].append(
-        {"definition_pointer": "/machines/0/root/states/faulty_processing", "next_sequence": "1"}
-    )
-    retained_root["next_component_activation_sequences"].extend([
-        {"definition_pointer": faulty_pointer, "next_sequence": "1"},
-        {"definition_pointer": observer_pointer, "next_sequence": "1"},
-    ])
-    retained_faulted["runtimes"] = [faulty_template, observer, retained_root]
-    failure_event_id = digest(
-        [
-            "determa-event-identity-1",
-            "1",
-            retained_before["root_instance_id"],
-            faulty_runtime_id,
-            retained_root["runtime_id"],
-            initialization_cause_id,
-            retained_faulted["next_logical_step_sequence"],
-            "system:component_failure",
-            "0",
-        ]
-    )
-    failure_entry = envelope_entry(
-        retained_faulted,
-        root_runtime(retained_faulted),
-        event="determa.component_failed",
-        event_id=failure_event_id,
-        acceptance_sequence=int(retained_faulted["next_acceptance_sequence"]) + 1,
-        queue_sequence=int(retained_faulted["next_queue_sequence"]) + 1,
-        delivery_mode="internal",
-        cause_id=initialization_cause_id,
-        source={"system": "system:component_failure"},
-        payload=typed_value(
-            {
-                "component_id": "faulty",
-                "component_runtime_id": faulty_runtime_id,
-                "fault": {
-                    "runtime_id": faulty_runtime_id,
-                    "cause_id": initialization_cause_id,
-                    "code": "action_fault",
-                    "step_sequence": faulty_fault["step_sequence"],
-                    "source_locator": faulty_fault["source_locator"],
-                },
-            }
-        ),
-    )
-    retained_root["ready_mailbox"] = [failure_entry]
-    retained_faulted["next_acceptance_sequence"] = str(
-        int(retained_faulted["next_acceptance_sequence"]) + 2
-    )
-    retained_faulted["next_queue_sequence"] = str(
-        int(retained_faulted["next_queue_sequence"]) + 2
-    )
-    retained_faulted["next_logical_step_sequence"] = str(
-        int(retained_faulted["next_logical_step_sequence"]) + 1
-    )
-    retained_faulted = seal_aggregate(retained_faulted)
-    outputs["internal-emission-retained-faulted-result.json"] = step_result(
-        retained_faulted,
-        "handled",
-        emissions=[
-            {
-                "kind": "internal_mailbox",
-                "emission_index": "0",
-                "event_id": entry_event_id,
-                "acceptance_sequence": pending_entry["acceptance_sequence"],
-                "queue_sequence": pending_entry["queue_sequence"],
-            },
-            {
-                "kind": "internal_mailbox",
-                "emission_index": "1",
-                "event_id": failure_event_id,
-                "acceptance_sequence": failure_entry["acceptance_sequence"],
-                "queue_sequence": failure_entry["queue_sequence"],
-            },
-        ],
-    )
-    faulted_component = copy.deepcopy(retained_faulted)
-    outputs["faulted-component-aggregate.json"] = faulted_component
-    outputs["faulted-component-step-result.json"] = step_result(
-        faulted_component, "rejected", rejection="inactive_component_target"
-    )
-
-    cancellation_before = root_event_before(
-        "cancel_after_send", "cancel-after-send-1"
-    )
-    outputs["cancellation-before.json"] = cancellation_before
-    cancellation_root = root_runtime(cancellation_before)
-    cancellation_target = component_runtimes(cancellation_before)[0]
-    cancellation_source = cancellation_root["ready_mailbox"][0]
-    cancellation_event_id = digest(
-        [
-            "determa-event-identity-1", "1", cancellation_before["root_instance_id"],
-            cancellation_root["runtime_id"], cancellation_target["runtime_id"],
-            cancellation_source["envelope"]["cause_id"], cancellation_before["next_logical_step_sequence"],
-            "/machines/0/root/states/processing/on_events/cancel_after_send/action/0/send", "0",
-        ]
-    )
-    cancellation_entry = envelope_entry(
-        cancellation_before, cancellation_target, event="component_work",
-        event_id=cancellation_event_id,
-        acceptance_sequence=int(cancellation_before["next_acceptance_sequence"]),
-        queue_sequence=int(cancellation_before["next_queue_sequence"]),
-        delivery_mode="internal",
-        cause_id=cancellation_source["envelope"]["cause_id"],
-        source={"runtime": copy.deepcopy(cancellation_root["target_identity"])},
-    )
-    cancelled = copy.deepcopy(cancellation_before)
-    cancelled_root = root_runtime(cancelled)
-    cancelled_root["ready_mailbox"] = []
-    cancelled_root["status"] = "completed"
-    cancelled_root["active_leaf_state_definition_pointers"] = []
-    cancelled_root["active_state_activations"] = []
-    cancelled_root["variables"] = []
-    cancelled_root["next_state_activation_sequences"].append(
-        {
-            "definition_pointer": "/machines/0/root/states/finished",
-            "next_sequence": "1",
-        }
-    )
-    cancelled["runtimes"] = [cancelled_root]
-    cancelled["next_acceptance_sequence"] = str(int(cancelled["next_acceptance_sequence"]) + 1)
-    cancelled["next_queue_sequence"] = str(int(cancelled["next_queue_sequence"]) + 1)
-    cancelled["next_logical_step_sequence"] = str(int(cancelled["next_logical_step_sequence"]) + 1)
-    cancelled = seal_aggregate(cancelled)
-    cancellation_disposition = lifecycle_disposition(
-        cancellation_entry, cancellation_target["runtime_id"], "runtime_cancelled"
-    )
-    outputs["internal-emission-cancelled-result.json"] = step_result(
-        cancelled, "handled", status="completed",
-        emissions=[internal_disposed_emission(cancellation_entry)],
-        lifecycle_dispositions=[cancellation_disposition],
-    )
-    outputs["completed-root-aggregate.json"] = cancelled
-    outputs["completed-root-step-result.json"] = step_result(
-        cancelled, "rejected", status="completed", rejection="invalid_instance_target"
-    )
-
-    natural_before = copy.deepcopy(lifecycle_before)
-    natural_root = root_runtime(natural_before)
-    natural_target = component_runtimes(natural_before)[0]
-    natural_root["ready_mailbox"] = []
-    natural_cause = envelope_entry(
-        natural_before, natural_target, event="component_finish",
-        event_id="component-finish-1", acceptance_sequence=2, queue_sequence=2,
-        delivery_mode="internal",
-        source={"runtime": copy.deepcopy(natural_root["target_identity"])},
-    )
-    natural_target["ready_mailbox"] = [natural_cause]
-    natural_before = seal_aggregate(natural_before)
-    outputs["natural-completion-before.json"] = natural_before
-    self_event_id = digest(
-        ["determa-event-identity-1", "1", natural_before["root_instance_id"],
-         natural_target["runtime_id"], natural_target["runtime_id"],
-         natural_cause["envelope"]["cause_id"], natural_before["next_logical_step_sequence"],
-         "/machines/0/root/states/processing/components/0/root/states/running/on_events/component_finish/action/0/send", "0"]
-    )
-    self_entry = envelope_entry(
-        natural_before, natural_target, event="component_work", event_id=self_event_id,
-        acceptance_sequence=3, queue_sequence=3, delivery_mode="internal",
-        cause_id=natural_cause["envelope"]["cause_id"],
-        source={"runtime": copy.deepcopy(natural_target["target_identity"])},
-    )
-    completion_event_id = digest(
-        ["determa-event-identity-1", "1", natural_before["root_instance_id"],
-         natural_target["runtime_id"], natural_root["runtime_id"],
-         natural_cause["envelope"]["cause_id"], natural_before["next_logical_step_sequence"],
-         "system:component_completion", "0"]
-    )
-    completion_entry = envelope_entry(
-        natural_before, natural_root, event="determa.component_completed",
-        event_id=completion_event_id, acceptance_sequence=4, queue_sequence=4,
-        delivery_mode="internal",
-        cause_id=natural_cause["envelope"]["cause_id"],
-        source={"system": "system:component_completion"},
-        payload=typed_value({"component_id": "left", "component_runtime_id": natural_target["runtime_id"]}),
-    )
-    naturally_completed = copy.deepcopy(natural_before)
-    completed_target = next(
-        runtime for runtime in component_runtimes(naturally_completed)
-        if runtime["runtime_id"] == natural_target["runtime_id"]
-    )
-    completed_target["status"] = "completed"
-    completed_target["active_leaf_state_definition_pointers"] = []
-    completed_target["active_state_activations"] = []
-    completed_target["variables"] = []
-    completed_target["ready_mailbox"] = []
-    completed_target["next_state_activation_sequences"].append(
-        {
-            "definition_pointer": (
-                "/machines/0/root/states/processing/components/0/root/states/complete"
-            ),
-            "next_sequence": "1",
-        }
-    )
-    root_runtime(naturally_completed)["ready_mailbox"] = [completion_entry]
-    naturally_completed["next_acceptance_sequence"] = "5"
-    naturally_completed["next_queue_sequence"] = "5"
-    naturally_completed["next_logical_step_sequence"] = str(int(naturally_completed["next_logical_step_sequence"]) + 1)
-    naturally_completed = seal_aggregate(naturally_completed)
-    natural_disposition = lifecycle_disposition(self_entry, natural_target["runtime_id"], "runtime_completed")
-    outputs["internal-emission-runtime-completed-result.json"] = step_result(
-        naturally_completed, "handled",
-        emissions=[
-            internal_disposed_emission(self_entry),
-            {"kind": "internal_mailbox", "emission_index": "1", "event_id": completion_event_id,
-             "acceptance_sequence": completion_entry["acceptance_sequence"], "queue_sequence": completion_entry["queue_sequence"]},
-        ],
-        lifecycle_dispositions=[natural_disposition],
-    )
-
-    chain_origin = root_event_before("finish_left", "chain-host-1")
-    chain_root = root_runtime(chain_origin)
-    chain_target = component_runtimes(chain_origin)[0]
-    chain_origin_entry = chain_root["ready_mailbox"][0]
-    first_generation_event_id = digest(
-        [
-            "determa-event-identity-1",
-            "1",
-            chain_origin["root_instance_id"],
-            chain_root["runtime_id"],
-            chain_target["runtime_id"],
-            chain_origin_entry["envelope"]["event_id"],
-            chain_origin["next_logical_step_sequence"],
-            "/machines/0/root/states/processing/on_events/finish_left/action/0/send",
-            "0",
-        ]
-    )
-    first_generation_entry = envelope_entry(
-        chain_origin,
-        chain_target,
-        event="component_finish",
-        event_id=first_generation_event_id,
-        acceptance_sequence=int(chain_origin["next_acceptance_sequence"]),
-        queue_sequence=int(chain_origin["next_queue_sequence"]),
-        delivery_mode="internal",
-        cause_id=chain_origin_entry["envelope"]["event_id"],
-        source={"runtime": copy.deepcopy(chain_root["target_identity"])},
-    )
-    chained_before = copy.deepcopy(chain_origin)
-    root_runtime(chained_before)["ready_mailbox"] = []
-    component_runtimes(chained_before)[0]["ready_mailbox"] = [
-        first_generation_entry
-    ]
-    chained_before["next_acceptance_sequence"] = str(
-        int(chained_before["next_acceptance_sequence"]) + 1
-    )
-    chained_before["next_queue_sequence"] = str(
-        int(chained_before["next_queue_sequence"]) + 1
-    )
-    chained_before["next_logical_step_sequence"] = str(
-        int(chained_before["next_logical_step_sequence"]) + 1
-    )
-    chained_before = seal_aggregate(chained_before)
-    outputs["chained-internal-before.json"] = chained_before
-
-    chained_root = root_runtime(chained_before)
-    chained_target = component_runtimes(chained_before)[0]
-    delivered_entry = chained_target["ready_mailbox"][0]
-    behavior_cause_id = delivered_entry["envelope"]["event_id"]
-    chained_self_event_id = digest(
-        [
-            "determa-event-identity-1",
-            "1",
-            chained_before["root_instance_id"],
-            chained_target["runtime_id"],
-            chained_target["runtime_id"],
-            behavior_cause_id,
-            chained_before["next_logical_step_sequence"],
-            "/machines/0/root/states/processing/components/0/root/"
-            "states/running/on_events/component_finish/action/0/send",
-            "0",
-        ]
-    )
-    chained_self_entry = envelope_entry(
-        chained_before,
-        chained_target,
-        event="component_work",
-        event_id=chained_self_event_id,
-        acceptance_sequence=int(chained_before["next_acceptance_sequence"]),
-        queue_sequence=int(chained_before["next_queue_sequence"]),
-        delivery_mode="internal",
-        cause_id=behavior_cause_id,
-        source={"runtime": copy.deepcopy(chained_target["target_identity"])},
-    )
-    chained_completion_event_id = digest(
-        [
-            "determa-event-identity-1",
-            "1",
-            chained_before["root_instance_id"],
-            chained_target["runtime_id"],
-            chained_root["runtime_id"],
-            behavior_cause_id,
-            chained_before["next_logical_step_sequence"],
-            "system:component_completion",
-            "0",
-        ]
-    )
-    chained_completion_entry = envelope_entry(
-        chained_before,
-        chained_root,
-        event="determa.component_completed",
-        event_id=chained_completion_event_id,
-        acceptance_sequence=int(chained_before["next_acceptance_sequence"]) + 1,
-        queue_sequence=int(chained_before["next_queue_sequence"]) + 1,
-        delivery_mode="internal",
-        cause_id=behavior_cause_id,
-        source={"system": "system:component_completion"},
-        payload=typed_value(
-            {
-                "component_id": "left",
-                "component_runtime_id": chained_target["runtime_id"],
-            }
-        ),
-    )
-    chained_result_state = copy.deepcopy(chained_before)
-    chained_result_target = component_runtimes(chained_result_state)[0]
-    chained_result_target["status"] = "completed"
-    chained_result_target["active_leaf_state_definition_pointers"] = []
-    chained_result_target["active_state_activations"] = []
-    chained_result_target["variables"] = []
-    chained_result_target["ready_mailbox"] = []
-    chained_result_target["next_state_activation_sequences"].append(
-        {
-            "definition_pointer": (
-                "/machines/0/root/states/processing/components/0/root/states/complete"
-            ),
-            "next_sequence": "1",
-        }
-    )
-    root_runtime(chained_result_state)["ready_mailbox"] = [
-        chained_completion_entry
-    ]
-    chained_result_state["next_acceptance_sequence"] = str(
-        int(chained_result_state["next_acceptance_sequence"]) + 2
-    )
-    chained_result_state["next_queue_sequence"] = str(
-        int(chained_result_state["next_queue_sequence"]) + 2
-    )
-    chained_result_state["next_logical_step_sequence"] = str(
-        int(chained_result_state["next_logical_step_sequence"]) + 1
-    )
-    chained_result_state = seal_aggregate(chained_result_state)
-    chained_disposition = lifecycle_disposition(
-        chained_self_entry, chained_target["runtime_id"], "runtime_completed"
-    )
-    outputs["chained-internal-result.json"] = step_result(
-        chained_result_state,
-        "handled",
-        emissions=[
-            internal_disposed_emission(chained_self_entry),
-            {
-                "kind": "internal_mailbox",
-                "emission_index": "1",
-                "event_id": chained_completion_event_id,
-                "acceptance_sequence": chained_completion_entry[
-                    "acceptance_sequence"
-                ],
-                "queue_sequence": chained_completion_entry["queue_sequence"],
-            },
-        ],
-        lifecycle_dispositions=[chained_disposition],
-    )
-    completed_component = copy.deepcopy(naturally_completed)
-    outputs["completed-component-aggregate.json"] = completed_component
-    outputs["completed-component-step-result.json"] = step_result(
-        completed_component, "rejected", rejection="inactive_component_target"
-    )
-    reserved_before = copy.deepcopy(naturally_completed)
-    outputs["reserved-event-before.json"] = reserved_before
-    reserved_after = copy.deepcopy(reserved_before)
-    root_runtime(reserved_after)["ready_mailbox"].pop(0)
-    reserved_after["next_logical_step_sequence"] = str(
-        int(reserved_after["next_logical_step_sequence"]) + 1
-    )
-    reserved_after = seal_aggregate(reserved_after)
-    outputs["reserved-event-handled-result.json"] = step_result(
-        reserved_after, "handled"
-    )
-
-    aggregate_before = root_event_before("aggregate_finish", "aggregate-finish-1")
-    outputs["aggregate-completion-before.json"] = aggregate_before
-    aggregate_root = root_runtime(aggregate_before)
-    aggregate_cause = aggregate_root["ready_mailbox"][0]
-    aggregate_event_id = digest(
-        ["determa-event-identity-1", "1", aggregate_before["root_instance_id"],
-         aggregate_root["runtime_id"], aggregate_root["runtime_id"],
-         aggregate_cause["envelope"]["cause_id"], aggregate_before["next_logical_step_sequence"],
-         "/machines/0/root/on_events/aggregate_finish/action/0/send", "0"]
-    )
-    aggregate_entry = envelope_entry(
-        aggregate_before, aggregate_root, event="component_work", event_id=aggregate_event_id,
-        acceptance_sequence=3, queue_sequence=3, delivery_mode="internal",
-        cause_id=aggregate_cause["envelope"]["cause_id"],
-        source={"runtime": copy.deepcopy(aggregate_root["target_identity"])},
-    )
-    aggregate_completed = copy.deepcopy(aggregate_before)
-    result_root = root_runtime(aggregate_completed)
-    result_root["status"] = "completed"
-    result_root["active_leaf_state_definition_pointers"] = []
-    result_root["active_state_activations"] = []
-    result_root["variables"] = []
-    result_root["ready_mailbox"] = []
-    aggregate_completed["runtimes"] = [result_root]
-    aggregate_completed["next_acceptance_sequence"] = "4"
-    aggregate_completed["next_queue_sequence"] = "4"
-    aggregate_completed["next_logical_step_sequence"] = str(int(aggregate_completed["next_logical_step_sequence"]) + 1)
-    aggregate_completed = seal_aggregate(aggregate_completed)
-    aggregate_disposition = lifecycle_disposition(aggregate_entry, aggregate_root["runtime_id"], "aggregate_completed")
-    outputs["internal-emission-aggregate-completed-result.json"] = step_result(
-        aggregate_completed, "handled", status="completed",
-        emissions=[internal_disposed_emission(aggregate_entry)],
-        lifecycle_dispositions=[aggregate_disposition],
-    )
-    disposed_target_id = component_runtimes(component)[0]["runtime_id"]
-    disposed_component = copy.deepcopy(aggregate_completed)
-    outputs["disposed-component-aggregate.json"] = disposed_component
-    outputs["disposed-component-step-result.json"] = step_result(
-        disposed_component, "rejected", rejection="invalid_instance_target"
-    )
-
-    rollback_before = root_event_before("cleanup_rollback", "cleanup-rollback-1")
-    rollback_root = root_runtime(rollback_before)
-    retained_component = component_runtimes(rollback_before)[0]
-    cleanup_pointer = "/machines/0/root/states/cleanup_failed/components/0"
-    cleanup_runtime_id = digest(
-        ["determa-component-runtime-identity-1", "1", rollback_before["root_instance_id"],
-         rollback_root["runtime_id"], cleanup_pointer, "0", rollback_before["namespace"],
-         rollback_before["root_machine_id"], rollback_before["root_machine_version"]]
-    )
-    old_id = retained_component["runtime_id"]
-    encoded = json.dumps(retained_component).replace(old_id, cleanup_runtime_id).replace(
-        "/machines/0/root/states/processing/components/0", cleanup_pointer
-    )
-    retained_component = json.loads(encoded)
-    retained_component["relation"]["component_id"] = "retained"
-    retained_component["target_identity"]["component"]["component_id"] = "retained"
-    retained_component["active_leaf_state_definition_pointers"] = [f"{cleanup_pointer}/root"]
-    retained_component["active_state_activations"] = [
-        {"state_definition_pointer": f"{cleanup_pointer}/root", "activation_sequence": "0"}
-    ]
-    retained_component["variables"] = []
-    retained_component["next_state_activation_sequences"] = [
-        {"definition_pointer": f"{cleanup_pointer}/root", "next_sequence": "1"}
-    ]
-    peer_pointer = "/machines/0/root/states/cleanup_failed/components/1"
-    peer_runtime_id = digest(
-        ["determa-component-runtime-identity-1", "1", rollback_before["root_instance_id"],
-         rollback_root["runtime_id"], peer_pointer, "0", rollback_before["namespace"],
-         rollback_before["root_machine_id"], rollback_before["root_machine_version"]]
-    )
-    retained_peer = json.loads(
-        json.dumps(retained_component).replace(cleanup_runtime_id, peer_runtime_id).replace(cleanup_pointer, peer_pointer)
-    )
-    retained_peer["identity_origin"]["declaration_index"] = "1"
-    retained_peer["relation"]["declaration_index"] = "1"
-    retained_peer["relation"]["component_id"] = "retained_peer"
-    retained_peer["target_identity"]["component"]["component_id"] = "retained_peer"
-    retained_peer["active_leaf_state_definition_pointers"] = [f"{peer_pointer}/root"]
-    retained_peer["active_state_activations"] = [
-        {"state_definition_pointer": f"{peer_pointer}/root", "activation_sequence": "0"}
-    ]
-    retained_peer["next_state_activation_sequences"] = [
-        {"definition_pointer": f"{peer_pointer}/root", "next_sequence": "1"}
-    ]
-    rollback_root["active_leaf_state_definition_pointers"] = ["/machines/0/root/states/cleanup_failed"]
-    rollback_root["active_state_activations"] = [
-        {"state_definition_pointer": "/machines/0/root", "activation_sequence": "0"},
-        {"state_definition_pointer": "/machines/0/root/states/cleanup_failed", "activation_sequence": "0"},
-    ]
-    rollback_root["variables"] = [
-        {
-            "variable_declaration_pointer": "/machines/0/root/states/cleanup_failed/variables/cleanup_marker",
-            "declaring_state_activation_sequence": "0",
-            "value": ["integer", "0"],
-        }
-    ]
-    rollback_root["next_state_activation_sequences"].append(
-        {"definition_pointer": "/machines/0/root/states/cleanup_failed", "next_sequence": "1"}
-    )
-    rollback_root["next_component_activation_sequences"].append(
-        {"definition_pointer": cleanup_pointer, "next_sequence": "1"}
-    )
-    rollback_root["next_component_activation_sequences"].append(
-        {"definition_pointer": peer_pointer, "next_sequence": "1"}
-    )
-    rollback_before["runtimes"] = [retained_component, retained_peer, rollback_root]
-    rollback_before["next_logical_step_sequence"] = str(
-        int(rollback_before["next_logical_step_sequence"]) + 1
-    )
-    rollback_before = seal_aggregate(rollback_before)
-    outputs["cleanup-rollback-before.json"] = rollback_before
-    rollback = copy.deepcopy(rollback_before)
-    rollback_root = root_runtime(rollback)
-    rollback_source = rollback_root["ready_mailbox"].pop(0)
-    rollback_fault = {
-        "definition_fingerprint": rollback["validated_bundle_fingerprint"],
-        "runtime_id": rollback_root["runtime_id"],
-        "cause_id": rollback_source["envelope"]["cause_id"],
-        "code": "action_fault",
-        "step_sequence": rollback["next_logical_step_sequence"],
-        "source_locator": "/machines/0/root/states/cleanup_failed/exit/0/assign/cleanup_marker",
-    }
-    rollback_root["status"] = "faulted"
-    rollback_root["fault"] = rollback_fault
-    rollback["next_logical_step_sequence"] = str(int(rollback["next_logical_step_sequence"]) + 1)
-    rollback = seal_aggregate(rollback)
-    outputs["internal-emission-rollback-result.json"] = step_result(
-        rollback, "faulted", status="faulted", fault=rollback_fault
-    )
-    outputs["faulted-root-retained-component-aggregate.json"] = rollback
-    outputs["faulted-root-retained-component-step-result.json"] = step_result(
-        rollback,
-        "rejected",
-        status="faulted",
-        rejection="invalid_instance_target",
-    )
-
-    invalid_aggregate = copy.deepcopy(base)
-    del invalid_aggregate["runtimes"][0]["deferred_mailbox"]
-    outputs["invalid-aggregate-v2.json"] = invalid_aggregate
-    invalid_result = step_result(empty, "not_runnable")
-    invalid_result["language_specific"] = True
-    outputs["invalid-core-step-result-v2.json"] = invalid_result
-
-    def delivery_input(
-        aggregate: dict[str, Any],
-        runtime: dict[str, Any],
-        event: str,
-        event_id: str,
-        payload: list[Any] | None = None,
-    ) -> dict[str, Any]:
-        entry = envelope_entry(
-            aggregate,
-            runtime,
-            event=event,
-            event_id=event_id,
-            acceptance_sequence=0,
-            queue_sequence=0,
-            payload=payload,
-        )
-        return {
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": entry["envelope"],
-            "envelope_digest": entry["envelope_digest"],
-        }
-
-    def delivery_from_entry(entry: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": copy.deepcopy(entry["envelope"]),
-            "envelope_digest": entry["envelope_digest"],
-        }
-
-    base_root = base["runtimes"][0]
-    duplicate_delivery = delivery_input(
-        base, base_root, "received", "duplicate"
-    )
-    duplicate_delivery_with_bad_digest = copy.deepcopy(duplicate_delivery)
-    duplicate_delivery_with_bad_digest["envelope_digest"] = "sha256:" + "0" * 64
-    valid_contract_delivery = delivery_input(
-        base, base_root, "received", "contract-valid-first"
-    )
-    undeclared_delivery = delivery_input(
-        base, base_root, "not_declared", "contract-undeclared"
-    )
-    wrong_payload_delivery = delivery_input(
-        base,
-        base_root,
-        "new_request",
-        "contract-wrong-payload",
-        typed_value({"transaction_id": 17}),
-    )
-    digest_mismatch_delivery = delivery_input(
-        base, base_root, "authorized", "digest-mismatch"
-    )
-    digest_mismatch_delivery["envelope_digest"] = "sha256:" + "0" * 64
-    unrelated_host_cause = delivery_input(
-        base, base_root, "received", "host-cause-mismatch"
-    )
-    unrelated_host_cause["envelope"]["cause_id"] = "unrelated-cause"
-    unrelated_host_cause["envelope_digest"] = digest(
-        [
-            "determa-inbox-envelope-digest-2",
-            "2",
-            base["root_instance_id"],
-            unrelated_host_cause["delivery_mode"],
-            unrelated_host_cause["envelope"],
-        ]
-    )
-    equal_replay = {
-        "delivery_mode": deferred_retry["delivery_mode"],
-        "envelope": copy.deepcopy(deferred_retry["envelope"]),
-        "envelope_digest": deferred_retry["envelope_digest"],
-    }
-    conflicting_replay = copy.deepcopy(equal_replay)
-    conflicting_replay["envelope"]["event"] = "held_request"
-    conflicting_replay["envelope_digest"] = digest(
-        [
-            "determa-inbox-envelope-digest-2",
-            "2",
-            base["root_instance_id"],
-            conflicting_replay["delivery_mode"],
-            conflicting_replay["envelope"],
-        ]
-    )
-    pending_changed_payload_stale_digest = copy.deepcopy(equal_replay)
-    pending_changed_payload_stale_digest["envelope"]["payload"] = typed_value(
-        {"changed": "payload"}
-    )
-    pending_unchanged_bad_digest = copy.deepcopy(equal_replay)
-    pending_unchanged_bad_digest["envelope_digest"] = "sha256:" + ("0" * 64)
-    completed_identity = component_runtimes(component)[0]["target_identity"]
-    disposed_delivery = delivery_input(
-        component,
-        component_runtimes(component)[0],
-        "component_work",
-        "disposed-component-admission",
-    )
-    disposed_delivery["envelope"]["target"] = copy.deepcopy(completed_identity)
-    disposed_delivery["envelope_digest"] = digest(
-        [
-            "determa-inbox-envelope-digest-2",
-            "2",
-            disposed_component["root_instance_id"],
-            disposed_delivery["delivery_mode"],
-            disposed_delivery["envelope"],
-        ]
-    )
-    faulted_root_component = component_runtimes(rollback)[0]
-    faulted_root_descendant_entry = envelope_entry(
-        rollback,
-        faulted_root_component,
-        event="component_work",
-        event_id="faulted-root-descendant-admission",
-        acceptance_sequence=0,
-        queue_sequence=0,
-        delivery_mode="internal",
-        source={"runtime": copy.deepcopy(root_runtime(rollback)["target_identity"])},
-    )
-    completed_root_delivery = delivery_input(
-        cancelled,
-        root_runtime(cancelled),
-        "fanout",
-        "completed-root-admission",
-    )
-    faulted_root_delivery = delivery_input(
-        rollback,
-        root_runtime(rollback),
-        "fanout",
-        "faulted-root-admission",
-    )
-
-    reserved_admission_before = copy.deepcopy(reserved_after)
-    reserved_source = component_runtimes(reserved_admission_before)[0]
-    reserved_target = root_runtime(reserved_admission_before)
-    reserved_entry = envelope_entry(
-        reserved_admission_before,
-        reserved_target,
-        event="determa.component_completed",
-        event_id=completion_event_id,
-        acceptance_sequence=int(reserved_admission_before["next_acceptance_sequence"]),
-        queue_sequence=int(reserved_admission_before["next_queue_sequence"]),
-        delivery_mode="internal",
-        cause_id=natural_cause["envelope"]["cause_id"],
-        source={"system": "system:component_completion"},
-        payload=typed_value(
-            {
-                "component_id": reserved_source["relation"]["component_id"],
-                "component_runtime_id": reserved_source["runtime_id"],
-            }
-        ),
-    )
-    reserved_admitted = copy.deepcopy(reserved_admission_before)
-    root_runtime(reserved_admitted)["ready_mailbox"].append(reserved_entry)
-    reserved_admitted["next_acceptance_sequence"] = str(
-        int(reserved_admitted["next_acceptance_sequence"]) + 1
-    )
-    reserved_admitted["next_queue_sequence"] = str(
-        int(reserved_admitted["next_queue_sequence"]) + 1
-    )
-    reserved_admitted = seal_aggregate(reserved_admitted)
-    reserved_dispatched = copy.deepcopy(reserved_admitted)
-    root_runtime(reserved_dispatched)["ready_mailbox"].pop(0)
-    reserved_dispatched["next_logical_step_sequence"] = str(
-        int(reserved_dispatched["next_logical_step_sequence"]) + 1
-    )
-    reserved_dispatched = seal_aggregate(reserved_dispatched)
-    outputs["reserved-admission-before.json"] = reserved_admission_before
-    outputs["reserved-admitted-aggregate.json"] = reserved_admitted
-    outputs["reserved-admission-result.json"] = {
-        "result": "accepted",
-        "status": "running",
-        "accepted": [
-            {
-                "event_id": reserved_entry["envelope"]["event_id"],
-                "acceptance_sequence": reserved_entry["acceptance_sequence"],
-                "queue_sequence": reserved_entry["queue_sequence"],
-            }
-        ],
-        "state": reserved_admitted,
-        "rejection": None,
-    }
-    outputs["reserved-dispatch-result.json"] = step_result(
-        reserved_dispatched, "handled"
-    )
-    operation_inputs = {
-        "create": create_input,
-        "admit_two": {
-            "operation": "admit_v2",
-            "deliveries": [
-                delivery_input(base, base_root, "received", "batch-a"),
-                delivery_input(base, base_root, "authorized", "batch-b"),
-            ],
-        },
-        "duplicate_batch": {
-            "operation": "admit_v2",
-            "deliveries": [duplicate_delivery, duplicate_delivery_with_bad_digest],
-        },
-        "digest_mismatch_batch": {
-            "operation": "admit_v2",
-            "deliveries": [valid_contract_delivery, digest_mismatch_delivery],
-        },
-        "host_cause_mismatch": {
-            "operation": "admit_v2",
-            "deliveries": [unrelated_host_cause],
-        },
-        "undeclared_event_batch": {
-            "operation": "admit_v2",
-            "deliveries": [valid_contract_delivery, undeclared_delivery],
-        },
-        "wrong_payload_batch": {
-            "operation": "admit_v2",
-            "deliveries": [valid_contract_delivery, wrong_payload_delivery],
-        },
-        "equal_replay": {"operation": "admit_v2", "deliveries": [equal_replay]},
-        "conflicting_replay": {
-            "operation": "admit_v2",
-            "deliveries": [conflicting_replay],
-        },
-        "pending_changed_payload_stale_digest": {
-            "operation": "admit_v2",
-            "deliveries": [pending_changed_payload_stale_digest],
-        },
-        "pending_unchanged_bad_digest": {
-            "operation": "admit_v2",
-            "deliveries": [pending_unchanged_bad_digest],
-        },
-        "recall_step": {"operation": "step_v2", "target_runtime_id": base["root_runtime_id"]},
-        "repeated_step": {"operation": "step_v2", "target_runtime_id": repeated_before["root_runtime_id"]},
-        "deferred_only_step": {"operation": "step_v2", "target_runtime_id": deferred_only["root_runtime_id"]},
-        "component_step": {"operation": "step_v2", "target_runtime_id": component_runtimes(component)[0]["runtime_id"]},
-        "spawn_step": {"operation": "step_v2", "target_runtime_id": spawned_runtimes(spawned)[0]["runtime_id"]},
-        "completed_component_step": {"operation": "step_v2", "target_runtime_id": component_runtimes(completed_component)[0]["runtime_id"]},
-        "faulted_component_step": {"operation": "step_v2", "target_runtime_id": component_runtimes(faulted_component)[0]["runtime_id"]},
-        "disposed_component_step": {"operation": "step_v2", "target_runtime_id": disposed_target_id},
-        "invalid_runtime_step": {"operation": "step_v2", "target_runtime_id": "sha256:" + "0" * 64},
-        "completed_root_step": {
-            "operation": "step_v2",
-            "target_runtime_id": cancelled["root_runtime_id"],
-        },
-        "overflow_step": {"operation": "step_v2", "target_runtime_id": zero_before["root_runtime_id"]},
-        "fanout_step": {"operation": "step_v2", "target_runtime_id": lifecycle_before["root_runtime_id"]},
-        "retained_faulted_step": {
-            "operation": "step_v2",
-            "target_runtime_id": root_runtime(retained_before)["runtime_id"],
-        },
-        "cancellation_step": {"operation": "step_v2", "target_runtime_id": cancellation_before["root_runtime_id"]},
-        "natural_completion_step": {"operation": "step_v2", "target_runtime_id": natural_target["runtime_id"]},
-        "chained_internal_step": {
-            "operation": "step_v2",
-            "target_runtime_id": chained_target["runtime_id"],
-        },
-        "aggregate_completion_step": {"operation": "step_v2", "target_runtime_id": aggregate_before["root_runtime_id"]},
-        "cleanup_rollback_step": {"operation": "step_v2", "target_runtime_id": rollback_before["root_runtime_id"]},
-        "reserved_event_step": {"operation": "step_v2", "target_runtime_id": reserved_before["root_runtime_id"]},
-        "reserved_event_admit": {
-            "operation": "admit_v2",
-            "deliveries": [delivery_from_entry(reserved_entry)],
-        },
-        "reserved_admitted_step": {
-            "operation": "step_v2",
-            "target_runtime_id": reserved_admitted["root_runtime_id"],
-        },
-        "faulted_root_descendant_step": {
-            "operation": "step_v2",
-            "target_runtime_id": faulted_root_component["runtime_id"],
-        },
-        "faulted_root_descendant_admit": {
-            "operation": "admit_v2",
-            "deliveries": [delivery_from_entry(faulted_root_descendant_entry)],
-        },
-        "completed_root_admit": {
-            "operation": "admit_v2",
-            "deliveries": [completed_root_delivery],
-        },
-        "faulted_root_admit": {
-            "operation": "admit_v2",
-            "deliveries": [faulted_root_delivery],
-        },
-        "completed_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(completed_component, component_runtimes(completed_component)[0], "component_work", "completed-component-admission")]},
-        "faulted_component_admit": {"operation": "admit_v2", "deliveries": [delivery_input(faulted_component, component_runtimes(faulted_component)[0], "component_work", "faulted-component-admission")]},
-        "disposed_component_admit": {"operation": "admit_v2", "deliveries": [disposed_delivery]},
-    }
-    admitted_state = copy.deepcopy(base)
-    admitted_root = root_runtime(admitted_state)
-    admitted_entries = []
-    for offset, delivery in enumerate(operation_inputs["admit_two"]["deliveries"]):
-        entry = {
-            "acceptance_sequence": str(4 + offset),
-            "queue_sequence": str(4 + offset),
-            "deferral_count": "0",
-            "delivery_mode": delivery["delivery_mode"],
-            "envelope": copy.deepcopy(delivery["envelope"]),
-            "envelope_digest": delivery["envelope_digest"],
-        }
-        admitted_root["ready_mailbox"].append(entry)
-        admitted_entries.append(entry)
-    admitted_state["next_acceptance_sequence"] = "6"
-    admitted_state["next_queue_sequence"] = "6"
-    admitted_state = seal_aggregate(admitted_state)
-    outputs["operation-inputs.json"] = operation_inputs
-    outputs["admission-success.json"] = {
-        "result": "accepted",
-        "status": "running",
-        "accepted": [
-            {
-                "event_id": entry["envelope"]["event_id"],
-                "acceptance_sequence": entry["acceptance_sequence"],
-                "queue_sequence": entry["queue_sequence"],
-            }
-            for entry in admitted_entries
-        ],
-        "state": admitted_state,
-        "rejection": None,
-    }
-    outputs["replay-success.json"] = {
-        "result": "replay",
-        "status": "running",
-        "event_id": "retry-guarded-recall",
-        "acceptance_sequence": "2",
-        "location": "deferred",
-        "state": base,
-        "rejection": None,
-    }
-    outputs["invalid-version2-operation-result.json"] = {
-        "result": "replay",
-        "event_id": "retry-guarded-recall",
-        "acceptance_sequence": "0",
-        "location": "deferred",
-        "language_specific": True,
-    }
-    return {name: canonical(value) for name, value in outputs.items()}
 
 
 def produce_persistence() -> dict[str, bytes]:
-    aggregate_v1 = load(PERSISTENCE / "base-aggregate-v1.json")
-    upgraded_aggregate_v2 = upgrade_aggregate(aggregate_v1)
     source_document = normalize_bundle_document(load_yaml(PERSISTENCE / "machine.yaml"))
     source_fingerprint = bundle_fingerprint_document(source_document)
     aggregate_v2 = rebind_single_root(
@@ -2265,7 +683,36 @@ def produce_persistence() -> dict[str, bytes]:
     stale_target["machines"][0]["root"]["states"]["idle"]["on_events"]["new_request"]["transition_to"] = "busy.receiving_replacement"
     target_documents["target-stale-state.yaml"] = stale_target
 
-    base_descriptor_template = load(PERSISTENCE / "base-descriptor-v1.json")
+    descriptor_template = {
+        "migration_descriptor_format": "determa.aggregate_migration",
+        "migration_descriptor_schema_version": 2,
+        "source_machine_format": 1,
+        "target_machine_format": 1,
+        "source_validated_bundle_fingerprint": source_fingerprint,
+        "target_validated_bundle_fingerprint": source_fingerprint,
+        "source_aggregate_shape_fingerprint": aggregate_shape_fingerprint_document(source_document),
+        "target_aggregate_shape_fingerprint": aggregate_shape_fingerprint_document(source_document),
+        "mode": "compatible",
+        "mappings": {
+            "machines": [],
+            "active_states": [],
+            "variables": [],
+            "history": [],
+            "components": [],
+            "owned_runtimes": [],
+            "lifetime_holders": [],
+            "counters": [],
+        },
+        "terminal_policy": {"completed": "preserve", "faulted": "preserve"},
+        "resource_requirements": {
+            "maximum_transformed_output_bytes": "0",
+            "maximum_cel_expression_length": "0",
+            "maximum_cel_ast_nodes": "0",
+            "maximum_cel_evaluation_steps": "0",
+        },
+        "queued_event_default": "preserve_if_compatible",
+        "queued_event_rules": [],
+    }
 
     def make_descriptor(
         target_name: str,
@@ -2276,47 +723,37 @@ def produce_persistence() -> dict[str, bytes]:
         descriptor_source = (
             source_document if source_name is None else target_documents[source_name]
         )
-        descriptor_v1 = copy.deepcopy(base_descriptor_template)
-        descriptor_v1["source_validated_bundle_fingerprint"] = (
+        descriptor = copy.deepcopy(descriptor_template)
+        descriptor["source_validated_bundle_fingerprint"] = (
             bundle_fingerprint_document(descriptor_source)
         )
-        descriptor_v1["target_validated_bundle_fingerprint"] = bundle_fingerprint_document(target_documents[target_name])
-        descriptor_v1["source_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(descriptor_source)
-        descriptor_v1["target_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(target_documents[target_name])
-        if descriptor_v1["source_aggregate_shape_fingerprint"] != descriptor_v1["target_aggregate_shape_fingerprint"]:
-            descriptor_v1["mode"] = "transform"
-            descriptor_v1["mappings"]["machines"] = [{
+        descriptor["target_validated_bundle_fingerprint"] = bundle_fingerprint_document(target_documents[target_name])
+        descriptor["source_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(descriptor_source)
+        descriptor["target_aggregate_shape_fingerprint"] = aggregate_shape_fingerprint_document(target_documents[target_name])
+        if descriptor["source_aggregate_shape_fingerprint"] != descriptor["target_aggregate_shape_fingerprint"]:
+            descriptor["mode"] = "transform"
+            descriptor["mappings"]["machines"] = [{
                 "source_definition_pointer": "/machines/0/root",
                 "target_definition_pointer": "/machines/0/root",
             }]
-            descriptor_v1["mappings"]["active_states"] = [{
+            descriptor["mappings"]["active_states"] = [{
                 "source_leaf_state_definition_pointer": "/machines/0/root/states/busy/states/receiving",
                 "target_leaf_state_definition_pointers": [
                     "/machines/0/root/states/busy/states/receiving_replacement"
                 ],
             }]
-            descriptor_v1["mappings"]["counters"] = [
+            descriptor["mappings"]["counters"] = [
                 {"operation": "map", "source_definition_pointer": "/machines/0/root", "target_definition_pointer": "/machines/0/root"},
                 {"operation": "map", "source_definition_pointer": "/machines/0/root/states/busy", "target_definition_pointer": "/machines/0/root/states/busy"},
                 {"operation": "map", "source_definition_pointer": "/machines/0/root/states/busy/states/receiving", "target_definition_pointer": "/machines/0/root/states/busy/states/receiving_replacement"},
             ]
-        descriptor_v1.pop("migration_descriptor_digest", None)
-        descriptor_v1["migration_descriptor_digest"] = digest(
-            ["determa-migration-descriptor-1", descriptor_v1]
-        )
-        descriptor = {
-            "migration_descriptor_format": "determa.aggregate_migration",
-            "migration_descriptor_schema_version": 2,
-            "base_descriptor": descriptor_v1,
-            "queued_event_default": "preserve_if_compatible",
-            "queued_event_rules": ([{
+        descriptor["queued_event_rules"] = ([{
                 "machine_id": aggregate_v2["root_machine_id"],
                 "event": "retired_event",
                 "delivery_mode": "input",
                 "action": "dispose",
                 "reason": "event removed by version migration",
-            }] if dispose_retired else []),
-        }
+            }] if dispose_retired else [])
         descriptor["migration_descriptor_digest"] = digest(
             ["determa-migration-descriptor-2", descriptor]
         )
@@ -2345,7 +782,7 @@ def produce_persistence() -> dict[str, bytes]:
                 "normalized_bundle": typed_value(source_document),
             },
             {
-                "validated_bundle_fingerprint": descriptor_v2["base_descriptor"]["target_validated_bundle_fingerprint"],
+                "validated_bundle_fingerprint": descriptor_v2["target_validated_bundle_fingerprint"],
                 "normalized_bundle": typed_value(target_documents["target-compatible.yaml"]),
             },
         ],
@@ -2377,14 +814,14 @@ def produce_persistence() -> dict[str, bytes]:
     disposal_before = seal_aggregate(disposal_before)
     disposal_after = copy.deepcopy(disposal_before)
     disposal_after["runtimes"][0]["deferred_mailbox"] = []
-    disposal_after["validated_bundle_fingerprint"] = descriptors["descriptor-dispose-v2.json"]["base_descriptor"]["target_validated_bundle_fingerprint"]
+    disposal_after["validated_bundle_fingerprint"] = descriptors["descriptor-dispose-v2.json"]["target_validated_bundle_fingerprint"]
     disposal_after["runtimes"][0]["current_definition"]["validated_bundle_fingerprint"] = disposal_after["validated_bundle_fingerprint"]
     disposal_after["migration_sequence"] = str(int(disposal_after["migration_sequence"]) + 1)
     disposal_after = seal_aggregate(disposal_after)
 
     def migrated_to(source: dict[str, Any], descriptor: dict[str, Any]) -> dict[str, Any]:
         result = copy.deepcopy(source)
-        target_fingerprint = descriptor["base_descriptor"]["target_validated_bundle_fingerprint"]
+        target_fingerprint = descriptor["target_validated_bundle_fingerprint"]
         result["validated_bundle_fingerprint"] = target_fingerprint
         result["migration_sequence"] = str(int(result["migration_sequence"]) + 1)
         for runtime in result["runtimes"]:
@@ -2397,7 +834,7 @@ def produce_persistence() -> dict[str, bytes]:
         descriptor: dict[str, Any],
     ) -> dict[str, Any]:
         return {
-            "migration_audit_record_schema_version": 1,
+            "migration_audit_record_schema_version": 2,
             "root_instance_id": source["root_instance_id"],
             "root_runtime_id": source["root_runtime_id"],
             "migration_sequence": target["migration_sequence"],
@@ -2479,9 +916,7 @@ def produce_persistence() -> dict[str, bytes]:
                 counter["definition_pointer"] = stale_target_pointer
     historical_fault_migrated = seal_aggregate(historical_fault_migrated)
     outputs: dict[str, Any] = {
-        "upgraded-aggregate-v2.json": canonical(upgraded_aggregate_v2),
         "base-aggregate-v2.json": canonical(aggregate_v2),
-        "base-descriptor-v1.json": canonical(descriptors["descriptor-compatible-v2.json"]["base_descriptor"]),
         "package-v2.json": canonical(package_v2),
         "invalid-descriptor-v2.json": canonical(invalid_descriptor),
         "invalid-package-v2.json": canonical(invalid_package),
@@ -2591,20 +1026,13 @@ def produce_persistence() -> dict[str, bytes]:
                 ],
             }
         ),
-        "downgrade-result.json": canonical(
-            {"result": "success", "aggregate_state": aggregate_v1}
-        ),
         "operation-inputs.json": canonical({}),
     }
     for name, document in target_documents.items():
         outputs[name] = canonical(document)
     for name, descriptor in descriptors.items():
         outputs[name] = canonical(descriptor)
-    operations: dict[str, Any] = {
-        "upgrade": {"operation": "upgrade_aggregate_v1_to_v2"},
-        "downgrade": {"operation": "downgrade_aggregate_v2_to_v1"},
-        "downgrade_prohibited": {"operation": "downgrade_aggregate_v2_to_v1"},
-    }
+    operations: dict[str, Any] = {}
     migration_targets = {
         "preserve": ("target-compatible.yaml", "descriptor-compatible-v2.json"),
         "preserve_fault": ("target-compatible.yaml", "descriptor-compatible-v2.json"),
@@ -2662,742 +1090,49 @@ def produce_persistence() -> dict[str, bytes]:
     return {name: data if isinstance(data, bytes) else canonical(data) for name, data in outputs.items()}
 
 
-def target_runtime_id(target: dict[str, Any]) -> str:
-    if "root" in target:
-        return target["root"]["root_runtime_id"]
-    if "component" in target:
-        return target["component"]["component_runtime_id"]
-    if "spawned_instance" in target:
-        return target["spawned_instance"]["instance_id"]
-    raise ValueError(f"unsupported checkpoint target: {target!r}")
-
-
-def upgrade_checkpoint(value: dict[str, Any]) -> dict[str, Any]:
-    source = copy.deepcopy(value)
-    aggregate = upgrade_aggregate(source["root_record"]["aggregate_state"])
-    receipts = []
-    for receipt in source["operation_receipts"]:
-        receipts.append(
-            {
-                "operation_kind": (
-                    "legacy_v1_creation"
-                    if receipt["operation_kind"] == "creation"
-                    else "legacy_v1_operation"
-                ),
-                "receipt_sequence": receipt["receipt_sequence"],
-                "legacy_receipt": receipt,
-            }
-        )
-    next_receipt_sequence = int(source["next_operation_receipt_sequence"])
-    next_queue_sequence = 0
-    aggregate["next_acceptance_sequence"] = source["next_delivery_sequence"]
-    runtime_by_id = {runtime["runtime_id"]: runtime for runtime in aggregate["runtimes"]}
-    for pending in sorted(source["pending_deliveries"], key=lambda item: int(item["delivery_sequence"])):
-        origin = pending["origin"]
-        envelope = copy.deepcopy(pending["envelope"])
-        envelope["cause_id"] = envelope["event_id"]
-        envelope["source"] = (
-            {"host": True}
-            if origin["kind"] == "host_input"
-            else {"legacy_v1_internal": {
-                "producing_receipt_sequence": origin["producing_receipt_sequence"],
-                "emission_index": origin["emission_index"],
-            }}
-        )
-        entry = {
-            "acceptance_sequence": pending["delivery_sequence"],
-            "queue_sequence": str(next_queue_sequence),
-            "delivery_mode": pending["delivery_mode"],
-            "envelope": envelope,
-            "envelope_digest": digest([
-                "determa-inbox-envelope-digest-2", "2", source["root_instance_id"],
-                pending["delivery_mode"], envelope,
-            ]),
-            "deferral_count": "0",
-        }
-        target = envelope["target"]
-        runtime_id = target_runtime_id(target)
-        if runtime_id not in runtime_by_id:
-            raise ValueError(
-                f"checkpoint target does not resolve to a runtime: {target!r}"
-            )
-        runtime_by_id[runtime_id]["ready_mailbox"].append(entry)
-        receipt = {
-            "operation_kind": "acceptance",
-            "receipt_sequence": str(next_receipt_sequence),
-            "event_id": envelope["event_id"],
-            "request_digest": entry["envelope_digest"],
-            "acceptance_sequence": pending["delivery_sequence"],
-            "accepted_revision": pending["accepted_revision"],
-            "delivery_mode": pending["delivery_mode"],
-        }
-        if pending["delivery_mode"] == "internal":
-            receipt["legacy_v1_delivery"] = {
-                "delivery_sequence": pending["delivery_sequence"],
-                "envelope_digest": pending["envelope_digest"],
-                "origin": origin,
-            }
-        receipts.append(receipt)
-        next_receipt_sequence += 1
-        next_queue_sequence += 1
-    aggregate["next_queue_sequence"] = str(next_queue_sequence)
-    aggregate = seal_aggregate(aggregate)
-    result = {
-        "execution_checkpoint_format": "determa.execution_checkpoint",
-        "execution_checkpoint_schema_version": 2,
-        "root_instance_id": source["root_instance_id"],
-        "revision": str(int(source["revision"]) + 1),
-        "root_record": {"status": "retained", "aggregate_state": aggregate},
-        "replay_retention": source["replay_retention"],
-        "next_operation_receipt_sequence": str(next_receipt_sequence),
-        "operation_receipts": receipts,
-        "event_identity_tombstones": [],
-        "pending_outbox_intents": source["pending_outbox_intents"],
-        "next_outbox_terminal_sequence": source["next_outbox_terminal_sequence"],
-        "terminal_outbox_records": source["terminal_outbox_records"],
-        "outbox_effect_tombstones": source["outbox_effect_tombstones"],
-        "migration_audit_records": source["migration_audit_records"],
-    }
-    return seal_checkpoint(result)
-
-
-def add_optional_host_legacy_metadata(
-    checkpoint: dict[str, Any], source: dict[str, Any]
-) -> dict[str, Any]:
-    result = copy.deepcopy(checkpoint)
-    pending_by_event = {
-        item["envelope"]["event_id"]: item for item in source["pending_deliveries"]
-    }
-    for receipt in result["operation_receipts"]:
-        if receipt["operation_kind"] != "acceptance":
-            continue
-        pending = pending_by_event[receipt["event_id"]]
-        if pending["origin"] != {"kind": "host_input"}:
-            continue
-        receipt["legacy_v1_delivery"] = {
-            "delivery_sequence": pending["delivery_sequence"],
-            "envelope_digest": pending["envelope_digest"],
-            "origin": copy.deepcopy(pending["origin"]),
-        }
-    return seal_checkpoint(result)
-
-
-def process_upgraded_unhandled(
-    checkpoint: dict[str, Any], event_id: str
-) -> dict[str, Any]:
-    result = copy.deepcopy(checkpoint)
-    aggregate = result["root_record"]["aggregate_state"]
-    selected_runtime = None
-    selected_index = None
-    for runtime in aggregate["runtimes"]:
-        for index, entry in enumerate(runtime["ready_mailbox"]):
-            if entry["envelope"]["event_id"] == event_id:
-                selected_runtime = runtime
-                selected_index = index
-                break
-        if selected_runtime is not None:
-            break
-    if selected_runtime is None or selected_index is None:
-        raise ValueError(f"missing upgraded ready event: {event_id}")
-    consumed = selected_runtime["ready_mailbox"].pop(selected_index)
-    aggregate = seal_aggregate(aggregate)
-    result["root_record"]["aggregate_state"] = aggregate
-    result["revision"] = str(int(result["revision"]) + 1)
-    receipt_sequence = result["next_operation_receipt_sequence"]
-    result["next_operation_receipt_sequence"] = str(int(receipt_sequence) + 1)
-    result["operation_receipts"].append(
-        {
-            "operation_kind": "event_terminal",
-            "receipt_sequence": receipt_sequence,
-            "event_id": consumed["envelope"]["event_id"],
-            "request_digest": consumed["envelope_digest"],
-            "acceptance_sequence": consumed["acceptance_sequence"],
-            "final_queue_sequence": consumed["queue_sequence"],
-            "committed_revision": result["revision"],
-            "resulting_aggregate_state_digest": aggregate[
-                "aggregate_state_digest"
-            ],
-            "outcome": {
-                "status": "running",
-                "disposition": "unhandled",
-                "fault": None,
-                "rejection": None,
-            },
-            "emission_references": [],
-        }
-    )
-    return seal_checkpoint(result)
-
-
-def process_upgraded_internal(checkpoint: dict[str, Any]) -> dict[str, Any]:
-    result = copy.deepcopy(checkpoint)
-    aggregate = result["root_record"]["aggregate_state"]
-    root = next(
-        runtime
-        for runtime in aggregate["runtimes"]
-        if runtime["relation"]["kind"] == "root"
-    )
-    consumed = next(
-        entry
-        for entry in root["ready_mailbox"]
-        if entry["envelope"]["event"] == "internal_increment"
-    )
-    root["ready_mailbox"].remove(consumed)
-    amount = int(consumed["envelope"]["payload"][1][0][1][1])
-    count = next(
-        variable
-        for variable in root["variables"]
-        if variable["variable_declaration_pointer"].endswith("/variables/count")
-    )
-    count["value"][1] = str(int(count["value"][1]) + amount)
-    aggregate["next_logical_step_sequence"] = str(
-        int(aggregate["next_logical_step_sequence"]) + 1
-    )
-    aggregate = seal_aggregate(aggregate)
-    result["root_record"]["aggregate_state"] = aggregate
-    result["revision"] = str(int(result["revision"]) + 1)
-    receipt_sequence = result["next_operation_receipt_sequence"]
-    result["next_operation_receipt_sequence"] = str(int(receipt_sequence) + 1)
-    result["operation_receipts"].append(
-        {
-            "operation_kind": "event_terminal",
-            "receipt_sequence": receipt_sequence,
-            "event_id": consumed["envelope"]["event_id"],
-            "request_digest": consumed["envelope_digest"],
-            "acceptance_sequence": consumed["acceptance_sequence"],
-            "final_queue_sequence": consumed["queue_sequence"],
-            "committed_revision": result["revision"],
-            "resulting_aggregate_state_digest": aggregate[
-                "aggregate_state_digest"
-            ],
-            "outcome": {
-                "status": "running",
-                "disposition": "handled",
-                "fault": None,
-                "rejection": None,
-            },
-            "emission_references": [],
-        }
-    )
-    return seal_checkpoint(result)
-
-
 def produce_checkpoint() -> dict[str, bytes]:
-    def with_checkpoint_cas(
-        operation: dict[str, Any], checkpoint: dict[str, Any]
-    ) -> dict[str, Any]:
-        return {
-            **operation,
-            "expected_revision": checkpoint["revision"],
-            "expected_checkpoint_digest": checkpoint[
-                "execution_checkpoint_digest"
-            ],
-        }
+    persistence = produce_persistence()
+    descriptor_one = json.loads(
+        persistence["descriptor-compatible-v2.json"]
+    )
+    descriptor_two = json.loads(
+        persistence["descriptor-compatible-second-v2.json"]
+    )
+    source_path = CHECKPOINT / "maintenance-source.yaml"
+    target_one_path = CHECKPOINT / "maintenance-target-one.yaml"
+    target_two_path = CHECKPOINT / "maintenance-target-two.yaml"
 
-    def prune_checkpoint(
-        checkpoint: dict[str, Any], cutoff: int
-    ) -> dict[str, Any]:
-        projected = copy.deepcopy(checkpoint)
-        receipts = projected["operation_receipts"]
-        removed = [
-            receipt
-            for receipt in receipts
-            if receipt["receipt_sequence"] != "0"
-            and int(receipt["receipt_sequence"]) <= cutoff
-        ]
-        acceptance_by_event = {
-            receipt["event_id"]: receipt
-            for receipt in receipts
-            if receipt["operation_kind"] == "acceptance"
-        }
-        tombstones = list(projected["event_identity_tombstones"])
-        for receipt in removed:
-            if receipt["operation_kind"] == "event_terminal":
-                acceptance = acceptance_by_event.get(receipt["event_id"])
-                if acceptance is not None:
-                    assert (
-                        acceptance["acceptance_sequence"]
-                        == receipt["acceptance_sequence"]
-                    )
-                else:
-                    producer_references = [
-                        reference
-                        for producer in receipts
-                        for reference in producer.get("emission_references", [])
-                        if reference.get("kind") == "internal_terminal"
-                        and reference.get("event_id") == receipt["event_id"]
-                        and reference.get("acceptance_sequence")
-                        == receipt["acceptance_sequence"]
-                        and reference.get("terminal_receipt_sequence")
-                        == receipt["receipt_sequence"]
-                    ]
-                    prior_cutoff = checkpoint["replay_retention"][
-                        "pruned_through_receipt_sequence"
-                    ]
-                    producer_was_attested_pruned = (
-                        not producer_references
-                        and prior_cutoff is not None
-                        and int(prior_cutoff)
-                        < int(receipt["receipt_sequence"])
-                    )
-                    assert (
-                        len(producer_references) == 1
-                        or producer_was_attested_pruned
-                    )
-                tombstones.append(
-                    {
-                        "event_id": receipt["event_id"],
-                        "request_digest": receipt["request_digest"],
-                        "request_digest_domain": (
-                            "determa-inbox-envelope-digest-2"
-                        ),
-                        "acceptance_sequence": receipt[
-                            "acceptance_sequence"
-                        ],
-                        "terminal_receipt_sequence": receipt[
-                            "receipt_sequence"
-                        ],
-                        "terminal_disposition": receipt["outcome"][
-                            "disposition"
-                        ],
-                    }
-                )
-            elif (
-                receipt["operation_kind"] == "legacy_v1_operation"
-                and receipt["legacy_receipt"].get("operation_kind")
-                == "delivery"
-            ):
-                legacy = receipt["legacy_receipt"]
-                tombstones.append(
-                    {
-                        "event_id": legacy["event_id"],
-                        "request_digest": legacy["request_digest"],
-                        "request_digest_domain": (
-                            "determa-inbox-envelope-digest-1"
-                        ),
-                        "acceptance_sequence": legacy[
-                            "accepted_delivery_sequence"
-                        ],
-                        "terminal_receipt_sequence": receipt[
-                            "receipt_sequence"
-                        ],
-                        "terminal_disposition": legacy["outcome"][
-                            "disposition"
-                        ],
-                    }
-                )
-        projected["operation_receipts"] = [
-            receipt for receipt in receipts if receipt not in removed
-        ]
-        projected["event_identity_tombstones"] = sorted(
-            tombstones, key=lambda item: int(item["terminal_receipt_sequence"])
-        )
-        projected["replay_retention"][
-            "pruned_through_receipt_sequence"
-        ] = str(cutoff)
-        projected["revision"] = str(int(checkpoint["revision"]) + 1)
-        return seal_checkpoint(projected)
-
-    def creation_owned_work_checkpoint(
-        machine_id: str, work_kind: str
-    ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
-        bundle_path = CHECKPOINT / "creation-owned-work-machine.yaml"
-        root_instance_id = f"{work_kind}-creation-root"
-        creation_id = f"{work_kind}-creation"
-        request = {
-            "machine_id": machine_id,
-            "machine_version": "1",
-            "root_instance_id": root_instance_id,
-            "creation_id": creation_id,
-            "bindings": {"input": {}, "external": {}},
-        }
-        creation_aggregate_v2 = create_v2_root(bundle_path, request)
-        creation_root = root_runtime(creation_aggregate_v2)
-        root_pointer = (
-            "/machines/0/root"
-            if machine_id == "internal_creator"
-            else "/machines/1/root"
-        )
-        initialization_cause_id = digest(
-            [
-                "determa-cause-identity-1",
-                "1",
-                "root_initialization",
-                root_instance_id,
-                creation_root["runtime_id"],
-                creation_root["runtime_id"],
-                creation_id,
-                "0",
-                root_pointer,
-                "0",
-            ]
-        )
-        creation_references: list[dict[str, Any]] = []
-        pending_outbox: list[dict[str, Any]] = []
-        pending_deliveries: list[dict[str, Any]] = []
-
-        if work_kind == "internal":
-            event_id = digest(
-                [
-                    "determa-event-identity-1",
-                    "1",
-                    root_instance_id,
-                    creation_root["runtime_id"],
-                    creation_root["runtime_id"],
-                    initialization_cause_id,
-                    "0",
-                    "/machines/0/root/entry/0/send",
-                    "0",
-                ]
-            )
-            envelope = {
-                "event": "internal_work",
-                "event_id": event_id,
-                "target": copy.deepcopy(creation_root["target_identity"]),
-                "payload": ["map", []],
-            }
-            envelope_digest = digest(
-                [
-                    "determa-inbox-envelope-digest-1",
-                    "1",
-                    root_instance_id,
-                    "internal",
-                    envelope,
-                ]
-            )
-            pending_deliveries.append(
-                {
-                    "delivery_sequence": "0",
-                    "accepted_revision": "0",
-                    "delivery_mode": "internal",
-                    "origin": {
-                        "kind": "internal_emission",
-                        "producing_receipt_sequence": "0",
-                        "emission_index": "0",
-                    },
-                    "envelope": envelope,
-                    "envelope_digest": envelope_digest,
-                }
-            )
-            creation_references.append(
-                {
-                    "kind": "internal_delivery",
-                    "emission_index": "0",
-                    "event_id": event_id,
-                    "delivery_sequence": "0",
-                }
-            )
-        else:
-            effect_id = digest(
-                [
-                    "determa-effect-identity-1",
-                    "1",
-                    [creation_aggregate_v2["namespace"], machine_id, "1"],
-                    root_instance_id,
-                    creation_root["runtime_id"],
-                    initialization_cause_id,
-                    "0",
-                    "/machines/1/root/entry/0/send",
-                    "0",
-                ]
-            )
-            creation_references.append(
-                {
-                    "kind": "external_outbox",
-                    "emission_index": "0",
-                    "effect_id": effect_id,
-                }
-            )
-            pending_outbox.append(
-                {
-                    "intent": {
-                        "effect_id": effect_id,
-                        "sequence": "0",
-                        "correlation_id": "creation-work",
-                        "event": "external_work",
-                        "payload": ["map", []],
-                    },
-                    "state_revision": "0",
-                    "delivery_state": {"status": "not_attempted"},
-                }
-            )
-            creation_aggregate_v2["next_output_sequence"] = "1"
-
-        creation_aggregate = project_aggregate_v1(creation_aggregate_v2)
-        current_aggregate = copy.deepcopy(creation_aggregate)
-        current_root = root_runtime(current_aggregate)
-        current_root["variables"][0]["value"] = ["integer", "1"]
-        current_aggregate["next_logical_step_sequence"] = "2"
-        terminal_acceptance_sequence = (
-            "1" if work_kind == "internal" else "0"
-        )
-        current_aggregate = seal_aggregate_v1(current_aggregate)
-        unrelated_envelope = {
-            "event": "increment",
-            "event_id": "creation-unrelated",
-            "target": copy.deepcopy(current_root["target_identity"]),
-            "payload": ["map", []],
-        }
-        unrelated_request_digest = digest(
-            [
-                "determa-inbox-envelope-digest-1",
-                "1",
-                root_instance_id,
-                "input",
-                unrelated_envelope,
-            ]
-        )
-        receipts: list[dict[str, Any]] = [
-            {
-                "operation_kind": "creation",
-                "receipt_sequence": "0",
-                "creation_id": creation_id,
-                "request_digest": digest(
-                    [
-                        "determa-creation-request-digest-1",
-                        "1",
-                        creation_aggregate["validated_bundle_fingerprint"],
-                        creation_aggregate["namespace"],
-                        machine_id,
-                        "1",
-                        root_instance_id,
-                        creation_id,
-                        typed_value(request["bindings"]),
-                    ]
-                ),
-                "committed_revision": "0",
-                "resulting_aggregate_state_digest": creation_aggregate[
-                    "aggregate_state_digest"
-                ],
-                "status": "running",
-                "fault": None,
-                "emission_references": creation_references,
-            },
-            {
-                "operation_kind": "delivery",
-                "receipt_sequence": "1",
-                "event_id": "creation-unrelated",
-                "request_digest": unrelated_request_digest,
-                "accepted_delivery_sequence": terminal_acceptance_sequence,
-                "accepted_revision": "1",
-                "delivery_mode": "input",
-                "origin": {"kind": "host_input"},
-                "committed_revision": "1",
-                "resulting_aggregate_state_digest": current_aggregate[
-                    "aggregate_state_digest"
-                ],
-                "outcome": {
-                    "status": "running",
-                    "disposition": "handled",
-                    "fault": None,
-                    "rejection": None,
-                },
-                "emission_references": [],
-            },
-        ]
-        checkpoint_v1 = seal_checkpoint_v1(
-            {
-                "execution_checkpoint_format": (
-                    "determa.execution_checkpoint"
-                ),
-                "execution_checkpoint_schema_version": 1,
-                "root_instance_id": root_instance_id,
-                "revision": "1",
-                "root_record": {
-                    "status": "retained",
-                    "aggregate_state": current_aggregate,
-                },
-                "operation_receipts": receipts,
-                "next_operation_receipt_sequence": "2",
-                "pending_deliveries": pending_deliveries,
-                "next_delivery_sequence": str(
-                    int(terminal_acceptance_sequence) + 1
-                ),
-                "pending_outbox_intents": pending_outbox,
-                "terminal_outbox_records": [],
-                "outbox_effect_tombstones": [],
-                "next_outbox_terminal_sequence": "0",
-                "migration_audit_records": [],
-                "replay_retention": {
-                    "mode": "bounded",
-                    "permanent_replay_eligible": False,
-                    "pruned_through_receipt_sequence": None,
-                    "policy_identifier": "bounded-test-v1",
-                },
-            }
-        )
-        checkpoint = upgrade_checkpoint(checkpoint_v1)
-        return checkpoint_v1, checkpoint, prune_checkpoint(checkpoint, 1)
-
-    v1 = load(CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "internal-pending-checkpoint.json")
-    upgraded = upgrade_checkpoint(v1)
-    processed_upgraded_internal = process_upgraded_internal(upgraded)
-    delivery_trace = CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle"
-    created_v1 = load(delivery_trace / "created-checkpoint.json")
-    delivery_inputs = load(delivery_trace / "inputs.json")["requests"]
-    delivery_results = load(delivery_trace / "core-results.json")["calls"]
-    multi_pending_v1 = copy.deepcopy(created_v1)
-    for accepted_revision, request_name in (("1", "accept_increment"), ("2", "unhandled")):
-        request = delivery_inputs[request_name]
-        delivery_sequence = multi_pending_v1["next_delivery_sequence"]
-        multi_pending_v1["next_delivery_sequence"] = str(int(delivery_sequence) + 1)
-        multi_pending_v1["revision"] = accepted_revision
-        multi_pending_v1["pending_deliveries"].append(
-            {
-                "delivery_sequence": delivery_sequence,
-                "accepted_revision": accepted_revision,
-                "delivery_mode": request["delivery_mode"],
-                "origin": copy.deepcopy(request["origin"]),
-                "envelope": copy.deepcopy(request["envelope"]),
-                "envelope_digest": request["envelope_digest"],
-            }
-        )
-        multi_pending_v1 = seal_checkpoint_v1(multi_pending_v1)
-    process_request = delivery_inputs["process_increment"]
-    process_result = delivery_results["increment"]
-    processed_pending = multi_pending_v1["pending_deliveries"].pop(0)
-    multi_pending_v1.pop("execution_checkpoint_digest", None)
-    multi_pending_v1["revision"] = "3"
-    multi_pending_v1["root_record"]["aggregate_state"] = copy.deepcopy(
-        process_result["aggregate_state"]
-    )
-    receipt_sequence = multi_pending_v1["next_operation_receipt_sequence"]
-    multi_pending_v1["next_operation_receipt_sequence"] = str(
-        int(receipt_sequence) + 1
-    )
-    multi_pending_v1["operation_receipts"].append(
-        {
-            "operation_kind": "delivery",
-            "receipt_sequence": receipt_sequence,
-            "event_id": process_request["envelope"]["event_id"],
-            "request_digest": process_request["envelope_digest"],
-            "accepted_delivery_sequence": processed_pending["delivery_sequence"],
-            "accepted_revision": processed_pending["accepted_revision"],
-            "delivery_mode": process_request["delivery_mode"],
-            "origin": copy.deepcopy(process_request["origin"]),
-            "committed_revision": "3",
-            "resulting_aggregate_state_digest": process_result["aggregate_state"][
-                "aggregate_state_digest"
-            ],
-            "outcome": {
-                "status": process_result["status"],
-                "disposition": process_result["disposition"],
-                "fault": copy.deepcopy(process_result["fault"]),
-                "rejection": copy.deepcopy(process_result["rejection"]),
-            },
-            "emission_references": [],
-        }
-    )
-    multi_pending_v1 = seal_checkpoint_v1(multi_pending_v1)
-    multi_pending_upgraded = upgrade_checkpoint(multi_pending_v1)
-    multi_pending_upgraded_with_metadata = add_optional_host_legacy_metadata(
-        multi_pending_upgraded, multi_pending_v1
-    )
-    multi_pending_processed = process_upgraded_unhandled(
-        multi_pending_upgraded, "delivery-unhandled"
-    )
-    multi_pending_processed_with_metadata = process_upgraded_unhandled(
-        multi_pending_upgraded_with_metadata, "delivery-unhandled"
-    )
-
-    multiple_converted_v1 = copy.deepcopy(multi_pending_v1)
-    additional_request = delivery_inputs["emit_internal"]
-    additional_sequence = multiple_converted_v1["next_delivery_sequence"]
-    multiple_converted_v1["next_delivery_sequence"] = str(
-        int(additional_sequence) + 1
-    )
-    multiple_converted_v1["revision"] = "4"
-    multiple_converted_v1["pending_deliveries"].append(
-        {
-            "delivery_sequence": additional_sequence,
-            "accepted_revision": "4",
-            "delivery_mode": additional_request["delivery_mode"],
-            "origin": copy.deepcopy(additional_request["origin"]),
-            "envelope": copy.deepcopy(additional_request["envelope"]),
-            "envelope_digest": additional_request["envelope_digest"],
-        }
-    )
-    multiple_converted_v1 = seal_checkpoint_v1(multiple_converted_v1)
-    multiple_converted_upgraded = upgrade_checkpoint(multiple_converted_v1)
-    multiple_converted_upgraded_with_metadata = add_optional_host_legacy_metadata(
-        multiple_converted_upgraded, multiple_converted_v1
-    )
-    multiple_converted_processed = process_upgraded_unhandled(
-        multiple_converted_upgraded, "delivery-unhandled"
-    )
-    multiple_converted_processed_with_metadata = process_upgraded_unhandled(
-        multiple_converted_upgraded_with_metadata, "delivery-unhandled"
-    )
-    outbox_v1 = load(
-        CHECKPOINT.parent
-        / "checkpoint-02-outbox-lifecycle"
-        / "outbox-created-checkpoint.json"
-    )
-    upgraded_outbox = upgrade_checkpoint(outbox_v1)
-    operational_v1 = load(
-        CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "created-checkpoint.json"
-    )
-    operational_base = upgrade_checkpoint(operational_v1)
-    operational_base["replay_retention"] = {
-        "mode": "bounded",
-        "permanent_replay_eligible": False,
-        "pruned_through_receipt_sequence": None,
-        "policy_identifier": "bounded-test-v1",
-    }
-    operational_base = seal_checkpoint(operational_base)
-
-    persistence_generated = produce_persistence()
-    maintenance_source_bytes = (PERSISTENCE / "machine.yaml").read_bytes()
-    maintenance_target_one_document = json.loads(
-        persistence_generated["target-compatible.yaml"]
-    )
-    maintenance_target_two_document = json.loads(
-        persistence_generated["target-compatible-second.yaml"]
-    )
-    maintenance_descriptor_one = json.loads(
-        persistence_generated["descriptor-compatible-v2.json"]
-    )
-    maintenance_descriptor_two = json.loads(
-        persistence_generated["descriptor-compatible-second-v2.json"]
-    )
-    maintenance_creation = {
+    source_binding = bundle_binding(source_path)
+    target_one_binding = bundle_binding(target_one_path)
+    target_two_binding = bundle_binding(target_two_path)
+    creation_request = {
         "machine_id": "transaction_server",
         "machine_version": "1",
         "root_instance_id": "maintenance-v2-root",
         "creation_id": "maintenance-v2-create",
         "bindings": {"input": {}, "external": {}},
     }
-    maintenance_base = native_v2_checkpoint(
-        PERSISTENCE / "machine.yaml", maintenance_creation
-    )
-    maintenance_source_binding = {
-        "bundle_file": "maintenance-source.yaml",
-        "bundle_source_digest": bytes_digest(maintenance_source_bytes),
-        "validated_bundle_fingerprint": bundle_fingerprint(
-            PERSISTENCE / "machine.yaml"
-        ),
-    }
-    maintenance_target_one_binding = generated_bundle_binding(
-        "maintenance-target-one.yaml", maintenance_target_one_document
-    )
-    maintenance_target_two_binding = generated_bundle_binding(
-        "maintenance-target-two.yaml", maintenance_target_two_document
-    )
+    base = native_v2_checkpoint(source_path, creation_request)
 
-    def maintenance_operation(
+    def operation(
         checkpoint: dict[str, Any],
         operation_id: str,
         target_binding: dict[str, str],
-        descriptor_files: list[str],
-        descriptor_route: list[str],
+        descriptors: list[dict[str, Any]],
     ) -> dict[str, Any]:
-        source_aggregate = checkpoint["root_record"]["aggregate_state"]
-        operation = {
+        source_digest = checkpoint["root_record"]["aggregate_state"][
+            "aggregate_state_digest"
+        ]
+        route = [item["migration_descriptor_digest"] for item in descriptors]
+        result = {
             "operation": "checkpoint_migrate_v2",
-            "source_bundle": maintenance_source_binding,
+            "source_bundle": source_binding,
             "target_bundle": target_binding,
-            "migration_descriptor_files": descriptor_files,
-            "migration_descriptor_digest_route": descriptor_route,
+            "migration_descriptor_files": [
+                "maintenance-descriptor-one.json",
+                "maintenance-descriptor-two.json",
+            ][: len(descriptors)],
+            "migration_descriptor_digest_route": route,
             "maintenance_mode": True,
             "operation_id": operation_id,
             "expected_revision": checkpoint["revision"],
@@ -3405,1384 +1140,210 @@ def produce_checkpoint() -> dict[str, bytes]:
                 "execution_checkpoint_digest"
             ],
         }
-        operation["request_digest"] = maintenance_request_digest(
+        result["request_digest"] = maintenance_request_digest(
             checkpoint["root_instance_id"],
             operation_id,
-            source_aggregate["aggregate_state_digest"],
+            source_digest,
             target_binding["validated_bundle_fingerprint"],
-            descriptor_route,
+            route,
             True,
         )
-        return operation
+        return result
 
-    maintenance_empty_operation = maintenance_operation(
-        maintenance_base,
-        "maintenance-v2-empty",
-        maintenance_source_binding,
-        [],
+    empty_operation = operation(
+        base, "maintenance-v2-empty", source_binding, []
+    )
+    base_aggregate = base["root_record"]["aggregate_state"]
+    empty_checkpoint, empty_receipt = commit_v2_maintenance_migration(
+        base, empty_operation, base_aggregate, []
+    )
+
+    one_operation = operation(
+        base,
+        "maintenance-v2-one-hop",
+        target_one_binding,
+        [descriptor_one],
+    )
+    one_aggregate = migrate_compatible_aggregate(
+        base_aggregate, descriptor_one
+    )
+    one_audit = v2_migration_audit_record(
+        base_aggregate, one_aggregate, descriptor_one
+    )
+    one_checkpoint, one_receipt = commit_v2_maintenance_migration(
+        base, one_operation, one_aggregate, [one_audit]
+    )
+
+    two_operation = operation(
+        base,
+        "maintenance-v2-two-hop",
+        target_two_binding,
+        [descriptor_one, descriptor_two],
+    )
+    two_first = migrate_compatible_aggregate(base_aggregate, descriptor_one)
+    two_aggregate = migrate_compatible_aggregate(two_first, descriptor_two)
+    two_audits = [
+        v2_migration_audit_record(
+            base_aggregate, two_first, descriptor_one
+        ),
+        v2_migration_audit_record(
+            two_first, two_aggregate, descriptor_two
+        ),
+    ]
+    two_checkpoint, two_receipt = commit_v2_maintenance_migration(
+        base, two_operation, two_aggregate, two_audits
+    )
+
+    sequential_operation = operation(
+        empty_checkpoint,
+        "maintenance-v2-after-empty",
+        target_one_binding,
+        [descriptor_one],
+    )
+    sequential_checkpoint, sequential_receipt = (
+        commit_v2_maintenance_migration(
+            empty_checkpoint,
+            sequential_operation,
+            one_aggregate,
+            [one_audit],
+        )
+    )
+
+    completed_base = copy.deepcopy(base)
+    completed_aggregate = completed_base["root_record"]["aggregate_state"]
+    completed_root = root_runtime(completed_aggregate)
+    completed_root["status"] = "completed"
+    completed_aggregate = seal_aggregate(completed_aggregate)
+    completed_base["root_record"]["aggregate_state"] = completed_aggregate
+    completed_base["operation_receipts"][0]["status"] = "completed"
+    completed_base["operation_receipts"][0][
+        "resulting_aggregate_state_digest"
+    ] = completed_aggregate["aggregate_state_digest"]
+    completed_base = seal_checkpoint(completed_base)
+    tombstone_operation = operation(
+        completed_base,
+        "maintenance-v2-tombstoned-empty",
+        source_binding,
         [],
     )
-    maintenance_empty_checkpoint, maintenance_empty_receipt = (
+    tombstone_retained, tombstone_receipt = (
         commit_v2_maintenance_migration(
-            maintenance_base,
-            maintenance_empty_operation,
-            maintenance_base["root_record"]["aggregate_state"],
+            completed_base,
+            tombstone_operation,
+            completed_aggregate,
             [],
         )
     )
-    maintenance_one_aggregate = migrate_compatible_aggregate(
-        maintenance_base["root_record"]["aggregate_state"],
-        maintenance_descriptor_one,
-    )
-    maintenance_one_audit = v2_migration_audit_record(
-        maintenance_base["root_record"]["aggregate_state"],
-        maintenance_one_aggregate,
-        maintenance_descriptor_one,
-    )
-    maintenance_one_operation = maintenance_operation(
-        maintenance_base,
-        "maintenance-v2-one-hop",
-        maintenance_target_one_binding,
-        ["maintenance-descriptor-one.json"],
-        [maintenance_descriptor_one["migration_descriptor_digest"]],
-    )
-    maintenance_one_checkpoint, maintenance_one_receipt = (
-        commit_v2_maintenance_migration(
-            maintenance_base,
-            maintenance_one_operation,
-            maintenance_one_aggregate,
-            [maintenance_one_audit],
-        )
-    )
-    maintenance_two_aggregate = migrate_compatible_aggregate(
-        maintenance_one_aggregate, maintenance_descriptor_two
-    )
-    maintenance_two_audits = [
-        maintenance_one_audit,
-        v2_migration_audit_record(
-            maintenance_one_aggregate,
-            maintenance_two_aggregate,
-            maintenance_descriptor_two,
-        ),
-    ]
-    maintenance_two_operation = maintenance_operation(
-        maintenance_base,
-        "maintenance-v2-two-hop",
-        maintenance_target_two_binding,
-        [
-            "maintenance-descriptor-one.json",
-            "maintenance-descriptor-two.json",
-        ],
-        [
-            maintenance_descriptor_one["migration_descriptor_digest"],
-            maintenance_descriptor_two["migration_descriptor_digest"],
-        ],
-    )
-    maintenance_two_checkpoint, maintenance_two_receipt = (
-        commit_v2_maintenance_migration(
-            maintenance_base,
-            maintenance_two_operation,
-            maintenance_two_aggregate,
-            maintenance_two_audits,
-        )
-    )
-    maintenance_sequential_operation = maintenance_operation(
-        maintenance_empty_checkpoint,
-        "maintenance-v2-after-empty",
-        maintenance_target_one_binding,
-        ["maintenance-descriptor-one.json"],
-        [maintenance_descriptor_one["migration_descriptor_digest"]],
-    )
-    maintenance_sequential_checkpoint, maintenance_sequential_receipt = (
-        commit_v2_maintenance_migration(
-            maintenance_empty_checkpoint,
-            maintenance_sequential_operation,
-            maintenance_one_aggregate,
-            [maintenance_one_audit],
-        )
-    )
-    maintenance_conflict_operation = maintenance_operation(
-        maintenance_base,
-        maintenance_empty_operation["operation_id"],
-        maintenance_target_one_binding,
-        ["maintenance-descriptor-one.json"],
-        [maintenance_descriptor_one["migration_descriptor_digest"]],
-    )
-    maintenance_stale_operation = maintenance_operation(
-        maintenance_base,
-        "maintenance-v2-stale-writer",
-        maintenance_target_one_binding,
-        ["maintenance-descriptor-one.json"],
-        [maintenance_descriptor_one["migration_descriptor_digest"]],
-    )
-
-    spawned_checkpoint_v1 = load(
-        CHECKPOINT.parent
-        / "checkpoint-05-spawned-host-trace"
-        / "spawned-child-checkpoint-v1.json"
-    )
-    spawned_checkpoint_v2 = upgrade_checkpoint(spawned_checkpoint_v1)
-    spawned_terminal_checkpoint_v1 = load(
-        CHECKPOINT.parent
-        / "checkpoint-06-terminal-spawned-host-trace"
-        / "terminal-checkpoint-v1.json"
-    )
-    spawned_terminal_checkpoint_v2 = upgrade_checkpoint(
-        spawned_terminal_checkpoint_v1
-    )
-    admitted = copy.deepcopy(operational_base)
-    aggregate = admitted["root_record"]["aggregate_state"]
-    root = next(r for r in aggregate["runtimes"] if r["relation"]["kind"] == "root")
-    entry = envelope_entry(
-        aggregate,
-        root,
-        event="increment",
-        event_id="checkpoint-v2-increment",
-        acceptance_sequence=int(aggregate["next_acceptance_sequence"]),
-        queue_sequence=int(aggregate["next_queue_sequence"]),
-        payload=["map", [["amount", ["integer", "1"]]]],
-    )
-    root["ready_mailbox"] = [entry]
-    aggregate["next_acceptance_sequence"] = str(int(entry["acceptance_sequence"]) + 1)
-    aggregate["next_queue_sequence"] = str(int(entry["queue_sequence"]) + 1)
-    aggregate = seal_aggregate(aggregate)
-    admitted["root_record"]["aggregate_state"] = aggregate
-    admitted["revision"] = str(int(operational_base["revision"]) + 1)
-    receipt_sequence = admitted["next_operation_receipt_sequence"]
-    admitted["operation_receipts"].append(
-        {
-            "operation_kind": "acceptance",
-            "receipt_sequence": receipt_sequence,
-            "event_id": entry["envelope"]["event_id"],
-            "request_digest": entry["envelope_digest"],
-            "acceptance_sequence": entry["acceptance_sequence"],
-            "accepted_revision": admitted["revision"],
-            "delivery_mode": "input",
-        }
-    )
-    admitted["next_operation_receipt_sequence"] = str(int(receipt_sequence) + 1)
-    admitted = seal_checkpoint(admitted)
-
-    terminal = copy.deepcopy(admitted)
-    aggregate = terminal["root_record"]["aggregate_state"]
-    root = next(r for r in aggregate["runtimes"] if r["relation"]["kind"] == "root")
-    consumed = root["ready_mailbox"].pop(0)
-    root["variables"][0]["value"] = ["integer", "1"]
-    aggregate["next_logical_step_sequence"] = str(
-        int(aggregate["next_logical_step_sequence"]) + 1
-    )
-    aggregate = seal_aggregate(aggregate)
-    terminal["root_record"]["aggregate_state"] = aggregate
-    terminal["revision"] = str(int(admitted["revision"]) + 1)
-    terminal_sequence = terminal["next_operation_receipt_sequence"]
-    terminal["operation_receipts"].append(
-        {
-            "operation_kind": "event_terminal",
-            "receipt_sequence": terminal_sequence,
-            "event_id": consumed["envelope"]["event_id"],
-            "request_digest": consumed["envelope_digest"],
-            "acceptance_sequence": consumed["acceptance_sequence"],
-            "final_queue_sequence": consumed["queue_sequence"],
-            "committed_revision": terminal["revision"],
-            "resulting_aggregate_state_digest": aggregate["aggregate_state_digest"],
-            "outcome": {
-                "status": "running",
-                "disposition": "handled",
-                "fault": None,
-                "rejection": None,
-            },
-            "emission_references": [],
-        }
-    )
-    terminal["next_operation_receipt_sequence"] = str(int(terminal_sequence) + 1)
-    terminal = seal_checkpoint(terminal)
-
-    native_emit_admitted = copy.deepcopy(terminal)
-    native_admitted_aggregate = native_emit_admitted["root_record"]["aggregate_state"]
-    native_admitted_root = root_runtime(native_admitted_aggregate)
-    native_host_entry = envelope_entry(
-        native_admitted_aggregate,
-        native_admitted_root,
-        event="emit_internal",
-        event_id="checkpoint-v2-emit-internal",
-        acceptance_sequence=int(native_admitted_aggregate["next_acceptance_sequence"]),
-        queue_sequence=int(native_admitted_aggregate["next_queue_sequence"]),
-        payload=typed_value({"amount": 5}),
-    )
-    native_admitted_root["ready_mailbox"] = [native_host_entry]
-    native_admitted_aggregate["next_acceptance_sequence"] = str(
-        int(native_host_entry["acceptance_sequence"]) + 1
-    )
-    native_admitted_aggregate["next_queue_sequence"] = str(
-        int(native_host_entry["queue_sequence"]) + 1
-    )
-    native_emit_admitted["root_record"]["aggregate_state"] = seal_aggregate(
-        native_admitted_aggregate
-    )
-    native_emit_admitted["revision"] = str(int(terminal["revision"]) + 1)
-    native_host_acceptance_receipt_sequence = native_emit_admitted[
-        "next_operation_receipt_sequence"
-    ]
-    native_emit_admitted["operation_receipts"].append(
-        {
-            "operation_kind": "acceptance",
-            "receipt_sequence": native_host_acceptance_receipt_sequence,
-            "event_id": native_host_entry["envelope"]["event_id"],
-            "request_digest": native_host_entry["envelope_digest"],
-            "acceptance_sequence": native_host_entry["acceptance_sequence"],
-            "accepted_revision": native_emit_admitted["revision"],
-            "delivery_mode": "input",
-        }
-    )
-    native_emit_admitted["next_operation_receipt_sequence"] = str(
-        int(native_host_acceptance_receipt_sequence) + 1
-    )
-    native_emit_admitted = seal_checkpoint(native_emit_admitted)
-
-    native_internal = copy.deepcopy(native_emit_admitted)
-    native_aggregate = native_internal["root_record"]["aggregate_state"]
-    native_root = root_runtime(native_aggregate)
-    native_host_cause = native_root["ready_mailbox"].pop(0)
-    native_event_id = digest([
-        "determa-event-identity-1", "1", native_aggregate["root_instance_id"],
-        native_root["runtime_id"], native_root["runtime_id"],
-        native_host_cause["envelope"]["cause_id"],
-        native_aggregate["next_logical_step_sequence"],
-        "/machines/0/root/on_events/emit_internal/action/0/send", "0",
-    ])
-    native_entry = envelope_entry(
-        native_aggregate, native_root, event="internal_increment", event_id=native_event_id,
-        acceptance_sequence=int(native_aggregate["next_acceptance_sequence"]),
-        queue_sequence=int(native_aggregate["next_queue_sequence"]), delivery_mode="internal",
-        cause_id=native_host_cause["envelope"]["cause_id"],
-        source={"runtime": copy.deepcopy(native_root["target_identity"])},
-        payload=typed_value({"amount": 5}),
-    )
-    native_root["ready_mailbox"] = [native_entry]
-    native_aggregate["next_acceptance_sequence"] = str(int(native_entry["acceptance_sequence"]) + 1)
-    native_aggregate["next_queue_sequence"] = str(int(native_entry["queue_sequence"]) + 1)
-    native_aggregate["next_logical_step_sequence"] = str(
-        int(native_aggregate["next_logical_step_sequence"]) + 1
-    )
-    native_internal["revision"] = str(int(native_emit_admitted["revision"]) + 1)
-    native_host_terminal_receipt_sequence = native_internal[
-        "next_operation_receipt_sequence"
-    ]
-    native_internal["operation_receipts"].append({
-        "operation_kind": "event_terminal",
-        "receipt_sequence": native_host_terminal_receipt_sequence,
-        "event_id": native_host_cause["envelope"]["event_id"],
-        "request_digest": native_host_cause["envelope_digest"],
-        "acceptance_sequence": native_host_cause["acceptance_sequence"],
-        "final_queue_sequence": native_host_cause["queue_sequence"],
-        "committed_revision": native_internal["revision"],
-        "resulting_aggregate_state_digest": "pending",
-        "outcome": {
-            "status": "running",
-            "disposition": "handled",
-            "fault": None,
-            "rejection": None,
-        },
-        "emission_references": [{
-        "kind": "internal_mailbox", "emission_index": "0", "event_id": native_event_id,
-        "acceptance_sequence": native_entry["acceptance_sequence"], "queue_sequence": native_entry["queue_sequence"],
-        }],
-    })
-    native_internal["next_operation_receipt_sequence"] = str(
-        int(native_host_terminal_receipt_sequence) + 1
-    )
-    native_internal["root_record"]["aggregate_state"] = seal_aggregate(native_aggregate)
-    native_internal["operation_receipts"][-1]["resulting_aggregate_state_digest"] = (
-        native_internal["root_record"]["aggregate_state"]["aggregate_state_digest"]
-    )
-    native_internal = seal_checkpoint(native_internal)
-
-    native_terminal = copy.deepcopy(native_internal)
-    native_terminal_aggregate = native_terminal["root_record"]["aggregate_state"]
-    native_terminal_root = next(r for r in native_terminal_aggregate["runtimes"] if r["relation"]["kind"] == "root")
-    native_consumed = native_terminal_root["ready_mailbox"].pop(0)
-    native_terminal_root["variables"][0]["value"] = ["integer", "6"]
-    native_terminal_aggregate["next_logical_step_sequence"] = str(int(native_terminal_aggregate["next_logical_step_sequence"]) + 1)
-    native_terminal_aggregate = seal_aggregate(native_terminal_aggregate)
-    native_terminal["root_record"]["aggregate_state"] = native_terminal_aggregate
-    native_terminal["revision"] = str(int(native_terminal["revision"]) + 1)
-    native_terminal_sequence = native_terminal["next_operation_receipt_sequence"]
-    native_terminal["operation_receipts"][-1]["emission_references"] = [{
-        "kind": "internal_terminal",
-        "emission_index": "0",
-        "event_id": native_consumed["envelope"]["event_id"],
-        "acceptance_sequence": native_consumed["acceptance_sequence"],
-        "terminal_receipt_sequence": native_terminal_sequence,
-    }]
-    native_terminal["operation_receipts"].append({
-        "operation_kind": "event_terminal", "receipt_sequence": native_terminal_sequence,
-        "event_id": native_consumed["envelope"]["event_id"], "request_digest": native_consumed["envelope_digest"],
-        "acceptance_sequence": native_consumed["acceptance_sequence"], "final_queue_sequence": native_consumed["queue_sequence"],
-        "committed_revision": native_terminal["revision"],
-        "resulting_aggregate_state_digest": native_terminal_aggregate["aggregate_state_digest"],
-        "outcome": {"status": "running", "disposition": "handled", "fault": None, "rejection": None},
-        "emission_references": [],
-    })
-    native_terminal["next_operation_receipt_sequence"] = str(int(native_terminal_sequence) + 1)
-    native_terminal = seal_checkpoint(native_terminal)
-
-    native_internal_producer_pruned = prune_checkpoint(native_terminal, 4)
-    native_internal_terminal_pruned = prune_checkpoint(native_terminal, 5)
-    native_internal_sequentially_pruned = prune_checkpoint(
-        native_internal_producer_pruned, 5
-    )
-    (
-        creation_internal_v1,
-        creation_internal_before,
-        creation_internal_pruned,
-    ) = creation_owned_work_checkpoint("internal_creator", "internal")
-    (
-        creation_external_v1,
-        creation_external_before,
-        creation_external_pruned,
-    ) = creation_owned_work_checkpoint("external_creator", "external")
-
-    compact = copy.deepcopy(terminal)
-    acceptance = compact["operation_receipts"].pop(-2)
-    event_terminal = compact["operation_receipts"].pop(-1)
-    compact["event_identity_tombstones"] = [
-        {
-            "event_id": event_terminal["event_id"],
-            "request_digest": event_terminal["request_digest"],
-            "request_digest_domain": "determa-inbox-envelope-digest-2",
-            "acceptance_sequence": acceptance["acceptance_sequence"],
-            "terminal_receipt_sequence": event_terminal["receipt_sequence"],
-            "terminal_disposition": "handled",
-        }
-    ]
-    compact["replay_retention"]["pruned_through_receipt_sequence"] = event_terminal["receipt_sequence"]
-    compact["revision"] = str(int(terminal["revision"]) + 1)
-    compact = seal_checkpoint(compact)
-
-    compacted_legacy = copy.deepcopy(upgraded)
-    compacted_legacy_receipt = next(
-        receipt
-        for receipt in compacted_legacy["operation_receipts"]
-        if receipt["operation_kind"] == "legacy_v1_operation"
-        and receipt["legacy_receipt"].get("event_id") == "delivery-increment"
-    )
-    compacted_nested = compacted_legacy_receipt["legacy_receipt"]
-    compacted_legacy["operation_receipts"].remove(compacted_legacy_receipt)
-    compacted_legacy["event_identity_tombstones"] = [
-        {
-            "event_id": compacted_nested["event_id"],
-            "request_digest": compacted_nested["request_digest"],
-            "request_digest_domain": "determa-inbox-envelope-digest-1",
-            "acceptance_sequence": compacted_nested[
-                "accepted_delivery_sequence"
-            ],
-            "terminal_receipt_sequence": compacted_legacy_receipt[
-                "receipt_sequence"
-            ],
-            "terminal_disposition": compacted_nested["outcome"]["disposition"],
-        }
-    ]
-    compacted_legacy["replay_retention"] = {
-        "mode": "bounded",
-        "permanent_replay_eligible": False,
-        "pruned_through_receipt_sequence": compacted_legacy_receipt[
-            "receipt_sequence"
-        ],
-        "policy_identifier": "bounded-legacy-replay-v1",
-    }
-    compacted_legacy["revision"] = str(int(upgraded["revision"]) + 1)
-    compacted_legacy = seal_checkpoint(compacted_legacy)
-
-    faulted_v1 = load(
-        CHECKPOINT.parent
-        / "checkpoint-01-delivery-lifecycle"
-        / "faulted-checkpoint.json"
-    )
-    faulted_upgraded = upgrade_checkpoint(faulted_v1)
-    faulted_aggregate = faulted_upgraded["root_record"]["aggregate_state"]
-    faulted_root = root_runtime(faulted_aggregate)
-    terminal_mismatch_entry = envelope_entry(
-        faulted_aggregate,
-        faulted_root,
-        event="increment",
-        event_id="checkpoint-v2-terminal-fresh-mismatch",
-        acceptance_sequence=int(faulted_aggregate["next_acceptance_sequence"]),
-        queue_sequence=int(faulted_aggregate["next_queue_sequence"]),
-        payload=typed_value({"amount": 1}),
-    )
-    terminal_mismatch_delivery = {
-        "delivery_mode": terminal_mismatch_entry["delivery_mode"],
-        "envelope": terminal_mismatch_entry["envelope"],
-        "envelope_digest": "sha256:" + ("7" * 64),
-    }
-    tombstoned = copy.deepcopy(faulted_upgraded)
-    terminal_aggregate = tombstoned["root_record"]["aggregate_state"]
-    terminal_root = root_runtime(terminal_aggregate)
+    tombstoned = copy.deepcopy(tombstone_retained)
+    tombstoned["revision"] = str(int(tombstoned["revision"]) + 1)
     tombstoned["root_record"] = {
         "status": "tombstone",
-        "root_runtime_id": terminal_root["runtime_id"],
-        "creation_id": terminal_aggregate["creation_id"],
-        "terminal_status": terminal_root["status"],
-        "final_aggregate_state_digest": terminal_aggregate[
+        "root_runtime_id": completed_aggregate["root_runtime_id"],
+        "creation_id": completed_aggregate["creation_id"],
+        "terminal_status": "completed",
+        "final_aggregate_state_digest": completed_aggregate[
             "aggregate_state_digest"
         ],
-        "tombstone_operation_id": "checkpoint-v2-faulted-root-tombstone",
+        "tombstone_operation_id": "maintenance-v2-tombstone",
     }
-    tombstoned["revision"] = str(int(faulted_upgraded["revision"]) + 1)
     tombstoned = seal_checkpoint(tombstoned)
-    tombstoned_fresh_delivery = copy.deepcopy(terminal_mismatch_delivery)
-    tombstoned_fresh_delivery["envelope"]["event_id"] = (
-        "checkpoint-v2-tombstoned-fresh"
-    )
-    tombstoned_fresh_delivery["envelope"]["cause_id"] = (
-        "checkpoint-v2-tombstoned-fresh"
-    )
 
-    invalid_mode_delivery = copy.deepcopy(terminal_mismatch_entry)
-    invalid_mode_delivery = {
-        "delivery_mode": "invalid",
-        "envelope": invalid_mode_delivery["envelope"],
-        "envelope_digest": digest(
-            [
-                "determa-inbox-envelope-digest-2",
-                "2",
-                operational_base["root_instance_id"],
-                "invalid",
-                invalid_mode_delivery["envelope"],
-            ]
-        ),
-    }
-    retained_native_delivery = {
-        "delivery_mode": entry["delivery_mode"],
-        "envelope": copy.deepcopy(entry["envelope"]),
-        "envelope_digest": entry["envelope_digest"],
-    }
-    changed_payload_stale_digest = copy.deepcopy(retained_native_delivery)
-    changed_payload_stale_digest["envelope"]["payload"] = typed_value(
-        {"amount": 2}
+    missing_target = copy.deepcopy(tombstoned)
+    missing_target["operation_receipts"][1].pop(
+        "target_validated_bundle_fingerprint"
     )
-    unchanged_envelope_bad_digest = copy.deepcopy(retained_native_delivery)
-    unchanged_envelope_bad_digest["envelope_digest"] = "sha256:" + ("0" * 64)
+    missing_target = seal_checkpoint(missing_target)
+    altered_target = copy.deepcopy(tombstoned)
+    altered_target["operation_receipts"][1][
+        "target_validated_bundle_fingerprint"
+    ] = "sha256:" + "f" * 64
+    altered_target = seal_checkpoint(altered_target)
+    historical_digest = copy.deepcopy(sequential_checkpoint)
+    historical_digest["operation_receipts"][1]["request_digest"] = (
+        "sha256:" + "e" * 64
+    )
+    historical_digest = seal_checkpoint(historical_digest)
+    audit_order = copy.deepcopy(two_checkpoint)
+    audit_order["migration_audit_records"].reverse()
+    audit_order = seal_checkpoint(audit_order)
+    next_gap = copy.deepcopy(sequential_checkpoint)
+    next_gap["operation_receipts"] = next_gap["operation_receipts"][:2]
+    next_gap = seal_checkpoint(next_gap)
+    shifted_gap = copy.deepcopy(empty_checkpoint)
+    shifted_gap["next_operation_receipt_sequence"] = "3"
+    shifted_gap["operation_receipts"][1]["receipt_sequence"] = "2"
+    shifted_gap = seal_checkpoint(shifted_gap)
 
-    spawned_tombstoned = copy.deepcopy(spawned_terminal_checkpoint_v2)
-    spawned_terminal_aggregate = spawned_tombstoned["root_record"]["aggregate_state"]
-    spawned_terminal_root = root_runtime(spawned_terminal_aggregate)
-    spawned_tombstoned["root_record"] = {
-        "status": "tombstone",
-        "root_runtime_id": spawned_terminal_root["runtime_id"],
-        "creation_id": spawned_terminal_aggregate["creation_id"],
-        "terminal_status": spawned_terminal_root["status"],
-        "final_aggregate_state_digest": spawned_terminal_aggregate[
-            "aggregate_state_digest"
-        ],
-        "tombstone_operation_id": "checkpoint-v2-spawned-root-tombstone",
-    }
-    spawned_tombstoned["revision"] = str(
-        int(spawned_terminal_checkpoint_v2["revision"]) + 1
+    conflict_operation = operation(
+        empty_checkpoint,
+        "maintenance-v2-empty",
+        target_one_binding,
+        [descriptor_one],
     )
-    spawned_tombstoned = seal_checkpoint(spawned_tombstoned)
-
-    invalid_acceptance_tombstone_overlap = copy.deepcopy(compact)
-    overlapping_acceptance = copy.deepcopy(acceptance)
-    overlapping_acceptance["receipt_sequence"] = compact["next_operation_receipt_sequence"]
-    invalid_acceptance_tombstone_overlap["operation_receipts"].append(overlapping_acceptance)
-    invalid_acceptance_tombstone_overlap["next_operation_receipt_sequence"] = str(
-        int(overlapping_acceptance["receipt_sequence"]) + 1
+    stale_operation = operation(
+        empty_checkpoint,
+        "maintenance-v2-stale-writer",
+        target_one_binding,
+        [descriptor_one],
     )
-    invalid_acceptance_tombstone_overlap = seal_checkpoint(
-        invalid_acceptance_tombstone_overlap
-    )
-
-    invalid_tombstone_counter = copy.deepcopy(compact)
-    invalid_tombstone_counter["event_identity_tombstones"][0][
-        "terminal_receipt_sequence"
-    ] = invalid_tombstone_counter["next_operation_receipt_sequence"]
-    invalid_tombstone_counter = seal_checkpoint(invalid_tombstone_counter)
-
-    invalid_pruning_claim = copy.deepcopy(terminal)
-    invalid_pruning_claim["replay_retention"][
-        "pruned_through_receipt_sequence"
-    ] = "1"
-    invalid_pruning_claim = seal_checkpoint(invalid_pruning_claim)
-
-    invalid_bounded_receipt_cutoff = copy.deepcopy(compact)
-    invalid_bounded_receipt_cutoff["replay_retention"][
-        "pruned_through_receipt_sequence"
-    ] = invalid_bounded_receipt_cutoff["next_operation_receipt_sequence"]
-    invalid_bounded_receipt_cutoff = seal_checkpoint(
-        invalid_bounded_receipt_cutoff
-    )
-
-    invalid_creation_identity = copy.deepcopy(tombstoned)
-    invalid_creation_identity["root_record"]["creation_id"] = (
-        "different-creation"
-    )
-    invalid_creation_identity = seal_checkpoint(invalid_creation_identity)
-
-    invalid_future_receipt_revision = copy.deepcopy(admitted)
-    next(
-        receipt
-        for receipt in invalid_future_receipt_revision["operation_receipts"]
-        if receipt["operation_kind"] == "acceptance"
-    )["accepted_revision"] = "999"
-    invalid_future_receipt_revision = seal_checkpoint(
-        invalid_future_receipt_revision
-    )
-
-    invalid = copy.deepcopy(admitted)
-    invalid_aggregate = invalid["root_record"]["aggregate_state"]
-    invalid_aggregate["runtimes"][0]["deferred_mailbox"] = copy.deepcopy(
-        invalid_aggregate["runtimes"][0]["ready_mailbox"]
-    )
-    invalid["root_record"]["aggregate_state"] = seal_aggregate(invalid_aggregate)
-    invalid = seal_checkpoint(invalid)
-    stale_writer_entry = envelope_entry(
-        operational_base["root_record"]["aggregate_state"],
-        next(
-            runtime
-            for runtime in operational_base["root_record"]["aggregate_state"][
-                "runtimes"
-            ]
-            if runtime["relation"]["kind"] == "root"
-        ),
-        event="increment",
-        event_id="checkpoint-v2-distinct-stale-writer",
-        acceptance_sequence=0,
-        queue_sequence=0,
-        payload=typed_value({"amount": 1}),
-    )
-    mixed_new_entry = envelope_entry(
-        admitted["root_record"]["aggregate_state"],
-        root_runtime(admitted["root_record"]["aggregate_state"]),
-        event="increment",
-        event_id="checkpoint-v2-mixed-new",
-        acceptance_sequence=int(
-            admitted["root_record"]["aggregate_state"]["next_acceptance_sequence"]
-        ),
-        queue_sequence=int(
-            admitted["root_record"]["aggregate_state"]["next_queue_sequence"]
-        ),
-        payload=typed_value({"amount": 2}),
-    )
-    mixed_checkpoint = copy.deepcopy(admitted)
-    mixed_aggregate = mixed_checkpoint["root_record"]["aggregate_state"]
-    root_runtime(mixed_aggregate)["ready_mailbox"].append(mixed_new_entry)
-    mixed_aggregate["next_acceptance_sequence"] = str(
-        int(mixed_new_entry["acceptance_sequence"]) + 1
-    )
-    mixed_aggregate["next_queue_sequence"] = str(
-        int(mixed_new_entry["queue_sequence"]) + 1
-    )
-    mixed_checkpoint["revision"] = str(int(admitted["revision"]) + 1)
-    mixed_receipt_sequence = mixed_checkpoint["next_operation_receipt_sequence"]
-    mixed_checkpoint["operation_receipts"].append(
-        {
-            "operation_kind": "acceptance",
-            "receipt_sequence": mixed_receipt_sequence,
-            "event_id": mixed_new_entry["envelope"]["event_id"],
-            "request_digest": mixed_new_entry["envelope_digest"],
-            "acceptance_sequence": mixed_new_entry["acceptance_sequence"],
-            "accepted_revision": mixed_checkpoint["revision"],
-            "delivery_mode": mixed_new_entry["delivery_mode"],
-        }
-    )
-    mixed_checkpoint["next_operation_receipt_sequence"] = str(
-        int(mixed_receipt_sequence) + 1
-    )
-    mixed_checkpoint["root_record"]["aggregate_state"] = seal_aggregate(
-        mixed_aggregate
-    )
-    mixed_checkpoint = seal_checkpoint(mixed_checkpoint)
-
-    original_v1_input = load(
-        CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "inputs.json"
-    )["requests"]["accept_increment"]
-    original_v1_inputs = load(
-        CHECKPOINT.parent / "checkpoint-01-delivery-lifecycle" / "inputs.json"
-    )["requests"]
-    legacy_replay_delivery = {
-        "delivery_mode": original_v1_input["delivery_mode"],
-        "envelope": original_v1_input["envelope"],
-        "envelope_digest": original_v1_input["envelope_digest"],
-        "request_digest_domain": "determa-inbox-envelope-digest-1",
-    }
-
-    def terminal_replay_evidence(
-        checkpoint: dict[str, Any], event_id: str
-    ) -> dict[str, Any]:
-        acceptance = next(
-            receipt
-            for receipt in checkpoint["operation_receipts"]
-            if receipt.get("operation_kind") == "acceptance"
-            and receipt.get("event_id") == event_id
-        )
-        terminal_receipt = next(
-            receipt
-            for receipt in checkpoint["operation_receipts"]
-            if receipt.get("operation_kind") == "event_terminal"
-            and receipt.get("event_id") == event_id
-        )
-        return {
-            "result": "replay",
-            "acceptance_receipt_sequence": acceptance["receipt_sequence"],
-            "terminal_receipt_sequence": terminal_receipt["receipt_sequence"],
-        }
-
-    all_replay_deliveries = [
-        {
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": entry["envelope"],
-            "envelope_digest": entry["envelope_digest"],
-        },
-        {
-            "delivery_mode": native_host_entry["delivery_mode"],
-            "envelope": native_host_entry["envelope"],
-            "envelope_digest": native_host_entry["envelope_digest"],
-        },
+    stale_operation["expected_revision"] = base["revision"]
+    stale_operation["expected_checkpoint_digest"] = base[
+        "execution_checkpoint_digest"
     ]
-    all_replay_result = {
-        "result": "batch",
-        "members": [
-            {
-                "event_id": delivery["envelope"]["event_id"],
-                "disposition": "replay",
-                "evidence": terminal_replay_evidence(
-                    native_terminal, delivery["envelope"]["event_id"]
-                ),
-            }
-            for delivery in all_replay_deliveries
-        ],
-        "checkpoint": native_terminal,
-    }
-    mixed_result = {
-        "result": "batch",
-        "members": [
-            {
-                "event_id": entry["envelope"]["event_id"],
-                "disposition": "replay",
-                "evidence": {
-                    "result": "replay",
-                    "event_id": entry["envelope"]["event_id"],
-                    "acceptance_sequence": entry["acceptance_sequence"],
-                    "location": "ready",
-                },
-            },
-            {
-                "event_id": mixed_new_entry["envelope"]["event_id"],
-                "disposition": "accepted",
-                "acceptance_sequence": mixed_new_entry["acceptance_sequence"],
-                "queue_sequence": mixed_new_entry["queue_sequence"],
-            },
-        ],
-        "checkpoint": mixed_checkpoint,
-    }
-    legacy_receipt = next(
-        receipt
-        for receipt in upgraded["operation_receipts"]
-        if receipt["operation_kind"] == "legacy_v1_operation"
-        and receipt["legacy_receipt"].get("event_id")
-        == original_v1_input["envelope"]["event_id"]
-    )
-    legacy_replay_result = {
-        "result": "replay",
-        "event_id": legacy_receipt["legacy_receipt"]["event_id"],
-        "acceptance_sequence": legacy_receipt["legacy_receipt"][
-            "accepted_delivery_sequence"
-        ],
-        "terminal_receipt_sequence": legacy_receipt["receipt_sequence"],
-        "terminal_disposition": legacy_receipt["legacy_receipt"]["outcome"][
-            "disposition"
-        ],
-        "request_digest_domain": "determa-inbox-envelope-digest-1",
-    }
 
-    def legacy_delivery(request: dict[str, Any]) -> dict[str, Any]:
-        return {
-            "delivery_mode": request["delivery_mode"],
-            "envelope": request["envelope"],
-            "envelope_digest": request["envelope_digest"],
-            "request_digest_domain": "determa-inbox-envelope-digest-1",
-        }
-
-    def legacy_terminal_evidence(
-        checkpoint: dict[str, Any], delivery: dict[str, Any]
-    ) -> dict[str, Any]:
-        event_id = delivery["envelope"]["event_id"]
-        wrapper = next(
-            (
-                receipt
-                for receipt in checkpoint["operation_receipts"]
-                if receipt["operation_kind"] == "legacy_v1_operation"
-                and receipt["legacy_receipt"].get("event_id") == event_id
-            ),
-            None,
-        )
-        if wrapper is not None:
-            nested = wrapper["legacy_receipt"]
-            return {
-                "result": "replay",
-                "event_id": event_id,
-                "acceptance_sequence": nested["accepted_delivery_sequence"],
-                "terminal_receipt_sequence": wrapper["receipt_sequence"],
-                "terminal_disposition": nested["outcome"]["disposition"],
-                "request_digest_domain": "determa-inbox-envelope-digest-1",
-            }
-        event_tombstone = next(
-            item
-            for item in checkpoint["event_identity_tombstones"]
-            if item["event_id"] == event_id
-            and item["request_digest_domain"]
-            == "determa-inbox-envelope-digest-1"
-        )
-        return {
-            "result": "replay",
-            "event_id": event_id,
-            "acceptance_sequence": event_tombstone["acceptance_sequence"],
-            "terminal_receipt_sequence": event_tombstone[
-                "terminal_receipt_sequence"
-            ],
-            "terminal_disposition": event_tombstone["terminal_disposition"],
-            "request_digest_domain": "determa-inbox-envelope-digest-1",
-        }
-
-    tombstone_replay_deliveries = [
-        legacy_delivery(original_v1_inputs["accept_increment"]),
-        legacy_delivery(original_v1_inputs["unhandled"]),
-    ]
-    spawned_trace_inputs = load(
-        CHECKPOINT.parent
-        / "checkpoint-06-terminal-spawned-host-trace"
-        / "inputs.json"
-    )["requests"]
-    spawned_child_replay_delivery = legacy_delivery(
-        spawned_trace_inputs["process_child"]
-    )
-    spawned_root_replay_delivery = legacy_delivery(spawned_trace_inputs["start"])
-    spawned_mixed_replay_deliveries = [
-        spawned_root_replay_delivery,
-        spawned_child_replay_delivery,
-    ]
-    spawned_mixed_replay_result = {
-        "result": "batch",
-        "members": [
-            {
-                "event_id": delivery["envelope"]["event_id"],
-                "disposition": "replay",
-                "evidence": legacy_terminal_evidence(
-                    spawned_tombstoned, delivery
-                ),
-            }
-            for delivery in spawned_mixed_replay_deliveries
-        ],
-        "checkpoint": spawned_tombstoned,
-    }
-    tombstone_batch_result = {
-        "result": "batch",
-        "members": [
-            {
-                "event_id": delivery["envelope"]["event_id"],
-                "disposition": "replay",
-                "evidence": legacy_terminal_evidence(tombstoned, delivery),
-            }
-            for delivery in tombstone_replay_deliveries
-        ],
-        "checkpoint": tombstoned,
-    }
-    wrong_root_duplicate_delivery = {
-        "delivery_mode": entry["delivery_mode"],
-        "envelope": copy.deepcopy(entry["envelope"]),
-        "envelope_digest": entry["envelope_digest"],
-    }
-    wrong_root_target = next(
-        iter(wrong_root_duplicate_delivery["envelope"]["target"].values())
-    )
-    wrong_root_target["root_instance_id"] = "foreign-checkpoint-root"
-    wrong_root_duplicate_delivery["envelope_digest"] = digest(
-        [
-            "determa-inbox-envelope-digest-2",
-            "2",
-            "foreign-checkpoint-root",
-            wrong_root_duplicate_delivery["delivery_mode"],
-            wrong_root_duplicate_delivery["envelope"],
-        ]
-    )
     operations = {
-        "upgrade": with_checkpoint_cas(
-            {"operation": "upgrade_checkpoint_v1_to_v2"}, v1
-        ),
-        "upgrade_outbox": with_checkpoint_cas(
-            {"operation": "upgrade_checkpoint_v1_to_v2"}, outbox_v1
-        ),
-        "upgrade_spawned_child": with_checkpoint_cas(
-            {"operation": "upgrade_checkpoint_v1_to_v2"},
-            spawned_checkpoint_v1,
-        ),
-        "upgrade_multi_pending": with_checkpoint_cas(
-            {"operation": "upgrade_checkpoint_v1_to_v2"},
-            multi_pending_v1,
-        ),
-        "upgrade_multiple_converted": with_checkpoint_cas(
-            {"operation": "upgrade_checkpoint_v1_to_v2"},
-            multiple_converted_v1,
-        ),
-        "process_upgraded_without_metadata": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_step_v2",
-                "target_runtime_id": multi_pending_upgraded[
-                    "root_record"
-                ]["aggregate_state"]["root_runtime_id"],
-            },
-            multi_pending_upgraded,
-        ),
-        "process_upgraded_with_metadata": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_step_v2",
-                "target_runtime_id": multi_pending_upgraded_with_metadata[
-                    "root_record"
-                ]["aggregate_state"]["root_runtime_id"],
-            },
-            multi_pending_upgraded_with_metadata,
-        ),
-        "process_multiple_converted_without_metadata": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_step_v2",
-                "target_runtime_id": multiple_converted_upgraded[
-                    "root_record"
-                ]["aggregate_state"]["root_runtime_id"],
-            },
-            multiple_converted_upgraded,
-        ),
-        "process_multiple_converted_with_metadata": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_step_v2",
-                "target_runtime_id": multiple_converted_upgraded_with_metadata[
-                    "root_record"
-                ]["aggregate_state"]["root_runtime_id"],
-            },
-            multiple_converted_upgraded_with_metadata,
-        ),
-        "process_upgraded_internal": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_step_v2",
-                "target_runtime_id": upgraded["root_record"]["aggregate_state"][
-                    "root_runtime_id"
-                ],
-            },
-            upgraded,
-        ),
-        "admit": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": entry["envelope"],
-            "envelope_digest": entry["envelope_digest"],
-        }]}, operational_base),
-        "v1_admit": with_checkpoint_cas({"operation": "checkpoint_v1_accept", "deliveries": [{
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": entry["envelope"],
-            "envelope_digest": entry["envelope_digest"],
-        }]}, v1),
-        "terminal_step": with_checkpoint_cas(
-            {"operation": "checkpoint_step_v2", "target_runtime_id": aggregate["root_runtime_id"]},
-            admitted,
-        ),
-        "native_emit_admit": with_checkpoint_cas(
-            {"operation": "checkpoint_admit_v2", "deliveries": [{
-                "delivery_mode": native_host_entry["delivery_mode"],
-                "envelope": native_host_entry["envelope"],
-                "envelope_digest": native_host_entry["envelope_digest"],
-            }]},
-            terminal,
-        ),
-        "native_emit_step": with_checkpoint_cas(
-            {"operation": "checkpoint_step_v2", "target_runtime_id": native_aggregate["root_runtime_id"]},
-            native_emit_admitted,
-        ),
-        "native_internal_step": with_checkpoint_cas(
-            {"operation": "checkpoint_step_v2", "target_runtime_id": native_aggregate["root_runtime_id"]},
-            native_internal,
-        ),
-        "terminal_equal_replay": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": entry["envelope"],
-            "envelope_digest": entry["envelope_digest"],
-        }]}, operational_base),
-        "pending_equal_replay": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": entry["envelope"],
-            "envelope_digest": entry["envelope_digest"],
-        }]}, operational_base),
-        "all_replay_batch": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": all_replay_deliveries,
-            },
-            operational_base,
-        ),
-        "mixed_replay_new_batch": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [
-                    {
-                        "delivery_mode": entry["delivery_mode"],
-                        "envelope": entry["envelope"],
-                        "envelope_digest": entry["envelope_digest"],
-                    },
-                    {
-                        "delivery_mode": mixed_new_entry["delivery_mode"],
-                        "envelope": mixed_new_entry["envelope"],
-                        "envelope_digest": mixed_new_entry["envelope_digest"],
-                    },
-                ],
-            },
-            admitted,
-        ),
-        "legacy_terminal_replay": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [legacy_replay_delivery],
-            },
-            v1,
-        ),
-        "compacted_legacy_terminal_replay": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [legacy_replay_delivery],
-            },
-            compacted_legacy,
-        ),
-        "tombstoned_single_replay": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [tombstone_replay_deliveries[0]],
-            },
-            faulted_upgraded,
-        ),
-        "tombstoned_batch_replay": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": tombstone_replay_deliveries,
-            },
-            faulted_upgraded,
-        ),
-        "tombstoned_spawned_child_replay": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [spawned_child_replay_delivery],
-            },
-            spawned_tombstoned,
-        ),
-        "tombstoned_mixed_runtime_batch_replay": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": spawned_mixed_replay_deliveries,
-            },
-            spawned_tombstoned,
-        ),
-        "tombstone_equal_replay": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": entry["envelope"],
-            "envelope_digest": entry["envelope_digest"],
-        }]}, operational_base),
-        "stale_admit": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [
-                    {
-                        "delivery_mode": stale_writer_entry["delivery_mode"],
-                        "envelope": stale_writer_entry["envelope"],
-                        "envelope_digest": stale_writer_entry["envelope_digest"],
-                    }
-                ],
-            },
-            operational_base,
-        ),
-        "terminal_conflict": with_checkpoint_cas({"operation": "checkpoint_admit_v2", "deliveries": [{
-            "delivery_mode": entry["delivery_mode"],
-            "envelope": {**entry["envelope"], "payload": typed_value({"amount": 2})},
-            "envelope_digest": digest(["determa-inbox-envelope-digest-2", "2", aggregate["root_instance_id"], entry["delivery_mode"], {**entry["envelope"], "payload": typed_value({"amount": 2})}]),
-        }]}, terminal),
-        "terminal_changed_payload_stale_digest": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [changed_payload_stale_digest],
-            },
-            terminal,
-        ),
-        "terminal_unchanged_bad_digest": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [unchanged_envelope_bad_digest],
-            },
-            terminal,
-        ),
-        "event_tombstone_changed_payload_stale_digest": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [changed_payload_stale_digest],
-            },
-            compact,
-        ),
-        "event_tombstone_unchanged_bad_digest": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [unchanged_envelope_bad_digest],
-            },
-            compact,
-        ),
-        "terminal_precedes_digest": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [terminal_mismatch_delivery],
-            },
-            faulted_upgraded,
-        ),
-        "tombstone_precedes_digest": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [tombstoned_fresh_delivery],
-            },
-            tombstoned,
-        ),
-        "malformed_delivery": with_checkpoint_cas(
-            {"operation": "checkpoint_admit_v2", "deliveries": [{}]},
-            operational_base,
-        ),
-        "invalid_delivery_mode": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [invalid_mode_delivery],
-            },
-            operational_base,
-        ),
-        "wrong_root_duplicate": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [
-                    wrong_root_duplicate_delivery,
-                    copy.deepcopy(wrong_root_duplicate_delivery),
-                ],
-            },
-            operational_base,
-        ),
-        "bounded_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": event_terminal["receipt_sequence"],
-        }, terminal),
-        "live_acceptance_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "1",
-        }, admitted),
-        "terminal_pair_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "1",
-        }, terminal),
-        "equal_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": event_terminal["receipt_sequence"],
-        }, compact),
-        "equal_prune_stale_cas": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": event_terminal["receipt_sequence"],
-        }, terminal),
-        "lower_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "1",
-        }, compact),
-        "dependency_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": native_host_terminal_receipt_sequence,
-        }, native_internal),
-        "native_internal_producer_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "4",
-        }, native_terminal),
-        "native_internal_terminal_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "5",
-        }, native_terminal),
-        "native_internal_sequential_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "5",
-        }, native_internal_producer_pruned),
-        "creation_internal_unrelated_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "1",
-        }, creation_internal_before),
-        "creation_external_unrelated_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "1",
-        }, creation_external_before),
-        "legacy_origin_dependency_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "2",
-        }, processed_upgraded_internal),
-        "invalid_high_prune": with_checkpoint_cas({
-            "operation": "checkpoint_prune_v2",
-            "cutoff_receipt_sequence": "9",
-        }, terminal),
-        "admit_invalid_checkpoint": with_checkpoint_cas(
-            {
-                "operation": "checkpoint_admit_v2",
-                "deliveries": [{}],
-            },
-            invalid,
-        ),
-        "tombstone": with_checkpoint_cas(
-            {"operation": "checkpoint_tombstone_v2"}, terminal
-        ),
+        "maintenance_empty": empty_operation,
+        "maintenance_empty_replay": empty_operation,
+        "maintenance_tombstoned_empty_replay": tombstone_operation,
+        "maintenance_one_hop": one_operation,
+        "maintenance_two_hop": two_operation,
+        "maintenance_after_empty": sequential_operation,
+        "maintenance_conflict": conflict_operation,
+        "maintenance_stale_writer": stale_operation,
     }
-    operations.update(
-        {
-            "maintenance_empty": maintenance_empty_operation,
-            "maintenance_empty_replay": copy.deepcopy(
-                maintenance_empty_operation
-            ),
-            "maintenance_one_hop": maintenance_one_operation,
-            "maintenance_two_hop": maintenance_two_operation,
-            "maintenance_after_empty": maintenance_sequential_operation,
-            "maintenance_conflict": maintenance_conflict_operation,
-            "maintenance_stale_writer": maintenance_stale_operation,
-        }
-    )
-
-    invalid_maintenance_schema = copy.deepcopy(maintenance_one_checkpoint)
-    del invalid_maintenance_schema["operation_receipts"][-1]["result_code"]
-    invalid_maintenance_schema = seal_checkpoint(invalid_maintenance_schema)
-    invalid_maintenance_digest = copy.deepcopy(maintenance_one_checkpoint)
-    invalid_maintenance_digest["operation_receipts"][-1]["request_digest"] = (
-        "sha256:" + ("0" * 64)
-    )
-    invalid_maintenance_digest = seal_checkpoint(invalid_maintenance_digest)
-    invalid_historical_noop_digest = copy.deepcopy(
-        maintenance_sequential_checkpoint
-    )
-    invalid_historical_noop_digest["operation_receipts"][1][
-        "request_digest"
-    ] = "sha256:" + ("0" * 64)
-    invalid_historical_noop_digest = seal_checkpoint(
-        invalid_historical_noop_digest
-    )
-    invalid_maintenance_audit_order = copy.deepcopy(maintenance_two_checkpoint)
-    invalid_maintenance_audit_order["migration_audit_records"].reverse()
-    invalid_maintenance_audit_order = seal_checkpoint(
-        invalid_maintenance_audit_order
-    )
-    invalid_maintenance_next_receipt_gap = copy.deepcopy(
-        maintenance_empty_checkpoint
-    )
-    invalid_maintenance_next_receipt_gap[
-        "next_operation_receipt_sequence"
-    ] = "3"
-    invalid_maintenance_next_receipt_gap = seal_checkpoint(
-        invalid_maintenance_next_receipt_gap
-    )
-    invalid_maintenance_shifted_receipt_gap = copy.deepcopy(
-        maintenance_empty_checkpoint
-    )
-    invalid_maintenance_shifted_receipt_gap["operation_receipts"][1][
-        "receipt_sequence"
-    ] = "2"
-    invalid_maintenance_shifted_receipt_gap[
-        "next_operation_receipt_sequence"
-    ] = "3"
-    invalid_maintenance_shifted_receipt_gap = seal_checkpoint(
-        invalid_maintenance_shifted_receipt_gap
-    )
-    return {
-        "maintenance-source.yaml": maintenance_source_bytes,
-        "maintenance-target-one.yaml": canonical(
-            maintenance_target_one_document
-        ),
-        "maintenance-target-two.yaml": canonical(
-            maintenance_target_two_document
-        ),
-        "maintenance-descriptor-one.json": canonical(
-            maintenance_descriptor_one
-        ),
-        "maintenance-descriptor-two.json": canonical(
-            maintenance_descriptor_two
-        ),
-        "maintenance-base-checkpoint-v2.json": canonical(maintenance_base),
-        "maintenance-empty-checkpoint-v2.json": canonical(
-            maintenance_empty_checkpoint
-        ),
-        "maintenance-one-hop-checkpoint-v2.json": canonical(
-            maintenance_one_checkpoint
-        ),
-        "maintenance-two-hop-checkpoint-v2.json": canonical(
-            maintenance_two_checkpoint
-        ),
-        "maintenance-sequential-checkpoint-v2.json": canonical(
-            maintenance_sequential_checkpoint
-        ),
-        "maintenance-empty-result.json": canonical(
-            {"result": "committed", "receipt": maintenance_empty_receipt}
-        ),
-        "maintenance-one-hop-result.json": canonical(
-            {"result": "committed", "receipt": maintenance_one_receipt}
-        ),
-        "maintenance-two-hop-result.json": canonical(
-            {"result": "committed", "receipt": maintenance_two_receipt}
-        ),
-        "maintenance-sequential-result.json": canonical(
-            {"result": "committed", "receipt": maintenance_sequential_receipt}
-        ),
-        "invalid-maintenance-schema-checkpoint-v2.json": canonical(
-            invalid_maintenance_schema
-        ),
-        "invalid-maintenance-digest-checkpoint-v2.json": canonical(
-            invalid_maintenance_digest
-        ),
-        "invalid-maintenance-historical-digest-checkpoint-v2.json": canonical(
-            invalid_historical_noop_digest
-        ),
-        "invalid-maintenance-audit-order-checkpoint-v2.json": canonical(
-            invalid_maintenance_audit_order
-        ),
-        "invalid-maintenance-next-receipt-gap-checkpoint-v2.json": canonical(
-            invalid_maintenance_next_receipt_gap
-        ),
-        "invalid-maintenance-shifted-receipt-gap-checkpoint-v2.json": canonical(
-            invalid_maintenance_shifted_receipt_gap
-        ),
-        "base-checkpoint-v1.json": canonical(v1),
-        "multi-pending-checkpoint-v1.json": canonical(multi_pending_v1),
-        "multi-pending-upgraded-checkpoint-v2.json": canonical(
-            multi_pending_upgraded
-        ),
-        "multi-pending-upgraded-with-metadata-checkpoint-v2.json": canonical(
-            multi_pending_upgraded_with_metadata
-        ),
-        "multi-pending-processed-checkpoint-v2.json": canonical(
-            multi_pending_processed
-        ),
-        "multi-pending-processed-with-metadata-checkpoint-v2.json": canonical(
-            multi_pending_processed_with_metadata
-        ),
-        "multiple-converted-checkpoint-v1.json": canonical(multiple_converted_v1),
-        "multiple-converted-upgraded-checkpoint-v2.json": canonical(
-            multiple_converted_upgraded
-        ),
-        "multiple-converted-upgraded-with-metadata-checkpoint-v2.json": canonical(
-            multiple_converted_upgraded_with_metadata
-        ),
-        "multiple-converted-processed-checkpoint-v2.json": canonical(
-            multiple_converted_processed
-        ),
-        "multiple-converted-processed-with-metadata-checkpoint-v2.json": canonical(
-            multiple_converted_processed_with_metadata
-        ),
-        "base-outbox-checkpoint-v1.json": canonical(outbox_v1),
-        "base-checkpoint.json": canonical(operational_base),
-        "spawned-child-checkpoint-v1.json": canonical(spawned_checkpoint_v1),
-        "spawned-child-checkpoint-v2.json": canonical(spawned_checkpoint_v2),
-        "spawned-terminal-checkpoint-v1.json": canonical(
-            spawned_terminal_checkpoint_v1
-        ),
-        "spawned-terminal-checkpoint-v2.json": canonical(
-            spawned_terminal_checkpoint_v2
-        ),
-        "spawned-tombstoned-checkpoint-v2.json": canonical(spawned_tombstoned),
-        "upgraded-checkpoint-v2.json": canonical(upgraded),
-        "processed-upgraded-internal-checkpoint-v2.json": canonical(
-            processed_upgraded_internal
-        ),
-        "upgraded-outbox-checkpoint-v2.json": canonical(upgraded_outbox),
-        "admitted-checkpoint-v2.json": canonical(admitted),
-        "mixed-admitted-checkpoint-v2.json": canonical(mixed_checkpoint),
-        "terminal-checkpoint-v2.json": canonical(terminal),
-        "native-emit-admitted-checkpoint-v2.json": canonical(native_emit_admitted),
-        "native-internal-checkpoint-v2.json": canonical(native_internal),
-        "native-internal-terminal-checkpoint-v2.json": canonical(native_terminal),
-        "native-internal-producer-pruned-checkpoint-v2.json": canonical(
-            native_internal_producer_pruned
-        ),
-        "native-internal-terminal-pruned-checkpoint-v2.json": canonical(
-            native_internal_terminal_pruned
-        ),
-        "native-internal-sequentially-pruned-checkpoint-v2.json": canonical(
-            native_internal_sequentially_pruned
-        ),
-        "creation-internal-host-history-checkpoint-v1.json": canonical(
-            creation_internal_v1
-        ),
-        "creation-internal-before-prune-checkpoint-v2.json": canonical(
-            creation_internal_before
-        ),
-        "creation-internal-pruned-checkpoint-v2.json": canonical(
-            creation_internal_pruned
-        ),
-        "creation-external-host-history-checkpoint-v1.json": canonical(
-            creation_external_v1
-        ),
-        "creation-external-before-prune-checkpoint-v2.json": canonical(
-            creation_external_before
-        ),
-        "creation-external-pruned-checkpoint-v2.json": canonical(
-            creation_external_pruned
-        ),
-        "compact-checkpoint-v2.json": canonical(compact),
-        "compacted-legacy-checkpoint-v2.json": canonical(compacted_legacy),
-        "tombstoned-checkpoint-v2.json": canonical(tombstoned),
-        "faulted-checkpoint-v2.json": canonical(faulted_upgraded),
-        "invalid-duplicate-location-checkpoint-v2.json": canonical(invalid),
-        "invalid-acceptance-tombstone-overlap-checkpoint-v2.json": canonical(
-            invalid_acceptance_tombstone_overlap
-        ),
-        "invalid-tombstone-counter-checkpoint-v2.json": canonical(
-            invalid_tombstone_counter
-        ),
-        "invalid-pruning-claim-checkpoint-v2.json": canonical(
-            invalid_pruning_claim
-        ),
-        "invalid-bounded-receipt-cutoff-checkpoint-v2.json": canonical(
-            invalid_bounded_receipt_cutoff
-        ),
-        "invalid-creation-identity-checkpoint-v2.json": canonical(
-            invalid_creation_identity
-        ),
-        "invalid-future-receipt-revision-checkpoint-v2.json": canonical(
-            invalid_future_receipt_revision
-        ),
-        "operation-inputs.json": canonical(operations),
-        "terminal-replay-result.json": canonical(
-            {"result": "replay", "acceptance_receipt_sequence": receipt_sequence, "terminal_receipt_sequence": terminal_sequence}
-        ),
-        "pending-replay-result.json": canonical(
-            {
-                "result": "replay",
-                "event_id": entry["envelope"]["event_id"],
-                "acceptance_sequence": entry["acceptance_sequence"],
-                "location": "ready",
-            }
-        ),
-        "all-replay-batch-result.json": canonical(all_replay_result),
-        "mixed-replay-new-batch-result.json": canonical(mixed_result),
-        "legacy-terminal-replay-result.json": canonical(legacy_replay_result),
-        "compacted-legacy-replay-result.json": canonical(
-            legacy_terminal_evidence(compacted_legacy, legacy_replay_delivery)
-        ),
-        "tombstoned-single-replay-result.json": canonical(
-            legacy_terminal_evidence(tombstoned, tombstone_replay_deliveries[0])
-        ),
-        "tombstoned-batch-replay-result.json": canonical(tombstone_batch_result),
-        "tombstoned-spawned-child-replay-result.json": canonical(
-            legacy_terminal_evidence(
-                spawned_tombstoned, spawned_child_replay_delivery
-            )
-        ),
-        "tombstoned-mixed-runtime-batch-replay-result.json": canonical(
-            spawned_mixed_replay_result
-        ),
-        "tombstone-replay-result.json": canonical(
-            {"result": "replay", "terminal_receipt_sequence": terminal_sequence, "terminal_disposition": "handled"}
-        ),
+    artifacts: dict[str, Any] = {
+        "maintenance-descriptor-one.json": descriptor_one,
+        "maintenance-descriptor-two.json": descriptor_two,
+        "maintenance-base-checkpoint-v2.json": base,
+        "maintenance-empty-checkpoint-v2.json": empty_checkpoint,
+        "maintenance-one-hop-checkpoint-v2.json": one_checkpoint,
+        "maintenance-two-hop-checkpoint-v2.json": two_checkpoint,
+        "maintenance-sequential-checkpoint-v2.json": sequential_checkpoint,
+        "maintenance-tombstoned-empty-checkpoint-v2.json": tombstoned,
+        "maintenance-empty-result.json": {
+            "result": "committed",
+            "receipt": empty_receipt,
+        },
+        "maintenance-one-hop-result.json": {
+            "result": "committed",
+            "receipt": one_receipt,
+        },
+        "maintenance-two-hop-result.json": {
+            "result": "committed",
+            "receipt": two_receipt,
+        },
+        "maintenance-sequential-result.json": {
+            "result": "committed",
+            "receipt": sequential_receipt,
+        },
+        "maintenance-tombstoned-empty-result.json": {
+            "result": "committed",
+            "receipt": tombstone_receipt,
+        },
+        "invalid-maintenance-missing-target-checkpoint-v2.json": missing_target,
+        "invalid-maintenance-target-digest-checkpoint-v2.json": altered_target,
+        "invalid-maintenance-historical-digest-checkpoint-v2.json": historical_digest,
+        "invalid-maintenance-audit-order-checkpoint-v2.json": audit_order,
+        "invalid-maintenance-next-receipt-gap-checkpoint-v2.json": next_gap,
+        "invalid-maintenance-shifted-receipt-gap-checkpoint-v2.json": shifted_gap,
+        "operation-inputs.json": operations,
     }
+    return {name: canonical(value) for name, value in artifacts.items()}
 
 
 def outputs() -> dict[Path, bytes]:
     result: dict[Path, bytes] = {}
     for directory, produced in (
-        (MAILBOX, produce_mailbox()),
         (PERSISTENCE, produce_persistence()),
         (CHECKPOINT, produce_checkpoint()),
     ):

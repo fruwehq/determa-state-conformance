@@ -56,17 +56,8 @@
             "create_v2",
             "admit_v2",
             "step_v2",
-            "upgrade_aggregate_v1_to_v2",
-            "downgrade_aggregate_v2_to_v1",
             "migrate_aggregate_v2",
-            "upgrade_checkpoint_v1_to_v2",
-            "downgrade_checkpoint_v2_to_v1",
-            "checkpoint_admit_v2",
-            "checkpoint_step_v2",
-            "checkpoint_prune_v2",
-            "checkpoint_tombstone_v2",
-            "checkpoint_migrate_v2",
-            "checkpoint_v1_accept"
+            "checkpoint_migrate_v2"
           ]
         },
         "bundle": { "$ref": "#/$defs/yamlFile" },
@@ -75,7 +66,6 @@
           "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
         },
         "checkpoint_after": { "$ref": "#/$defs/jsonFile" },
-        "source_checkpoint_v1": { "$ref": "#/$defs/jsonFile" },
         "request_file": { "$ref": "#/$defs/jsonFile" },
         "request_pointer": {
           "type": "string",

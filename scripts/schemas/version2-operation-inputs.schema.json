@@ -25,7 +25,6 @@
     "delivery": {
       "oneOf": [
         { "$ref": "#/$defs/nativeDelivery" },
-        { "$ref": "#/$defs/legacyTerminalReplayDelivery" },
         { "$ref": "#/$defs/invalidModeDelivery" },
         { "$ref": "#/$defs/malformedDelivery" }
       ]
@@ -58,17 +57,6 @@
         "envelope_digest": { "$ref": "#/$defs/sha256" }
       }
     },
-    "legacyTerminalReplayDelivery": {
-      "type": "object",
-      "required": ["delivery_mode", "envelope", "envelope_digest", "request_digest_domain"],
-      "additionalProperties": false,
-      "properties": {
-        "delivery_mode": { "enum": ["input", "internal"] },
-        "envelope": { "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/envelope" },
-        "envelope_digest": { "$ref": "#/$defs/sha256" },
-        "request_digest_domain": { "const": "determa-inbox-envelope-digest-1" }
-      }
-    },
     "create": {
       "type": "object",
       "required": ["operation", "bundle", "machine_id", "machine_version", "root_instance_id", "creation_id", "bindings"],
@@ -96,30 +84,18 @@
       "required": ["operation", "deliveries"],
       "additionalProperties": false,
       "properties": {
-        "operation": { "enum": ["admit_v2", "checkpoint_admit_v2", "checkpoint_v1_accept"] },
-        "deliveries": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/delivery" } },
-        "expected_revision": { "$ref": "#/$defs/expectedRevision" },
-        "expected_checkpoint_digest": { "$ref": "#/$defs/expectedCheckpointDigest" }
-      },
-      "allOf": [{
-        "if": { "properties": { "operation": { "pattern": "^checkpoint_" } } },
-        "then": { "required": ["expected_revision", "expected_checkpoint_digest"] }
-      }]
+        "operation": { "const": "admit_v2" },
+        "deliveries": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/delivery" } }
+      }
     },
     "step": {
       "type": "object",
       "required": ["operation", "target_runtime_id"],
       "additionalProperties": false,
       "properties": {
-        "operation": { "enum": ["step_v2", "checkpoint_step_v2"] },
-        "target_runtime_id": { "$ref": "#/$defs/sha256" },
-        "expected_revision": { "$ref": "#/$defs/expectedRevision" },
-        "expected_checkpoint_digest": { "$ref": "#/$defs/expectedCheckpointDigest" }
-      },
-      "allOf": [{
-        "if": { "properties": { "operation": { "const": "checkpoint_step_v2" } } },
-        "then": { "required": ["expected_revision", "expected_checkpoint_digest"] }
-      }]
+        "operation": { "const": "step_v2" },
+        "target_runtime_id": { "$ref": "#/$defs/sha256" }
+      }
     },
     "migration": {
       "type": "object",
@@ -159,41 +135,12 @@
         }
       ]
     },
-    "prune": {
-      "type": "object",
-      "required": ["operation", "cutoff_receipt_sequence", "expected_revision", "expected_checkpoint_digest"],
-      "additionalProperties": false,
-      "properties": {
-        "operation": { "const": "checkpoint_prune_v2" },
-        "cutoff_receipt_sequence": { "$ref": "#/$defs/canonicalDecimal" },
-        "expected_revision": { "$ref": "#/$defs/expectedRevision" },
-        "expected_checkpoint_digest": { "$ref": "#/$defs/expectedCheckpointDigest" }
-      }
-    },
-    "conversion": {
-      "type": "object",
-      "required": ["operation"],
-      "additionalProperties": false,
-      "properties": {
-        "operation": {
-          "enum": ["upgrade_aggregate_v1_to_v2", "downgrade_aggregate_v2_to_v1", "upgrade_checkpoint_v1_to_v2", "downgrade_checkpoint_v2_to_v1", "checkpoint_tombstone_v2"]
-        },
-        "expected_revision": { "$ref": "#/$defs/expectedRevision" },
-        "expected_checkpoint_digest": { "$ref": "#/$defs/expectedCheckpointDigest" }
-      },
-      "allOf": [{
-        "if": { "properties": { "operation": { "pattern": "checkpoint" } } },
-        "then": { "required": ["expected_revision", "expected_checkpoint_digest"] }
-      }]
-    },
     "operationInput": {
       "oneOf": [
         { "$ref": "#/$defs/create" },
         { "$ref": "#/$defs/admit" },
         { "$ref": "#/$defs/step" },
-        { "$ref": "#/$defs/migration" },
-        { "$ref": "#/$defs/prune" },
-        { "$ref": "#/$defs/conversion" }
+        { "$ref": "#/$defs/migration" }
       ]
     }
   }
