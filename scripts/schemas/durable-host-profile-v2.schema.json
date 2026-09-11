@@ -154,6 +154,7 @@
         "checkpoint_update_outbox_v2",
         "checkpoint_terminalize_outbox_v2",
         "checkpoint_compact_outbox_v2",
+        "checkpoint_delete_retained_record_v2",
         "checkpoint_prune_v2",
         "checkpoint_tombstone_v2",
         "checkpoint_register_adapter_v2",

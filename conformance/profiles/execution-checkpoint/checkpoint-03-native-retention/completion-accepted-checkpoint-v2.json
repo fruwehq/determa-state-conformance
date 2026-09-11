@@ -2,7 +2,7 @@
   "execution_checkpoint_format": "determa.execution_checkpoint",
   "execution_checkpoint_schema_version": 2,
   "root_instance_id": "checkpoint-retention-root",
-  "revision": "5",
+  "revision": "4",
   "root_record": {
     "status": "retained",
     "aggregate_state": {
@@ -17,7 +17,7 @@
       "creation_id": "checkpoint-retention-create",
       "root_runtime_id": "sha256:c0f8188724d18531df9609951b3916890e775f0149a51df158a5c7153bf624d4",
       "migration_sequence": "0",
-      "next_logical_step_sequence": "3",
+      "next_logical_step_sequence": "2",
       "next_output_sequence": "0",
       "next_acceptance_sequence": "2",
       "next_queue_sequence": "2",
@@ -55,10 +55,30 @@
           "relation": {
             "kind": "root"
           },
-          "status": "completed",
-          "active_leaf_state_definition_pointers": [],
-          "active_state_activations": [],
-          "variables": [],
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root/states/active"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/0/root/states/active",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/count",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "1"
+              ]
+            }
+          ],
           "history": [],
           "next_spawn_sequence": "0",
           "next_state_activation_sequences": [
@@ -69,19 +89,41 @@
             {
               "definition_pointer": "/machines/0/root/states/active",
               "next_sequence": "1"
-            },
-            {
-              "definition_pointer": "/machines/0/root/states/finished",
-              "next_sequence": "1"
             }
           ],
           "next_component_activation_sequences": [],
           "fault": null,
-          "ready_mailbox": [],
+          "ready_mailbox": [
+            {
+              "envelope": {
+                "event": "complete",
+                "event_id": "retention-complete",
+                "cause_id": "retention-complete",
+                "source": {
+                  "host": true
+                },
+                "target": {
+                  "root": {
+                    "root_instance_id": "checkpoint-retention-root",
+                    "root_runtime_id": "sha256:c0f8188724d18531df9609951b3916890e775f0149a51df158a5c7153bf624d4"
+                  }
+                },
+                "payload": [
+                  "map",
+                  []
+                ]
+              },
+              "envelope_digest": "sha256:3bae89acd60d9aa2ae0a3e97a9c4ccfe3523131821c5511a62392972eeb106bd",
+              "delivery_mode": "input",
+              "acceptance_sequence": "1",
+              "queue_sequence": "1",
+              "deferral_count": "0"
+            }
+          ],
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:41ee5316e17388f430083e27c54652cab82b56e6475613f8c19a17f2e0c025d0"
+      "aggregate_state_digest": "sha256:7a06e8c05ddc04c10d1ac904f0ce117fadec47009894ee698ccd07f5338a11d7"
     }
   },
   "operation_receipts": [
@@ -104,26 +146,9 @@
       "acceptance_sequence": "1",
       "accepted_revision": "4",
       "delivery_mode": "input"
-    },
-    {
-      "operation_kind": "event_terminal",
-      "receipt_sequence": "4",
-      "event_id": "retention-complete",
-      "request_digest": "sha256:3bae89acd60d9aa2ae0a3e97a9c4ccfe3523131821c5511a62392972eeb106bd",
-      "acceptance_sequence": "1",
-      "final_queue_sequence": "1",
-      "committed_revision": "5",
-      "resulting_aggregate_state_digest": "sha256:41ee5316e17388f430083e27c54652cab82b56e6475613f8c19a17f2e0c025d0",
-      "outcome": {
-        "disposition": "handled",
-        "status": "completed",
-        "fault": null,
-        "rejection": null
-      },
-      "emission_references": []
     }
   ],
-  "next_operation_receipt_sequence": "5",
+  "next_operation_receipt_sequence": "4",
   "replay_retention": {
     "mode": "bounded",
     "permanent_replay_eligible": false,
@@ -145,5 +170,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:3ca6013ed1f4fe5d1b17e2fe726573ef3f9ce2303af155dbc52e5be0269e388a"
+  "execution_checkpoint_digest": "sha256:bae4f58a7576e69e976d738df96549249e233fc8039dfa9e066ac41c3ba929eb"
 }

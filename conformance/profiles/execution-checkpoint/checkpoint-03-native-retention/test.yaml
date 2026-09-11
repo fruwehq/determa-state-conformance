@@ -7,11 +7,20 @@ artifacts:
     - { file: created-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: processed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: bounded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: completion-accepted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: completed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: root-tombstone-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
     - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
 durable_host_vectors:
+  - name: checkpoint_completion_execution
+    covers: [checkpoint_completion_execution]
+    operation: checkpoint_step_v2
+    checkpoint_before: completion-accepted-checkpoint-v2.json
+    checkpoint_after: completed-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/complete_process }
+    result: { file: results-v2.json, pointer: /results/processing_committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: checkpoint_dependency_safe_pruning
     covers: [checkpoint_dependency_safe_pruning, checkpoint_permanent_to_bounded, exact_pruning_revision_equation]
     operation: checkpoint_prune_v2
@@ -79,7 +88,7 @@ durable_host_vectors:
     expect: { result: rejected, code: creation_id_conflict, mutation: none, core_calls: 0 }
   - name: checkpoint_physical_deletion_unsupported
     covers: [checkpoint_physical_deletion_unsupported]
-    operation: checkpoint_tombstone_v2
+    operation: checkpoint_delete_retained_record_v2
     checkpoint_before: root-tombstone-checkpoint-v2.json
     checkpoint_after: root-tombstone-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/delete }

@@ -106,7 +106,7 @@
       "expected_checkpoint": {
         "root_instance_id": "owned-migration-root",
         "revision": "2",
-        "digest": "sha256:d461cf9523b872c5120e9ed77a8923fbbc24240b0e711884e9cad65741c36bdc"
+        "digest": "sha256:73663ca9b271d4ee487e40a3d3d9c63b5a901f5d35eed502b6f93675b561ae7a"
       },
       "envelopes": [
         {
@@ -155,7 +155,7 @@
       "expected_checkpoint": {
         "root_instance_id": "owned-migration-root",
         "revision": "3",
-        "digest": "sha256:9038624da0fc44728b9f8f1b34771d5c263661a768bcae8befe2f5c3f41a44a5"
+        "digest": "sha256:6511da8e3d170b12e653234569f8ac3f8aa82da1e3d2c0106717a49c53f523e9"
       },
       "envelopes": [
         {
@@ -194,7 +194,7 @@
       "expected_checkpoint": {
         "root_instance_id": "owned-migration-root",
         "revision": "4",
-        "digest": "sha256:6b208559e7bb0e96217efc5c95b26d7311efab780d6c8ff5ff29a8a820806d06"
+        "digest": "sha256:74ac72e3a39694b32d487c2846a66e7e617f7e87bdfd1bbf9e02e01e5a0749af"
       },
       "event_id": "spawned-pay",
       "envelope_digest": "sha256:2d1947642db9636a0991d576c81f674a27ebd6c4b233d8fc5a07ea142f5a1151",
@@ -222,7 +222,7 @@
       "expected_checkpoint": {
         "root_instance_id": "owned-migration-root",
         "revision": "5",
-        "digest": "sha256:948790e0a4d61f1d342f509f8a1955a0beb645a064f2380eeab1d0be300d9952"
+        "digest": "sha256:9686615a73dac081e2269e99284bc08ab54978da1f6a7b9fbebe946ea414fc08"
       },
       "event_id": "spawned-root-followup",
       "envelope_digest": "sha256:dfabf1f16a9aee260cd3c2a0be92bfc971db98255c28b27ea7a00bc0515e3d80",
@@ -248,7 +248,7 @@
       "expected_checkpoint": {
         "root_instance_id": "owned-migration-root",
         "revision": "6",
-        "digest": "sha256:503a0bc30a3a7a5bc6aefb06edec37b315483a88ed94ba03c45e9b009c6e7b88"
+        "digest": "sha256:7969e6e5ebbe42bfaadaa00b820140a0d5178efe758d0df3e4e56585d4de7679"
       },
       "event_id": "sha256:521e722605b0c260f812bf8b852e6c2234633e231f472a6411d198fca9c96107",
       "envelope_digest": "sha256:1c2ce945a720372a7ee2e59c893b1f1ff78afe8c5b4b9a4324bbeb6ce17cf95a",

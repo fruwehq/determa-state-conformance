@@ -93,7 +93,7 @@
                   [
                     "machine_version",
                     [
-                      "string",
+                      "integer",
                       "1"
                     ]
                   ],
@@ -142,7 +142,7 @@
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:47dafa9867138a43f29294a3725e53db44c268c364d1b002ca12768b46a48b0f"
+      "aggregate_state_digest": "sha256:7ec8e74d6f2fc942df1468e4e8b602eb9d89fb93571f1f05d07ad3ee76f36864"
     }
   },
   "operation_receipts": [
@@ -174,7 +174,7 @@
       "acceptance_sequence": "0",
       "final_queue_sequence": "0",
       "committed_revision": "2",
-      "resulting_aggregate_state_digest": "sha256:5cebe5741b92212d21e54873aabf982b710e5918ee342746ea89ac2b3ecf6b4a",
+      "resulting_aggregate_state_digest": "sha256:e10a39f6e548db058f5789d109543bcd6bdb9d49c19a59fb37da059f5783183e",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -209,7 +209,7 @@
       "acceptance_sequence": "1",
       "final_queue_sequence": "1",
       "committed_revision": "5",
-      "resulting_aggregate_state_digest": "sha256:ef36949d5ee9977c8ee44dbbe7a047393eb892d167fbb729c71036ef5f42655e",
+      "resulting_aggregate_state_digest": "sha256:644dea4b24dc8373c294085b23e130ad647f908b734afee6b226c3449cf8d6ea",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -234,7 +234,7 @@
       "acceptance_sequence": "2",
       "final_queue_sequence": "2",
       "committed_revision": "6",
-      "resulting_aggregate_state_digest": "sha256:bbeaa2f7f9e21cf1179cf89ff258d4005511d82e19a87f230095af895641f33f",
+      "resulting_aggregate_state_digest": "sha256:5d582b9feabbf742620e32e9759d81b552c47c4ec10f920e03204c7d0ea4f78b",
       "outcome": {
         "disposition": "unhandled",
         "status": "running",
@@ -251,7 +251,7 @@
       "acceptance_sequence": "3",
       "final_queue_sequence": "3",
       "committed_revision": "7",
-      "resulting_aggregate_state_digest": "sha256:47dafa9867138a43f29294a3725e53db44c268c364d1b002ca12768b46a48b0f",
+      "resulting_aggregate_state_digest": "sha256:7ec8e74d6f2fc942df1468e4e8b602eb9d89fb93571f1f05d07ad3ee76f36864",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -274,5 +274,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:6e17fcf759989381bcd2cbd79e9c939557700e69e090cb995bda9885c22a6be0"
+  "execution_checkpoint_digest": "sha256:b60fbe3700af35c2ae0df092d6660fd4292cddefb450042d3f6e0bc779a6254b"
 }

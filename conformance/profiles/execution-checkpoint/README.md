@@ -48,6 +48,10 @@ outbox, pruning, or tombstone mutation advances exactly one revision; the combin
 persistence migration, admission, processing, inbox, outbox, audit, and application
 write transaction advances exactly one revision. A golden from
 another request is therefore not interchangeable even when it is schema-valid.
+Deletion-refusal vectors use an explicit retained-record deletion operation with a
+stable operation identity and a typed target. The validator derives refusal from the
+targeted retained root identity or referenced effect tombstone, rather than from test
+names, coverage labels, or expected result codes.
 
 The complete host-contract case additionally covers creation rejection, pending and
 terminal replay precedence, handled/unhandled/rejected/faulted delivery, foreground

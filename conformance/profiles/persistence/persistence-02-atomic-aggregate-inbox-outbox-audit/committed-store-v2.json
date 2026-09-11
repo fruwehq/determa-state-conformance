@@ -12,13 +12,13 @@
         "aggregate_state_format": "determa.aggregate_state",
         "aggregate_state_schema_version": 2,
         "machine_format": 1,
-        "validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
+        "validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
         "namespace": "conformance.persistence_atomic_v2",
         "root_machine_id": "counter",
         "root_machine_version": "1",
         "root_instance_id": "persistence-2-root",
         "creation_id": "persistence-2-create",
-        "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b",
+        "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2",
         "migration_sequence": "1",
         "next_logical_step_sequence": "2",
         "next_output_sequence": "1",
@@ -26,11 +26,11 @@
         "next_queue_sequence": "1",
         "runtimes": [
           {
-            "runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b",
+            "runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2",
             "identity_origin": {
               "kind": "root",
               "definition": {
-                "validated_bundle_fingerprint": "sha256:87b1f23a34f45f200fb90768b4246aa9e89b1ecf205b246525c443043e67cd0f",
+                "validated_bundle_fingerprint": "sha256:eb981696ef74c96483ba94b2e57714dbcdac009eec778c8295ec9fcc3757d767",
                 "machine": {
                   "namespace": "conformance.persistence_atomic_v2",
                   "machine_id": "counter",
@@ -43,11 +43,11 @@
             "target_identity": {
               "root": {
                 "root_instance_id": "persistence-2-root",
-                "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b"
+                "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2"
               }
             },
             "current_definition": {
-              "validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
+              "validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
               "machine": {
                 "namespace": "conformance.persistence_atomic_v2",
                 "machine_id": "counter",
@@ -92,7 +92,7 @@
             "deferred_mailbox": []
           }
         ],
-        "aggregate_state_digest": "sha256:1572b60342ece32f1cc4e1e6bcd15d841242fdc18db84e816fbf868b3d1bbcf4"
+        "aggregate_state_digest": "sha256:d99965825dc52fa44c291251b0356efa78763e5649da36a09efb1e341269779d"
       }
     },
     "operation_receipts": [
@@ -100,9 +100,9 @@
         "operation_kind": "creation",
         "receipt_sequence": "0",
         "creation_id": "persistence-2-create",
-        "request_digest": "sha256:222f8fe99950086c3c3cea34c19ad17e0ba1768e73b7686939e545665c25f25f",
+        "request_digest": "sha256:45bdbff683dee1b75ce8bccb89a1af10cda043b3fa7d8129d42717c545c863e1",
         "committed_revision": "0",
-        "resulting_aggregate_state_digest": "sha256:6d595429c8be43f2076efa450ea23bb6176c594c4b871c5718e965bd0c1a70d3",
+        "resulting_aggregate_state_digest": "sha256:24677d7f7409ad184dc2046b9f68767d54ab69353befbb086c4fb9870cc42e0c",
         "status": "running",
         "fault": null,
         "emission_references": []
@@ -111,7 +111,7 @@
         "operation_kind": "acceptance",
         "receipt_sequence": "1",
         "event_id": "persistence-2-event",
-        "request_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+        "request_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
         "acceptance_sequence": "0",
         "accepted_revision": "1",
         "delivery_mode": "input"
@@ -120,11 +120,11 @@
         "operation_kind": "event_terminal",
         "receipt_sequence": "2",
         "event_id": "persistence-2-event",
-        "request_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+        "request_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
         "acceptance_sequence": "0",
         "final_queue_sequence": "0",
         "committed_revision": "1",
-        "resulting_aggregate_state_digest": "sha256:1572b60342ece32f1cc4e1e6bcd15d841242fdc18db84e816fbf868b3d1bbcf4",
+        "resulting_aggregate_state_digest": "sha256:d99965825dc52fa44c291251b0356efa78763e5649da36a09efb1e341269779d",
         "outcome": {
           "disposition": "handled",
           "status": "running",
@@ -135,7 +135,7 @@
           {
             "kind": "external_outbox",
             "emission_index": "0",
-            "effect_id": "sha256:812344e00ddeeed36469f4f54504d55367af7a2dde8ab562b25206372df5b94a"
+            "effect_id": "sha256:2948d0a87d6792c384d811916b6791b2b6d49818c755781660b7e0467dad3c4d"
           }
         ]
       }
@@ -151,7 +151,7 @@
     "pending_outbox_intents": [
       {
         "intent": {
-          "effect_id": "sha256:812344e00ddeeed36469f4f54504d55367af7a2dde8ab562b25206372df5b94a",
+          "effect_id": "sha256:2948d0a87d6792c384d811916b6791b2b6d49818c755781660b7e0467dad3c4d",
           "sequence": "0",
           "event": "output_record",
           "payload": [
@@ -181,22 +181,22 @@
       {
         "migration_audit_record_schema_version": 2,
         "root_instance_id": "persistence-2-root",
-        "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b",
+        "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2",
         "migration_sequence": "1",
-        "source_validated_bundle_fingerprint": "sha256:87b1f23a34f45f200fb90768b4246aa9e89b1ecf205b246525c443043e67cd0f",
-        "target_validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
-        "migration_descriptor_digest": "sha256:d2779811c0672ceebfb07bc5281c5acf68991685c4ceef1c866fcb2176cbd549",
-        "source_aggregate_state_digest": "sha256:6d595429c8be43f2076efa450ea23bb6176c594c4b871c5718e965bd0c1a70d3",
-        "target_aggregate_state_digest": "sha256:33a5f82871b46874204f88cdde23b4988d6fff4722e027907ff770b880d98d3a",
+        "source_validated_bundle_fingerprint": "sha256:eb981696ef74c96483ba94b2e57714dbcdac009eec778c8295ec9fcc3757d767",
+        "target_validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
+        "migration_descriptor_digest": "sha256:83482cd473cf3d88b12dd6cd57c6486a1b8fbd9015920d6ab315ad098612fdda",
+        "source_aggregate_state_digest": "sha256:24677d7f7409ad184dc2046b9f68767d54ab69353befbb086c4fb9870cc42e0c",
+        "target_aggregate_state_digest": "sha256:5e5b00ad6b3caa05a96b73bdb0c31e3be38a4bb92f01ef94ab5a423f24511e8c",
         "result_code": "migration_applied"
       }
     ],
-    "execution_checkpoint_digest": "sha256:4e164c93901d2bc12089ee4e3bff893aad0d8bd8f028037c289a9d346b0a86f4"
+    "execution_checkpoint_digest": "sha256:f699648394c4b91d552744c095e4fba4b1179df17294ba48aa6476e179e6c0f7"
   },
   "inbox": [
     {
       "event_id": "persistence-2-event",
-      "request_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+      "request_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
       "disposition": "committed"
     }
   ],

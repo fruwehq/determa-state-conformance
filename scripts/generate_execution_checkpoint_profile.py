@@ -388,6 +388,21 @@ def tombstone_request(
     }
 
 
+def deletion_probe_request(
+    checkpoint: dict[str, Any],
+    request_id: str,
+    target: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "operation": "checkpoint_delete_retained_record_v2",
+        "request_id": request_id,
+        "deletion_operation_id": request_id,
+        "scope": scope(),
+        "expected_checkpoint": expected_checkpoint(checkpoint),
+        "target": target,
+    }
+
+
 STANDARD_REGISTRATIONS = [
     {
         "adapter_identifier": "memory",
@@ -799,7 +814,7 @@ def admit_batch(
 
 
 def process(
-    checkpoint: dict[str, Any], *, output_count: int = 0
+    checkpoint: dict[str, Any], *, bundle_path: Path | None = None
 ) -> dict[str, Any]:
     value = copy.deepcopy(checkpoint)
     aggregate = value["root_record"]["aggregate_state"]
@@ -817,6 +832,12 @@ def process(
         )
         count["value"] = ["integer", str(int(count["value"][1]) + int(amount))]
     elif entry["envelope"]["event"] == "complete":
+        runtime["next_state_activation_sequences"].append(
+            {
+                "definition_pointer": "/machines/0/root/states/finished",
+                "next_sequence": "1",
+            }
+        )
         runtime["status"] = "completed"
         runtime["active_leaf_state_definition_pointers"] = []
         runtime["active_state_activations"] = []
@@ -825,22 +846,71 @@ def process(
     receipt_sequence = value["next_operation_receipt_sequence"]
     value["next_operation_receipt_sequence"] = str(int(receipt_sequence) + 1)
     references = []
-    for index in range(output_count):
+    external_actions: list[tuple[str, dict[str, Any]]] = []
+    machine_identity = runtime["current_definition"]["machine"]
+    if bundle_path is not None:
+        bundle = normalize_bundle_document(load_yaml(bundle_path))
+        machine_index, machine = next(
+            (index, candidate)
+            for index, candidate in enumerate(bundle["machines"])
+            if candidate["machine_id"] == machine_identity["machine_id"]
+            and str(candidate["version"]) == machine_identity["machine_version"]
+        )
+        handler = machine["root"].get("on_events", {}).get(
+            entry["envelope"]["event"]
+        )
+        transitions = handler if isinstance(handler, list) else [handler]
+        for transition_index, transition in enumerate(transitions):
+            if not isinstance(transition, dict):
+                continue
+            for action_index, action in enumerate(transition.get("action", [])):
+                send = action.get("send") if isinstance(action, dict) else None
+                if isinstance(send, dict) and send.get("to") == {"external": True}:
+                    transition_suffix = (
+                        f"/{transition_index}" if isinstance(handler, list) else ""
+                    )
+                    external_actions.append(
+                        (
+                            f"/machines/{machine_index}/root/on_events/"
+                            f"{entry['envelope']['event']}{transition_suffix}/"
+                            f"action/{action_index}/send",
+                            send,
+                        )
+                    )
+    input_payload = {
+        name: value[1] for name, value in entry["envelope"]["payload"][1]
+    }
+    for action_pointer, send in external_actions:
         sequence = aggregate["next_output_sequence"]
         aggregate["next_output_sequence"] = str(int(sequence) + 1)
+        output_payload = {
+            name: int(expression)
+            for name, expression in send.get("payload", {}).items()
+        }
+        correlation_expression = send["correlation_id"]
+        correlation_id = input_payload[correlation_expression.rsplit(".", 1)[1]]
         intent = {
             "effect_id": digest(
                 [
-                    "determa-effect-identity-2",
+                    "determa-effect-identity-1",
+                    "1",
+                    [
+                        machine_identity["namespace"],
+                        machine_identity["machine_id"],
+                        machine_identity["machine_version"],
+                    ],
                     aggregate["root_instance_id"],
-                    receipt_sequence,
-                    str(index),
+                    runtime["runtime_id"],
+                    entry["envelope"]["cause_id"],
+                    str(int(aggregate["next_logical_step_sequence"]) - 1),
+                    action_pointer,
+                    "0",
                 ]
             ),
             "sequence": sequence,
-            "event": "output_record",
-            "payload": typed_value({"index": index}),
-            "correlation_id": f"batch-{index}",
+            "event": send["event"],
+            "payload": typed_value(output_payload),
+            "correlation_id": correlation_id,
         }
         value["pending_outbox_intents"].append(
             {
@@ -852,7 +922,7 @@ def process(
         references.append(
             {
                 "kind": "external_outbox",
-                "emission_index": str(index),
+                "emission_index": "0",
                 "effect_id": intent["effect_id"],
             }
         )
@@ -1148,7 +1218,7 @@ def generate_outbox() -> dict[Path, bytes]:
     case = PROFILE / "execution-checkpoint" / "checkpoint-02-native-outbox"
     created = create_checkpoint(case, "checkpoint-outbox-root", "checkpoint-outbox-create")
     admitted = admit(created, "emit_outputs", "delivery-outputs", {"batch_id": "batch"})
-    pending = process(admitted, output_count=5)
+    pending = process(admitted, bundle_path=case / "machine.yaml")
     retryable = update_pending(pending, 0, "retryable_failure")
     ambiguous = update_pending(retryable, 1, "ambiguous")
     statuses = ["confirmed", "permanently_rejected", "operator_cancelled", "discarded", "dead_lettered"]
@@ -1171,7 +1241,7 @@ def generate_outbox() -> dict[Path, bytes]:
     inputs = request_document(
         {
             "pending": processing_request(
-                pending, "emit-outputs", event_id="delivery-outputs"
+                admitted, "emit-outputs", event_id="delivery-outputs"
             ),
             "retryable": outbox_request(
                 pending, "retryable", pending_effects[0], "retryable_failure", terminal=False
@@ -1198,15 +1268,14 @@ def generate_outbox() -> dict[Path, bytes]:
                 terminal=True,
             ),
             "compact": compact_request(terminal, "compact", pending_effects[0]),
-            "delete": {
-                "operation": "checkpoint_compact_outbox_v2",
-                "request_id": "delete",
-                "scope": scope(),
-                "expected_checkpoint": expected_checkpoint(compacted),
-                "effect_id": pending_effects[0],
-                "intent_digest": compacted["outbox_effect_tombstones"][0]["intent_digest"],
-                "retention_mode": compacted["replay_retention"]["mode"],
-            },
+            "delete": deletion_probe_request(
+                compacted,
+                "delete-outbox-tombstone",
+                {
+                    "kind": "outbox_effect_tombstone",
+                    "effect_id": pending_effects[0],
+                },
+            ),
             "prune_effect_dependency": {
                 **prune_request(terminal, "prune-effect-dependency", "2", "bounded"),
                 "dependency_effect_ids": [pending_effects[0]],
@@ -1223,12 +1292,14 @@ def generate_outbox() -> dict[Path, bytes]:
     results = result_document(
         {
             "committed": result("committed", "atomic", 0),
+            "processing_committed": result("committed", "atomic", 1),
             "replayed": result("replayed", "none", 0),
             "conflict": result("rejected", "none", 0, code="effect_id_conflict"),
             "deletion_rejected": result("rejected", "none", 0, code="invalid_execution_checkpoint"),
         }
     )
     return {
+        case / "accepted-checkpoint-v2.json": write_json(case / "x", admitted),
         case / "pending-checkpoint-v2.json": write_json(case / "x", pending),
         case / "retryable-checkpoint-v2.json": write_json(case / "x", retryable),
         case / "ambiguous-checkpoint-v2.json": write_json(case / "x", ambiguous),
@@ -1260,6 +1331,11 @@ def generate_retention() -> dict[Path, bytes]:
     )
     reuse["existing_checkpoint"] = expected_checkpoint(tombstoned)
     operations = {
+        "complete_process": processing_request(
+            completion_accepted,
+            "complete-process",
+            event_id="retention-complete",
+        ),
         "prune": prune_request(processed, "prune", "2", "bounded"),
         "prune_replay": prune_request(bounded, "prune", "2", "bounded"),
         "prune_lower": prune_request(bounded, "prune-lower", "1", "bounded"),
@@ -1274,7 +1350,14 @@ def generate_retention() -> dict[Path, bytes]:
         "tombstone_running": tombstone_request(bounded, "root-tombstone-running"),
         "tombstone_replay": tombstone_request(tombstoned, "root-tombstone"),
         "reuse": reuse,
-        "delete": tombstone_request(tombstoned, "delete"),
+        "delete": deletion_probe_request(
+            tombstoned,
+            "delete-root-identity",
+            {
+                "kind": "root_identity",
+                "root_instance_id": tombstoned["root_instance_id"],
+            },
+        ),
         "resolve_adapter": resolve_adapter_request(
             "resolve-adapter", "sqlite", capabilities=["durable_single_writer"]
         ),
@@ -1289,6 +1372,7 @@ def generate_retention() -> dict[Path, bytes]:
     results = result_document(
         {
             "committed": result("committed", "atomic", 0),
+            "processing_committed": result("committed", "atomic", 1),
             "replayed": result("replayed", "none", 0),
             "invalid_cutoff": result("rejected", "none", 0, code="invalid_execution_checkpoint"),
             "stale": result("rejected", "none", 0, code="checkpoint_revision_conflict"),
@@ -1304,6 +1388,9 @@ def generate_retention() -> dict[Path, bytes]:
     return {
         case / "processed-checkpoint-v2.json": write_json(case / "x", processed),
         case / "bounded-checkpoint-v2.json": write_json(case / "x", bounded),
+        case / "completion-accepted-checkpoint-v2.json": write_json(
+            case / "x", completion_accepted
+        ),
         case / "completed-checkpoint-v2.json": write_json(case / "x", completed),
         case / "root-tombstone-checkpoint-v2.json": write_json(case / "x", tombstoned),
         case / "created-checkpoint-v2.json": write_json(case / "x", created),
@@ -1422,15 +1509,17 @@ def start_spawned_runtime(checkpoint: dict[str, Any]) -> dict[str, Any]:
             "1",
         ]
     )
-    reference = {
+    target_reference = {
         "root_instance_id": aggregate["root_instance_id"],
         "instance_id": child_runtime_id,
         "machine_id": "payment",
         "machine_version": "1",
     }
+    logical_reference = copy.deepcopy(target_reference)
+    logical_reference["machine_version"] = 1
     for variable in owner["variables"]:
         if variable["variable_declaration_pointer"].endswith("/payment_reference"):
-            variable["value"] = typed_value(reference)
+            variable["value"] = typed_value(logical_reference)
     owner["active_leaf_state_definition_pointers"] = [
         "/machines/0/root/states/checkout"
     ]
@@ -1469,7 +1558,7 @@ def start_spawned_runtime(checkpoint: dict[str, Any]) -> dict[str, Any]:
                 "spawn_action_pointer": action_pointer,
                 "spawn_sequence": spawn_sequence,
             },
-            "target_identity": {"spawned_instance": reference},
+            "target_identity": {"spawned_instance": target_reference},
             "current_definition": copy.deepcopy(definition),
             "relation": {
                 "kind": "owned_spawned_instance",
@@ -1926,7 +2015,7 @@ def combined_migrate_and_process(
         "cause_id": event_id,
         "source": {"host": True},
         "target": copy.deepcopy(runtime["target_identity"]),
-        "payload": typed_value({}),
+        "payload": typed_value({"correlation_id": event_id}),
     }
     envelope_digest = digest(
         [
@@ -2051,7 +2140,11 @@ def generate_persistence_case(index: int, slug: str) -> dict[Path, bytes]:
             case / "machine.yaml", case / "target-machine.yaml"
         )
     event = "host_commit" if index == 2 else "increment"
-    payload = {} if index == 2 else {"amount": 1}
+    payload = (
+        {"correlation_id": f"persistence-{index}-event"}
+        if index == 2
+        else {"amount": 1}
+    )
     if descriptor is not None:
         committed_checkpoint, presented_envelope, presented_digest = (
             combined_migrate_and_process(

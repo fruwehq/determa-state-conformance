@@ -19,6 +19,7 @@ from validate_conformance import (
     host_profile_failure_code,
     load_fixture_document,
     normalize_raw_admission_request,
+    validate_aggregate_against_bundle,
     validate_checkpoint_derivation,
     validate_cross_scope_pair,
     validate_durable_host_vectors,
@@ -238,6 +239,134 @@ class DurableHostValidatorTests(unittest.TestCase):
             retain_completed_child,
             "spawned completion disposal",
         )
+
+    def test_instance_reference_machine_version_is_logically_integer(self) -> None:
+        case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
+        checkpoint = load(case / "spawned-root-pending-checkpoint-v2.json")
+        aggregate = checkpoint["root_record"]["aggregate_state"]
+        owner = next(
+            runtime
+            for runtime in aggregate["runtimes"]
+            if runtime["relation"]["kind"] == "root"
+        )
+        reference = next(
+            variable
+            for variable in owner["variables"]
+            if variable["variable_declaration_pointer"].endswith(
+                "/payment_reference"
+            )
+        )["value"]
+        fields = dict(reference[1])
+        self.assertEqual(fields["machine_version"], ["integer", "1"])
+        fields["machine_version"] = ["string", "1"]
+        reference[1] = [[name, fields[name]] for name, _ in reference[1]]
+        with self.assertRaisesRegex(
+            ValidationFailure, "machine_version is not an integer"
+        ):
+            validate_aggregate_against_bundle(aggregate, case / "machine.yaml")
+
+    def test_outbox_effects_are_derived_from_machine_actions(self) -> None:
+        case = PROFILE / "checkpoint-02-native-outbox"
+        request = load(case / "inputs-v2.json")["requests"]["pending"]
+        result = load(case / "results-v2.json")["results"][
+            "processing_committed"
+        ]
+        before = load(case / "accepted-checkpoint-v2.json")
+        after = load(case / "pending-checkpoint-v2.json")
+        after["pending_outbox_intents"][0]["intent"]["effect_id"] = (
+            "sha256:" + "0" * 64
+        )
+        with self.assertRaisesRegex(
+            ValidationFailure, "external effects are not machine-derived"
+        ):
+            validate_checkpoint_derivation(
+                request, result, before, after, "effect mutation", case / "machine.yaml"
+            )
+
+    def test_deletion_probe_requires_a_retained_referenced_effect(self) -> None:
+        case = PROFILE / "checkpoint-02-native-outbox"
+        request = load(case / "inputs-v2.json")["requests"]["delete"]
+        result = load(case / "results-v2.json")["results"]["deletion_rejected"]
+        checkpoint = load(case / "effect-tombstone-checkpoint-v2.json")
+        request["target"]["effect_id"] = "sha256:" + "0" * 64
+        with self.assertRaisesRegex(
+            ValidationFailure, "deletion target is not retained and referenced"
+        ):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                checkpoint,
+                checkpoint,
+                "effect deletion mutation",
+                case / "machine.yaml",
+            )
+
+    def test_deletion_probe_requires_the_checkpoint_root_identity(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["delete"]
+        result = load(case / "results-v2.json")["results"][
+            "deletion_unsupported"
+        ]
+        checkpoint = load(case / "root-tombstone-checkpoint-v2.json")
+        request["target"]["root_instance_id"] = "different-root"
+        with self.assertRaisesRegex(
+            ValidationFailure, "does not identify this checkpoint"
+        ):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                checkpoint,
+                checkpoint,
+                "root deletion mutation",
+                case / "machine.yaml",
+            )
+
+    def test_deletion_probe_operation_identity_cannot_conflict_with_history(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["delete"]
+        result = load(case / "results-v2.json")["results"][
+            "deletion_unsupported"
+        ]
+        checkpoint = load(case / "root-tombstone-checkpoint-v2.json")
+        request["request_id"] = "root-tombstone"
+        request["deletion_operation_id"] = "root-tombstone"
+        with self.assertRaisesRegex(
+            ValidationFailure, "conflicts with retained history"
+        ):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                checkpoint,
+                checkpoint,
+                "deletion identity mutation",
+                case / "machine.yaml",
+            )
+
+    def test_completed_transition_allocates_final_state_activation(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        request = load(case / "inputs-v2.json")["requests"]["complete_process"]
+        result = load(case / "results-v2.json")["results"][
+            "processing_committed"
+        ]
+        before = load(case / "completion-accepted-checkpoint-v2.json")
+        after = load(case / "completed-checkpoint-v2.json")
+        runtime = after["root_record"]["aggregate_state"]["runtimes"][0]
+        runtime["next_state_activation_sequences"] = [
+            item
+            for item in runtime["next_state_activation_sequences"]
+            if not item["definition_pointer"].endswith("/states/finished")
+        ]
+        with self.assertRaisesRegex(
+            ValidationFailure, "did not allocate its state activation"
+        ):
+            validate_checkpoint_derivation(
+                request,
+                result,
+                before,
+                after,
+                "completion mutation",
+                case / "machine.yaml",
+            )
 
     def test_raw_malformed_member_precedes_normalized_members(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"

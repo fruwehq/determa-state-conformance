@@ -177,6 +177,7 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "checkpoint_admission_commit",
         "checkpoint_broker_requirements",
         "checkpoint_capability_composition",
+        "checkpoint_completion_execution",
         "checkpoint_create_commit",
         "checkpoint_creation_conflict",
         "checkpoint_creation_replay",
@@ -1059,6 +1060,64 @@ def validate_aggregate_against_bundle(
             declaration = resolve(item["variable_declaration_pointer"])
             if not isinstance(declaration, dict) or "type" not in declaration:
                 raise ValidationFailure("aggregate v2: variable pointer is not a declaration")
+            if declaration["type"] == "instance_reference":
+                value = item["value"]
+                if value[0] == "null":
+                    if not declaration.get("nullable", False):
+                        raise ValidationFailure(
+                            "aggregate v2: non-nullable instance reference is null"
+                        )
+                    continue
+                if value[0] != "map":
+                    raise ValidationFailure(
+                        "aggregate v2: instance reference is not a typed map"
+                    )
+                encoded_fields = dict(value[1])
+                required_fields = {
+                    "root_instance_id",
+                    "instance_id",
+                    "machine_id",
+                    "machine_version",
+                }
+                if set(encoded_fields) != required_fields:
+                    raise ValidationFailure(
+                        "aggregate v2: instance reference fields are not canonical"
+                    )
+                if encoded_fields["machine_version"][0] != "integer":
+                    raise ValidationFailure(
+                        "aggregate v2: instance reference machine_version is not an integer"
+                    )
+                decoded_reference = decode_typed_value(value)
+                if (
+                    isinstance(decoded_reference["machine_version"], bool)
+                    or decoded_reference["machine_version"] < 1
+                    or (
+                        declaration.get("machine_id") is not None
+                        and decoded_reference["machine_id"]
+                        != declaration["machine_id"]
+                    )
+                ):
+                    raise ValidationFailure(
+                        "aggregate v2: instance reference violates its declaration"
+                    )
+                matching_spawned = [
+                    candidate
+                    for candidate in aggregate["runtimes"]
+                    if candidate["relation"]["kind"] == "owned_spawned_instance"
+                    and candidate["target_identity"]["spawned_instance"]["instance_id"]
+                    == decoded_reference["instance_id"]
+                ]
+                if matching_spawned:
+                    target_reference = matching_spawned[0]["target_identity"][
+                        "spawned_instance"
+                    ]
+                    if decoded_reference != {
+                        **target_reference,
+                        "machine_version": int(target_reference["machine_version"]),
+                    }:
+                        raise ValidationFailure(
+                            "aggregate v2: logical instance reference and target identity disagree"
+                        )
         for item in runtime["next_state_activation_sequences"]:
             resolve(item["definition_pointer"])
         for item in runtime["next_component_activation_sequences"]:
@@ -5846,6 +5905,157 @@ def validate_checkpoint_derivation(
             raise ValidationFailure(
                 f"{location}: {disposition} processing allocated the wrong logical step count"
             )
+        before_entry = before_entries[0]
+        target_runtime_before = next(
+            runtime
+            for runtime in before_aggregate["runtimes"]
+            if runtime["target_identity"] == operation_input["target"]
+        )
+        target_runtime_after = next(
+            (
+                runtime
+                for runtime in after_aggregate["runtimes"]
+                if runtime["runtime_id"] == target_runtime_before["runtime_id"]
+            ),
+            None,
+        )
+        bundle = normalized_bundle_value(bundle_path)
+        machine_identity = target_runtime_before["current_definition"]["machine"]
+        machine_index, machine = next(
+            (index, candidate)
+            for index, candidate in enumerate(bundle["machines"])
+            if candidate["machine_id"] == machine_identity["machine_id"]
+            and str(candidate["version"]) == machine_identity["machine_version"]
+        )
+        handler = machine["root"].get("on_events", {}).get(
+            before_entry["envelope"]["event"]
+        )
+        transitions = handler if isinstance(handler, list) else [handler]
+        external_actions: list[tuple[str, dict[str, Any]]] = []
+        for transition_index, transition in enumerate(transitions):
+            if not isinstance(transition, dict):
+                continue
+            for action_index, action in enumerate(transition.get("action", [])):
+                send = action.get("send") if isinstance(action, dict) else None
+                if isinstance(send, dict) and send.get("to") == {"external": True}:
+                    transition_suffix = (
+                        f"/{transition_index}" if isinstance(handler, list) else ""
+                    )
+                    external_actions.append(
+                        (
+                            f"/machines/{machine_index}/root/on_events/"
+                            f"{before_entry['envelope']['event']}{transition_suffix}/"
+                            f"action/{action_index}/send",
+                            send,
+                        )
+                    )
+        if external_actions:
+            payload = decode_typed_value(before_entry["envelope"]["payload"])
+            expected_records = []
+            expected_references = []
+            before_output_sequence = int(before_aggregate["next_output_sequence"])
+            for index, (action_pointer, send) in enumerate(external_actions):
+                expected_effect_id = hash_value(
+                    [
+                        "determa-effect-identity-1",
+                        "1",
+                        [
+                            machine_identity["namespace"],
+                            machine_identity["machine_id"],
+                            machine_identity["machine_version"],
+                        ],
+                        before_aggregate["root_instance_id"],
+                        target_runtime_before["runtime_id"],
+                        before_entry["envelope"]["cause_id"],
+                        str(before_logical_step),
+                        action_pointer,
+                        "0",
+                    ]
+                )
+                output_payload = {}
+                for field, expression in send.get("payload", {}).items():
+                    if isinstance(expression, str) and expression.isdigit():
+                        output_payload[field] = int(expression)
+                    else:
+                        raise ValidationFailure(
+                            f"{location}: unsupported external effect payload expression"
+                        )
+                correlation_expression = send.get("correlation_id")
+                if (
+                    isinstance(correlation_expression, str)
+                    and correlation_expression.startswith("event.payload.")
+                ):
+                    correlation_id = payload[correlation_expression.rsplit(".", 1)[1]]
+                else:
+                    raise ValidationFailure(
+                        f"{location}: unsupported external effect correlation expression"
+                    )
+                intent = {
+                    "effect_id": expected_effect_id,
+                    "sequence": str(before_output_sequence + index),
+                    "event": send["event"],
+                    "payload": encode_typed_value(output_payload),
+                    "correlation_id": correlation_id,
+                }
+                expected_records.append(
+                    {
+                        "intent": intent,
+                        "state_revision": checkpoint_after["revision"],
+                        "delivery_state": {"status": "not_attempted"},
+                    }
+                )
+                expected_references.append(
+                    {
+                        "kind": "external_outbox",
+                        "emission_index": "0",
+                        "effect_id": expected_effect_id,
+                    }
+                )
+            produced_records = [
+                record
+                for record in checkpoint_after["pending_outbox_intents"]
+                if int(record["intent"]["sequence"]) >= before_output_sequence
+            ]
+            if (
+                produced_records != expected_records
+                or receipt["emission_references"] != expected_references
+                or int(after_aggregate["next_output_sequence"])
+                != before_output_sequence + len(expected_records)
+            ):
+                raise ValidationFailure(
+                    f"{location}: external effects are not machine-derived"
+                )
+        if (
+            disposition == "handled"
+            and target_runtime_after is not None
+            and target_runtime_before["status"] == "running"
+            and target_runtime_after["status"] == "completed"
+            and isinstance(handler, dict)
+            and isinstance(handler.get("transition_to"), str)
+        ):
+            target_pointer = (
+                f"/machines/{machine_index}/root/states/{handler['transition_to']}"
+            )
+            before_next = next(
+                (
+                    int(item["next_sequence"])
+                    for item in target_runtime_before["next_state_activation_sequences"]
+                    if item["definition_pointer"] == target_pointer
+                ),
+                0,
+            )
+            after_next = next(
+                (
+                    int(item["next_sequence"])
+                    for item in target_runtime_after["next_state_activation_sequences"]
+                    if item["definition_pointer"] == target_pointer
+                ),
+                None,
+            )
+            if after_next != before_next + 1:
+                raise ValidationFailure(
+                    f"{location}: completed transition did not allocate its state activation"
+                )
         if disposition == "faulted":
             fault = receipt["outcome"]["fault"]
             target_runtime = next(
@@ -5970,6 +6180,47 @@ def validate_checkpoint_derivation(
             raise ValidationFailure(f"{location}: outbox compaction is not request-derived")
         if not mutates and not after_tombstones:
             raise ValidationFailure(f"{location}: compacted effect identity was deleted")
+    elif operation == "checkpoint_delete_retained_record_v2":
+        if mutates or operation_result.get("code") != "invalid_execution_checkpoint":
+            raise ValidationFailure(
+                f"{location}: retained-record deletion was not rejected read-only"
+            )
+        if operation_input["request_id"] != operation_input["deletion_operation_id"]:
+            raise ValidationFailure(
+                f"{location}: deletion operation identity is not replay-stable"
+            )
+        retained_operation_ids: set[str] = set()
+        root_record = checkpoint_before["root_record"]
+        if root_record["status"] == "tombstone":
+            retained_operation_ids.add(root_record["tombstone_operation_id"])
+        if operation_input["deletion_operation_id"] in retained_operation_ids:
+            raise ValidationFailure(
+                f"{location}: deletion operation identity conflicts with retained history"
+            )
+        target = operation_input["target"]
+        if target["kind"] == "outbox_effect_tombstone":
+            effect_id = target["effect_id"]
+            tombstones = [
+                record
+                for record in checkpoint_before["outbox_effect_tombstones"]
+                if record["effect_id"] == effect_id
+            ]
+            producer_references = [
+                reference
+                for receipt in checkpoint_before["operation_receipts"]
+                for reference in receipt.get("emission_references", [])
+                if reference.get("kind") == "external_outbox"
+                and reference.get("effect_id") == effect_id
+            ]
+            if len(tombstones) != 1 or not producer_references:
+                raise ValidationFailure(
+                    f"{location}: outbox deletion target is not retained and referenced"
+                )
+        elif target["kind"] == "root_identity":
+            if target["root_instance_id"] != checkpoint_before["root_instance_id"]:
+                raise ValidationFailure(
+                    f"{location}: root deletion target does not identify this checkpoint"
+                )
     elif operation == "checkpoint_prune_v2" and mutates:
         retention = checkpoint_after["replay_retention"]
         if (

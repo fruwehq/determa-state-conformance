@@ -17,4 +17,30 @@ machines:
       variables:
         count: { type: int, init: 0 }
       on_events:
-        emit_outputs: {}
+        emit_outputs:
+          action:
+            - send:
+                event: output_record
+                to: { external: true }
+                payload: { index: "0" }
+                correlation_id: "event.payload.batch_id"
+            - send:
+                event: output_record
+                to: { external: true }
+                payload: { index: "1" }
+                correlation_id: "event.payload.batch_id"
+            - send:
+                event: output_record
+                to: { external: true }
+                payload: { index: "2" }
+                correlation_id: "event.payload.batch_id"
+            - send:
+                event: output_record
+                to: { external: true }
+                payload: { index: "3" }
+                correlation_id: "event.payload.batch_id"
+            - send:
+                event: output_record
+                to: { external: true }
+                payload: { index: "4" }
+                correlation_id: "event.payload.batch_id"

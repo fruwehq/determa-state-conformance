@@ -13,15 +13,15 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
-        "revision": "2",
-        "digest": "sha256:57ac8f23c60342ac8f960219bc926de886def516e915a5beceb95fc042852cbd"
+        "revision": "1",
+        "digest": "sha256:7bb55d45e3e4894a5ca0c78f8b0a481c9d4ba8191afbc6de6bee3848737851bd"
       },
       "event_id": "delivery-outputs",
-      "envelope_digest": "sha256:fa5721fb217ee473e7f24f12bc380e25ec86845b6974ba88c4c1a50541a2f4f4",
+      "envelope_digest": "sha256:62f2c1135b2ac2027aa4bdfd5a53bbc797b90cfdcaa663d6449fe60e52987eb7",
       "target": {
         "root": {
           "root_instance_id": "checkpoint-outbox-root",
-          "root_runtime_id": "sha256:8a005ff374ebdf3843dc6a6b3c60aabbd4d8c4276f92b4350faf709842401dcf"
+          "root_runtime_id": "sha256:4ec9ca5ff79dbe8b50d39e7160bf663fe19efb36292b1c315db62cf2f238e802"
         }
       },
       "processing_mode": "delayed",
@@ -40,9 +40,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "2",
-        "digest": "sha256:57ac8f23c60342ac8f960219bc926de886def516e915a5beceb95fc042852cbd"
+        "digest": "sha256:286fcb6d789090e7f962c93f66a4aa2fdade78998fa913cd18b3936647157a38"
       },
-      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "effect_id": "sha256:d5b577b1263732a366f4f8344a0d48d63e2315b9fa4490f747b40b7be89a1de3",
       "target_disposition": "retryable_failure",
       "outcome": {
         "reason_code": "retryable_failure_reported",
@@ -61,9 +61,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "3",
-        "digest": "sha256:ece6209fdeb91545fad96e5c5c7ba2ea7781f8b55a633b066a022fc50179cd7e"
+        "digest": "sha256:b150cb92136e57a5405990838a7408e5c973a453204619905616828bbd6a5730"
       },
-      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "effect_id": "sha256:d5b577b1263732a366f4f8344a0d48d63e2315b9fa4490f747b40b7be89a1de3",
       "target_disposition": "retryable_failure",
       "outcome": {
         "reason_code": "retryable_failure_reported",
@@ -82,9 +82,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "3",
-        "digest": "sha256:ece6209fdeb91545fad96e5c5c7ba2ea7781f8b55a633b066a022fc50179cd7e"
+        "digest": "sha256:b150cb92136e57a5405990838a7408e5c973a453204619905616828bbd6a5730"
       },
-      "effect_id": "sha256:3a64aeda992befdd9c30c080bfd7826d166349179785066dc611eee53dfdbbc5",
+      "effect_id": "sha256:baf934843b794109788e49797e992650aa2eb0b1b77cc4f48470413f362158a3",
       "target_disposition": "ambiguous",
       "outcome": {
         "reason_code": "ambiguous_reported",
@@ -103,9 +103,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "4",
-        "digest": "sha256:929f620bcf52889aea2464c09a22cbab3602e0cab80c9f7983ff01a67a3ba5f5"
+        "digest": "sha256:b73482e154a658edb3e2ee6e08d6f31b62b98f5a63a1e8cf01925bd45881c757"
       },
-      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "effect_id": "sha256:d5b577b1263732a366f4f8344a0d48d63e2315b9fa4490f747b40b7be89a1de3",
       "target_disposition": "confirmed",
       "outcome": {
         "reason_code": null,
@@ -124,9 +124,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "5",
-        "digest": "sha256:74f783ea6a264b1509871646bef1187ac82bb4be0b5b9542bede6e40c6d0eb47"
+        "digest": "sha256:9af64415b74dbca77902b0243137f398e589931b270fec532549fbe53d13dbd1"
       },
-      "effect_id": "sha256:3a64aeda992befdd9c30c080bfd7826d166349179785066dc611eee53dfdbbc5",
+      "effect_id": "sha256:baf934843b794109788e49797e992650aa2eb0b1b77cc4f48470413f362158a3",
       "target_disposition": "permanently_rejected",
       "outcome": {
         "reason_code": "permanently_rejected_policy",
@@ -145,9 +145,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "6",
-        "digest": "sha256:1b23187318991283698bd68eff25cfd911166d5897610e6eeacc7f316b53d17e"
+        "digest": "sha256:ddb126fd74eaa2e8ff2c5988ee23bcc841aa0fb11cb1e373d1eed425dfd29bc1"
       },
-      "effect_id": "sha256:20ed8ffae7d3b189515117802a6fff2351b26e32fa77b4afa8841061f47275a7",
+      "effect_id": "sha256:772119959ef05df805a79331bbda2d3f6a12c0fde510237af16a3baa5c8b1889",
       "target_disposition": "operator_cancelled",
       "outcome": {
         "reason_code": "operator_cancelled_policy",
@@ -166,9 +166,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "7",
-        "digest": "sha256:80740f813f999d31746c3d0bd0eac604a100c10c33a743feb3d7e4c46522f460"
+        "digest": "sha256:50869be9c5aa44db135a5423c19edb8f20da5542b2af8d8a63097e8dfe3cc2f3"
       },
-      "effect_id": "sha256:6e3173f6729d9d6583564f38f4bbee1b2a87e912991701105406929388f5c86e",
+      "effect_id": "sha256:2ab233001ba64368b19eb6eac60862ebe7498c729465971a651d7de589aaaa8c",
       "target_disposition": "discarded",
       "outcome": {
         "reason_code": "discarded_policy",
@@ -187,9 +187,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "8",
-        "digest": "sha256:baa309afdaa580e222ff06036e329eef869e9cb9f20de27b6f56ecfa01ef64ae"
+        "digest": "sha256:13d3fa71a0c0970284baa2662008843e2898668698cef8a6cd9e2a9e2bbcdc19"
       },
-      "effect_id": "sha256:546e51d05d05b8367582472d6156829b91b20560a1853fdfa0700ed645737b34",
+      "effect_id": "sha256:ab406849aa6001f5be227ae53cf340e7a8d0f217726f85e80005722c3517867a",
       "target_disposition": "dead_lettered",
       "outcome": {
         "reason_code": "dead_lettered_policy",
@@ -208,9 +208,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "9",
-        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+        "digest": "sha256:370aad5049635ceaa8e0db93b0c69fde1de037a56827ad8d58264cf5adbe7c3f"
       },
-      "effect_id": "sha256:546e51d05d05b8367582472d6156829b91b20560a1853fdfa0700ed645737b34",
+      "effect_id": "sha256:ab406849aa6001f5be227ae53cf340e7a8d0f217726f85e80005722c3517867a",
       "target_disposition": "dead_lettered",
       "outcome": {
         "reason_code": "dead_lettered_policy",
@@ -229,9 +229,9 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "9",
-        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+        "digest": "sha256:370aad5049635ceaa8e0db93b0c69fde1de037a56827ad8d58264cf5adbe7c3f"
       },
-      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
+      "effect_id": "sha256:d5b577b1263732a366f4f8344a0d48d63e2315b9fa4490f747b40b7be89a1de3",
       "target_disposition": "discarded",
       "outcome": {
         "reason_code": "discarded_policy",
@@ -250,15 +250,16 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "9",
-        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+        "digest": "sha256:370aad5049635ceaa8e0db93b0c69fde1de037a56827ad8d58264cf5adbe7c3f"
       },
-      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
-      "intent_digest": "sha256:5699ae90bed4af566505a96f6024c3a249e0c975c324bb39524a0be20039534b",
+      "effect_id": "sha256:d5b577b1263732a366f4f8344a0d48d63e2315b9fa4490f747b40b7be89a1de3",
+      "intent_digest": "sha256:3cf96b56d1c7cd4e808f4e54af9ad0a8aee3fa8085e59cb80a8fb58e45f23119",
       "retention_mode": "permanent"
     },
     "delete": {
-      "operation": "checkpoint_compact_outbox_v2",
-      "request_id": "delete",
+      "operation": "checkpoint_delete_retained_record_v2",
+      "request_id": "delete-outbox-tombstone",
+      "deletion_operation_id": "delete-outbox-tombstone",
       "scope": {
         "scope_id": "primary",
         "ownership_binding": "owner:primary",
@@ -268,11 +269,12 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "10",
-        "digest": "sha256:b9de092c1113c6a78fef25851b7b35829e0d9468c959c43d4fcbae2926bf8411"
+        "digest": "sha256:eace962ce3a1f785f2414d184123144c171587c6cfb6cf3e2448bb9e4f9a1215"
       },
-      "effect_id": "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf",
-      "intent_digest": "sha256:5699ae90bed4af566505a96f6024c3a249e0c975c324bb39524a0be20039534b",
-      "retention_mode": "permanent"
+      "target": {
+        "kind": "outbox_effect_tombstone",
+        "effect_id": "sha256:d5b577b1263732a366f4f8344a0d48d63e2315b9fa4490f747b40b7be89a1de3"
+      }
     },
     "prune_effect_dependency": {
       "operation": "checkpoint_prune_v2",
@@ -286,14 +288,14 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "9",
-        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+        "digest": "sha256:370aad5049635ceaa8e0db93b0c69fde1de037a56827ad8d58264cf5adbe7c3f"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "bounded",
       "policy_identifier": "bounded-native-v2",
       "dependency_receipt_sequences": [],
       "dependency_effect_ids": [
-        "sha256:62c203021261b7956edb18f1e0016e640a3c2317bdd01d78ac19804922458adf"
+        "sha256:d5b577b1263732a366f4f8344a0d48d63e2315b9fa4490f747b40b7be89a1de3"
       ]
     },
     "prune_producer_dependency": {
@@ -308,7 +310,7 @@
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
         "revision": "9",
-        "digest": "sha256:b4279b98703841233073ed8a105c769ce41ba70640eb05d38dffa05c136bc878"
+        "digest": "sha256:370aad5049635ceaa8e0db93b0c69fde1de037a56827ad8d58264cf5adbe7c3f"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "bounded",

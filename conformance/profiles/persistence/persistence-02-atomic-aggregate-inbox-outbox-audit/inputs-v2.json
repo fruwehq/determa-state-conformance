@@ -14,7 +14,7 @@
       "expected_checkpoint": {
         "root_instance_id": "persistence-2-root",
         "revision": "0",
-        "digest": "sha256:2bd4d08c94774b05b2c5306951a59a24de9a89ba6ac75818b9b04e448bb9cdd9"
+        "digest": "sha256:514a35af43a034964b54a65d379226355bfa1be4c659d36006e7e6d4d0f0ae43"
       },
       "presented_envelope": {
         "event": "host_commit",
@@ -26,19 +26,27 @@
         "target": {
           "root": {
             "root_instance_id": "persistence-2-root",
-            "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b"
+            "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2"
           }
         },
         "payload": [
           "map",
-          []
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
         ]
       },
-      "envelope_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+      "envelope_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
       "transaction_inputs": {
-        "target_validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
+        "target_validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
         "migration_descriptor_digest_route": [
-          "sha256:d2779811c0672ceebfb07bc5281c5acf68991685c4ceef1c866fcb2176cbd549"
+          "sha256:83482cd473cf3d88b12dd6cd57c6486a1b8fbd9015920d6ab315ad098612fdda"
         ],
         "application_writes": {
           "aggregate_version": 1
@@ -70,7 +78,7 @@
       "expected_checkpoint": {
         "root_instance_id": "persistence-2-root",
         "revision": "0",
-        "digest": "sha256:2bd4d08c94774b05b2c5306951a59a24de9a89ba6ac75818b9b04e448bb9cdd9"
+        "digest": "sha256:514a35af43a034964b54a65d379226355bfa1be4c659d36006e7e6d4d0f0ae43"
       },
       "presented_envelope": {
         "event": "host_commit",
@@ -82,19 +90,27 @@
         "target": {
           "root": {
             "root_instance_id": "persistence-2-root",
-            "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b"
+            "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2"
           }
         },
         "payload": [
           "map",
-          []
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
         ]
       },
-      "envelope_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+      "envelope_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
       "transaction_inputs": {
-        "target_validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
+        "target_validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
         "migration_descriptor_digest_route": [
-          "sha256:d2779811c0672ceebfb07bc5281c5acf68991685c4ceef1c866fcb2176cbd549"
+          "sha256:83482cd473cf3d88b12dd6cd57c6486a1b8fbd9015920d6ab315ad098612fdda"
         ],
         "application_writes": {
           "aggregate_version": 1
@@ -126,7 +142,7 @@
       "expected_checkpoint": {
         "root_instance_id": "persistence-2-root",
         "revision": "0",
-        "digest": "sha256:2bd4d08c94774b05b2c5306951a59a24de9a89ba6ac75818b9b04e448bb9cdd9"
+        "digest": "sha256:514a35af43a034964b54a65d379226355bfa1be4c659d36006e7e6d4d0f0ae43"
       },
       "presented_envelope": {
         "event": "host_commit",
@@ -138,19 +154,27 @@
         "target": {
           "root": {
             "root_instance_id": "persistence-2-root",
-            "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b"
+            "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2"
           }
         },
         "payload": [
           "map",
-          []
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
         ]
       },
-      "envelope_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+      "envelope_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
       "transaction_inputs": {
-        "target_validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
+        "target_validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
         "migration_descriptor_digest_route": [
-          "sha256:d2779811c0672ceebfb07bc5281c5acf68991685c4ceef1c866fcb2176cbd549"
+          "sha256:83482cd473cf3d88b12dd6cd57c6486a1b8fbd9015920d6ab315ad098612fdda"
         ],
         "application_writes": {
           "aggregate_version": 1
@@ -182,7 +206,7 @@
       "expected_checkpoint": {
         "root_instance_id": "persistence-2-root",
         "revision": "0",
-        "digest": "sha256:2bd4d08c94774b05b2c5306951a59a24de9a89ba6ac75818b9b04e448bb9cdd9"
+        "digest": "sha256:514a35af43a034964b54a65d379226355bfa1be4c659d36006e7e6d4d0f0ae43"
       },
       "presented_envelope": {
         "event": "host_commit",
@@ -194,19 +218,27 @@
         "target": {
           "root": {
             "root_instance_id": "persistence-2-root",
-            "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b"
+            "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2"
           }
         },
         "payload": [
           "map",
-          []
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
         ]
       },
-      "envelope_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+      "envelope_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
       "transaction_inputs": {
-        "target_validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
+        "target_validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
         "migration_descriptor_digest_route": [
-          "sha256:d2779811c0672ceebfb07bc5281c5acf68991685c4ceef1c866fcb2176cbd549"
+          "sha256:83482cd473cf3d88b12dd6cd57c6486a1b8fbd9015920d6ab315ad098612fdda"
         ],
         "application_writes": {
           "aggregate_version": 1
@@ -238,7 +270,7 @@
       "expected_checkpoint": {
         "root_instance_id": "persistence-2-root",
         "revision": "0",
-        "digest": "sha256:2bd4d08c94774b05b2c5306951a59a24de9a89ba6ac75818b9b04e448bb9cdd9"
+        "digest": "sha256:514a35af43a034964b54a65d379226355bfa1be4c659d36006e7e6d4d0f0ae43"
       },
       "presented_envelope": {
         "event": "host_commit",
@@ -250,19 +282,27 @@
         "target": {
           "root": {
             "root_instance_id": "persistence-2-root",
-            "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b"
+            "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2"
           }
         },
         "payload": [
           "map",
-          []
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
         ]
       },
-      "envelope_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+      "envelope_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
       "transaction_inputs": {
-        "target_validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
+        "target_validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
         "migration_descriptor_digest_route": [
-          "sha256:d2779811c0672ceebfb07bc5281c5acf68991685c4ceef1c866fcb2176cbd549"
+          "sha256:83482cd473cf3d88b12dd6cd57c6486a1b8fbd9015920d6ab315ad098612fdda"
         ],
         "application_writes": {
           "aggregate_version": 1
@@ -294,7 +334,7 @@
       "expected_checkpoint": {
         "root_instance_id": "persistence-2-root",
         "revision": "1",
-        "digest": "sha256:4e164c93901d2bc12089ee4e3bff893aad0d8bd8f028037c289a9d346b0a86f4"
+        "digest": "sha256:f699648394c4b91d552744c095e4fba4b1179df17294ba48aa6476e179e6c0f7"
       },
       "presented_envelope": {
         "event": "host_commit",
@@ -306,19 +346,27 @@
         "target": {
           "root": {
             "root_instance_id": "persistence-2-root",
-            "root_runtime_id": "sha256:b6877399a2ff55d52d0c8267ecc63800a3aae38beb7faaf25a1b451d993bb08b"
+            "root_runtime_id": "sha256:1eaf4ddeefb7b4b6015cc78655e6813ec7788188a771b1ff18b852c21cac06f2"
           }
         },
         "payload": [
           "map",
-          []
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
         ]
       },
-      "envelope_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+      "envelope_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
       "transaction_inputs": {
-        "target_validated_bundle_fingerprint": "sha256:b6cf741eca6780ce08d70d736383a749ef5d4315182a43a25d3258e32a5f1888",
+        "target_validated_bundle_fingerprint": "sha256:c1be0b34b5863df94d95b3641b444312d8519074cfe56b7d9f854ae34ab536dc",
         "migration_descriptor_digest_route": [
-          "sha256:d2779811c0672ceebfb07bc5281c5acf68991685c4ceef1c866fcb2176cbd549"
+          "sha256:83482cd473cf3d88b12dd6cd57c6486a1b8fbd9015920d6ab315ad098612fdda"
         ],
         "application_writes": {
           "aggregate_version": 1
@@ -350,10 +398,10 @@
       "expected_checkpoint": {
         "root_instance_id": "persistence-2-root",
         "revision": "0",
-        "digest": "sha256:2bd4d08c94774b05b2c5306951a59a24de9a89ba6ac75818b9b04e448bb9cdd9"
+        "digest": "sha256:514a35af43a034964b54a65d379226355bfa1be4c659d36006e7e6d4d0f0ae43"
       },
       "event_id": "persistence-2-event",
-      "envelope_digest": "sha256:37638cf1d0cd48fa8a251d9e5cb1a4ea4fadd91ba3689b0f5e9c0d2536865c4a",
+      "envelope_digest": "sha256:1892ac3bcff7b7548db06c259da2bf9ae2dd8e402c5fbe0b630184184e1695fc",
       "quarantine_reason_code": "permanent_processing_failure",
       "release_authorization": "operator:conformance"
     }

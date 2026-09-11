@@ -4,6 +4,7 @@ static:
     - { file: machine.yaml, valid: true }
 artifacts:
   documents:
+    - { file: accepted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: retryable-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
     - { file: ambiguous-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
@@ -19,11 +20,11 @@ durable_host_vectors:
   - name: outbox_initial_pending
     covers: [outbox_not_attempted, outbox_receipt_linkage]
     operation: checkpoint_step_v2
-    checkpoint_before: pending-checkpoint-v2.json
+    checkpoint_before: accepted-checkpoint-v2.json
     checkpoint_after: pending-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/pending }
-    result: { file: results-v2.json, pointer: /results/replayed }
-    expect: { result: replayed, mutation: none, core_calls: 0 }
+    result: { file: results-v2.json, pointer: /results/processing_committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: outbox_retryable_failure
     covers: [outbox_retryable_failure]
     operation: checkpoint_update_outbox_v2
@@ -114,7 +115,7 @@ durable_host_vectors:
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_forbidden_deletion
     covers: [outbox_forbidden_deletion]
-    operation: checkpoint_compact_outbox_v2
+    operation: checkpoint_delete_retained_record_v2
     checkpoint_before: effect-tombstone-checkpoint-v2.json
     checkpoint_after: effect-tombstone-checkpoint-v2.json
     request: { file: inputs-v2.json, pointer: /requests/delete }

@@ -8,7 +8,7 @@
     "root_runtime_id": "sha256:c0f8188724d18531df9609951b3916890e775f0149a51df158a5c7153bf624d4",
     "creation_id": "checkpoint-retention-create",
     "terminal_status": "completed",
-    "final_aggregate_state_digest": "sha256:2242b0c2d96b1c4749ec48ad86eed6a9628d6e3a5e7f6fee10e7d9fe103b9c30",
+    "final_aggregate_state_digest": "sha256:41ee5316e17388f430083e27c54652cab82b56e6475613f8c19a17f2e0c025d0",
     "tombstone_operation_id": "root-tombstone"
   },
   "operation_receipts": [
@@ -40,7 +40,7 @@
       "acceptance_sequence": "1",
       "final_queue_sequence": "1",
       "committed_revision": "5",
-      "resulting_aggregate_state_digest": "sha256:2242b0c2d96b1c4749ec48ad86eed6a9628d6e3a5e7f6fee10e7d9fe103b9c30",
+      "resulting_aggregate_state_digest": "sha256:41ee5316e17388f430083e27c54652cab82b56e6475613f8c19a17f2e0c025d0",
       "outcome": {
         "disposition": "handled",
         "status": "completed",
@@ -72,5 +72,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:f24b3447791ee3aa01d54df96a9007f71ffeb4310c837b7e5f3ece3ddfd790cd"
+  "execution_checkpoint_digest": "sha256:b083ed7761155f6d1540794cb6676bb21363d54613b46476781c99e24d053cae"
 }

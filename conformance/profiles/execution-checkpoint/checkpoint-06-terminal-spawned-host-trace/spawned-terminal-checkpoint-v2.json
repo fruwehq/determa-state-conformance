@@ -117,7 +117,7 @@
       "acceptance_sequence": "0",
       "final_queue_sequence": "0",
       "committed_revision": "2",
-      "resulting_aggregate_state_digest": "sha256:92283d371e76cd689e9cd9c8b7329ee525572f76b5c9b50433db4534d4f7929e",
+      "resulting_aggregate_state_digest": "sha256:09a9102f6f570f6a23a65ddd78a62997dcb437bfd8072f75c54060854d249b13",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -152,7 +152,7 @@
       "acceptance_sequence": "1",
       "final_queue_sequence": "1",
       "committed_revision": "5",
-      "resulting_aggregate_state_digest": "sha256:4a10a49b9390259dd9220a25c2a60c1c24091bdcb518a6aa709ce902ffa0a90a",
+      "resulting_aggregate_state_digest": "sha256:c44cb274fafa5385c862d9528b766326e8ac0e05a72879cdc8e4a0b6f0e498d3",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -177,7 +177,7 @@
       "acceptance_sequence": "2",
       "final_queue_sequence": "2",
       "committed_revision": "6",
-      "resulting_aggregate_state_digest": "sha256:d27406c0316d23b8c80050fe72f0c7d2cc8bd263d5cec291230dfc90f4dffcbf",
+      "resulting_aggregate_state_digest": "sha256:3a587565d460c26fcc423ce8af7b5b228dab86b66c888a8303028a591c73786a",
       "outcome": {
         "disposition": "unhandled",
         "status": "running",
@@ -217,5 +217,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:d59165ed9b290be49311902ee3fcfc7a303c5038d844dc8a4140c2f547970667"
+  "execution_checkpoint_digest": "sha256:fc2ef8cd7af0959699966c5ae2974cb6803aa9a905ee222232440c93d8945789"
 }

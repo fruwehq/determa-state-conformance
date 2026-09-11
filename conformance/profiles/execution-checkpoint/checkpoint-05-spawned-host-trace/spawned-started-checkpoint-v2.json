@@ -187,7 +187,7 @@
                   [
                     "machine_version",
                     [
-                      "string",
+                      "integer",
                       "1"
                     ]
                   ],
@@ -232,7 +232,7 @@
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:5cebe5741b92212d21e54873aabf982b710e5918ee342746ea89ac2b3ecf6b4a"
+      "aggregate_state_digest": "sha256:e10a39f6e548db058f5789d109543bcd6bdb9d49c19a59fb37da059f5783183e"
     }
   },
   "operation_receipts": [
@@ -264,7 +264,7 @@
       "acceptance_sequence": "0",
       "final_queue_sequence": "0",
       "committed_revision": "2",
-      "resulting_aggregate_state_digest": "sha256:5cebe5741b92212d21e54873aabf982b710e5918ee342746ea89ac2b3ecf6b4a",
+      "resulting_aggregate_state_digest": "sha256:e10a39f6e548db058f5789d109543bcd6bdb9d49c19a59fb37da059f5783183e",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -287,5 +287,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:1428ea6f0bb31b1f87d3c3c2d8aa64cdb178f05c044f0d37d50159b7059b879d"
+  "execution_checkpoint_digest": "sha256:31d724d4b3d55e9d2d2c027f906745f8146c9d1c90242035276e71bb4165827b"
 }

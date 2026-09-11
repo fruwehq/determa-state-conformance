@@ -2,7 +2,10 @@ format: 1
 namespace: conformance.persistence_atomic_v2
 meta: { release: next }
 events:
-  host_commit: { direction: input }
+  host_commit:
+    direction: input
+    payload:
+      correlation_id: { type: string, required: true }
   output_record:
     direction: output
     payload:
@@ -21,4 +24,4 @@ machines:
                 event: output_record
                 to: { external: true }
                 payload: { aggregate_version: "1" }
-                correlation_id: "event.event_id"
+                correlation_id: "event.payload.correlation_id"

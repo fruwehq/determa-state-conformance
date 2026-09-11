@@ -47,7 +47,7 @@
     },
     "request": { "oneOf": [
       { "$ref": "#/$defs/createRequest" }, { "$ref": "#/$defs/admitRequest" }, { "$ref": "#/$defs/processRequest" },
-      { "$ref": "#/$defs/outboxRequest" }, { "$ref": "#/$defs/compactRequest" }, { "$ref": "#/$defs/pruneRequest" },
+      { "$ref": "#/$defs/outboxRequest" }, { "$ref": "#/$defs/compactRequest" }, { "$ref": "#/$defs/deletionProbeRequest" }, { "$ref": "#/$defs/pruneRequest" },
       { "$ref": "#/$defs/tombstoneRequest" }, { "$ref": "#/$defs/registerAdapterRequest" }, { "$ref": "#/$defs/resolveAdapterRequest" },
       { "$ref": "#/$defs/capabilityRequest" }, { "$ref": "#/$defs/scopeRequest" }, { "$ref": "#/$defs/backupRequest" },
       { "$ref": "#/$defs/injectStoreRequest" }, { "$ref": "#/$defs/persistenceRequest" }, { "$ref": "#/$defs/releaseRequest" }
@@ -71,6 +71,16 @@
       }
     },
     "compactRequest": { "type": "object", "required": ["operation", "request_id", "scope", "expected_checkpoint", "effect_id", "intent_digest", "retention_mode"], "additionalProperties": false, "properties": { "operation": { "const": "checkpoint_compact_outbox_v2" }, "request_id": { "$ref": "#/$defs/nonEmpty" }, "scope": { "$ref": "#/$defs/scopeSelection" }, "expected_checkpoint": { "$ref": "#/$defs/expectedCheckpoint" }, "effect_id": { "$ref": "#/$defs/sha256" }, "intent_digest": { "$ref": "#/$defs/sha256" }, "retention_mode": { "enum": ["permanent", "bounded"] } } },
+    "deletionProbeRequest": {
+      "type": "object", "required": ["operation", "request_id", "deletion_operation_id", "scope", "expected_checkpoint", "target"], "additionalProperties": false,
+      "properties": {
+        "operation": { "const": "checkpoint_delete_retained_record_v2" }, "request_id": { "$ref": "#/$defs/nonEmpty" }, "deletion_operation_id": { "$ref": "#/$defs/nonEmpty" }, "scope": { "$ref": "#/$defs/scopeSelection" }, "expected_checkpoint": { "$ref": "#/$defs/expectedCheckpoint" },
+        "target": { "oneOf": [
+          { "type": "object", "required": ["kind", "effect_id"], "additionalProperties": false, "properties": { "kind": { "const": "outbox_effect_tombstone" }, "effect_id": { "$ref": "#/$defs/sha256" } } },
+          { "type": "object", "required": ["kind", "root_instance_id"], "additionalProperties": false, "properties": { "kind": { "const": "root_identity" }, "root_instance_id": { "$ref": "#/$defs/nonEmpty" } } }
+        ] }
+      }
+    },
     "pruneRequest": { "type": "object", "required": ["operation", "request_id", "scope", "expected_checkpoint", "cutoff_receipt_sequence", "target_mode", "policy_identifier", "dependency_receipt_sequences", "dependency_effect_ids"], "additionalProperties": false, "properties": { "operation": { "const": "checkpoint_prune_v2" }, "request_id": { "$ref": "#/$defs/nonEmpty" }, "scope": { "$ref": "#/$defs/scopeSelection" }, "expected_checkpoint": { "$ref": "#/$defs/expectedCheckpoint" }, "cutoff_receipt_sequence": { "$ref": "#/$defs/canonicalDecimal" }, "target_mode": { "enum": ["permanent", "bounded"] }, "policy_identifier": { "type": ["string", "null"] }, "dependency_receipt_sequences": { "type": "array", "items": { "$ref": "#/$defs/canonicalDecimal" } }, "dependency_effect_ids": { "type": "array", "items": { "$ref": "#/$defs/sha256" } } } },
     "tombstoneRequest": { "type": "object", "required": ["operation", "request_id", "scope", "expected_checkpoint", "tombstone_operation_id", "terminal_status", "retention_mode"], "additionalProperties": false, "properties": { "operation": { "const": "checkpoint_tombstone_v2" }, "request_id": { "$ref": "#/$defs/nonEmpty" }, "scope": { "$ref": "#/$defs/scopeSelection" }, "expected_checkpoint": { "$ref": "#/$defs/expectedCheckpoint" }, "tombstone_operation_id": { "$ref": "#/$defs/nonEmpty" }, "terminal_status": { "enum": ["completed", "faulted"] }, "retention_mode": { "enum": ["permanent", "bounded"] } } },
     "registration": { "type": "object", "required": ["adapter_identifier", "uri_scheme", "source", "configuration_schema", "capabilities"], "additionalProperties": false, "properties": { "adapter_identifier": { "$ref": "#/$defs/adapterScheme" }, "uri_scheme": { "$ref": "#/$defs/adapterScheme" }, "source": { "enum": ["bundled", "third_party"] }, "configuration_schema": { "type": "object" }, "capabilities": { "$ref": "#/$defs/capabilities" } } },

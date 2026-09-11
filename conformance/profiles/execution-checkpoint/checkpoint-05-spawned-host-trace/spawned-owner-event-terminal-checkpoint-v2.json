@@ -93,7 +93,7 @@
                   [
                     "machine_version",
                     [
-                      "string",
+                      "integer",
                       "1"
                     ]
                   ],
@@ -229,7 +229,7 @@
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:bbeaa2f7f9e21cf1179cf89ff258d4005511d82e19a87f230095af895641f33f"
+      "aggregate_state_digest": "sha256:5d582b9feabbf742620e32e9759d81b552c47c4ec10f920e03204c7d0ea4f78b"
     }
   },
   "operation_receipts": [
@@ -261,7 +261,7 @@
       "acceptance_sequence": "0",
       "final_queue_sequence": "0",
       "committed_revision": "2",
-      "resulting_aggregate_state_digest": "sha256:5cebe5741b92212d21e54873aabf982b710e5918ee342746ea89ac2b3ecf6b4a",
+      "resulting_aggregate_state_digest": "sha256:e10a39f6e548db058f5789d109543bcd6bdb9d49c19a59fb37da059f5783183e",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -296,7 +296,7 @@
       "acceptance_sequence": "1",
       "final_queue_sequence": "1",
       "committed_revision": "5",
-      "resulting_aggregate_state_digest": "sha256:ef36949d5ee9977c8ee44dbbe7a047393eb892d167fbb729c71036ef5f42655e",
+      "resulting_aggregate_state_digest": "sha256:644dea4b24dc8373c294085b23e130ad647f908b734afee6b226c3449cf8d6ea",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -321,7 +321,7 @@
       "acceptance_sequence": "2",
       "final_queue_sequence": "2",
       "committed_revision": "6",
-      "resulting_aggregate_state_digest": "sha256:bbeaa2f7f9e21cf1179cf89ff258d4005511d82e19a87f230095af895641f33f",
+      "resulting_aggregate_state_digest": "sha256:5d582b9feabbf742620e32e9759d81b552c47c4ec10f920e03204c7d0ea4f78b",
       "outcome": {
         "disposition": "unhandled",
         "status": "running",
@@ -344,5 +344,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:e3366691ed8ec8f8826242fc0319e7e8873a1fa871e13ca63ce13c399f0f305b"
+  "execution_checkpoint_digest": "sha256:182f46a1f33031eb5085b2f24935823bc0d4a4dc979c693455b388bc4ca4d2c2"
 }
