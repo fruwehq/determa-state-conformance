@@ -1,0 +1,53 @@
+{
+  "durable_host_inputs_format": "determa.durable_host.inputs",
+  "durable_host_inputs_schema_version": 2,
+  "requests": {
+    "create": {
+      "operation": "checkpoint_create_v2",
+      "request_id": "checkpoint-05-spawned-host-trace-create",
+      "parameters": {}
+    },
+    "start_accept": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "spawn-start",
+      "parameters": {},
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:b39e2d234dee79eb17bc746dc35aaca8251d34ed0cf080b8e0afcf94bbdabf1f"
+    },
+    "start_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "checkpoint-05-spawned-host-trace-start",
+      "parameters": {},
+      "expected_revision": "1",
+      "expected_checkpoint_digest": "sha256:46f9fdf9761e83d488a4ff0846aa44a2d4d6b3298970d26fbb57afa3d2cfe4a7"
+    },
+    "child_accept": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "spawned-pay",
+      "parameters": {},
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:31d724d4b3d55e9d2d2c027f906745f8146c9d1c90242035276e71bb4165827b"
+    },
+    "root_accept": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "spawned-root-followup",
+      "parameters": {},
+      "expected_revision": "3",
+      "expected_checkpoint_digest": "sha256:3572862bfd1157ff61920b87329d1208bc22d8ef0e827a3f66d9568b4963ac59"
+    },
+    "child_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "checkpoint-05-spawned-host-trace-child-process",
+      "parameters": {},
+      "expected_revision": "4",
+      "expected_checkpoint_digest": "sha256:cc7229471c880188e43323885388dec806fcbb243dacd92fed94afe93df6cdef"
+    },
+    "root_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "checkpoint-05-spawned-host-trace-root-process",
+      "parameters": {},
+      "expected_revision": "5",
+      "expected_checkpoint_digest": "sha256:2b535ca2b558a9951d5006b786531fe8d371162cf636775eed69b283337570b4"
+    }
+  }
+}

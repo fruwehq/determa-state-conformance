@@ -90,7 +90,96 @@ ARTIFACT_KINDS = {
 DRIVER_ARTIFACT_KINDS = {
     "version2_operation_inputs": "version2-operation-inputs.schema.json",
     "version2_operation_result": "version2-operation-result.schema.json",
+    "durable_host_inputs_v2": "durable-host-inputs-v2.schema.json",
+    "durable_host_results_v2": "durable-host-results-v2.schema.json",
+    "durable_host_store_v2": "durable-host-store-v2.schema.json",
+    "durable_host_call_log_v2": "durable-host-call-log-v2.schema.json",
 }
+REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
+    {
+        "acceptance_receipt_native_v2",
+        "admission_event_conflict_precedence",
+        "admission_malformed_precedence",
+        "admission_wrong_root_precedence",
+        "checkpoint_admission_commit",
+        "checkpoint_broker_requirements",
+        "checkpoint_capability_composition",
+        "checkpoint_create_commit",
+        "checkpoint_creation_conflict",
+        "checkpoint_creation_replay",
+        "checkpoint_dependency_safe_pruning",
+        "checkpoint_durable_profile_requirements",
+        "checkpoint_equal_pruning_replay",
+        "checkpoint_exactly_once_requirements",
+        "checkpoint_lower_pruning_rejected",
+        "checkpoint_permanent_to_bounded",
+        "checkpoint_physical_deletion_unsupported",
+        "checkpoint_precommit_crash_rollback",
+        "checkpoint_processing_commit",
+        "checkpoint_public_adapter_registry",
+        "checkpoint_root_identity_retention",
+        "checkpoint_root_no_reuse",
+        "checkpoint_root_tombstone",
+        "checkpoint_root_tombstone_replay",
+        "checkpoint_scope_fail_closed",
+        "checkpoint_scope_isolation",
+        "checkpoint_stale_pruning_rejected",
+        "checkpoint_stale_writer_rejected",
+        "checkpoint_strict_outbox_requirements",
+        "checkpoint_terminal_replay",
+        "checkpoint_third_party_adapter_registration",
+        "creation_receipt_native_v2",
+        "outbox_ambiguous",
+        "outbox_confirmed",
+        "outbox_dead_lettered",
+        "outbox_discarded",
+        "outbox_effect_tombstone",
+        "outbox_equal_pending_replay",
+        "outbox_equal_terminal_replay",
+        "outbox_forbidden_deletion",
+        "outbox_not_attempted",
+        "outbox_operator_cancelled",
+        "outbox_permanently_rejected",
+        "outbox_receipt_linkage",
+        "outbox_retryable_failure",
+        "outbox_terminal_conflict",
+        "persistence_atomic_aggregate_inbox_outbox_audit",
+        "persistence_atomic_application_rows",
+        "persistence_atomic_precommit_rollback",
+        "persistence_capabilities_before_transaction",
+        "persistence_crash_after_commit_before_acknowledgement",
+        "persistence_crash_before_commit",
+        "persistence_crash_redelivery_replay",
+        "persistence_inbox_first_commit",
+        "persistence_inbox_idempotency",
+        "persistence_inbox_replay_no_core_call",
+        "persistence_local_cache_boundary",
+        "persistence_permanent_failure_quarantine",
+        "persistence_quarantine_no_core_call",
+        "persistence_quarantine_release_semantics",
+        "persistence_released_event_processing",
+        "persistence_resolve_before_transaction",
+        "persistence_transient_failure_rollback",
+        "persistence_transient_retry_from_committed_state",
+        "persistence_transient_retry_required",
+        "replay_precedes_stale_writer",
+        "spawned_child_admission",
+        "spawned_host_creation",
+        "spawned_host_start",
+        "spawned_host_start_admission",
+        "spawned_child_processing",
+        "spawned_root_mailbox_isolation",
+        "spawned_target_identity",
+        "terminal_receipt_native_v2",
+        "terminal_spawned_child_admission",
+        "terminal_spawned_child_processing",
+        "terminal_spawned_creation",
+        "terminal_spawned_root_admission",
+        "terminal_spawned_root_processing",
+        "terminal_spawned_start",
+        "terminal_spawned_start_admission",
+    }
+)
 REQUIRED_VERSION2_COVERAGE = frozenset(
     {
         "aggregate_v2_schema_positive_negative",
@@ -4951,6 +5040,118 @@ def validate_version2_vectors(
 
 
 
+def resolve_artifact_pointer(document: Any, pointer: str, location: str) -> Any:
+    value = document
+    try:
+        for encoded in pointer.split("/")[1:]:
+            part = encoded.replace("~1", "/").replace("~0", "~")
+            value = value[int(part)] if isinstance(value, list) else value[part]
+    except (KeyError, IndexError, TypeError, ValueError) as error:
+        raise ValidationFailure(f"{location}: unresolved artifact pointer {pointer}") from error
+    return value
+
+
+def validate_durable_host_vectors(
+    case: Path, test: dict[str, Any], artifact_paths: set[Path]
+) -> set[str]:
+    """Validate the closed schema-v2 durable host profile table."""
+    manifests = {entry["file"]: entry for entry in test["artifacts"]["documents"]}
+    artifacts = {path.name: analyze_artifact(path).document for path in artifact_paths}
+    coverage: set[str] = set()
+    names: set[str] = set()
+
+    def require_kind(filename: str, kind: str, location: str) -> Any:
+        manifest = manifests.get(filename)
+        if manifest is None or manifest["kind"] != kind or not manifest["valid"]:
+            raise ValidationFailure(
+                f"{location}: {filename} is not a valid {kind} artifact"
+            )
+        return artifacts[filename]
+
+    for index, vector in enumerate(test["durable_host_vectors"]):
+        location = f"{case.name}: durable host vector {index}"
+        if vector["name"] in names:
+            raise ValidationFailure(f"{location}: duplicate vector name")
+        names.add(vector["name"])
+        duplicate = coverage & set(vector["covers"])
+        if duplicate:
+            raise ValidationFailure(f"{location}: duplicate coverage {sorted(duplicate)}")
+        coverage.update(vector["covers"])
+
+        request_ref = vector["request"]
+        request_document = require_kind(request_ref["file"], "durable_host_inputs_v2", location)
+        operation_input = resolve_artifact_pointer(request_document, request_ref["pointer"], location)
+        if operation_input["operation"] != vector["operation"]:
+            raise ValidationFailure(f"{location}: operation input does not match vector")
+
+        result_ref = vector["result"]
+        result_document = require_kind(result_ref["file"], "durable_host_results_v2", location)
+        operation_result = resolve_artifact_pointer(result_document, result_ref["pointer"], location)
+        expected_result = dict(vector["expect"])
+        expected_result.setdefault("broker_acknowledged", False)
+        if operation_result != expected_result:
+            raise ValidationFailure(f"{location}: exact result does not match expectation")
+
+        before_name = vector.get("checkpoint_before")
+        after_name = vector.get("checkpoint_after")
+        if after_name is not None:
+            checkpoint_after = require_kind(after_name, "execution_checkpoint_v2", location)
+            validate_execution_checkpoint_v2_semantics(checkpoint_after)
+            if before_name is None:
+                if checkpoint_after["revision"] != "0":
+                    raise ValidationFailure(f"{location}: creation must commit revision zero")
+            else:
+                checkpoint_before = require_kind(before_name, "execution_checkpoint_v2", location)
+                if vector["expect"]["mutation"] == "none":
+                    if checkpoint_before != checkpoint_after:
+                        raise ValidationFailure(f"{location}: non-mutating result changed checkpoint")
+                elif int(checkpoint_after["revision"]) <= int(checkpoint_before["revision"]):
+                    raise ValidationFailure(f"{location}: atomic mutation did not advance revision")
+
+        store_before_name = vector.get("store_before")
+        store_after_name = vector.get("store_after")
+        if store_before_name is not None and store_after_name is not None:
+            store_before = require_kind(store_before_name, "durable_host_store_v2", location)
+            store_after = require_kind(store_after_name, "durable_host_store_v2", location)
+            for store_value in (store_before, store_after):
+                validate_execution_checkpoint_v2_semantics(store_value["checkpoint"])
+            changed = store_before != store_after
+            if changed != (vector["expect"]["mutation"] == "atomic"):
+                raise ValidationFailure(f"{location}: store mutation classification is inconsistent")
+            if "persistence_atomic_aggregate_inbox_outbox_audit" in vector["covers"]:
+                checkpoint = store_after["checkpoint"]
+                if (
+                    not store_after["inbox"]
+                    or not checkpoint["pending_outbox_intents"]
+                    or not checkpoint["migration_audit_records"]
+                    or not store_after["application_rows"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: atomic store omits inbox, outbox, audit, or application state"
+                    )
+            if vector["operation"] == "persistence_process_v2" and (
+                "target_validated_bundle_fingerprint" not in operation_input
+                or "migration_descriptor_digest_route" not in operation_input
+            ):
+                raise ValidationFailure(f"{location}: persistence input is not definition-bound")
+
+        call_log_name = vector.get("call_log")
+        if call_log_name is not None:
+            call_log = require_kind(call_log_name, "durable_host_call_log_v2", location)["calls"]
+            if call_log.count("call_core") != vector["expect"]["core_calls"]:
+                raise ValidationFailure(f"{location}: core call count differs")
+            if "begin_transaction" in call_log:
+                transaction_index = call_log.index("begin_transaction")
+                for required in ("select_scope", "resolve_artifacts", "validate_capabilities"):
+                    if required not in call_log or call_log.index(required) > transaction_index:
+                        raise ValidationFailure(f"{location}: {required} must precede transaction begin")
+            if "acknowledge" in call_log and "commit" in call_log:
+                if call_log.index("acknowledge") < call_log.index("commit"):
+                    raise ValidationFailure(f"{location}: acknowledgement precedes commit")
+
+    return coverage
+
+
 def validate_static_entry(entry: Any, case: Path) -> tuple[Path, bool, str | None]:
     if not isinstance(entry, dict):
         raise ValidationFailure(f"{case.name}: static entry must be a map")
@@ -5138,6 +5339,12 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         "version2_vectors": (
             repository_root / "scripts" / "schemas" / "version2-vectors.schema.json"
         ),
+        "durable_host_vectors": (
+            repository_root
+            / "scripts"
+            / "schemas"
+            / "durable-host-profile-v2.schema.json"
+        ),
     }
     schemas: dict[str, dict[str, Any]] = {}
     resources: list[tuple[str, Resource[Any]]] = []
@@ -5164,6 +5371,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     }
     version2_vector_validator = Draft202012Validator(
         schemas["version2_vectors"], registry=registry
+    )
+    durable_host_vector_validator = Draft202012Validator(
+        schemas["durable_host_vectors"], registry=registry
     )
 
     conformance_version = (repository_root / "VERSION").read_text().strip()
@@ -5207,13 +5417,15 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     artifact_documents = 0
     version2_vectors = 0
     version2_coverage: set[str] = set()
+    durable_host_vectors = 0
+    durable_host_coverage: set[str] = set()
 
     for case in cases:
         test = load_fixture_document(case / "test.yaml")
         validate_driver_markers(test, case.name)
         profile_modes = {
             name
-            for name in ("version2_vectors",)
+            for name in ("version2_vectors", "durable_host_vectors")
             if name in test
         }
         if len(profile_modes) > 1:
@@ -5222,6 +5434,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             )
         if "version2_vectors" in test:
             validate_fixture_schema(test, version2_vector_validator, case)
+        if "durable_host_vectors" in test:
+            validate_fixture_schema(test, durable_host_vector_validator, case)
         if "load" in test and test["load"] != {"valid": True}:
             raise ValidationFailure(f"{case.name}: unsupported load assertion")
 
@@ -5445,6 +5659,18 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 )
             version2_coverage.update(case_coverage)
             version2_vectors += len(test["version2_vectors"])
+        elif "durable_host_vectors" in test:
+            case_coverage = validate_durable_host_vectors(
+                case, test, referenced_artifacts
+            )
+            duplicate_coverage = durable_host_coverage & case_coverage
+            if duplicate_coverage:
+                raise ValidationFailure(
+                    f"{case.name}: durable host coverage repeated across cases: "
+                    f"{sorted(duplicate_coverage)}"
+                )
+            durable_host_coverage.update(case_coverage)
+            durable_host_vectors += len(test["durable_host_vectors"])
 
         actual_bundles = {
             path
@@ -5487,6 +5713,15 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 f"missing={sorted(missing_coverage)}, "
                 f"unexpected={sorted(unexpected_coverage)}"
             )
+    if durable_host_vectors:
+        missing_coverage = REQUIRED_DURABLE_HOST_COVERAGE - durable_host_coverage
+        unexpected_coverage = durable_host_coverage - REQUIRED_DURABLE_HOST_COVERAGE
+        if missing_coverage or unexpected_coverage:
+            raise ValidationFailure(
+                "durable host coverage mismatch: "
+                f"missing={sorted(missing_coverage)}, "
+                f"unexpected={sorted(unexpected_coverage)}"
+            )
 
     return (
         f"validated {registry_entries} closed-code entries across "
@@ -5497,7 +5732,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{source_rejections} expected source rejections, "
         f"{structural_rejections} expected structural rejections, "
         f"{static_schema_passes} schema-valid static documents, and "
-        f"{scenarios} runtime scenarios and {version2_vectors} version-2 vectors"
+        f"{scenarios} runtime scenarios, {version2_vectors} version-2 vectors, "
+        f"and {durable_host_vectors} durable host vectors"
     )
 
 

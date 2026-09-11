@@ -1,0 +1,38 @@
+title: native schema-v2 persistence transient retry from committed state
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: initial-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: committed-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: quarantined-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: released-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+    - { file: commit-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: replay-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: rollback-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: quarantine-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: release-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: transient-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+durable_host_vectors:
+  - name: persistence_transient_failure
+    covers: [persistence_transient_failure_rollback]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: initial-store-v2.json
+    call_log: transient-call-log-v2.json
+    failure_boundary: after_transaction_begin
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/transient }
+    expect: { result: rejected, code: transient_processing_failure, mutation: none, core_calls: 0 }
+  - name: persistence_transient_retry
+    covers: [persistence_transient_retry_required, persistence_transient_retry_from_committed_state]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: committed-store-v2.json
+    call_log: commit-call-log-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }

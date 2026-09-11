@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/durable-host-inputs-v2.schema.json",
+  "title": "Determa State durable host operation inputs",
+  "type": "object",
+  "required": ["durable_host_inputs_format", "durable_host_inputs_schema_version", "requests"],
+  "additionalProperties": false,
+  "properties": {
+    "durable_host_inputs_format": { "const": "determa.durable_host.inputs" },
+    "durable_host_inputs_schema_version": { "const": 2 },
+    "requests": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "pattern": "^[a-z][a-z0-9_]*$" },
+      "additionalProperties": { "$ref": "#/$defs/request" }
+    }
+  },
+  "$defs": {
+    "sha256": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "canonicalDecimal": { "type": "string", "pattern": "^(0|[1-9][0-9]*)$" },
+    "operation": { "$ref": "durable-host-profile-v2.schema.json#/$defs/operation" },
+    "request": {
+      "type": "object",
+      "required": ["operation", "request_id", "parameters"],
+      "additionalProperties": false,
+      "properties": {
+        "operation": { "$ref": "#/$defs/operation" },
+        "request_id": { "type": "string", "minLength": 1 },
+        "expected_revision": { "$ref": "#/$defs/canonicalDecimal" },
+        "expected_checkpoint_digest": { "$ref": "#/$defs/sha256" },
+        "target_validated_bundle_fingerprint": { "$ref": "#/$defs/sha256" },
+        "migration_descriptor_digest_route": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sha256" }
+        },
+        "parameters": { "type": "object" }
+      }
+    }
+  }
+}

@@ -1,42 +1,39 @@
-# Execution-checkpoint maintenance profile
+# Execution-checkpoint durable host profile
 
-This optional profile binds hosts that support the portable schema-version-2
-execution checkpoint and its maintenance migration operation from SPEC section 17. It
-does not standardize a language API, database schema, worker, daemon, socket, broker,
-or command-line surface.
+This optional profile binds hosts that implement the portable schema-version-2
+execution checkpoint from SPEC section 17. It fixes durable transaction outcomes and
+before/after bytes without standardizing a language API, database schema, worker,
+daemon, socket, broker, or command-line surface.
 
-The profile contains only `checkpoint_migrate_v2` vectors. Every vector names the
-exact checkpoint before the operation, the closed operation input, the expected result,
-and the checkpoint after a successful mutation. Existing-checkpoint writers provide
-the exact revision and checkpoint digest they read. Exact replay and operation identity
-conflict are resolved before the stale-writer comparison.
+The profile covers:
 
-The fixtures cover:
+- checkpoint creation, input admission, processing, durable receipts, exact replay,
+  conflict ordering, stale writers, and crashes on both sides of commit;
+- every pending and terminal outbox state, equal-state replay, effect tombstones,
+  conflict handling, and dependency-safe deletion refusal;
+- bounded pruning, irreversible retention history, root tombstones, root no-reuse,
+  adapter registration, composed capabilities, and logical store isolation;
+- native admission, processing, replay, pruning, and tombstoning with schema-version-2
+  mailbox and receipt identities;
+- owned spawned-runtime and terminal spawned-runtime host traces; and
+- keyed maintenance migration, including empty, one-hop, two-hop, sequential,
+  replay, conflict, stale-writer, retention, and tombstoned-root cases.
 
-- empty, one-hop, and two-hop maintenance migration;
-- an empty migration receipt followed by an applied migration;
-- exact replay after response loss;
-- operation identity conflict and a distinct stale writer;
-- retained receipt sequence continuity and bounded-retention cutoffs; and
-- an empty migration receipt that remains canonically verifiable after the aggregate
-  has been replaced by a root tombstone.
+Every maintenance receipt retains `target_validated_bundle_fingerprint`. Maintenance
+requests retain a non-empty operation identity and the exact ordered descriptor digest
+route. Replay and operation-identity conflict are resolved before the writer revision
+and checkpoint-digest comparison.
 
-Every maintenance receipt includes `target_validated_bundle_fingerprint`. The durable
-validator recomputes the request digest from the retained source aggregate digest, the
-target definition fingerprint, the descriptor route, and maintenance mode. This check
-also applies after tombstoning, when no aggregate definition remains. Resealed negative
-fixtures prove that a missing or altered target fingerprint, altered historical request
-digest, receipt allocation gap, audit reordering, and invalid retention cutoff are
-rejected for their semantic defect rather than an outer digest mismatch.
+Profile requests, results, store snapshots, and call logs use dedicated closed schemas
+under `scripts/schemas/`. Checkpoint and aggregate members use only the specification's
+schema-version-2 formats. Machine documents continue to use integer `format: 1` because
+machine grammar and portable artifact schema versions are separate domains.
 
-All JSON artifacts are canonical RFC 8785 bytes and are validated against the exact
-schema-version-2 schemas in the pinned specification checkout. Generate or verify the
-fixtures with:
+Generate and verify deterministic artifacts with:
 
 ```sh
-python scripts/generate_version2_vectors.py
+python scripts/generate_execution_checkpoint_profile.py
+python scripts/generate_execution_checkpoint_profile.py --check
 python scripts/generate_version2_vectors.py --check
+python scripts/validate_conformance.py --spec-root ../determa-state-spec
 ```
-
-Machine documents continue to use integer `format: 1`; machine grammar and portable
-artifact schema versions are separate version domains.

@@ -1,0 +1,85 @@
+{
+  "durable_host_inputs_format": "determa.durable_host.inputs",
+  "durable_host_inputs_schema_version": 2,
+  "requests": {
+    "prune": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "prune",
+      "parameters": {},
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:ebb370999658290a05778c3cc10216a3f7e3dc56b01c1104f1cb61a46c9ffb70"
+    },
+    "prune_replay": {
+      "operation": "checkpoint_replay_v2",
+      "request_id": "prune",
+      "parameters": {},
+      "expected_revision": "3",
+      "expected_checkpoint_digest": "sha256:28e78de21c36bb8af7d001e86be85197636c58fa107c3f0d18257be484a71411"
+    },
+    "prune_lower": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "prune-lower",
+      "parameters": {},
+      "expected_revision": "3",
+      "expected_checkpoint_digest": "sha256:28e78de21c36bb8af7d001e86be85197636c58fa107c3f0d18257be484a71411"
+    },
+    "prune_stale": {
+      "operation": "checkpoint_prune_v2",
+      "request_id": "prune-stale",
+      "parameters": {},
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:ebb370999658290a05778c3cc10216a3f7e3dc56b01c1104f1cb61a46c9ffb70"
+    },
+    "tombstone": {
+      "operation": "checkpoint_tombstone_v2",
+      "request_id": "root-tombstone",
+      "parameters": {},
+      "expected_revision": "3",
+      "expected_checkpoint_digest": "sha256:28e78de21c36bb8af7d001e86be85197636c58fa107c3f0d18257be484a71411"
+    },
+    "tombstone_replay": {
+      "operation": "checkpoint_replay_v2",
+      "request_id": "root-tombstone",
+      "parameters": {},
+      "expected_revision": "4",
+      "expected_checkpoint_digest": "sha256:e2d0d1de097028d22aa4a66b06cc882a87c5b4073006b66bd9bd26cbe56da044"
+    },
+    "reuse": {
+      "operation": "checkpoint_create_v2",
+      "request_id": "reuse",
+      "parameters": {},
+      "expected_revision": "4",
+      "expected_checkpoint_digest": "sha256:e2d0d1de097028d22aa4a66b06cc882a87c5b4073006b66bd9bd26cbe56da044"
+    },
+    "delete": {
+      "operation": "checkpoint_tombstone_v2",
+      "request_id": "delete",
+      "parameters": {},
+      "expected_revision": "4",
+      "expected_checkpoint_digest": "sha256:e2d0d1de097028d22aa4a66b06cc882a87c5b4073006b66bd9bd26cbe56da044"
+    },
+    "resolve_adapter": {
+      "operation": "checkpoint_resolve_adapter_v2",
+      "request_id": "resolve-adapter",
+      "parameters": {
+        "adapter": "sqlite"
+      }
+    },
+    "validate_capabilities": {
+      "operation": "checkpoint_validate_capabilities_v2",
+      "request_id": "validate-capabilities",
+      "parameters": {
+        "profile": "durable_embedded"
+      }
+    },
+    "scope": {
+      "operation": "checkpoint_scope_operation_v2",
+      "request_id": "scope",
+      "parameters": {
+        "scope": "scope-a"
+      },
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:3dad1a6d7fc9d754afbb227dc7e5851a12ba9f38666f55435296e7bdb809d66a"
+    }
+  }
+}

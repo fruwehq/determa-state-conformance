@@ -1,0 +1,47 @@
+title: native schema-v2 persistence crash boundaries
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: initial-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: committed-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: quarantined-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: released-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+    - { file: commit-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: replay-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: rollback-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: quarantine-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: release-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+durable_host_vectors:
+  - name: persistence_crash_before_commit
+    covers: [persistence_crash_before_commit]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: initial-store-v2.json
+    call_log: rollback-call-log-v2.json
+    failure_boundary: after_audit_staged
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/crashed }
+    expect: { result: crashed, code: injected_pre_commit_failure, mutation: none, core_calls: 1 }
+  - name: persistence_crash_after_commit
+    covers: [persistence_crash_after_commit_before_acknowledgement]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: committed-store-v2.json
+    call_log: commit-call-log-v2.json
+    failure_boundary: after_commit_before_acknowledgement
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/postcommit_crash }
+    expect: { result: crashed, code: response_lost_after_commit, mutation: atomic, core_calls: 1, broker_acknowledged: false }
+  - name: persistence_redelivery_after_commit
+    covers: [persistence_crash_redelivery_replay]
+    operation: persistence_process_v2
+    store_before: committed-store-v2.json
+    store_after: committed-store-v2.json
+    call_log: replay-call-log-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0, broker_acknowledged: true }

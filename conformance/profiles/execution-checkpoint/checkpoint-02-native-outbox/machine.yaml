@@ -1,0 +1,20 @@
+format: 1
+namespace: conformance.execution_checkpoint_native_outbox
+events:
+  emit_outputs:
+    direction: input
+    payload:
+      batch_id: { type: string, required: true }
+  output_record:
+    direction: output
+    payload:
+      index: { type: int, required: true }
+machines:
+  - machine_id: counter
+    version: 1
+    root:
+      type: simple
+      variables:
+        count: { type: int, init: 0 }
+      on_events:
+        emit_outputs: {}

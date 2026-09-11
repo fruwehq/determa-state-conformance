@@ -1,0 +1,53 @@
+{
+  "durable_host_inputs_format": "determa.durable_host.inputs",
+  "durable_host_inputs_schema_version": 2,
+  "requests": {
+    "create": {
+      "operation": "checkpoint_create_v2",
+      "request_id": "checkpoint-06-terminal-spawned-host-trace-create",
+      "parameters": {}
+    },
+    "start_accept": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "spawn-start",
+      "parameters": {},
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:7207b648527cda6ea9c9f6d7a9b9866a13bf1873d33652c6d84be894ef023fc7"
+    },
+    "start_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "checkpoint-06-terminal-spawned-host-trace-start",
+      "parameters": {},
+      "expected_revision": "1",
+      "expected_checkpoint_digest": "sha256:835a04d1f764ae1286f6c4fb22b59915da8c7f27aaf4129cd92692c6f2a4b778"
+    },
+    "child_accept": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "spawned-pay",
+      "parameters": {},
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:4ad98083836351388787a75cc02d8e712bd650bf21e7f18f36042e05942b2984"
+    },
+    "root_accept": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "spawned-root-followup",
+      "parameters": {},
+      "expected_revision": "3",
+      "expected_checkpoint_digest": "sha256:ac32b93e92dfddca084930de1746c0297074d5f5335ea92ca60c53597b84725e"
+    },
+    "child_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "checkpoint-06-terminal-spawned-host-trace-child-process",
+      "parameters": {},
+      "expected_revision": "4",
+      "expected_checkpoint_digest": "sha256:2556444589c562b61aea268b16dad53278d4edf9d7f5c5a2f6ba4af94e84e14b"
+    },
+    "root_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "checkpoint-06-terminal-spawned-host-trace-root-process",
+      "parameters": {},
+      "expected_revision": "5",
+      "expected_checkpoint_digest": "sha256:4b44a5f0482f628cdd25d5b7e2de4e2f811673fad2cc3cef29e739cc767027bb"
+    }
+  }
+}

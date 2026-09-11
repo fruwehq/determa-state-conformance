@@ -1,0 +1,101 @@
+title: native schema-v2 pruning root identity adapters and capabilities
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: created-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: processed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: bounded-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: root-tombstone-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+durable_host_vectors:
+  - name: checkpoint_dependency_safe_pruning
+    covers: [checkpoint_dependency_safe_pruning, checkpoint_permanent_to_bounded]
+    operation: checkpoint_prune_v2
+    checkpoint_before: processed-checkpoint-v2.json
+    checkpoint_after: bounded-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/prune }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: checkpoint_equal_pruning_replay
+    covers: [checkpoint_equal_pruning_replay]
+    operation: checkpoint_replay_v2
+    checkpoint_before: bounded-checkpoint-v2.json
+    checkpoint_after: bounded-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/prune_replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
+  - name: checkpoint_lower_pruning_rejected
+    covers: [checkpoint_lower_pruning_rejected]
+    operation: checkpoint_prune_v2
+    checkpoint_before: bounded-checkpoint-v2.json
+    checkpoint_after: bounded-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/prune_lower }
+    result: { file: results-v2.json, pointer: /results/invalid_cutoff }
+    expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
+  - name: checkpoint_stale_pruning_rejected
+    covers: [checkpoint_stale_pruning_rejected]
+    operation: checkpoint_prune_v2
+    checkpoint_before: bounded-checkpoint-v2.json
+    checkpoint_after: bounded-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/prune_stale }
+    result: { file: results-v2.json, pointer: /results/stale }
+    expect: { result: rejected, code: checkpoint_revision_conflict, mutation: none, core_calls: 0 }
+  - name: checkpoint_root_tombstone
+    covers: [checkpoint_root_tombstone, checkpoint_root_identity_retention]
+    operation: checkpoint_tombstone_v2
+    checkpoint_before: bounded-checkpoint-v2.json
+    checkpoint_after: root-tombstone-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/tombstone }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: checkpoint_root_tombstone_replay
+    covers: [checkpoint_root_tombstone_replay]
+    operation: checkpoint_replay_v2
+    checkpoint_before: root-tombstone-checkpoint-v2.json
+    checkpoint_after: root-tombstone-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/tombstone_replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
+  - name: checkpoint_root_no_reuse
+    covers: [checkpoint_root_no_reuse]
+    operation: checkpoint_create_v2
+    checkpoint_before: root-tombstone-checkpoint-v2.json
+    checkpoint_after: root-tombstone-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/reuse }
+    result: { file: results-v2.json, pointer: /results/no_reuse }
+    expect: { result: rejected, code: creation_id_conflict, mutation: none, core_calls: 0 }
+  - name: checkpoint_physical_deletion_unsupported
+    covers: [checkpoint_physical_deletion_unsupported]
+    operation: checkpoint_tombstone_v2
+    checkpoint_before: root-tombstone-checkpoint-v2.json
+    checkpoint_after: root-tombstone-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/delete }
+    result: { file: results-v2.json, pointer: /results/deletion_unsupported }
+    expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
+  - name: checkpoint_public_adapter_registry
+    covers: [checkpoint_public_adapter_registry, checkpoint_third_party_adapter_registration]
+    operation: checkpoint_resolve_adapter_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/resolve_adapter }
+    result: { file: results-v2.json, pointer: /results/validated }
+    expect: { result: validated, mutation: none, core_calls: 0 }
+  - name: checkpoint_capability_composition
+    covers: [checkpoint_capability_composition, checkpoint_durable_profile_requirements, checkpoint_exactly_once_requirements, checkpoint_broker_requirements, checkpoint_strict_outbox_requirements]
+    operation: checkpoint_validate_capabilities_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/validate_capabilities }
+    result: { file: results-v2.json, pointer: /results/validated }
+    expect: { result: validated, mutation: none, core_calls: 0 }
+  - name: checkpoint_scope_isolation
+    covers: [checkpoint_scope_isolation, checkpoint_scope_fail_closed]
+    operation: checkpoint_scope_operation_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/scope }
+    result: { file: results-v2.json, pointer: /results/scope_rejected }
+    expect: { result: rejected, code: invalid_store_scope, mutation: none, core_calls: 0 }

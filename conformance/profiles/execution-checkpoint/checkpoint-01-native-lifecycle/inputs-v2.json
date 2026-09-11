@@ -1,0 +1,85 @@
+{
+  "durable_host_inputs_format": "determa.durable_host.inputs",
+  "durable_host_inputs_schema_version": 2,
+  "requests": {
+    "create": {
+      "operation": "checkpoint_create_v2",
+      "request_id": "create",
+      "parameters": {}
+    },
+    "create_replay": {
+      "operation": "checkpoint_replay_v2",
+      "request_id": "create",
+      "parameters": {},
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:09b874870db76b8d2da19d461b2ea21741294227e611259187e07dd429dd012f"
+    },
+    "create_conflict": {
+      "operation": "checkpoint_create_v2",
+      "request_id": "different-create",
+      "parameters": {},
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:09b874870db76b8d2da19d461b2ea21741294227e611259187e07dd429dd012f"
+    },
+    "accept": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "delivery-increment",
+      "parameters": {},
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:09b874870db76b8d2da19d461b2ea21741294227e611259187e07dd429dd012f"
+    },
+    "accept_replay": {
+      "operation": "checkpoint_replay_v2",
+      "request_id": "delivery-increment",
+      "parameters": {},
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:5a5e129eb6659e694af30e3dcb94b8d3f54671c3c39b37d4e4793c4dc11f774a"
+    },
+    "process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "process-delivery",
+      "parameters": {},
+      "expected_revision": "1",
+      "expected_checkpoint_digest": "sha256:45f8412c4baf966cdda9a853afabb34b9fc56afaf4228642eb6de407e81f8f3f"
+    },
+    "process_crash": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "process-crash",
+      "parameters": {},
+      "expected_revision": "1",
+      "expected_checkpoint_digest": "sha256:45f8412c4baf966cdda9a853afabb34b9fc56afaf4228642eb6de407e81f8f3f"
+    },
+    "stale_process": {
+      "operation": "checkpoint_step_v2",
+      "request_id": "stale-process",
+      "parameters": {},
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:09b874870db76b8d2da19d461b2ea21741294227e611259187e07dd429dd012f"
+    },
+    "malformed": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "malformed",
+      "parameters": {},
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:5a5e129eb6659e694af30e3dcb94b8d3f54671c3c39b37d4e4793c4dc11f774a"
+    },
+    "wrong_root": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "wrong-root",
+      "parameters": {},
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:5a5e129eb6659e694af30e3dcb94b8d3f54671c3c39b37d4e4793c4dc11f774a"
+    },
+    "event_conflict": {
+      "operation": "checkpoint_admit_v2",
+      "request_id": "delivery-increment",
+      "parameters": {
+        "payload": {
+          "amount": 9
+        }
+      },
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:5a5e129eb6659e694af30e3dcb94b8d3f54671c3c39b37d4e4793c4dc11f774a"
+    }
+  }
+}

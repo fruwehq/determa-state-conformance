@@ -30,8 +30,7 @@ migrated suite.
   assertion.
 - `conformance/core/117-*` onward may use `version2_vectors` plus a strict
   `artifacts.documents` manifest for portable JSON operations.
-- `conformance/profiles/<profile>/` — optional, explicitly non-core compatibility
-  surfaces.
+- `conformance/profiles/<profile>/` — optional, explicitly non-core host surfaces.
 - `conformance/profiles/execution-checkpoint/` — the optional SPEC §17 durable-host
   checkpoint profile.
 - `conformance/closed-code-registry/registry.json` — the single machine-readable
@@ -339,12 +338,12 @@ A later, separate issue may define commands, exit codes, and JSON shapes for
 implementations that declare a CLI profile, without queue introspection. Until then,
 the absence of CLI cases is intentional and no CLI surface is portable conformance.
 
-The `execution-checkpoint` profile fixes only portable SPEC §17 maintenance migration
-over the schema-version-2 checkpoint artifact. It covers exact replay, operation
-identity conflict, compare-and-swap rejection, retained receipt identity, and canonical
-verification after aggregate tombstoning. It binds only hosts that declare the profile
-and does not standardize their storage or public API. See
-`conformance/profiles/execution-checkpoint/README.md`.
+The `execution-checkpoint` profile fixes the portable SPEC §17 durable-host lifecycle
+over the schema-version-2 checkpoint artifact. It covers native creation, admission,
+processing, replay, outbox transitions, pruning, root identity, spawned-runtime traces,
+adapter capabilities, store scope, and keyed maintenance migration. The persistence
+profile adds the six required host transaction traces. Both bind only hosts that
+declare them and do not standardize storage or a public API. See the profile READMEs.
 
 ## Coverage
 
@@ -455,8 +454,8 @@ and does not standardize their storage or public API. See
 - Package imports and dependency/version resolution remain unsupported.
 - Production store protocols, CLI JSON, queue inspection, enabled-event lists, and
   visualization output are implementation/host surfaces rather than portable core
-  behavior. The optional execution-checkpoint maintenance profile binds only hosts that
-  declare it.
+  behavior. The optional execution-checkpoint and persistence durable-host profiles
+  bind only hosts that declare them.
 
 ## License
 

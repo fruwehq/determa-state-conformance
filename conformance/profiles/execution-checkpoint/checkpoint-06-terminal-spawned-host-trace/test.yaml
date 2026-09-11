@@ -1,0 +1,72 @@
+title: native schema-v2 terminal spawned child and root host trace
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: spawned-base-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-start-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-started-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-child-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-root-pending-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-child-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: spawned-terminal-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+durable_host_vectors:
+  - name: terminal_spawned_creation
+    covers: [terminal_spawned_creation]
+    operation: checkpoint_create_v2
+    checkpoint_before: null
+    checkpoint_after: spawned-base-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/create }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_start_admission
+    covers: [terminal_spawned_start_admission]
+    operation: checkpoint_admit_v2
+    checkpoint_before: spawned-base-checkpoint-v2.json
+    checkpoint_after: spawned-start-pending-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/start_accept }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_start
+    covers: [terminal_spawned_start]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-start-pending-checkpoint-v2.json
+    checkpoint_after: spawned-started-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/start_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_child_admission
+    covers: [terminal_spawned_child_admission]
+    operation: checkpoint_admit_v2
+    checkpoint_before: spawned-started-checkpoint-v2.json
+    checkpoint_after: spawned-child-pending-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/child_accept }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_root_admission
+    covers: [terminal_spawned_root_admission]
+    operation: checkpoint_admit_v2
+    checkpoint_before: spawned-child-pending-checkpoint-v2.json
+    checkpoint_after: spawned-root-pending-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/root_accept }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_child_processing
+    covers: [terminal_spawned_child_processing]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-root-pending-checkpoint-v2.json
+    checkpoint_after: spawned-child-terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/child_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
+  - name: terminal_spawned_root_processing
+    covers: [terminal_spawned_root_processing]
+    operation: checkpoint_step_v2
+    checkpoint_before: spawned-child-terminal-checkpoint-v2.json
+    checkpoint_after: spawned-terminal-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/root_process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }

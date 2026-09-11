@@ -1,0 +1,33 @@
+{
+  "durable_host_inputs_format": "determa.durable_host.inputs",
+  "durable_host_inputs_schema_version": 2,
+  "requests": {
+    "process": {
+      "operation": "persistence_process_v2",
+      "request_id": "persistence-3-process",
+      "parameters": {},
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:6031dd6af7db60ed8c7b85c7ee5f61d053bd47f2e61b0894803ce23e5d07875e",
+      "target_validated_bundle_fingerprint": "sha256:b3d70cdd9876c6da6429e7d7422bc956eebd6544ea675b18998ed37fbcf1dd94",
+      "migration_descriptor_digest_route": []
+    },
+    "replay": {
+      "operation": "persistence_process_v2",
+      "request_id": "persistence-3-process",
+      "parameters": {},
+      "expected_revision": "2",
+      "expected_checkpoint_digest": "sha256:fcd375c15440e37b8de78577283bc3eaf8c481e6915eb8a06114e4f0e53be1b1",
+      "target_validated_bundle_fingerprint": "sha256:b3d70cdd9876c6da6429e7d7422bc956eebd6544ea675b18998ed37fbcf1dd94",
+      "migration_descriptor_digest_route": []
+    },
+    "release": {
+      "operation": "persistence_release_quarantine_v2",
+      "request_id": "persistence-3-release",
+      "parameters": {},
+      "expected_revision": "0",
+      "expected_checkpoint_digest": "sha256:6031dd6af7db60ed8c7b85c7ee5f61d053bd47f2e61b0894803ce23e5d07875e",
+      "target_validated_bundle_fingerprint": "sha256:b3d70cdd9876c6da6429e7d7422bc956eebd6544ea675b18998ed37fbcf1dd94",
+      "migration_descriptor_digest_route": []
+    }
+  }
+}

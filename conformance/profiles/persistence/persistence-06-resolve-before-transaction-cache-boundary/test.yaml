@@ -1,0 +1,27 @@
+title: native schema-v2 resolve before transaction and local cache boundary
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: initial-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: committed-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: quarantined-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: released-store-v2.json, kind: durable_host_store_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+    - { file: commit-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: replay-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: rollback-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: quarantine-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+    - { file: release-call-log-v2.json, kind: durable_host_call_log_v2, valid: true }
+durable_host_vectors:
+  - name: persistence_resolve_before_transaction
+    covers: [persistence_resolve_before_transaction, persistence_local_cache_boundary, persistence_capabilities_before_transaction]
+    operation: persistence_process_v2
+    store_before: initial-store-v2.json
+    store_after: committed-store-v2.json
+    call_log: commit-call-log-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }

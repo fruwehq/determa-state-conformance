@@ -13,11 +13,12 @@ Layout:
 - Core portable-state cases use a closed `version2_vectors` driver mode plus strict
   schema-version-2 JSON artifact manifests. Exact canonical results are compared
   byte-for-byte.
-- `conformance/profiles/<profile>/` — optional non-core compatibility surfaces. They
+- `conformance/profiles/<profile>/` — optional non-core host surfaces. They
   bind only implementations that declare the profile and never override core prose.
-- The execution-checkpoint profile uses the same closed v2 vector driver for maintenance
-  migration. It fixes checkpoint results and before/after bytes without defining a
-  language API, store schema, worker, daemon, or socket protocol.
+- The execution-checkpoint and persistence profiles use a closed durable-host vector
+  driver. They fix schema-version-2 checkpoint/store results and before/after bytes
+  without defining a language API, production store schema, worker, daemon, or socket
+  protocol.
 - Additional bundle files are allowed only when `test.yaml` names them explicitly.
 - `VERSION` — the synchronized spec version this suite targets.
 
@@ -77,7 +78,7 @@ python scripts/validate_conformance.py --spec-root ../determa-state-spec
 ```
 
 The workflow uses the same command against an explicitly pinned specification commit.
-The version-2 generator and maintenance profile are documented in the profile README.
+The version-2 generators and durable-host profiles are documented in their READMEs.
 Durable validation proves fixture construction, schema dispositions, and cross-artifact
 semantics; it does not replace each implementation's runtime harness.
 
@@ -92,4 +93,5 @@ Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that 
 - Coverage table + case index: `README.md`.
 - Execution-checkpoint profile:
   `conformance/profiles/execution-checkpoint/README.md`.
+- Persistence profile: `conformance/profiles/persistence/README.md`.
 - Fixture conventions: `README.md`. The spec it targets: `determa-state-spec/SPEC.md`.

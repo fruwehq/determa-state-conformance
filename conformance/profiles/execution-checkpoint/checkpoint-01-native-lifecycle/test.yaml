@@ -1,0 +1,101 @@
+title: native schema-v2 checkpoint creation admission processing and replay
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: created-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: accepted-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: processed-checkpoint-v2.json, kind: execution_checkpoint_v2, valid: true }
+    - { file: inputs-v2.json, kind: durable_host_inputs_v2, valid: true }
+    - { file: results-v2.json, kind: durable_host_results_v2, valid: true }
+durable_host_vectors:
+  - name: checkpoint_create_commit
+    covers: [checkpoint_create_commit, creation_receipt_native_v2]
+    operation: checkpoint_create_v2
+    checkpoint_before: null
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/create }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
+  - name: checkpoint_creation_replay
+    covers: [checkpoint_creation_replay]
+    operation: checkpoint_replay_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/create_replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0, broker_acknowledged: true }
+  - name: checkpoint_creation_conflict
+    covers: [checkpoint_creation_conflict]
+    operation: checkpoint_create_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: created-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/create_conflict }
+    result: { file: results-v2.json, pointer: /results/creation_conflict }
+    expect: { result: rejected, code: creation_id_conflict, mutation: none, core_calls: 0 }
+  - name: checkpoint_admission_commit
+    covers: [checkpoint_admission_commit, acceptance_receipt_native_v2]
+    operation: checkpoint_admit_v2
+    checkpoint_before: created-checkpoint-v2.json
+    checkpoint_after: accepted-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/accept }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
+  - name: checkpoint_processing_commit
+    covers: [checkpoint_processing_commit, terminal_receipt_native_v2]
+    operation: checkpoint_step_v2
+    checkpoint_before: accepted-checkpoint-v2.json
+    checkpoint_after: processed-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/process }
+    result: { file: results-v2.json, pointer: /results/committed }
+    expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
+  - name: checkpoint_terminal_replay
+    covers: [checkpoint_terminal_replay, replay_precedes_stale_writer]
+    operation: checkpoint_replay_v2
+    checkpoint_before: processed-checkpoint-v2.json
+    checkpoint_after: processed-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/accept_replay }
+    result: { file: results-v2.json, pointer: /results/replayed }
+    expect: { result: replayed, mutation: none, core_calls: 0, broker_acknowledged: true }
+  - name: checkpoint_precommit_crash
+    covers: [checkpoint_precommit_crash_rollback]
+    operation: checkpoint_step_v2
+    checkpoint_before: accepted-checkpoint-v2.json
+    checkpoint_after: accepted-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/process_crash }
+    result: { file: results-v2.json, pointer: /results/crash }
+    failure_boundary: before_commit
+    expect: { result: crashed, code: injected_pre_commit_failure, mutation: none, core_calls: 1 }
+  - name: checkpoint_stale_writer
+    covers: [checkpoint_stale_writer_rejected]
+    operation: checkpoint_step_v2
+    checkpoint_before: processed-checkpoint-v2.json
+    checkpoint_after: processed-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/stale_process }
+    result: { file: results-v2.json, pointer: /results/stale }
+    expect: { result: rejected, code: checkpoint_revision_conflict, mutation: none, core_calls: 0 }
+  - name: checkpoint_malformed_admission
+    covers: [admission_malformed_precedence]
+    operation: checkpoint_admit_v2
+    checkpoint_before: processed-checkpoint-v2.json
+    checkpoint_after: processed-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/malformed }
+    result: { file: results-v2.json, pointer: /results/malformed }
+    expect: { result: rejected, code: malformed_delivery, mutation: none, core_calls: 0 }
+  - name: checkpoint_wrong_root_admission
+    covers: [admission_wrong_root_precedence]
+    operation: checkpoint_admit_v2
+    checkpoint_before: processed-checkpoint-v2.json
+    checkpoint_after: processed-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/wrong_root }
+    result: { file: results-v2.json, pointer: /results/wrong_root }
+    expect: { result: rejected, code: wrong_root, mutation: none, core_calls: 0 }
+  - name: checkpoint_event_identity_conflict
+    covers: [admission_event_conflict_precedence]
+    operation: checkpoint_admit_v2
+    checkpoint_before: processed-checkpoint-v2.json
+    checkpoint_after: processed-checkpoint-v2.json
+    request: { file: inputs-v2.json, pointer: /requests/event_conflict }
+    result: { file: results-v2.json, pointer: /results/event_conflict }
+    expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
