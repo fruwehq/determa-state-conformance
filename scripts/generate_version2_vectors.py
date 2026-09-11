@@ -35,10 +35,32 @@ NATIVE_CORE_CASES = tuple(
         "124-native-v2-occurrence-identity",
     )
 )
+LIFECYCLE_RECEIPT_RESULTS = tuple(
+    ROOT / "conformance" / "core" / "117-version2-mailboxes" / name
+    for name in (
+        "chained-internal-result.json",
+        "internal-emission-retained-faulted-result.json",
+        "internal-emission-runtime-completed-result.json",
+    )
+)
 
 
 def load(path: Path) -> Any:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def produce_lifecycle_receipt_result(path: Path) -> bytes:
+    document = load(path)
+    system_event_ids = {
+        entry["envelope"]["event_id"]
+        for runtime in document["state"]["runtimes"]
+        for entry in runtime["ready_mailbox"]
+        if "system" in entry["envelope"]["source"]
+    }
+    for emission in document["emissions"]:
+        if emission["event_id"] in system_event_ids:
+            emission["emission_index"] = "0"
+    return canonical(document)
 
 
 def load_yaml(path: Path) -> Any:
@@ -1457,6 +1479,8 @@ def outputs() -> dict[Path, bytes]:
     ):
         for name, data in produced.items():
             result[directory / name] = data
+    for path in LIFECYCLE_RECEIPT_RESULTS:
+        result[path] = produce_lifecycle_receipt_result(path)
     return result
 
 

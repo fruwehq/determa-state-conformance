@@ -96,6 +96,7 @@ generated vector bytes. Update the generated projection only from the registry:
 python scripts/closed_code_registry.py
 python scripts/closed_code_registry.py --check
 python scripts/test_closed_code_registry.py
+python scripts/test_version2_validator.py
 ```
 
 The registry is conformance-first. Current Python and Rust releases do not yet expose

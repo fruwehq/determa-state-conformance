@@ -178,10 +178,11 @@
     },
     "restorePackage": {
       "type": "object",
-      "required": ["operation", "package_file", "artifact_resolver", "maintenance_mode"],
+      "required": ["operation", "intent", "package_file", "artifact_resolver", "maintenance_mode"],
       "additionalProperties": false,
       "properties": {
         "operation": { "const": "restore_package_v2" },
+        "intent": { "enum": ["restore_aggregate", "restore_and_apply_migration_route"] },
         "package_file": { "$ref": "#/$defs/jsonFile" },
         "artifact_resolver": { "$ref": "#/$defs/artifactResolver" },
         "maintenance_mode": { "type": "boolean" }
