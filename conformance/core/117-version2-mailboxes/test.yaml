@@ -36,6 +36,7 @@ artifacts:
     - { file: retained-faulted-before.json, kind: aggregate_state_v2, valid: true }
     - { file: cancellation-before.json, kind: aggregate_state_v2, valid: true }
     - { file: natural-completion-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: chained-internal-before.json, kind: aggregate_state_v2, valid: true }
     - { file: aggregate-completion-before.json, kind: aggregate_state_v2, valid: true }
     - { file: cleanup-rollback-before.json, kind: aggregate_state_v2, valid: true }
     - { file: reserved-event-before.json, kind: aggregate_state_v2, valid: true }
@@ -44,6 +45,7 @@ artifacts:
     - { file: internal-emission-retained-faulted-result.json, kind: core_step_result_v2, valid: true }
     - { file: internal-emission-cancelled-result.json, kind: core_step_result_v2, valid: true }
     - { file: internal-emission-runtime-completed-result.json, kind: core_step_result_v2, valid: true }
+    - { file: chained-internal-result.json, kind: core_step_result_v2, valid: true }
     - { file: internal-emission-aggregate-completed-result.json, kind: core_step_result_v2, valid: true }
     - { file: internal-emission-rollback-result.json, kind: core_step_result_v2, valid: true }
     - { file: faulted-root-retained-component-aggregate.json, kind: aggregate_state_v2, valid: true }
@@ -339,6 +341,14 @@ version2_vectors:
     request_file: operation-inputs.json
     request_pointer: /natural_completion_step
     expect: { result: success, exact_result_file: internal-emission-runtime-completed-result.json }
+  - name: chained_internal_emission_uses_delivered_event_identity
+    covers: [internal_emission_chained_provenance]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: chained-internal-before.json
+    request_file: operation-inputs.json
+    request_pointer: /chained_internal_step
+    expect: { result: success, exact_result_file: chained-internal-result.json }
   - name: internal_emission_target_aggregate_completes
     covers: [lifecycle_aggregate_completion_disposal]
     operation: step_v2
