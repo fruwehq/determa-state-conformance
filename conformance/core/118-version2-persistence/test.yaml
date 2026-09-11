@@ -91,7 +91,9 @@ version2_vectors:
     request_pointer: /preserve_historical_fault
     expect: { result: success, exact_result_file: migration-historical-fault-result.json }
   - name: migration_explicitly_disposes_removed_work
-    covers: [migration_preserve_dispose_default]
+    covers:
+      - mailbox_payload_matches_event_declaration
+      - migration_preserve_dispose_default
     operation: migrate_aggregate_v2
     state_before: disposal-before.json
     descriptor_file: descriptor-dispose-v2.json

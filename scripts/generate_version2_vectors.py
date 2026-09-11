@@ -2187,6 +2187,7 @@ def produce_persistence() -> dict[str, bytes]:
     disposal_entry["envelope"]["event"] = "retired_event"
     disposal_entry["envelope"]["event_id"] = "retired-1"
     disposal_entry["envelope"]["cause_id"] = "retired-1"
+    disposal_entry["envelope"]["payload"] = ["map", []]
     disposal_entry["envelope_digest"] = digest(
         [
             "determa-inbox-envelope-digest-2",
