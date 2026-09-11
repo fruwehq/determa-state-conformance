@@ -24,16 +24,10 @@ artifacts:
       valid: true
     - file: failures-missing_maintenance_mode_is_invalid_request-request.json
       kind: version2_operation_inputs
-      valid: false
-      error: invalid_version2_operation_inputs
-      covers:
-        - missing_maintenance_mode_is_invalid_request
+      valid: true
     - file: failures-non_boolean_maintenance_mode_is_invalid_request-request.json
       kind: version2_operation_inputs
-      valid: false
-      error: invalid_version2_operation_inputs
-      covers:
-        - non_boolean_maintenance_mode_is_invalid_request
+      valid: true
     - file: failures-source-aggregate-v2.json
       kind: aggregate_state_v2
       valid: true
@@ -305,6 +299,30 @@ version2_vectors:
     expect:
       result: failure
       code: target_definition_unavailable
+      unchanged_file: failures-source-aggregate-v2.json
+  - name: missing_maintenance_mode_is_invalid_request
+    covers:
+      - missing_maintenance_mode_is_invalid_request
+    operation: migrate_aggregate_v2
+    request_file: failures-missing_maintenance_mode_is_invalid_request-request.json
+    request_pointer: /missing_maintenance_mode_is_invalid_request
+    state_before: failures-source-aggregate-v2.json
+    descriptor_file: failures-descriptor-v2.json
+    expect:
+      result: failure
+      code: invalid_migration_request
+      unchanged_file: failures-source-aggregate-v2.json
+  - name: non_boolean_maintenance_mode_is_invalid_request
+    covers:
+      - non_boolean_maintenance_mode_is_invalid_request
+    operation: migrate_aggregate_v2
+    request_file: failures-non_boolean_maintenance_mode_is_invalid_request-request.json
+    request_pointer: /non_boolean_maintenance_mode_is_invalid_request
+    state_before: failures-source-aggregate-v2.json
+    descriptor_file: failures-descriptor-v2.json
+    expect:
+      result: failure
+      code: invalid_migration_request
       unchanged_file: failures-source-aggregate-v2.json
   - name: runtime_transform_fault
     covers:

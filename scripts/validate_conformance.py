@@ -2132,7 +2132,6 @@ def artifact_entries(
             "semantic_expected",
             "semantic_input_file",
             "semantic_input_pointer",
-            "covers",
         }
         if unknown:
             raise ValidationFailure(
@@ -2147,24 +2146,6 @@ def artifact_entries(
             raise ValidationFailure(f"{case.name}: invalid artifact kind {kind!r}")
         if not isinstance(entry.get("valid"), bool):
             raise ValidationFailure(f"{case.name}: artifact needs Boolean valid")
-        entry_coverage = entry.get("covers", [])
-        if "covers" in entry:
-            if (
-                not isinstance(entry_coverage, list)
-                or not entry_coverage
-                or len(set(entry_coverage)) != len(entry_coverage)
-                or any(
-                    not isinstance(item, str) or not item
-                    for item in entry_coverage
-                )
-            ):
-                raise ValidationFailure(
-                    f"{case.name}: artifact has malformed coverage"
-                )
-        if entry_coverage and (entry["valid"] or kind not in DRIVER_ARTIFACT_KINDS):
-            raise ValidationFailure(
-                f"{case.name}: artifact coverage requires an invalid driver artifact"
-            )
         expected_error = entry.get("error")
         if entry["valid"] and expected_error is not None:
             raise ValidationFailure(f"{case.name}: valid artifact cannot declare error")
@@ -2303,6 +2284,60 @@ def validate_direct_descriptor_expectation_probes() -> None:
         raise ValidationFailure(f"{name}: adversarial expectation was accepted")
 
 
+def validate_operation_input_schema_probes(
+    validator: Draft202012Validator,
+) -> None:
+    digest = "sha256:" + "0" * 64
+    bundle = {
+        "bundle_file": "machine.yaml",
+        "bundle_source_digest": digest,
+        "validated_bundle_fingerprint": digest,
+    }
+    migration = {
+        "operation": "migrate_aggregate_v2",
+        "source_bundle": bundle,
+        "target_bundle": bundle,
+        "migration_descriptor_files": [],
+        "migration_descriptor_digest_route": [],
+        "maintenance_mode": False,
+    }
+
+    valid_probes = [
+        migration,
+        {
+            key: value
+            for key, value in migration.items()
+            if key != "maintenance_mode"
+        },
+    ]
+    invalid_mode_probe = copy.deepcopy(migration)
+    invalid_mode_probe["maintenance_mode"] = "not-a-boolean"
+    valid_probes.append(invalid_mode_probe)
+    for index, probe in enumerate(valid_probes):
+        if not validator.is_valid({"probe": probe}):
+            raise ValidationFailure(
+                f"operation-input schema rejected semantic migration probe {index}"
+            )
+
+    arbitrary_mode = copy.deepcopy(migration)
+    arbitrary_mode["maintenance_mode"] = "false"
+    unrelated_operation = {
+        "operation": "create_v2",
+        "bundle": bundle,
+        "machine_id": "machine",
+        "machine_version": "1",
+        "root_instance_id": "root",
+        "creation_id": "creation",
+        "bindings": {"input": {}, "external": {}},
+        "maintenance_mode": "not-a-boolean",
+    }
+    for index, probe in enumerate((arbitrary_mode, unrelated_operation)):
+        if validator.is_valid({"probe": probe}):
+            raise ValidationFailure(
+                f"operation-input schema accepted permissive request probe {index}"
+            )
+
+
 def validate_version2_vectors(
     case: Path,
     test: dict[str, Any],
@@ -2318,14 +2353,6 @@ def validate_version2_vectors(
         entry["file"]: entry for entry in test["artifacts"]["documents"]
     }
     coverage: set[str] = set()
-    for manifest in manifests.values():
-        artifact_coverage = set(manifest.get("covers", []))
-        duplicate = coverage & artifact_coverage
-        if duplicate:
-            raise ValidationFailure(
-                f"{case.name}: duplicate artifact coverage {sorted(duplicate)}"
-            )
-        coverage.update(artifact_coverage)
     names: set[str] = set()
     artifact_overrides = artifact_overrides or {}
 
@@ -3794,6 +3821,34 @@ def validate_version2_vectors(
                     f"{location}: exact result is not canonical RFC 8785 bytes"
                 )
             result_document = analysis.document
+            if operation == "round_trip_aggregate_v2":
+                assert prior_aggregate is not None
+                prior_analysis = artifact(vector["state_before"])
+                if (
+                    result_document != prior_aggregate
+                    or analysis.source != prior_analysis.source
+                ):
+                    raise ValidationFailure(
+                        f"{location}: aggregate round trip is not byte-identical"
+                    )
+                if "all_typed_values_round_trip" in covers:
+                    typed_tags = {
+                        variable["value"][0]
+                        for runtime in prior_aggregate["runtimes"]
+                        for variable in runtime["variables"]
+                    }
+                    if typed_tags != {
+                        "null",
+                        "boolean",
+                        "string",
+                        "integer",
+                        "float",
+                        "list",
+                        "map",
+                    }:
+                        raise ValidationFailure(
+                            f"{location}: typed-value round trip is not total"
+                        )
             expected_kinds = (
                 {"aggregate_state_v2"}
                 if operation in {"create_v2", "round_trip_aggregate_v2"}
@@ -5369,6 +5424,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         kind: Draft202012Validator(schemas[kind], registry=registry)
         for kind in (*ARTIFACT_KINDS, *DRIVER_ARTIFACT_KINDS)
     }
+    validate_operation_input_schema_probes(
+        artifact_validators["version2_operation_inputs"]
+    )
     version2_vector_validator = Draft202012Validator(
         schemas["version2_vectors"], registry=registry
     )

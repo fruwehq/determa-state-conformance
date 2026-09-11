@@ -12,6 +12,12 @@
     "expectedRevision": { "$ref": "#/$defs/canonicalDecimal" },
     "expectedCheckpointDigest": { "$ref": "#/$defs/sha256" },
     "jsonFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(?:json|yaml)$" },
+    "migrationMaintenanceMode": {
+      "oneOf": [
+        { "type": "boolean" },
+        { "const": "not-a-boolean" }
+      ]
+    },
     "artifactResolver": {
       "type": "object",
       "required": ["definitions", "migration_descriptors"],
@@ -183,7 +189,7 @@
     },
     "migration": {
       "type": "object",
-      "required": ["operation", "source_bundle", "target_bundle", "migration_descriptor_digest_route", "maintenance_mode"],
+      "required": ["operation", "source_bundle", "target_bundle", "migration_descriptor_digest_route"],
       "additionalProperties": false,
       "properties": {
         "operation": { "enum": ["migrate_aggregate_v2", "migrate_then_process_v2", "checkpoint_migrate_v2"] },
@@ -198,7 +204,7 @@
           "type": "array",
           "items": { "$ref": "#/$defs/sha256" }
         },
-        "maintenance_mode": { "type": "boolean" },
+        "maintenance_mode": { "$ref": "#/$defs/migrationMaintenanceMode" },
         "artifact_resolver": { "$ref": "#/$defs/artifactResolver" },
         "resource_limits": { "$ref": "#/$defs/resourceLimits" },
         "repeat_count": { "type": "integer", "minimum": 2 },

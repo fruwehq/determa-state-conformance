@@ -160,10 +160,10 @@ version2_vectors:
   - name: all_typed_values_round_trip
     covers:
       - all_typed_values_round_trip
-    operation: create_v2
+    operation: round_trip_aggregate_v2
     request_file: operation-inputs.json
     request_pointer: /all_typed_values_round_trip
-    bundle: typed-values-machine.yaml
+    state_before: aggregate-typed-values-aggregate-v2.json
     expect:
       result: success
       exact_result_file: aggregate-typed-values-aggregate-v2.json

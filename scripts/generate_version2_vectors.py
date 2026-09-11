@@ -1406,12 +1406,35 @@ def produce_checkpoint() -> dict[str, bytes]:
 
 
 def produce_native_core(directory: Path) -> dict[str, bytes]:
-    produced = {
-        path.name: canonical(load(path))
-        for path in sorted(directory.glob("*.json"))
-        if path.name
-        not in {"rejection-duplicate-key.json", "rejection-invalid-unicode.json"}
-    }
+    produced: dict[str, bytes] = {}
+    for path in sorted(directory.glob("*.json")):
+        if path.name in {
+            "rejection-duplicate-key.json",
+            "rejection-invalid-unicode.json",
+        }:
+            continue
+        document = load(path)
+        if (
+            directory.name == "119-native-v2-aggregate-integrity"
+            and path.name == "operation-inputs.json"
+        ):
+            fingerprint = bundle_fingerprint(
+                directory / "typed-values-machine.yaml"
+            )
+            document["all_typed_values_round_trip"] = {
+                "operation": "round_trip_aggregate_v2",
+                "definition_resolver": {
+                    "definitions": [
+                        {
+                            "validated_bundle_fingerprint": fingerprint,
+                            "bundle_file": "typed-values-machine.yaml",
+                            "trusted": True,
+                        }
+                    ],
+                    "migration_descriptors": [],
+                },
+            }
+        produced[path.name] = canonical(document)
     if directory.name == "119-native-v2-aggregate-integrity":
         aggregate = canonical(load(directory / "aggregate-source-aggregate-v2.json"))
         marker = b'"aggregate_state_schema_version":2'
