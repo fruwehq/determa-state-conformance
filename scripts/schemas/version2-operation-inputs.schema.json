@@ -139,12 +139,14 @@
           "items": { "$ref": "#/$defs/sha256" }
         },
         "maintenance_mode": { "type": "boolean" },
+        "operation_id": { "type": "string", "minLength": 1 },
+        "request_digest": { "$ref": "#/$defs/sha256" },
         "expected_revision": { "$ref": "#/$defs/expectedRevision" },
         "expected_checkpoint_digest": { "$ref": "#/$defs/expectedCheckpointDigest" }
       },
       "allOf": [{
         "if": { "properties": { "operation": { "const": "checkpoint_migrate_v2" } } },
-        "then": { "required": ["expected_revision", "expected_checkpoint_digest"] }
+        "then": { "required": ["operation_id", "request_digest", "expected_revision", "expected_checkpoint_digest"] }
       }],
       "oneOf": [
         {

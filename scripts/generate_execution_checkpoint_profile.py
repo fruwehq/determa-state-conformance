@@ -28,7 +28,7 @@ from determa.state.wire import migration_descriptor_digest, typed_value
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance" / "profiles" / "execution-checkpoint"
-SPEC_COMMIT = "7782671b56165a59caa61a65c29fefc63105ebf8"
+SPEC_COMMIT = "e22f9db295d632f3f46a9d1260c63b5af92efa7e"
 PYTHON_CORE_COMMIT = "7b17d788b48049648e7e463aa3d35ba13dc1aa6e"
 RUST_CORE_COMMIT = "d17480c8b281dcd17953f59afcf6b5d23ff44efd"
 
@@ -1457,6 +1457,9 @@ def generate_retention(delivery: dict[str, Any]) -> None:
     target_bundle = load_bundle(
         (case / "migration-target.yaml").read_text(encoding="utf-8")
     )
+    second_target_bundle = load_bundle(
+        (case / "migration-target-second.yaml").read_text(encoding="utf-8")
+    )
     descriptor = {
         "migration_descriptor_format": "determa.aggregate_migration",
         "migration_descriptor_schema_version": 1,
@@ -1574,6 +1577,101 @@ def generate_retention(delivery: dict[str, Any]) -> None:
     descriptor["migration_descriptor_digest"] = migration_descriptor_digest(
         descriptor
     )
+    second_descriptor = {
+        "migration_descriptor_format": "determa.aggregate_migration",
+        "migration_descriptor_schema_version": 1,
+        "source_machine_format": 1,
+        "target_machine_format": 1,
+        "source_validated_bundle_fingerprint": target_bundle.fingerprint,
+        "target_validated_bundle_fingerprint": second_target_bundle.fingerprint,
+        "source_aggregate_shape_fingerprint": aggregate_shape_fingerprint(
+            target_bundle
+        ),
+        "target_aggregate_shape_fingerprint": aggregate_shape_fingerprint(
+            second_target_bundle
+        ),
+        "mode": "transform",
+        "mappings": {
+            "machines": [{
+                "source_definition_pointer": "/machines/0/root",
+                "target_definition_pointer": "/machines/0/root",
+            }],
+            "active_states": [{
+                "source_leaf_state_definition_pointer": (
+                    "/machines/0/root/states/new_state"
+                ),
+                "target_leaf_state_definition_pointers": [
+                    "/machines/0/root/states/new_state"
+                ],
+            }],
+            "variables": [
+                {
+                    "operation": "copy",
+                    "source_declaration_pointer": (
+                        "/machines/0/root/variables/new_count"
+                    ),
+                    "target_declaration_pointer": (
+                        "/machines/0/root/variables/new_count"
+                    ),
+                },
+                {
+                    "operation": "copy",
+                    "source_declaration_pointer": (
+                        "/machines/0/root/variables/added"
+                    ),
+                    "target_declaration_pointer": (
+                        "/machines/0/root/variables/added"
+                    ),
+                },
+                {
+                    "operation": "copy",
+                    "source_declaration_pointer": (
+                        "/machines/0/root/states/new_state/variables/renamed_shadow"
+                    ),
+                    "target_declaration_pointer": (
+                        "/machines/0/root/states/new_state/variables/renamed_shadow"
+                    ),
+                },
+            ],
+            "history": [{
+                "operation": "map",
+                "source_history_declaration_pointer": "/machines/0/root/history",
+                "target_history_declaration_pointer": "/machines/0/root/history",
+                "recorded_state_mappings": [{
+                    "source_definition_pointer": (
+                        "/machines/0/root/states/new_state"
+                    ),
+                    "target_definition_pointer": (
+                        "/machines/0/root/states/new_state"
+                    ),
+                }],
+            }],
+            "components": [],
+            "owned_runtimes": [],
+            "lifetime_holders": [],
+            "counters": [
+                {
+                    "operation": "map",
+                    "source_definition_pointer": "/machines/0/root",
+                    "target_definition_pointer": "/machines/0/root",
+                },
+                {
+                    "operation": "map",
+                    "source_definition_pointer": (
+                        "/machines/0/root/states/new_state"
+                    ),
+                    "target_definition_pointer": (
+                        "/machines/0/root/states/new_state"
+                    ),
+                },
+            ],
+        },
+        "terminal_policy": {"completed": "preserve", "faulted": "preserve"},
+        "resource_requirements": copy.deepcopy(descriptor["resource_requirements"]),
+    }
+    second_descriptor["migration_descriptor_digest"] = (
+        migration_descriptor_digest(second_descriptor)
+    )
     conflict_descriptor = copy.deepcopy(descriptor)
     conflict_descriptor["resource_requirements"][
         "maximum_cel_evaluation_steps"
@@ -1615,16 +1713,20 @@ def generate_retention(delivery: dict[str, Any]) -> None:
         definitions={
             source_bundle.fingerprint: source_bundle,
             target_bundle.fingerprint: target_bundle,
+            second_target_bundle.fingerprint: second_target_bundle,
         },
         migration_descriptors={
-            descriptor["migration_descriptor_digest"]: descriptor
+            descriptor["migration_descriptor_digest"]: descriptor,
+            second_descriptor["migration_descriptor_digest"]: second_descriptor,
         },
         trusted_definitions=[
             source_bundle.fingerprint,
             target_bundle.fingerprint,
+            second_target_bundle.fingerprint,
         ],
         trusted_migration_descriptors=[
-            descriptor["migration_descriptor_digest"]
+            descriptor["migration_descriptor_digest"],
+            second_descriptor["migration_descriptor_digest"],
         ],
     )
     migration = migrate_aggregate(
@@ -1720,6 +1822,152 @@ def generate_retention(delivery: dict[str, Any]) -> None:
             True,
         ]
     )
+
+    empty_migration = migrate_aggregate(
+        rfc8785.dumps(created["aggregate_state"]),
+        source_bundle.fingerprint,
+        [],
+        resolver,
+        maintenance_mode=True,
+    )
+    if not empty_migration.succeeded or empty_migration.aggregate_envelope is None:
+        raise RuntimeError("empty maintenance migration failed")
+    empty_input = {
+        "operation": "maintenance_migration",
+        "operation_id": "maintenance-empty",
+        "source_aggregate_state_digest": created["aggregate_state"][
+            "aggregate_state_digest"
+        ],
+        "target_bundle_file": "migration-source.yaml",
+        "target_bundle_source_digest": hash_bytes(
+            (case / "migration-source.yaml").read_bytes()
+        ),
+        "migration_descriptor_files": [],
+        "target_validated_bundle_fingerprint": source_bundle.fingerprint,
+        "migration_descriptor_digest_route": [],
+        "maintenance_mode": True,
+    }
+    empty_input["request_digest"] = hash_value([
+        "determa-maintenance-migration-request-digest-1",
+        "1",
+        "maintenance-root",
+        empty_input["operation_id"],
+        empty_input["source_aggregate_state_digest"],
+        source_bundle.fingerprint,
+        [],
+        True,
+    ])
+    empty_input.update({
+        "expected_revision": maintenance_created["revision"],
+        "expected_checkpoint_digest": maintenance_created[
+            "execution_checkpoint_digest"
+        ],
+    })
+    empty_checkpoint_result = mutate(maintenance_created)
+    empty_checkpoint_result["next_operation_receipt_sequence"] = "2"
+    empty_checkpoint_result["operation_receipts"].append({
+        "operation_kind": "maintenance_migration",
+        "receipt_sequence": "1",
+        "operation_id": empty_input["operation_id"],
+        "request_digest": empty_input["request_digest"],
+        "committed_revision": empty_checkpoint_result["revision"],
+        "source_aggregate_state_digest": empty_input[
+            "source_aggregate_state_digest"
+        ],
+        "resulting_aggregate_state_digest": empty_migration.aggregate_envelope[
+            "aggregate_state_digest"
+        ],
+        "migration_sequences": [],
+        "result_code": "migration_no_operation",
+    })
+    empty_checkpoint_result = seal(empty_checkpoint_result)
+
+    route = [
+        descriptor["migration_descriptor_digest"],
+        second_descriptor["migration_descriptor_digest"],
+    ]
+    multi_migration = migrate_aggregate(
+        rfc8785.dumps(created["aggregate_state"]),
+        second_target_bundle.fingerprint,
+        route,
+        resolver,
+        maintenance_mode=True,
+    )
+    if not multi_migration.succeeded or multi_migration.aggregate_envelope is None:
+        raise RuntimeError("multi-hop maintenance migration failed")
+    multi_input = {
+        "operation": "maintenance_migration",
+        "operation_id": "maintenance-multi-hop",
+        "source_aggregate_state_digest": created["aggregate_state"][
+            "aggregate_state_digest"
+        ],
+        "target_bundle_file": "migration-target-second.yaml",
+        "target_bundle_source_digest": hash_bytes(
+            (case / "migration-target-second.yaml").read_bytes()
+        ),
+        "migration_descriptor_files": [
+            "migration-descriptor.json",
+            "migration-descriptor-second.json",
+        ],
+        "target_validated_bundle_fingerprint": second_target_bundle.fingerprint,
+        "migration_descriptor_digest_route": route,
+        "maintenance_mode": True,
+    }
+    multi_input["request_digest"] = hash_value([
+        "determa-maintenance-migration-request-digest-1",
+        "1",
+        "maintenance-root",
+        multi_input["operation_id"],
+        multi_input["source_aggregate_state_digest"],
+        second_target_bundle.fingerprint,
+        route,
+        True,
+    ])
+    multi_input.update({
+        "expected_revision": maintenance_created["revision"],
+        "expected_checkpoint_digest": maintenance_created[
+            "execution_checkpoint_digest"
+        ],
+    })
+    multi_checkpoint = mutate(maintenance_created)
+    multi_checkpoint["next_operation_receipt_sequence"] = "2"
+    multi_checkpoint["operation_receipts"].append({
+        "operation_kind": "maintenance_migration",
+        "receipt_sequence": "1",
+        "operation_id": multi_input["operation_id"],
+        "request_digest": multi_input["request_digest"],
+        "committed_revision": multi_checkpoint["revision"],
+        "source_aggregate_state_digest": multi_input[
+            "source_aggregate_state_digest"
+        ],
+        "resulting_aggregate_state_digest": multi_migration.aggregate_envelope[
+            "aggregate_state_digest"
+        ],
+        "migration_sequences": [
+            item["migration_sequence"] for item in multi_migration.audit_records
+        ],
+        "result_code": "migration_applied",
+    })
+    multi_checkpoint["root_record"]["aggregate_state"] = copy.deepcopy(
+        multi_migration.aggregate_envelope
+    )
+    multi_checkpoint["migration_audit_records"] = [
+        copy.deepcopy(item) for item in multi_migration.audit_records
+    ]
+    multi_checkpoint = seal(multi_checkpoint)
+
+    stale_maintenance = copy.deepcopy(empty_input)
+    stale_maintenance["operation_id"] = "maintenance-stale-writer"
+    stale_maintenance["request_digest"] = hash_value([
+        "determa-maintenance-migration-request-digest-1",
+        "1",
+        "maintenance-root",
+        stale_maintenance["operation_id"],
+        stale_maintenance["source_aggregate_state_digest"],
+        stale_maintenance["target_validated_bundle_fingerprint"],
+        [],
+        True,
+    ])
 
     dependency = copy.deepcopy(delivery["faulted"])
     bounded = mutate(dependency)
@@ -1864,6 +2112,9 @@ def generate_retention(delivery: dict[str, Any]) -> None:
             "create_maintenance": create_args,
             "maintenance": maintenance_input,
             "maintenance_conflict": maintenance_conflict,
+            "maintenance_empty": empty_input,
+            "maintenance_multi_hop": multi_input,
+            "maintenance_stale_writer": stale_maintenance,
             "prune_through_1": operation_input(
                 dependency,
                 "update_replay_retention",
@@ -1912,6 +2163,22 @@ def generate_retention(delivery: dict[str, Any]) -> None:
             "audit_records": list(migration.audit_records),
             "failure": None,
         },
+        "maintenance_empty": {
+            "prior_aggregate_state_digest": created["aggregate_state"][
+                "aggregate_state_digest"
+            ],
+            "aggregate_state": empty_migration.aggregate_envelope,
+            "audit_records": list(empty_migration.audit_records),
+            "failure": None,
+        },
+        "maintenance_multi_hop": {
+            "prior_aggregate_state_digest": created["aggregate_state"][
+                "aggregate_state_digest"
+            ],
+            "aggregate_state": multi_migration.aggregate_envelope,
+            "audit_records": list(multi_migration.audit_records),
+            "failure": None,
+        },
         "create_terminal": completed_result,
     }
     write_json(case / "migration-descriptor.json", descriptor)
@@ -1919,8 +2186,11 @@ def generate_retention(delivery: dict[str, Any]) -> None:
         case / "migration-descriptor-conflict.json",
         conflict_descriptor,
     )
+    write_json(case / "migration-descriptor-second.json", second_descriptor)
     write_json(case / "maintenance-created-checkpoint.json", maintenance_created)
     write_json(case / "maintenance-checkpoint.json", maintenance)
+    write_json(case / "maintenance-empty-checkpoint.json", empty_checkpoint_result)
+    write_json(case / "maintenance-multi-hop-checkpoint.json", multi_checkpoint)
     write_json(case / "dependency-checkpoint.json", dependency)
     write_json(case / "bounded-checkpoint.json", bounded)
     write_json(
@@ -1939,6 +2209,8 @@ def generate_retention(delivery: dict[str, Any]) -> None:
             {
                 "create_maintenance": ("create", "create_maintenance"),
                 "maintenance_migration": ("migrate", "maintenance"),
+                "maintenance_empty": ("migrate", "maintenance_empty"),
+                "maintenance_multi_hop": ("migrate", "maintenance_multi_hop"),
                 "create_terminal": ("create", "create_terminal"),
             },
         ),
@@ -1959,6 +2231,58 @@ def generate_retention(delivery: dict[str, Any]) -> None:
     digest_mismatch = copy.deepcopy(maintenance_created)
     digest_mismatch["execution_checkpoint_digest"] = "sha256:" + ("0" * 64)
     write_json(case / "digest-mismatch-checkpoint.json", digest_mismatch)
+
+    malformed_maintenance = copy.deepcopy(maintenance)
+    del malformed_maintenance["operation_receipts"][1]["result_code"]
+    seal(malformed_maintenance)
+    write_json(
+        case / "invalid-maintenance-receipt-schema-checkpoint.json",
+        malformed_maintenance,
+    )
+    wrong_maintenance_digest = copy.deepcopy(maintenance)
+    wrong_maintenance_digest["operation_receipts"][1]["request_digest"] = (
+        "sha256:" + ("0" * 64)
+    )
+    seal(wrong_maintenance_digest)
+    write_json(
+        case / "invalid-maintenance-receipt-digest-checkpoint.json",
+        wrong_maintenance_digest,
+    )
+    wrong_maintenance_sequences = copy.deepcopy(multi_checkpoint)
+    wrong_maintenance_sequences["operation_receipts"][1][
+        "migration_sequences"
+    ] = ["2", "1"]
+    seal(wrong_maintenance_sequences)
+    write_json(
+        case / "invalid-maintenance-receipt-sequences-checkpoint.json",
+        wrong_maintenance_sequences,
+    )
+    wrong_audit_order = copy.deepcopy(multi_checkpoint)
+    wrong_audit_order["migration_audit_records"].reverse()
+    seal(wrong_audit_order)
+    write_json(
+        case / "invalid-maintenance-audit-order-checkpoint.json",
+        wrong_audit_order,
+    )
+    wrong_maintenance_revision = copy.deepcopy(maintenance)
+    wrong_maintenance_revision["operation_receipts"][1][
+        "committed_revision"
+    ] = "99"
+    seal(wrong_maintenance_revision)
+    write_json(
+        case / "invalid-maintenance-receipt-revision-checkpoint.json",
+        wrong_maintenance_revision,
+    )
+    wrong_maintenance_allocation = copy.deepcopy(maintenance)
+    wrong_maintenance_allocation["operation_receipts"][1][
+        "receipt_sequence"
+    ] = "2"
+    wrong_maintenance_allocation["next_operation_receipt_sequence"] = "3"
+    seal(wrong_maintenance_allocation)
+    write_json(
+        case / "invalid-maintenance-receipt-allocation-checkpoint.json",
+        wrong_maintenance_allocation,
+    )
 
     unrelated_tombstone = copy.deepcopy(tombstone)
     unrelated_tombstone["root_record"]["final_aggregate_state_digest"] = (

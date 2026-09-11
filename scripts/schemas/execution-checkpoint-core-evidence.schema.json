@@ -27,7 +27,7 @@
       "additionalProperties": false,
       "properties": {
         "spec_commit": {
-          "const": "7782671b56165a59caa61a65c29fefc63105ebf8"
+          "const": "e22f9db295d632f3f46a9d1260c63b5af92efa7e"
         },
         "python_core_commit": {
           "const": "7b17d788b48049648e7e463aa3d35ba13dc1aa6e"
@@ -265,7 +265,6 @@
         },
         "audit_records": {
           "type": "array",
-          "minItems": 1,
           "items": {
             "$ref": "https://determa.dev/state/schema/execution-checkpoint.schema.json#/$defs/migrationAuditRecord"
           }

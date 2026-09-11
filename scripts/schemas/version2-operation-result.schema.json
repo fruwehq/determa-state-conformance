@@ -10,6 +10,7 @@
     { "$ref": "#/$defs/tombstoneReplay" },
     { "$ref": "#/$defs/legacyTerminalReplay" },
     { "$ref": "#/$defs/batchAdmission" },
+    { "$ref": "#/$defs/maintenanceMigration" },
     { "$ref": "#/$defs/migration" },
     { "$ref": "#/$defs/downgrade" }
   ],
@@ -153,6 +154,17 @@
           "items": { "$ref": "#/$defs/batchMember" }
         },
         "checkpoint": { "$ref": "https://determa.dev/state/schema/execution-checkpoint-v2.schema.json" }
+      }
+    },
+    "maintenanceMigration": {
+      "type": "object",
+      "required": ["result", "receipt"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "committed" },
+        "receipt": {
+          "$ref": "https://determa.dev/state/schema/execution-checkpoint-v2.schema.json#/$defs/maintenanceMigrationReceipt"
+        }
       }
     },
     "migrationDisposition": {

@@ -426,6 +426,166 @@ def seal_checkpoint(value: dict[str, Any]) -> dict[str, Any]:
     return value
 
 
+def maintenance_request_digest(
+    root_instance_id: str,
+    operation_id: str,
+    source_aggregate_state_digest: str,
+    target_validated_bundle_fingerprint: str,
+    migration_descriptor_digest_route: list[str],
+    maintenance_mode: bool,
+) -> str:
+    return digest(
+        [
+            "determa-maintenance-migration-request-digest-1",
+            "1",
+            root_instance_id,
+            operation_id,
+            source_aggregate_state_digest,
+            target_validated_bundle_fingerprint,
+            migration_descriptor_digest_route,
+            maintenance_mode,
+        ]
+    )
+
+
+def native_v2_checkpoint(
+    bundle_path: Path,
+    request: dict[str, Any],
+) -> dict[str, Any]:
+    aggregate = create_v2_root(bundle_path, request)
+    creation_request_digest = digest(
+        [
+            "determa-creation-request-digest-1",
+            "1",
+            aggregate["validated_bundle_fingerprint"],
+            aggregate["namespace"],
+            aggregate["root_machine_id"],
+            aggregate["root_machine_version"],
+            aggregate["root_instance_id"],
+            aggregate["creation_id"],
+            typed_value(request["bindings"]),
+        ]
+    )
+    root = root_runtime(aggregate)
+    return seal_checkpoint(
+        {
+            "execution_checkpoint_format": "determa.execution_checkpoint",
+            "execution_checkpoint_schema_version": 2,
+            "root_instance_id": aggregate["root_instance_id"],
+            "revision": "0",
+            "root_record": {"status": "retained", "aggregate_state": aggregate},
+            "operation_receipts": [
+                {
+                    "operation_kind": "creation",
+                    "receipt_sequence": "0",
+                    "creation_id": aggregate["creation_id"],
+                    "request_digest": creation_request_digest,
+                    "committed_revision": "0",
+                    "resulting_aggregate_state_digest": aggregate[
+                        "aggregate_state_digest"
+                    ],
+                    "status": root["status"],
+                    "fault": root["fault"],
+                    "emission_references": [],
+                }
+            ],
+            "next_operation_receipt_sequence": "1",
+            "replay_retention": {
+                "mode": "permanent",
+                "permanent_replay_eligible": True,
+                "pruned_through_receipt_sequence": None,
+                "policy_identifier": None,
+            },
+            "event_identity_tombstones": [],
+            "pending_outbox_intents": [],
+            "next_outbox_terminal_sequence": "0",
+            "terminal_outbox_records": [],
+            "outbox_effect_tombstones": [],
+            "migration_audit_records": [],
+        }
+    )
+
+
+def migrate_compatible_aggregate(
+    source: dict[str, Any], descriptor: dict[str, Any]
+) -> dict[str, Any]:
+    result = copy.deepcopy(source)
+    target_fingerprint = descriptor["base_descriptor"][
+        "target_validated_bundle_fingerprint"
+    ]
+    result["validated_bundle_fingerprint"] = target_fingerprint
+    result["migration_sequence"] = str(int(result["migration_sequence"]) + 1)
+    for runtime in result["runtimes"]:
+        runtime["current_definition"][
+            "validated_bundle_fingerprint"
+        ] = target_fingerprint
+    return seal_aggregate(result)
+
+
+def v2_migration_audit_record(
+    source: dict[str, Any],
+    target: dict[str, Any],
+    descriptor: dict[str, Any],
+) -> dict[str, Any]:
+    return {
+        "migration_audit_record_schema_version": 1,
+        "root_instance_id": source["root_instance_id"],
+        "root_runtime_id": source["root_runtime_id"],
+        "migration_sequence": target["migration_sequence"],
+        "source_validated_bundle_fingerprint": source[
+            "validated_bundle_fingerprint"
+        ],
+        "target_validated_bundle_fingerprint": target[
+            "validated_bundle_fingerprint"
+        ],
+        "migration_descriptor_digest": descriptor[
+            "migration_descriptor_digest"
+        ],
+        "source_aggregate_state_digest": source["aggregate_state_digest"],
+        "target_aggregate_state_digest": target["aggregate_state_digest"],
+        "result_code": "migration_applied",
+    }
+
+
+def commit_v2_maintenance_migration(
+    checkpoint: dict[str, Any],
+    operation: dict[str, Any],
+    resulting_aggregate: dict[str, Any],
+    audit_records: list[dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    result = copy.deepcopy(checkpoint)
+    result["revision"] = str(int(result["revision"]) + 1)
+    receipt_sequence = result["next_operation_receipt_sequence"]
+    result["next_operation_receipt_sequence"] = str(
+        int(receipt_sequence) + 1
+    )
+    receipt = {
+        "operation_kind": "maintenance_migration",
+        "receipt_sequence": receipt_sequence,
+        "operation_id": operation["operation_id"],
+        "request_digest": operation["request_digest"],
+        "committed_revision": result["revision"],
+        "source_aggregate_state_digest": checkpoint["root_record"][
+            "aggregate_state"
+        ]["aggregate_state_digest"],
+        "resulting_aggregate_state_digest": resulting_aggregate[
+            "aggregate_state_digest"
+        ],
+        "migration_sequences": [
+            item["migration_sequence"] for item in audit_records
+        ],
+        "result_code": (
+            "migration_applied" if audit_records else "migration_no_operation"
+        ),
+    }
+    result["root_record"]["aggregate_state"] = copy.deepcopy(
+        resulting_aggregate
+    )
+    result["migration_audit_records"].extend(copy.deepcopy(audit_records))
+    result["operation_receipts"].append(receipt)
+    return seal_checkpoint(result), receipt
+
+
 def seal_checkpoint_v1(value: dict[str, Any]) -> dict[str, Any]:
     value = copy.deepcopy(value)
     value.pop("execution_checkpoint_digest", None)
@@ -3186,6 +3346,176 @@ def produce_checkpoint() -> dict[str, bytes]:
     }
     operational_base = seal_checkpoint(operational_base)
 
+    persistence_generated = produce_persistence()
+    maintenance_source_bytes = (PERSISTENCE / "machine.yaml").read_bytes()
+    maintenance_target_one_document = json.loads(
+        persistence_generated["target-compatible.yaml"]
+    )
+    maintenance_target_two_document = json.loads(
+        persistence_generated["target-compatible-second.yaml"]
+    )
+    maintenance_descriptor_one = json.loads(
+        persistence_generated["descriptor-compatible-v2.json"]
+    )
+    maintenance_descriptor_two = json.loads(
+        persistence_generated["descriptor-compatible-second-v2.json"]
+    )
+    maintenance_creation = {
+        "machine_id": "transaction_server",
+        "machine_version": "1",
+        "root_instance_id": "maintenance-v2-root",
+        "creation_id": "maintenance-v2-create",
+        "bindings": {"input": {}, "external": {}},
+    }
+    maintenance_base = native_v2_checkpoint(
+        PERSISTENCE / "machine.yaml", maintenance_creation
+    )
+    maintenance_source_binding = {
+        "bundle_file": "maintenance-source.yaml",
+        "bundle_source_digest": bytes_digest(maintenance_source_bytes),
+        "validated_bundle_fingerprint": bundle_fingerprint(
+            PERSISTENCE / "machine.yaml"
+        ),
+    }
+    maintenance_target_one_binding = generated_bundle_binding(
+        "maintenance-target-one.yaml", maintenance_target_one_document
+    )
+    maintenance_target_two_binding = generated_bundle_binding(
+        "maintenance-target-two.yaml", maintenance_target_two_document
+    )
+
+    def maintenance_operation(
+        checkpoint: dict[str, Any],
+        operation_id: str,
+        target_binding: dict[str, str],
+        descriptor_files: list[str],
+        descriptor_route: list[str],
+    ) -> dict[str, Any]:
+        source_aggregate = checkpoint["root_record"]["aggregate_state"]
+        operation = {
+            "operation": "checkpoint_migrate_v2",
+            "source_bundle": maintenance_source_binding,
+            "target_bundle": target_binding,
+            "migration_descriptor_files": descriptor_files,
+            "migration_descriptor_digest_route": descriptor_route,
+            "maintenance_mode": True,
+            "operation_id": operation_id,
+            "expected_revision": checkpoint["revision"],
+            "expected_checkpoint_digest": checkpoint[
+                "execution_checkpoint_digest"
+            ],
+        }
+        operation["request_digest"] = maintenance_request_digest(
+            checkpoint["root_instance_id"],
+            operation_id,
+            source_aggregate["aggregate_state_digest"],
+            target_binding["validated_bundle_fingerprint"],
+            descriptor_route,
+            True,
+        )
+        return operation
+
+    maintenance_empty_operation = maintenance_operation(
+        maintenance_base,
+        "maintenance-v2-empty",
+        maintenance_source_binding,
+        [],
+        [],
+    )
+    maintenance_empty_checkpoint, maintenance_empty_receipt = (
+        commit_v2_maintenance_migration(
+            maintenance_base,
+            maintenance_empty_operation,
+            maintenance_base["root_record"]["aggregate_state"],
+            [],
+        )
+    )
+    maintenance_one_aggregate = migrate_compatible_aggregate(
+        maintenance_base["root_record"]["aggregate_state"],
+        maintenance_descriptor_one,
+    )
+    maintenance_one_audit = v2_migration_audit_record(
+        maintenance_base["root_record"]["aggregate_state"],
+        maintenance_one_aggregate,
+        maintenance_descriptor_one,
+    )
+    maintenance_one_operation = maintenance_operation(
+        maintenance_base,
+        "maintenance-v2-one-hop",
+        maintenance_target_one_binding,
+        ["maintenance-descriptor-one.json"],
+        [maintenance_descriptor_one["migration_descriptor_digest"]],
+    )
+    maintenance_one_checkpoint, maintenance_one_receipt = (
+        commit_v2_maintenance_migration(
+            maintenance_base,
+            maintenance_one_operation,
+            maintenance_one_aggregate,
+            [maintenance_one_audit],
+        )
+    )
+    maintenance_two_aggregate = migrate_compatible_aggregate(
+        maintenance_one_aggregate, maintenance_descriptor_two
+    )
+    maintenance_two_audits = [
+        maintenance_one_audit,
+        v2_migration_audit_record(
+            maintenance_one_aggregate,
+            maintenance_two_aggregate,
+            maintenance_descriptor_two,
+        ),
+    ]
+    maintenance_two_operation = maintenance_operation(
+        maintenance_base,
+        "maintenance-v2-two-hop",
+        maintenance_target_two_binding,
+        [
+            "maintenance-descriptor-one.json",
+            "maintenance-descriptor-two.json",
+        ],
+        [
+            maintenance_descriptor_one["migration_descriptor_digest"],
+            maintenance_descriptor_two["migration_descriptor_digest"],
+        ],
+    )
+    maintenance_two_checkpoint, maintenance_two_receipt = (
+        commit_v2_maintenance_migration(
+            maintenance_base,
+            maintenance_two_operation,
+            maintenance_two_aggregate,
+            maintenance_two_audits,
+        )
+    )
+    maintenance_sequential_operation = maintenance_operation(
+        maintenance_empty_checkpoint,
+        "maintenance-v2-after-empty",
+        maintenance_target_one_binding,
+        ["maintenance-descriptor-one.json"],
+        [maintenance_descriptor_one["migration_descriptor_digest"]],
+    )
+    maintenance_sequential_checkpoint, maintenance_sequential_receipt = (
+        commit_v2_maintenance_migration(
+            maintenance_empty_checkpoint,
+            maintenance_sequential_operation,
+            maintenance_one_aggregate,
+            [maintenance_one_audit],
+        )
+    )
+    maintenance_conflict_operation = maintenance_operation(
+        maintenance_base,
+        maintenance_empty_operation["operation_id"],
+        maintenance_target_one_binding,
+        ["maintenance-descriptor-one.json"],
+        [maintenance_descriptor_one["migration_descriptor_digest"]],
+    )
+    maintenance_stale_operation = maintenance_operation(
+        maintenance_base,
+        "maintenance-v2-stale-writer",
+        maintenance_target_one_binding,
+        ["maintenance-descriptor-one.json"],
+        [maintenance_descriptor_one["migration_descriptor_digest"]],
+    )
+
     spawned_checkpoint_v1 = load(
         CHECKPOINT.parent
         / "checkpoint-05-spawned-host-trace"
@@ -3574,6 +3904,14 @@ def produce_checkpoint() -> dict[str, bytes]:
         "pruned_through_receipt_sequence"
     ] = "1"
     invalid_pruning_claim = seal_checkpoint(invalid_pruning_claim)
+
+    invalid_bounded_receipt_cutoff = copy.deepcopy(compact)
+    invalid_bounded_receipt_cutoff["replay_retention"][
+        "pruned_through_receipt_sequence"
+    ] = invalid_bounded_receipt_cutoff["next_operation_receipt_sequence"]
+    invalid_bounded_receipt_cutoff = seal_checkpoint(
+        invalid_bounded_receipt_cutoff
+    )
 
     invalid_creation_identity = copy.deepcopy(tombstoned)
     invalid_creation_identity["root_record"]["creation_id"] = (
@@ -4192,7 +4530,120 @@ def produce_checkpoint() -> dict[str, bytes]:
             {"operation": "checkpoint_tombstone_v2"}, terminal
         ),
     }
+    operations.update(
+        {
+            "maintenance_empty": maintenance_empty_operation,
+            "maintenance_empty_replay": copy.deepcopy(
+                maintenance_empty_operation
+            ),
+            "maintenance_one_hop": maintenance_one_operation,
+            "maintenance_two_hop": maintenance_two_operation,
+            "maintenance_after_empty": maintenance_sequential_operation,
+            "maintenance_conflict": maintenance_conflict_operation,
+            "maintenance_stale_writer": maintenance_stale_operation,
+        }
+    )
+
+    invalid_maintenance_schema = copy.deepcopy(maintenance_one_checkpoint)
+    del invalid_maintenance_schema["operation_receipts"][-1]["result_code"]
+    invalid_maintenance_schema = seal_checkpoint(invalid_maintenance_schema)
+    invalid_maintenance_digest = copy.deepcopy(maintenance_one_checkpoint)
+    invalid_maintenance_digest["operation_receipts"][-1]["request_digest"] = (
+        "sha256:" + ("0" * 64)
+    )
+    invalid_maintenance_digest = seal_checkpoint(invalid_maintenance_digest)
+    invalid_historical_noop_digest = copy.deepcopy(
+        maintenance_sequential_checkpoint
+    )
+    invalid_historical_noop_digest["operation_receipts"][1][
+        "request_digest"
+    ] = "sha256:" + ("0" * 64)
+    invalid_historical_noop_digest = seal_checkpoint(
+        invalid_historical_noop_digest
+    )
+    invalid_maintenance_audit_order = copy.deepcopy(maintenance_two_checkpoint)
+    invalid_maintenance_audit_order["migration_audit_records"].reverse()
+    invalid_maintenance_audit_order = seal_checkpoint(
+        invalid_maintenance_audit_order
+    )
+    invalid_maintenance_next_receipt_gap = copy.deepcopy(
+        maintenance_empty_checkpoint
+    )
+    invalid_maintenance_next_receipt_gap[
+        "next_operation_receipt_sequence"
+    ] = "3"
+    invalid_maintenance_next_receipt_gap = seal_checkpoint(
+        invalid_maintenance_next_receipt_gap
+    )
+    invalid_maintenance_shifted_receipt_gap = copy.deepcopy(
+        maintenance_empty_checkpoint
+    )
+    invalid_maintenance_shifted_receipt_gap["operation_receipts"][1][
+        "receipt_sequence"
+    ] = "2"
+    invalid_maintenance_shifted_receipt_gap[
+        "next_operation_receipt_sequence"
+    ] = "3"
+    invalid_maintenance_shifted_receipt_gap = seal_checkpoint(
+        invalid_maintenance_shifted_receipt_gap
+    )
     return {
+        "maintenance-source.yaml": maintenance_source_bytes,
+        "maintenance-target-one.yaml": canonical(
+            maintenance_target_one_document
+        ),
+        "maintenance-target-two.yaml": canonical(
+            maintenance_target_two_document
+        ),
+        "maintenance-descriptor-one.json": canonical(
+            maintenance_descriptor_one
+        ),
+        "maintenance-descriptor-two.json": canonical(
+            maintenance_descriptor_two
+        ),
+        "maintenance-base-checkpoint-v2.json": canonical(maintenance_base),
+        "maintenance-empty-checkpoint-v2.json": canonical(
+            maintenance_empty_checkpoint
+        ),
+        "maintenance-one-hop-checkpoint-v2.json": canonical(
+            maintenance_one_checkpoint
+        ),
+        "maintenance-two-hop-checkpoint-v2.json": canonical(
+            maintenance_two_checkpoint
+        ),
+        "maintenance-sequential-checkpoint-v2.json": canonical(
+            maintenance_sequential_checkpoint
+        ),
+        "maintenance-empty-result.json": canonical(
+            {"result": "committed", "receipt": maintenance_empty_receipt}
+        ),
+        "maintenance-one-hop-result.json": canonical(
+            {"result": "committed", "receipt": maintenance_one_receipt}
+        ),
+        "maintenance-two-hop-result.json": canonical(
+            {"result": "committed", "receipt": maintenance_two_receipt}
+        ),
+        "maintenance-sequential-result.json": canonical(
+            {"result": "committed", "receipt": maintenance_sequential_receipt}
+        ),
+        "invalid-maintenance-schema-checkpoint-v2.json": canonical(
+            invalid_maintenance_schema
+        ),
+        "invalid-maintenance-digest-checkpoint-v2.json": canonical(
+            invalid_maintenance_digest
+        ),
+        "invalid-maintenance-historical-digest-checkpoint-v2.json": canonical(
+            invalid_historical_noop_digest
+        ),
+        "invalid-maintenance-audit-order-checkpoint-v2.json": canonical(
+            invalid_maintenance_audit_order
+        ),
+        "invalid-maintenance-next-receipt-gap-checkpoint-v2.json": canonical(
+            invalid_maintenance_next_receipt_gap
+        ),
+        "invalid-maintenance-shifted-receipt-gap-checkpoint-v2.json": canonical(
+            invalid_maintenance_shifted_receipt_gap
+        ),
         "base-checkpoint-v1.json": canonical(v1),
         "multi-pending-checkpoint-v1.json": canonical(multi_pending_v1),
         "multi-pending-upgraded-checkpoint-v2.json": canonical(
@@ -4282,6 +4733,9 @@ def produce_checkpoint() -> dict[str, bytes]:
         ),
         "invalid-pruning-claim-checkpoint-v2.json": canonical(
             invalid_pruning_claim
+        ),
+        "invalid-bounded-receipt-cutoff-checkpoint-v2.json": canonical(
+            invalid_bounded_receipt_cutoff
         ),
         "invalid-creation-identity-checkpoint-v2.json": canonical(
             invalid_creation_identity

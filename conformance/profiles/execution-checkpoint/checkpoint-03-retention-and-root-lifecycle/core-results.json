@@ -2,7 +2,7 @@
   "execution_checkpoint_core_evidence_format": "determa.execution_checkpoint_profile.core_evidence",
   "execution_checkpoint_core_evidence_schema_version": 1,
   "provenance": {
-    "spec_commit": "7782671b56165a59caa61a65c29fefc63105ebf8",
+    "spec_commit": "e22f9db295d632f3f46a9d1260c63b5af92efa7e",
     "python_core_commit": "7b17d788b48049648e7e463aa3d35ba13dc1aa6e",
     "python_core_version": "0.1.0",
     "rust_cross_check_commit": "d17480c8b281dcd17953f59afcf6b5d23ff44efd"
@@ -263,6 +263,271 @@
       "operation_input_file": "inputs.json",
       "operation_input_pointer": "/requests/maintenance",
       "operation_input_digest": "sha256:b62de7208b36ea3cfb893ca6eebc5312bfebb5f8168b135d95c50c1aa061f546"
+    },
+    "maintenance_empty": {
+      "prior_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+      "aggregate_state": {
+        "aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "creation_id": "maintenance-create",
+        "machine_format": 1,
+        "migration_sequence": "0",
+        "namespace": "conformance.execution_checkpoint_migration",
+        "next_logical_step_sequence": "1",
+        "next_output_sequence": "0",
+        "root_instance_id": "maintenance-root",
+        "root_machine_id": "workflow",
+        "root_machine_version": "1",
+        "root_runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed",
+        "runtimes": [
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/old_state"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/old_state"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "workflow",
+                "machine_version": "1",
+                "namespace": "conformance.execution_checkpoint_migration",
+                "root_definition_pointer": "/machines/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9"
+            },
+            "fault": null,
+            "history": [
+              {
+                "history_declaration_pointer": "/machines/0/root/history",
+                "recorded_state_definition_pointers": null
+              }
+            ],
+            "identity_origin": {
+              "definition": {
+                "machine": {
+                  "machine_id": "workflow",
+                  "machine_version": "1",
+                  "namespace": "conformance.execution_checkpoint_migration",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9"
+              },
+              "kind": "root",
+              "root_instance_id": "maintenance-root"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/old_state",
+                "next_sequence": "1"
+              }
+            ],
+            "relation": {
+              "kind": "root"
+            },
+            "runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed",
+            "status": "running",
+            "target_identity": {
+              "root": {
+                "root_instance_id": "maintenance-root",
+                "root_runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "7"
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/old_state/variables/shadow"
+              },
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "2"
+                ],
+                "variable_declaration_pointer": "/machines/0/root/variables/old_count"
+              },
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "string",
+                  "obsolete"
+                ],
+                "variable_declaration_pointer": "/machines/0/root/variables/remove_me"
+              }
+            ]
+          }
+        ],
+        "validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9"
+      },
+      "audit_records": [],
+      "failure": null,
+      "core_operation": "migrate",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/maintenance_empty",
+      "operation_input_digest": "sha256:589f4e664bdf663999de6db91999d47dc8e42d739837b4cece79f6b9367db741"
+    },
+    "maintenance_multi_hop": {
+      "prior_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+      "aggregate_state": {
+        "aggregate_state_digest": "sha256:fa70d5bec928366fe3bc32f2d88f3423fe72bcc7294dee0a926f7df06e0378cc",
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "creation_id": "maintenance-create",
+        "machine_format": 1,
+        "migration_sequence": "2",
+        "namespace": "conformance.execution_checkpoint_migration",
+        "next_logical_step_sequence": "1",
+        "next_output_sequence": "0",
+        "root_instance_id": "maintenance-root",
+        "root_machine_id": "workflow",
+        "root_machine_version": "1",
+        "root_runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed",
+        "runtimes": [
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/new_state"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              },
+              {
+                "state_definition_pointer": "/machines/0/root/states/new_state",
+                "activation_sequence": "0"
+              }
+            ],
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:75581a6535ba01f63e9d16098d68b740dc839cae7d401946a9ac9641cc307f57",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_migration",
+                "machine_id": "workflow",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "fault": null,
+            "history": [
+              {
+                "history_declaration_pointer": "/machines/0/root/history",
+                "recorded_state_definition_pointers": null
+              }
+            ],
+            "identity_origin": {
+              "definition": {
+                "machine": {
+                  "machine_id": "workflow",
+                  "machine_version": "1",
+                  "namespace": "conformance.execution_checkpoint_migration",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9"
+              },
+              "kind": "root",
+              "root_instance_id": "maintenance-root"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/new_state",
+                "next_sequence": "1"
+              }
+            ],
+            "relation": {
+              "kind": "root"
+            },
+            "runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed",
+            "status": "running",
+            "target_identity": {
+              "root": {
+                "root_instance_id": "maintenance-root",
+                "root_runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed"
+              }
+            },
+            "variables": [
+              {
+                "variable_declaration_pointer": "/machines/0/root/states/new_state/variables/renamed_shadow",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "8"
+                ]
+              },
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/added",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "boolean",
+                  true
+                ]
+              },
+              {
+                "variable_declaration_pointer": "/machines/0/root/variables/new_count",
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "integer",
+                  "2"
+                ]
+              }
+            ]
+          }
+        ],
+        "validated_bundle_fingerprint": "sha256:75581a6535ba01f63e9d16098d68b740dc839cae7d401946a9ac9641cc307f57"
+      },
+      "audit_records": [
+        {
+          "migration_audit_record_schema_version": 1,
+          "root_instance_id": "maintenance-root",
+          "root_runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed",
+          "migration_sequence": "1",
+          "source_validated_bundle_fingerprint": "sha256:6c82730fa1917d209396a046733789f73a3d33d904f8720bd76a7f0974d53bc9",
+          "target_validated_bundle_fingerprint": "sha256:67e01dc52ceedc38b15cd248001532d0b44ed62b5a8b622aae20b0e533cb0b10",
+          "migration_descriptor_digest": "sha256:b79f764863cb9b02a706d6feb5a2fb8a78907fd85bff31f7810466a9815e62af",
+          "source_aggregate_state_digest": "sha256:4af1c0751f9c63313b504ebf4adfc3b8b7dd552f51d557dd5bd30515f21ad60a",
+          "target_aggregate_state_digest": "sha256:76f3cc4911d437948ee89b6b574144cf8fbe01cef3a10794b3ded6ba876f755b",
+          "result_code": "migration_applied"
+        },
+        {
+          "migration_audit_record_schema_version": 1,
+          "root_instance_id": "maintenance-root",
+          "root_runtime_id": "sha256:fdda68be6a45d34ba60cc5e4c33b57cab7d4ba766250c56bb2d4aa4efa4812ed",
+          "migration_sequence": "2",
+          "source_validated_bundle_fingerprint": "sha256:67e01dc52ceedc38b15cd248001532d0b44ed62b5a8b622aae20b0e533cb0b10",
+          "target_validated_bundle_fingerprint": "sha256:75581a6535ba01f63e9d16098d68b740dc839cae7d401946a9ac9641cc307f57",
+          "migration_descriptor_digest": "sha256:b837c80379f5a9e8f8d434b3861ce71d58b6cf05d8a6a0179594688a4d7d6a9a",
+          "source_aggregate_state_digest": "sha256:76f3cc4911d437948ee89b6b574144cf8fbe01cef3a10794b3ded6ba876f755b",
+          "target_aggregate_state_digest": "sha256:fa70d5bec928366fe3bc32f2d88f3423fe72bcc7294dee0a926f7df06e0378cc",
+          "result_code": "migration_applied"
+        }
+      ],
+      "failure": null,
+      "core_operation": "migrate",
+      "operation_input_file": "inputs.json",
+      "operation_input_pointer": "/requests/maintenance_multi_hop",
+      "operation_input_digest": "sha256:9b5b6aca966ba1e7e32e19ac7fa1572b639e3a00b008a508964ad536f2e20c35"
     },
     "create_terminal": {
       "prior_aggregate_state_digest": null,
