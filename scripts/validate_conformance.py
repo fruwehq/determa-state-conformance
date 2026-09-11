@@ -1507,6 +1507,13 @@ def validate_core_step_v2_semantics(document: dict[str, Any]) -> None:
                 raise ValidationFailure(
                     "core step v2: unresolved internal mailbox emission"
                 )
+            if (
+                "system" in entry["envelope"]["source"]
+                and emission["emission_index"] != "0"
+            ):
+                raise ValidationFailure(
+                    "core step v2: system emission index is not lifecycle-operation-local"
+                )
             continue
         index = canonical_decimal(
             emission["lifecycle_disposition_index"],
@@ -3031,9 +3038,7 @@ def validate_version2_vectors(
                 f"{location}: embedded checkpoint digest mismatch"
             )
         validate_execution_checkpoint_v2_semantics(checkpoint)
-
-
-    operation_signatures: dict[tuple[str, str | None, str], str] = {}
+    operation_signatures: dict[tuple[str, str | None, bytes | str], str] = {}
 
     for index, vector in enumerate(test["version2_vectors"]):
         location = f"{case.name}: version2 vector {index}"
@@ -3106,6 +3111,13 @@ def validate_version2_vectors(
             ) from error
         if not isinstance(selected, dict) or selected.get("operation") != operation:
             raise ValidationFailure(f"{location}: selected request operation mismatch")
+        if (
+            operation == "restore_package_v2"
+            and selected["package_file"] != vector["package_file"]
+        ):
+            raise ValidationFailure(
+                f"{location}: package request does not name the supplied package"
+            )
 
         def resolver_evidence(
             resolver: dict[str, Any],
@@ -3167,8 +3179,15 @@ def validate_version2_vectors(
             require_allowed_operation_failure_code(operation, expectation["code"])
         signature = (
             operation,
-            vector.get("state_before", vector.get("checkpoint_before")),
-            vector["request_pointer"],
+            vector.get(
+                "state_before",
+                vector.get("checkpoint_before", vector.get("package_file")),
+            ),
+            (
+                canonical_json_bytes(selected)
+                if operation == "restore_package_v2"
+                else vector["request_pointer"]
+            ),
         )
         if signature in operation_signatures:
             raise ValidationFailure(
@@ -4082,8 +4101,6 @@ def validate_version2_vectors(
             ):
                 failure_evidence.add("migration_totality_failure")
 
-
-
         result_file = expectation.get("exact_result_file")
         if result_file is not None:
             manifest = manifests.get(result_file)
@@ -4099,6 +4116,8 @@ def validate_version2_vectors(
                     f"{location}: exact result is not canonical RFC 8785 bytes"
                 )
             result_document = analysis.document
+            if manifests[result_file]["kind"] == "core_step_result_v2":
+                validate_core_step_v2_semantics(result_document)
             if operation == "round_trip_aggregate_v2":
                 assert prior_aggregate is not None
                 prior_analysis = artifact(vector["state_before"])
@@ -4137,6 +4156,71 @@ def validate_version2_vectors(
             )
             if manifests[result_file]["kind"] not in expected_kinds:
                 raise ValidationFailure(f"{location}: result artifact kind is not closed for {operation}")
+            if operation == "restore_package_v2":
+                package = artifact(vector["package_file"]).document
+                expected_package_result: dict[str, Any]
+                if selected["intent"] == "restore_aggregate":
+                    expected_package_result = package["aggregate_state"]
+                else:
+                    migrated = copy.deepcopy(package["aggregate_state"])
+                    expected_audits = []
+                    descriptors_by_digest = {
+                        descriptor["migration_descriptor_digest"]: descriptor
+                        for descriptor in package["migration_descriptors"]
+                    }
+                    for descriptor_digest in package["migration_route"]:
+                        descriptor = descriptors_by_digest[descriptor_digest]
+                        if descriptor["mode"] != "compatible":
+                            raise ValidationFailure(
+                                f"{location}: package route projection requires an exact transformed candidate"
+                            )
+                        source = migrated
+                        migrated = copy.deepcopy(source)
+                        target_fingerprint = descriptor[
+                            "target_validated_bundle_fingerprint"
+                        ]
+                        migrated["validated_bundle_fingerprint"] = target_fingerprint
+                        migrated["migration_sequence"] = str(
+                            int(source["migration_sequence"]) + 1
+                        )
+                        for runtime in migrated["runtimes"]:
+                            runtime["current_definition"][
+                                "validated_bundle_fingerprint"
+                            ] = target_fingerprint
+                        migrated.pop("aggregate_state_digest", None)
+                        migrated["aggregate_state_digest"] = hash_value(
+                            ["determa-aggregate-state-digest-2", migrated]
+                        )
+                        expected_audits.append(
+                            {
+                                "migration_audit_record_schema_version": 2,
+                                "root_instance_id": source["root_instance_id"],
+                                "root_runtime_id": source["root_runtime_id"],
+                                "migration_sequence": migrated["migration_sequence"],
+                                "source_validated_bundle_fingerprint": source[
+                                    "validated_bundle_fingerprint"
+                                ],
+                                "target_validated_bundle_fingerprint": target_fingerprint,
+                                "migration_descriptor_digest": descriptor_digest,
+                                "source_aggregate_state_digest": source[
+                                    "aggregate_state_digest"
+                                ],
+                                "target_aggregate_state_digest": migrated[
+                                    "aggregate_state_digest"
+                                ],
+                                "result_code": "migration_applied",
+                            }
+                        )
+                    expected_package_result = {
+                        "result": "success",
+                        "aggregate_state": migrated,
+                        "dispositions": [],
+                        "audit_records": expected_audits,
+                    }
+                if result_document != expected_package_result:
+                    raise ValidationFailure(
+                        f"{location}: package restore result is not request-derived"
+                    )
             if operation == "migrate_then_process_v2":
                 assert prior_aggregate is not None
                 migration_state_name = vector.get("migration_state_after")

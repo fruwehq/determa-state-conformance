@@ -47,6 +47,9 @@ jobs:
       - name: Test durable-host relational validation
         run: python scripts/test_durable_host_validator.py
 
+      - name: Test version-2 substitution-free validation
+        run: python scripts/test_version2_validator.py
+
       - name: Check generated closed-code vectors
         run: python scripts/closed_code_registry.py --check
 
