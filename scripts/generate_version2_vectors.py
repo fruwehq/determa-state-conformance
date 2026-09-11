@@ -856,7 +856,7 @@ def produce_persistence() -> dict[str, bytes]:
     invalid_descriptor = copy.deepcopy(descriptor_v2)
     invalid_descriptor["queued_event_default"] = "drop"
     invalid_package = copy.deepcopy(package_v2)
-    invalid_package["aggregate_state_package_schema_version"] = 1
+    invalid_package["aggregate_state_package_schema_version"] = 3
     invalid_aggregate = copy.deepcopy(aggregate_v2)
     invalid_aggregate["next_queue_sequence"] = -1
 
