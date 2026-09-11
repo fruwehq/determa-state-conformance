@@ -1,0 +1,12 @@
+format: 1
+namespace: conformance.case_04_invalid_duplicate
+events:
+  request: { direction: input }
+machines:
+  - machine_id: invalid
+    root:
+      type: composite
+      deferred_events: [request, request]
+      initial: { transition_to: idle }
+      states:
+        idle: {}

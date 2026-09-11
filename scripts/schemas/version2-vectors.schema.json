@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/version2-vectors.schema.json",
+  "title": "Determa State version-2 conformance vectors",
+  "type": "object",
+  "required": ["title", "artifacts", "version2_vectors"],
+  "additionalProperties": false,
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "static": { "type": "object" },
+    "artifacts": { "type": "object" },
+    "version2_vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/vector" }
+    }
+  },
+  "$defs": {
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "jsonFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.json$" },
+    "yamlFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.yaml$" },
+    "success": {
+      "type": "object",
+      "required": ["result", "exact_result_file"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "success" },
+        "exact_result_file": { "$ref": "#/$defs/jsonFile" }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "required": ["result", "code", "unchanged_file"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "failure" },
+        "code": { "type": "string", "minLength": 1 },
+        "unchanged_file": { "$ref": "#/$defs/jsonFile" },
+        "caller_still_owns_input": { "const": true }
+      }
+    },
+    "vector": {
+      "type": "object",
+      "required": ["name", "covers", "operation", "request_file", "request_pointer", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "covers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/name" }
+        },
+        "operation": {
+          "enum": [
+            "create_v2",
+            "admit_v2",
+            "step_v2",
+            "upgrade_aggregate_v1_to_v2",
+            "downgrade_aggregate_v2_to_v1",
+            "migrate_aggregate_v2",
+            "upgrade_checkpoint_v1_to_v2",
+            "downgrade_checkpoint_v2_to_v1",
+            "checkpoint_admit_v2",
+            "checkpoint_step_v2",
+            "checkpoint_prune_v2",
+            "checkpoint_tombstone_v2",
+            "checkpoint_migrate_v2",
+            "checkpoint_v1_accept"
+          ]
+        },
+        "bundle": { "$ref": "#/$defs/yamlFile" },
+        "state_before": { "$ref": "#/$defs/jsonFile" },
+        "checkpoint_before": {
+          "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
+        },
+        "source_checkpoint_v1": { "$ref": "#/$defs/jsonFile" },
+        "request_file": { "$ref": "#/$defs/jsonFile" },
+        "request_pointer": {
+          "type": "string",
+          "pattern": "^(?:/(?:[^~/]|~[01])*)*$"
+        },
+        "descriptor_file": { "$ref": "#/$defs/jsonFile" },
+        "expect": { "oneOf": [{ "$ref": "#/$defs/success" }, { "$ref": "#/$defs/failure" }] }
+      }
+    }
+  }
+}

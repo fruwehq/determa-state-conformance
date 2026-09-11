@@ -1,0 +1,397 @@
+title: queue-bearing aggregate version 2 mailboxes and one-step execution
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+    - { file: component-machine.yaml, valid: true }
+    - { file: spawn-machine.yaml, valid: true }
+    - { file: zero-capacity-machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: base-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: base-aggregate.canonical.json, kind: aggregate_state_v2, valid: true, canonical_of: base-aggregate.json }
+    - { file: empty-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
+    - { file: deferred-only-aggregate-v2.json, kind: aggregate_state_v2, valid: true }
+    - { file: repeated-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: zero-capacity-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: component-isolation-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: component-isolation-result.json, kind: core_step_result_v2, valid: true }
+    - { file: completed-component-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: completed-component-step-result.json, kind: core_step_result_v2, valid: true }
+    - { file: faulted-component-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: faulted-component-step-result.json, kind: core_step_result_v2, valid: true }
+    - { file: disposed-component-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: disposed-component-step-result.json, kind: core_step_result_v2, valid: true }
+    - { file: spawn-isolation-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: spawn-isolation-result.json, kind: core_step_result_v2, valid: true }
+    - { file: invalid-aggregate-v2.json, kind: aggregate_state_v2, valid: false, error: invalid_aggregate_state }
+    - { file: invalid-canonical-order-aggregate-v2.json, kind: aggregate_state_v2, valid: false, error: invalid_aggregate_state }
+    - { file: handled-recall-result.json, kind: core_step_result_v2, valid: true }
+    - { file: repeated-deferral-result.json, kind: core_step_result_v2, valid: true }
+    - { file: not-runnable-result.json, kind: core_step_result_v2, valid: true }
+    - { file: invalid-target-result.json, kind: core_step_result_v2, valid: true }
+    - { file: completed-root-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: completed-root-step-result.json, kind: core_step_result_v2, valid: true }
+    - { file: overflow-result.json, kind: core_step_result_v2, valid: true }
+    - { file: lifecycle-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: retained-faulted-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: cancellation-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: natural-completion-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: aggregate-completion-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: cleanup-rollback-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: reserved-event-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: reserved-event-handled-result.json, kind: core_step_result_v2, valid: true }
+    - { file: internal-emission-active-result.json, kind: core_step_result_v2, valid: true }
+    - { file: internal-emission-retained-faulted-result.json, kind: core_step_result_v2, valid: true }
+    - { file: internal-emission-cancelled-result.json, kind: core_step_result_v2, valid: true }
+    - { file: internal-emission-runtime-completed-result.json, kind: core_step_result_v2, valid: true }
+    - { file: internal-emission-aggregate-completed-result.json, kind: core_step_result_v2, valid: true }
+    - { file: internal-emission-rollback-result.json, kind: core_step_result_v2, valid: true }
+    - { file: faulted-root-retained-component-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: faulted-root-retained-component-step-result.json, kind: core_step_result_v2, valid: true }
+    - { file: reserved-admission-before.json, kind: aggregate_state_v2, valid: true }
+    - { file: reserved-admitted-aggregate.json, kind: aggregate_state_v2, valid: true }
+    - { file: reserved-admission-result.json, kind: version2_operation_result, valid: true }
+    - { file: reserved-dispatch-result.json, kind: core_step_result_v2, valid: true }
+    - { file: invalid-core-step-result-v2.json, kind: core_step_result_v2, valid: false, error: invalid_core_step_result }
+    - { file: operation-inputs.json, kind: version2_operation_inputs, valid: true }
+    - { file: admission-success.json, kind: version2_operation_result, valid: true }
+    - { file: replay-success.json, kind: version2_operation_result, valid: true }
+    - { file: invalid-version2-operation-result.json, kind: version2_operation_result, valid: false, error: invalid_version2_operation_result }
+version2_vectors:
+  - name: create_empty_queue_bearing_aggregate
+    covers:
+      - aggregate_v2_schema_positive_negative
+      - canonical_v2_bytes_and_digests
+      - capacity_unbounded
+      - root_mailbox_isolation
+      - version2_counter_allocation
+    operation: create_v2
+    bundle: machine.yaml
+    request_file: operation-inputs.json
+    request_pointer: /create
+    expect: { result: success, exact_result_file: empty-aggregate-v2.json }
+  - name: admit_ordered_batch
+    covers:
+      - mailbox_location_totality
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /admit_two
+    expect: { result: success, exact_result_file: admission-success.json }
+  - name: duplicate_batch_is_atomic
+    covers: [batch_duplicate_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /duplicate_batch
+    expect:
+      result: failure
+      code: duplicate_event_id_in_batch
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: digest_mismatch_batch_is_atomic
+    covers: [delivery_digest_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /digest_mismatch_batch
+    expect:
+      result: failure
+      code: delivery_digest_mismatch
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: host_cause_must_equal_event_identity
+    covers: [host_cause_identity_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /host_cause_mismatch
+    expect:
+      result: failure
+      code: invalid_delivery_source
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: undeclared_event_batch_is_atomic
+    covers: [invalid_event_batch_atomic_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /undeclared_event_batch
+    expect:
+      result: failure
+      code: invalid_event
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: wrong_payload_batch_is_atomic
+    covers: [invalid_payload_batch_atomic_rejection]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /wrong_payload_batch
+    expect:
+      result: failure
+      code: invalid_payload
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: pending_identity_replay
+    covers: [equal_pending_replay]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /equal_replay
+    expect: { result: success, exact_result_file: replay-success.json }
+  - name: pending_identity_conflict
+    covers: [conflicting_pending_replay]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /conflicting_replay
+    expect:
+      result: failure
+      code: event_id_conflict
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: pending_changed_payload_uses_canonical_candidate_digest
+    covers: [pending_changed_payload_stale_digest_conflict]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /pending_changed_payload_stale_digest
+    expect:
+      result: failure
+      code: event_id_conflict
+      unchanged_file: base-aggregate.json
+      caller_still_owns_input: true
+  - name: pending_unchanged_envelope_replays_before_supplied_digest_validation
+    covers: [pending_replay_precedes_supplied_digest_validation]
+    operation: admit_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /pending_unchanged_bad_digest
+    expect: { result: success, exact_result_file: replay-success.json }
+  - name: explicit_step_recall
+    covers:
+      - automatic_selective_recall
+      - explicit_target_single_step
+      - fifo_recall_to_ready_tail
+      - fresh_queue_sequence_on_recall
+      - mailbox_envelope_identity_preserved
+    operation: step_v2
+    bundle: machine.yaml
+    state_before: base-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /recall_step
+    expect: { result: success, exact_result_file: handled-recall-result.json }
+  - name: recalled_event_can_defer_again
+    covers: [reclassification_and_repeated_deferral]
+    operation: step_v2
+    bundle: machine.yaml
+    state_before: repeated-before.json
+    request_file: operation-inputs.json
+    request_pointer: /repeated_step
+    expect: { result: success, exact_result_file: repeated-deferral-result.json }
+  - name: empty_ready_mailbox
+    covers: [deferred_only_not_runnable]
+    operation: step_v2
+    bundle: machine.yaml
+    state_before: deferred-only-aggregate-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /deferred_only_step
+    expect: { result: success, exact_result_file: not-runnable-result.json }
+  - name: isolated_component_mailboxes
+    covers:
+      - component_mailbox_isolation
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: component-isolation-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /component_step
+    expect: { result: success, exact_result_file: component-isolation-result.json }
+  - name: isolated_spawned_mailboxes
+    covers: [spawned_mailbox_isolation]
+    operation: step_v2
+    bundle: spawn-machine.yaml
+    state_before: spawn-isolation-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /spawn_step
+    expect: { result: success, exact_result_file: spawn-isolation-result.json }
+  - name: completed_component_step_rejection
+    covers: [completed_component_step_rejection]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: completed-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /completed_component_step
+    expect: { result: success, exact_result_file: completed-component-step-result.json }
+  - name: faulted_component_step_rejection
+    covers: [faulted_component_step_rejection]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: faulted-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /faulted_component_step
+    expect: { result: success, exact_result_file: faulted-component-step-result.json }
+  - name: disposed_component_step_rejection
+    covers: [disposed_component_step_rejection]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: disposed-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /disposed_component_step
+    expect: { result: success, exact_result_file: disposed-component-step-result.json }
+  - name: completed_component_admission_rejection
+    covers: [completed_component_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: completed-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /completed_component_admit
+    expect: { result: failure, code: inactive_component_target, unchanged_file: completed-component-aggregate.json, caller_still_owns_input: true }
+  - name: faulted_component_admission_rejection
+    covers: [faulted_component_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: faulted-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /faulted_component_admit
+    expect: { result: failure, code: inactive_component_target, unchanged_file: faulted-component-aggregate.json, caller_still_owns_input: true }
+  - name: disposed_component_admission_rejection
+    covers: [disposed_component_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: disposed-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /disposed_component_admit
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: disposed-component-aggregate.json, caller_still_owns_input: true }
+  - name: invalid_machine_runtime_rejection
+    covers: [invalid_machine_runtime_target]
+    operation: step_v2
+    bundle: machine.yaml
+    state_before: empty-aggregate-v2.json
+    request_file: operation-inputs.json
+    request_pointer: /invalid_runtime_step
+    expect: { result: success, exact_result_file: invalid-target-result.json }
+  - name: completed_root_step_rejection
+    covers: [completed_root_step_rejection]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: completed-root-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /completed_root_step
+    expect: { result: success, exact_result_file: completed-root-step-result.json }
+  - name: completed_root_admission_rejection
+    covers: [completed_root_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: completed-root-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /completed_root_admit
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: completed-root-aggregate.json, caller_still_owns_input: true }
+  - name: deterministic_deferral_overflow
+    covers:
+      - capacity_zero_and_overflow_fault
+      - fault_frozen_mailbox_retention
+    operation: step_v2
+    bundle: zero-capacity-machine.yaml
+    state_before: zero-capacity-before.json
+    request_file: operation-inputs.json
+    request_pointer: /overflow_step
+    expect: { result: success, exact_result_file: overflow-result.json }
+  - name: internal_emission_to_active_target
+    covers: [core_step_v2_schema_positive_negative, internal_emission_active_target]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: lifecycle-before.json
+    request_file: operation-inputs.json
+    request_pointer: /fanout_step
+    expect: { result: success, exact_result_file: internal-emission-active-result.json }
+  - name: internal_emission_to_retained_faulted_target
+    covers: [internal_emission_retained_faulted_target]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: retained-faulted-before.json
+    request_file: operation-inputs.json
+    request_pointer: /retained_faulted_step
+    expect: { result: success, exact_result_file: internal-emission-retained-faulted-result.json }
+  - name: internal_emission_cancelled_with_target
+    covers: [internal_emission_disposed_target, lifecycle_cancellation_disposal]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: cancellation-before.json
+    request_file: operation-inputs.json
+    request_pointer: /cancellation_step
+    expect: { result: success, exact_result_file: internal-emission-cancelled-result.json }
+  - name: internal_emission_target_naturally_completes
+    covers: [lifecycle_natural_completion_disposal]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: natural-completion-before.json
+    request_file: operation-inputs.json
+    request_pointer: /natural_completion_step
+    expect: { result: success, exact_result_file: internal-emission-runtime-completed-result.json }
+  - name: internal_emission_target_aggregate_completes
+    covers: [lifecycle_aggregate_completion_disposal]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: aggregate-completion-before.json
+    request_file: operation-inputs.json
+    request_pointer: /aggregate_completion_step
+    expect: { result: success, exact_result_file: internal-emission-aggregate-completed-result.json }
+  - name: internal_emission_rolls_back_with_cleanup_fault
+    covers: [cleanup_fault_rollback, internal_emission_rollback]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: cleanup-rollback-before.json
+    request_file: operation-inputs.json
+    request_pointer: /cleanup_rollback_step
+    expect: { result: success, exact_result_file: internal-emission-rollback-result.json }
+  - name: faulted_root_rejects_retained_component_admission
+    covers: [faulted_root_descendant_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: faulted-root-retained-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /faulted_root_descendant_admit
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true }
+  - name: faulted_root_admission_rejection
+    covers: [faulted_root_admission_rejection]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: faulted-root-retained-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /faulted_root_admit
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true }
+  - name: faulted_root_rejects_retained_component_step
+    covers: [faulted_root_descendant_step_rejection]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: faulted-root-retained-component-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /faulted_root_descendant_step
+    expect: { result: success, exact_result_file: faulted-root-retained-component-step-result.json }
+  - name: reserved_component_completion_is_admitted
+    covers: [reserved_internal_event_admission]
+    operation: admit_v2
+    bundle: component-machine.yaml
+    state_before: reserved-admission-before.json
+    request_file: operation-inputs.json
+    request_pointer: /reserved_event_admit
+    expect: { result: success, exact_result_file: reserved-admission-result.json }
+  - name: admitted_reserved_component_completion_is_handled
+    covers: [reserved_events_not_deferrable]
+    operation: step_v2
+    bundle: component-machine.yaml
+    state_before: reserved-admitted-aggregate.json
+    request_file: operation-inputs.json
+    request_pointer: /reserved_admitted_step
+    expect: { result: success, exact_result_file: reserved-dispatch-result.json }

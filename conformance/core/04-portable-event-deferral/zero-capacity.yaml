@@ -1,0 +1,13 @@
+format: 1
+namespace: conformance.case_04_zero_capacity
+events:
+  request: { direction: input }
+machines:
+  - machine_id: valid
+    root:
+      type: composite
+      deferred_event_capacity: 0
+      initial: { transition_to: idle }
+      states:
+        idle:
+          deferred_events: [request]

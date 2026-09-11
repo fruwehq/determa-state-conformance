@@ -1,0 +1,11 @@
+format: 1
+namespace: conformance.case_04_invalid_reserved
+events: {}
+machines:
+  - machine_id: invalid
+    root:
+      type: composite
+      deferred_events: [determa.component_failed]
+      initial: { transition_to: idle }
+      states:
+        idle: {}

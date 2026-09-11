@@ -1,0 +1,83 @@
+title: portable UML event deferral uses deepest-state precedence
+load: { valid: true }
+static:
+  documents:
+    - { file: zero-capacity.yaml, valid: true }
+    - { file: unbounded-capacity.yaml, valid: true }
+    - { file: undeclared-event.yaml, valid: false, error: semantic_validation }
+    - { file: output-event.yaml, valid: false, error: semantic_validation }
+    - { file: reserved-event.yaml, valid: false, error: structural_validation }
+    - { file: duplicate-event.yaml, valid: false, error: structural_validation }
+    - { file: negative-capacity.yaml, valid: false, error: structural_validation }
+    - { file: fractional-capacity.yaml, valid: false, error: structural_validation }
+    - { file: nested-capacity.yaml, valid: false, error: semantic_validation }
+create:
+  expect:
+    status: running
+    config: [idle]
+    variables: { handled_count: 0 }
+steps:
+  - send: { event: enter_busy }
+    expect:
+      status: running
+      disposition: handled
+      config: [busy.deep]
+      variables: { handled_count: 0 }
+  - send: { event: same_state_handle }
+    expect:
+      status: running
+      disposition: handled
+      config: [busy.deep]
+      variables: { handled_count: 1 }
+  - send: { event: same_state_false }
+    expect:
+      status: running
+      disposition: deferred
+      caller_still_owns_input: true
+      state_bytes_unchanged: true
+      config: [busy.deep]
+      variables: { handled_count: 1 }
+      emissions: []
+  - send: { event: child_handle }
+    expect:
+      status: running
+      disposition: handled
+      config: [busy.deep]
+      variables: { handled_count: 3 }
+  - send: { event: child_defer }
+    expect:
+      status: running
+      disposition: deferred
+      caller_still_owns_input: true
+      state_bytes_unchanged: true
+      config: [busy.deep]
+      variables: { handled_count: 3 }
+      emissions: []
+  - send: { event: ancestor_handle }
+    expect:
+      status: running
+      disposition: handled
+      config: [busy.deep]
+      variables: { handled_count: 13 }
+  - send: { event: leave_busy }
+    expect:
+      status: running
+      disposition: handled
+      config: [idle]
+      variables: { handled_count: 13 }
+      emissions: []
+  - send: { event: enter_busy }
+    expect:
+      status: running
+      disposition: handled
+      config: [busy.deep]
+      variables: { handled_count: 13 }
+  - send: { event: guard_fault }
+    expect:
+      status: faulted
+      disposition: faulted
+      config: [busy.deep]
+      variables: { handled_count: 13 }
+      fault:
+        code: guard_fault
+      emissions: []

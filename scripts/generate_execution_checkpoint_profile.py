@@ -148,6 +148,14 @@ def portable_envelope(
     return result
 
 
+def native_target(target: dict[str, Any]) -> dict[str, Any]:
+    result = copy.deepcopy(target)
+    spawned = result.get("spawned_instance")
+    if spawned is not None:
+        spawned["machine_version"] = int(spawned["machine_version"])
+    return result
+
+
 def delivery_request(
     *,
     case: Path,
@@ -971,6 +979,291 @@ def generate_delivery() -> dict[str, Any]:
     }
 
 
+def generate_spawned_checkpoint_trace() -> None:
+    case = PROFILE / "checkpoint-05-spawned-host-trace"
+    bundle_file = "spawn-machine.yaml"
+    bundle = load_bundle((case / bundle_file).read_text(encoding="utf-8"))
+    bindings = {"input": {}, "external": {}}
+    create_request = {
+        "operation": "create",
+        **bundle_binding(case, bundle_file, bundle),
+        "namespace": bundle.namespace,
+        "machine_id": "order",
+        "machine_version": "1",
+        "root_instance_id": "owned-migration-root",
+        "creation_id": "owned-migration-create",
+        "bindings": bindings,
+    }
+    create_request["request_digest"] = creation_digest(
+        bundle,
+        "order",
+        1,
+        "owned-migration-root",
+        "owned-migration-create",
+        bindings,
+    )
+    created_raw = create(
+        bundle,
+        "order",
+        "owned-migration-root",
+        "owned-migration-create",
+        bindings,
+    )
+    created = project_core_result(bundle, created_raw)
+    created_checkpoint = empty_checkpoint(
+        created["aggregate_state"], create_request["request_digest"], created
+    )
+    root_target = next(
+        runtime["target_identity"]
+        for runtime in created["aggregate_state"]["runtimes"]
+        if runtime["relation"]["kind"] == "root"
+    )
+    start_request = with_read(
+        delivery_request(
+            case=case,
+            bundle=bundle,
+            bundle_file=bundle_file,
+            root_instance_id="owned-migration-root",
+            delivery_mode="input",
+            origin={"kind": "host_input"},
+            event="start",
+            event_id="checkpoint-spawn-start",
+            target=root_target,
+            payload={},
+        ),
+        created_checkpoint,
+    )
+    started_raw = dispatch(
+        bundle, created_raw["state"], start_request["dispatch_input"]["delivery"]
+    )
+    started = project_core_result(bundle, started_raw, created_raw["state"])
+    started_checkpoint = commit_delivery(
+        created_checkpoint, start_request, started, foreground=True
+    )
+    child_target = next(
+        runtime["target_identity"]
+        for runtime in started["aggregate_state"]["runtimes"]
+        if runtime["relation"]["kind"] == "owned_spawned_instance"
+    )
+    child_request = with_read(
+        delivery_request(
+            case=case,
+            bundle=bundle,
+            bundle_file=bundle_file,
+            root_instance_id="owned-migration-root",
+            delivery_mode="input",
+            origin={"kind": "host_input"},
+            event="pay",
+            event_id="python-host-spawned-child-pay",
+            target=child_target,
+            payload={"amount": 100},
+        ),
+        started_checkpoint,
+    )
+    child_accepted_checkpoint = accept_delivery(started_checkpoint, child_request)
+    requests = {
+        "create": create_request,
+        "start": start_request,
+        "accept_child": child_request,
+    }
+    write_json(
+        case / "inputs.json",
+        {
+            "execution_checkpoint_inputs_format": (
+                "determa.execution_checkpoint_profile.inputs"
+            ),
+            "execution_checkpoint_inputs_schema_version": 1,
+            "requests": requests,
+        },
+    )
+    write_json(
+        case / "core-results.json",
+        generation_record(
+            {"create": created, "start": started},
+            requests,
+            {"create": ("create", "create"), "start": ("dispatch", "start")},
+        ),
+    )
+    write_json(case / "spawned-created-checkpoint-v1.json", created_checkpoint)
+    write_json(case / "spawned-started-checkpoint-v1.json", started_checkpoint)
+    write_json(case / "spawned-child-checkpoint-v1.json", child_accepted_checkpoint)
+
+
+def generate_terminal_spawned_checkpoint_trace() -> None:
+    case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
+    bundle_file = "machine.yaml"
+    bundle = load_bundle((case / bundle_file).read_text(encoding="utf-8"))
+    bindings = {"input": {}, "external": {}}
+    create_request = {
+        "operation": "create",
+        **bundle_binding(case, bundle_file, bundle),
+        "namespace": bundle.namespace,
+        "machine_id": "order",
+        "machine_version": "1",
+        "root_instance_id": "terminal-spawn-root",
+        "creation_id": "terminal-spawn-create",
+        "bindings": bindings,
+    }
+    create_request["request_digest"] = creation_digest(
+        bundle,
+        "order",
+        1,
+        "terminal-spawn-root",
+        "terminal-spawn-create",
+        bindings,
+    )
+    created_raw = create(
+        bundle,
+        "order",
+        "terminal-spawn-root",
+        "terminal-spawn-create",
+        bindings,
+    )
+    created = project_core_result(bundle, created_raw)
+    created_checkpoint = empty_checkpoint(
+        created["aggregate_state"], create_request["request_digest"], created
+    )
+    root_target = next(
+        runtime["target_identity"]
+        for runtime in created["aggregate_state"]["runtimes"]
+        if runtime["relation"]["kind"] == "root"
+    )
+    start_request = with_read(
+        delivery_request(
+            case=case,
+            bundle=bundle,
+            bundle_file=bundle_file,
+            root_instance_id="terminal-spawn-root",
+            delivery_mode="input",
+            origin={"kind": "host_input"},
+            event="start",
+            event_id="terminal-spawn-start",
+            target=root_target,
+            payload={},
+        ),
+        created_checkpoint,
+    )
+    started_raw = dispatch(
+        bundle, created_raw["state"], start_request["dispatch_input"]["delivery"]
+    )
+    started = project_core_result(bundle, started_raw, created_raw["state"])
+    started_checkpoint = commit_delivery(
+        created_checkpoint, start_request, started, foreground=True
+    )
+    child_target = next(
+        runtime["target_identity"]
+        for runtime in started["aggregate_state"]["runtimes"]
+        if runtime["relation"]["kind"] == "owned_spawned_instance"
+    )
+    child_request = with_read(
+        delivery_request(
+            case=case,
+            bundle=bundle,
+            bundle_file=bundle_file,
+            root_instance_id="terminal-spawn-root",
+            delivery_mode="input",
+            origin={"kind": "host_input"},
+            event="pay",
+            event_id="terminal-spawn-child-pay",
+            target=child_target,
+            payload={"amount": 100},
+        ),
+        started_checkpoint,
+    )
+    child_accepted_checkpoint = accept_delivery(started_checkpoint, child_request)
+    process_child_request = copy.deepcopy(child_request)
+    process_child_request["expected_revision"] = child_accepted_checkpoint["revision"]
+    process_child_request["expected_checkpoint_digest"] = child_accepted_checkpoint[
+        "execution_checkpoint_digest"
+    ]
+    native_child_delivery = copy.deepcopy(
+        process_child_request["dispatch_input"]["delivery"]
+    )
+    native_child_delivery["input"]["target"] = native_target(child_target)
+    child_raw = dispatch(
+        bundle, started_raw["state"], native_child_delivery
+    )
+    child = project_core_result(bundle, child_raw, started_raw["state"])
+    child_terminal_checkpoint = commit_delivery(
+        child_accepted_checkpoint, process_child_request, child, foreground=False
+    )
+    pending_completion = child_terminal_checkpoint["pending_deliveries"][0]
+    completion_request = with_read(
+        {
+            "operation": "delivery",
+            "root_instance_id": "terminal-spawn-root",
+            "delivery_mode": "internal",
+            "origin": copy.deepcopy(pending_completion["origin"]),
+            "envelope": copy.deepcopy(pending_completion["envelope"]),
+            "envelope_digest": pending_completion["envelope_digest"],
+            "dispatch_input": {
+                **bundle_binding(case, bundle_file, bundle),
+                "delivery": {
+                    "internal": {
+                        "event": child_raw["emissions"][0]["event"],
+                        "event_id": child_raw["emissions"][0]["event_id"],
+                        "target": copy.deepcopy(child_raw["emissions"][0]["target"]),
+                        "payload": copy.deepcopy(child_raw["emissions"][0]["payload"]),
+                    }
+                },
+            },
+        },
+        child_terminal_checkpoint,
+    )
+    completion_raw = dispatch(
+        bundle, child_raw["state"], completion_request["dispatch_input"]["delivery"]
+    )
+    completion = project_core_result(bundle, completion_raw, child_raw["state"])
+    terminal_checkpoint = commit_delivery(
+        child_terminal_checkpoint,
+        completion_request,
+        completion,
+        foreground=False,
+    )
+    requests = {
+        "create": create_request,
+        "start": start_request,
+        "accept_child": child_request,
+        "process_child": process_child_request,
+        "process_completion": completion_request,
+    }
+    write_json(
+        case / "inputs.json",
+        {
+            "execution_checkpoint_inputs_format": (
+                "determa.execution_checkpoint_profile.inputs"
+            ),
+            "execution_checkpoint_inputs_schema_version": 1,
+            "requests": requests,
+        },
+    )
+    write_json(
+        case / "core-results.json",
+        generation_record(
+            {
+                "create": created,
+                "start": started,
+                "process_child": child,
+                "process_completion": completion,
+            },
+            requests,
+            {
+                "create": ("create", "create"),
+                "start": ("dispatch", "start"),
+                "process_child": ("dispatch", "process_child"),
+                "process_completion": ("dispatch", "process_completion"),
+            },
+        ),
+    )
+    write_json(case / "created-checkpoint-v1.json", created_checkpoint)
+    write_json(case / "started-checkpoint-v1.json", started_checkpoint)
+    write_json(case / "child-pending-checkpoint-v1.json", child_accepted_checkpoint)
+    write_json(
+        case / "child-terminal-checkpoint-v1.json", child_terminal_checkpoint
+    )
+    write_json(case / "terminal-checkpoint-v1.json", terminal_checkpoint)
+
+
 def generate_outbox() -> None:
     case = PROFILE / "checkpoint-02-outbox-lifecycle"
     bundle_file = "machine.yaml"
@@ -1772,6 +2065,93 @@ def generate_store_scope() -> None:
     )
 
 
+def verify_creation_owned_work_host_traces() -> None:
+    from generate_version2_vectors import upgrade_checkpoint
+
+    case = PROFILE / "checkpoint-04-version2-mailboxes"
+    bundle_file = "creation-owned-work-machine.yaml"
+    bundle = load_bundle((case / bundle_file).read_text(encoding="utf-8"))
+    bindings = {"input": {}, "external": {}}
+    for machine_id, kind in (
+        ("internal_creator", "internal"),
+        ("external_creator", "external"),
+    ):
+        root_instance_id = f"{kind}-creation-root"
+        creation_id = f"{kind}-creation"
+        created_raw = create(
+            bundle,
+            machine_id,
+            root_instance_id,
+            creation_id,
+            bindings,
+        )
+        created = project_core_result(bundle, created_raw)
+        checkpoint = empty_checkpoint(
+            created["aggregate_state"],
+            creation_digest(
+                bundle,
+                machine_id,
+                1,
+                root_instance_id,
+                creation_id,
+                bindings,
+            ),
+            created,
+        )
+        checkpoint["replay_retention"] = {
+            "mode": "bounded",
+            "permanent_replay_eligible": False,
+            "pruned_through_receipt_sequence": None,
+            "policy_identifier": "bounded-test-v1",
+        }
+        checkpoint = seal(checkpoint)
+        target = {
+            "root": {
+                "root_instance_id": root_instance_id,
+                "root_runtime_id": created["aggregate_state"]["root_runtime_id"],
+            }
+        }
+        request = delivery_request(
+            case=case,
+            bundle=bundle,
+            bundle_file=bundle_file,
+            root_instance_id=root_instance_id,
+            delivery_mode="input",
+            origin={"kind": "host_input"},
+            event="increment",
+            event_id="creation-unrelated",
+            target=target,
+            payload={},
+        )
+        dispatched_raw = dispatch(
+            bundle,
+            created_raw["state"],
+            request["dispatch_input"]["delivery"],
+        )
+        dispatched = project_core_result(
+            bundle, dispatched_raw, created_raw["state"]
+        )
+        checkpoint = commit_delivery(
+            checkpoint, request, dispatched, foreground=True
+        )
+        source_path = (
+            case / f"creation-{kind}-host-history-checkpoint-v1.json"
+        )
+        source = json.loads(source_path.read_text(encoding="utf-8"))
+        if source != checkpoint:
+            raise SystemExit(
+                f"creation-owned {kind} version-1 host trace differs from "
+                "pinned engine execution"
+            )
+        upgraded_path = case / f"creation-{kind}-before-prune-checkpoint-v2.json"
+        upgraded = json.loads(upgraded_path.read_text(encoding="utf-8"))
+        if upgraded != upgrade_checkpoint(source):
+            raise SystemExit(
+                f"creation-owned {kind} version-2 checkpoint is not the exact "
+                "upgrade of the pinned engine trace"
+            )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -1788,10 +2168,13 @@ def main() -> None:
         if path.is_file()
     }
     delivery = generate_delivery()
+    generate_spawned_checkpoint_trace()
+    generate_terminal_spawned_checkpoint_trace()
     generate_outbox()
     generate_retention(delivery)
     generate_store_scope()
     if args.check:
+        verify_creation_owned_work_host_traces()
         changed = [
             str(path.relative_to(ROOT))
             for path in sorted(before)

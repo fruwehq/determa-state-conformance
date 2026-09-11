@@ -1,0 +1,40 @@
+format: 1
+namespace: conformance.execution_checkpoint_creation_work
+events:
+  increment:
+    direction: input
+  internal_work:
+    direction: internal
+  external_work:
+    direction: output
+machines:
+  - machine_id: internal_creator
+    version: 1
+    root:
+      type: simple
+      variables:
+        count: { type: int, init: 0 }
+      entry:
+        - send: { event: internal_work }
+      on_events:
+        increment:
+          action:
+            - assign: { count: "count + 1" }
+        internal_work:
+          action:
+            - assign: { count: "count + 10" }
+  - machine_id: external_creator
+    version: 1
+    root:
+      type: simple
+      variables:
+        count: { type: int, init: 0 }
+      entry:
+        - send:
+            event: external_work
+            to: { external: true }
+            correlation_id: "'creation-work'"
+      on_events:
+        increment:
+          action:
+            - assign: { count: "count + 1" }

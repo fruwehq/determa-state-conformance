@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           repository: fruwehq/determa-state-spec
-          ref: 7782671b56165a59caa61a65c29fefc63105ebf8
+          ref: 2e33036563cb966b07124197db672159b4b7e1f4
           path: .determa-state-spec
           persist-credentials: false
 
@@ -46,3 +46,6 @@ jobs:
 
       - name: Check generated closed-code vectors
         run: python scripts/closed_code_registry.py --check
+
+      - name: Check generated version-2 fixtures
+        run: python scripts/generate_version2_vectors.py --check

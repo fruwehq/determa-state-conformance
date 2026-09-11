@@ -134,15 +134,39 @@
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
+      "code": "checkpoint_upgrade_required",
+      "condition": "A version-1 checkpoint host receives work for a bundle that declares event deferral.",
+      "source": "SPEC.md sections 17.1 and 17.15"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
       "code": "delivery_digest_mismatch",
       "condition": "A supplied delivery digest differs from the canonical delivery request digest.",
       "source": "SPEC.md section 17.4"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
+      "code": "duplicate_event_id_in_batch",
+      "condition": "One version-2 admission batch repeats an event identity.",
+      "source": "SPEC.md section 17.15"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
       "code": "event_id_conflict",
       "condition": "A pending or retained event identity has a different canonical request digest.",
       "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "inactive_component_target",
+      "condition": "A version-2 admission targets a retained component that is no longer active.",
+      "source": "SPEC.md sections 8 and 17.15"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "invalid_correlation",
+      "condition": "A version-2 admission correlation identity violates its public event contract.",
+      "source": "SPEC.md section 17.15"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
@@ -158,9 +182,39 @@
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
+      "code": "invalid_delivery_source",
+      "condition": "A version-2 admission carries a source outside the closed source union or inconsistent with its delivery mode.",
+      "source": "SPEC.md section 17.15"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "invalid_event",
+      "condition": "A version-2 admission carries an undeclared or invalid event.",
+      "source": "SPEC.md section 17.15"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "invalid_instance_target",
+      "condition": "A version-2 admission targets an absent or non-targetable machine runtime.",
+      "source": "SPEC.md sections 8 and 17.15"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "invalid_payload",
+      "condition": "A version-2 admission payload violates the declared event contract.",
+      "source": "SPEC.md section 17.15"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
       "code": "malformed_delivery",
       "condition": "The supplied value cannot provide the closed envelope and identity fields needed for acceptance.",
       "source": "SPEC.md section 17.4"
+    },
+    {
+      "category": "checkpoint_pre_acceptance_failure",
+      "code": "terminal_root",
+      "condition": "A non-replay version-2 delivery targets a completed or faulted aggregate root.",
+      "source": "SPEC.md section 17.15"
     },
     {
       "category": "checkpoint_pre_acceptance_failure",
@@ -236,6 +290,12 @@
     },
     {
       "category": "disposition",
+      "code": "deferred",
+      "condition": "An accepted envelope is retained because the resolving active state defers it.",
+      "source": "SPEC.md sections 6.3, 6.7, and 8"
+    },
+    {
+      "category": "disposition",
       "code": "faulted",
       "condition": "An accepted run-to-completion step commits an engine fault.",
       "source": "SPEC.md section 8"
@@ -244,6 +304,12 @@
       "category": "disposition",
       "code": "handled",
       "condition": "An accepted envelope completes a successful run-to-completion step.",
+      "source": "SPEC.md section 8"
+    },
+    {
+      "category": "disposition",
+      "code": "not_runnable",
+      "condition": "An explicit version-2 step targets a running runtime with an empty ready mailbox.",
       "source": "SPEC.md section 8"
     },
     {
@@ -281,6 +347,12 @@
       "code": "contained_runtime_fault",
       "condition": "A contained runtime faults and its owner cannot absorb the reserved failure event.",
       "source": "SPEC.md section 10.1"
+    },
+    {
+      "category": "engine_fault",
+      "code": "deferred_event_capacity_exceeded",
+      "condition": "Deferring the selected envelope would exceed the runtime root's declared deferred-event capacity.",
+      "source": "SPEC.md sections 6.7 and 10.1"
     },
     {
       "category": "engine_fault",

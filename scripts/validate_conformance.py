@@ -63,6 +63,17 @@ SOURCE_ERROR_CODES = frozenset(
 )
 MINIMUM_INTEGER = -9_223_372_036_854_775_808
 MAXIMUM_INTEGER = 9_223_372_036_854_775_807
+_CLOSED_CODE_REGISTRY = json.loads(
+    (
+        Path(__file__).resolve().parents[1]
+        / "conformance/closed-code-registry/registry.json"
+    ).read_text(encoding="utf-8")
+)
+ENGINE_FAULT_CODES = frozenset(
+    entry["code"]
+    for entry in _CLOSED_CODE_REGISTRY["entries"]
+    if entry["category"] == "engine_fault"
+)
 NON_FINITE_DOUBLE_MARKERS = frozenset(
     {"nan", "positive_infinity", "negative_infinity"}
 )
@@ -71,9 +82,14 @@ INSTANCE_REFERENCE_FIELDS = frozenset(
 )
 ARTIFACT_KINDS = {
     "aggregate_state": "aggregate-state.schema.json",
+    "aggregate_state_v2": "aggregate-state-v2.schema.json",
     "migration_descriptor": "migration-descriptor.schema.json",
+    "migration_descriptor_v2": "migration-descriptor-v2.schema.json",
     "aggregate_state_package": "aggregate-state-package.schema.json",
+    "aggregate_state_package_v2": "aggregate-state-package-v2.schema.json",
+    "core_step_result_v2": "core-step-result-v2.schema.json",
     "execution_checkpoint": "execution-checkpoint.schema.json",
+    "execution_checkpoint_v2": "execution-checkpoint-v2.schema.json",
 }
 DRIVER_ARTIFACT_KINDS = {
     "artifact_resolver": "artifact-resolver.schema.json",
@@ -83,6 +99,8 @@ DRIVER_ARTIFACT_KINDS = {
         "execution-checkpoint-core-evidence.schema.json"
     ),
     "execution_store_scope_state": "execution-store-scope-state.schema.json",
+    "version2_operation_inputs": "version2-operation-inputs.schema.json",
+    "version2_operation_result": "version2-operation-result.schema.json",
 }
 MINIMUM_RESOURCE_LIMIT_FLOORS = {
     "maximum_aggregate_bytes": "1048576",
@@ -105,6 +123,14 @@ MINIMUM_RESOURCE_LIMIT_FLOORS = {
 REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
     {
         "creation_commit",
+        "spawned_trace_creation",
+        "spawned_trace_start",
+        "spawned_trace_child_acceptance",
+        "terminal_spawn_trace_creation",
+        "terminal_spawn_trace_start",
+        "terminal_spawn_trace_child_acceptance",
+        "terminal_spawn_trace_child_processing",
+        "terminal_spawn_trace_completion_processing",
         "creation_replay",
         "creation_conflict",
         "creation_rejection_without_checkpoint",
@@ -206,6 +232,130 @@ REQUIRED_EXECUTION_CHECKPOINT_COVERAGE = frozenset(
         "mismatched_scope_rejected",
         "unauthorized_scope_rejected",
         "portable_state_scope_invariance",
+    }
+)
+REQUIRED_VERSION2_COVERAGE = frozenset(
+    {
+        "aggregate_v2_schema_positive_negative",
+        "all_replay_multi_event_batch",
+        "automatic_selective_recall",
+        "batch_duplicate_rejection",
+        "canonical_v2_bytes_and_digests",
+        "capacity_unbounded",
+        "capacity_zero_and_overflow_fault",
+        "checkpoint_v1_requires_upgrade",
+        "checkpoint_v2_schema_positive_negative",
+        "checkpoint_admission_invalid_artifact",
+        "compacted_legacy_terminal_replay",
+        "checkpoint_pending_replay_precedes_stale_cas",
+        "cleanup_fault_rollback",
+        "component_mailbox_isolation",
+        "core_step_v2_schema_positive_negative",
+        "deferred_only_not_runnable",
+        "downgrade_permitted",
+        "downgrade_prohibited",
+        "invalid_aggregate_artifact_precedes_operation",
+        "conflicting_pending_replay",
+        "conflicting_terminal_replay",
+        "equal_pending_replay",
+        "equal_terminal_replay",
+        "pending_changed_payload_stale_digest_conflict",
+        "pending_replay_precedes_supplied_digest_validation",
+        "terminal_changed_payload_stale_digest_conflict",
+        "terminal_replay_precedes_supplied_digest_validation",
+        "event_tombstone_changed_payload_stale_digest_conflict",
+        "event_tombstone_replay_precedes_supplied_digest_validation",
+        "explicit_target_single_step",
+        "fault_frozen_mailbox_retention",
+        "fifo_recall_to_ready_tail",
+        "fresh_queue_sequence_on_recall",
+        "completed_component_admission_rejection",
+        "completed_component_step_rejection",
+        "completed_root_step_rejection",
+        "completed_root_admission_rejection",
+        "disposed_component_admission_rejection",
+        "disposed_component_step_rejection",
+        "faulted_component_admission_rejection",
+        "faulted_component_step_rejection",
+        "faulted_root_descendant_admission_rejection",
+        "faulted_root_descendant_step_rejection",
+        "faulted_root_admission_rejection",
+        "internal_emission_active_target",
+        "internal_emission_disposed_target",
+        "internal_emission_retained_faulted_target",
+        "internal_emission_rollback",
+        "invalid_machine_runtime_target",
+        "invalid_event_batch_atomic_rejection",
+        "invalid_payload_batch_atomic_rejection",
+        "host_cause_identity_rejection",
+        "lifecycle_aggregate_completion_disposal",
+        "lifecycle_cancellation_disposal",
+        "lifecycle_natural_completion_disposal",
+        "mailbox_envelope_identity_preserved",
+        "mailbox_location_totality",
+        "native_internal_producer_reference",
+        "processed_legacy_internal_producer_reference",
+        "native_internal_handler_provenance",
+        "native_internal_handler_admission",
+        "migration_backlog_independent_descriptor",
+        "migration_capacity_totality",
+        "migration_descriptor_v2_schema_positive_negative",
+        "migration_fault_frozen_preservation",
+        "migration_historical_fault_locator_preservation",
+        "migration_package_v2_schema_positive_negative",
+        "migration_preserve_dispose_default",
+        "migration_stale_target_transform",
+        "mixed_replay_new_batch",
+        "migration_removed_event_failure",
+        "migration_payload_incompatible_failure",
+        "migration_correlation_incompatible_failure",
+        "receipt_acceptance_terminal_distinction",
+        "reclassification_and_repeated_deferral",
+        "reserved_events_not_deferrable",
+        "reserved_internal_event_admission",
+        "delivery_digest_rejection",
+        "wrong_root_precedes_batch_duplicate",
+        "root_mailbox_isolation",
+        "spawned_mailbox_isolation",
+        "terminal_receipt_replay",
+        "terminal_replay_precedes_stale_cas",
+        "terminal_root_precedes_delivery_validation",
+        "distinct_stale_checkpoint_writer_rejected",
+        "terminal_processing_receipt",
+        "terminal_tombstone_replay",
+        "tombstoned_root_batch_replay",
+        "tombstoned_spawned_child_replay",
+        "tombstoned_mixed_runtime_batch_replay",
+        "tombstoned_root_single_replay",
+        "tombstoned_root_precedes_delivery_validation",
+        "upgrade_aggregate_v1_to_v2",
+        "upgrade_checkpoint_v1_to_v2_legacy_evidence",
+        "upgrade_checkpoint_v1_to_v2_populated_outbox",
+        "upgrade_checkpoint_v1_spawned_target",
+        "upgrade_checkpoint_v1_multi_pending_history",
+        "processed_upgrade_history_without_optional_metadata",
+        "processed_upgrade_history_with_optional_metadata",
+        "multiple_converted_upgrade_history",
+        "multiple_processed_upgrade_history_without_optional_metadata",
+        "multiple_processed_upgrade_history_with_optional_metadata",
+        "version2_malformed_delivery_rejected",
+        "version2_invalid_delivery_mode_rejected",
+        "version2_counter_allocation",
+        "version2_dependency_safe_pruning",
+        "version2_dependency_pruning_rejected",
+        "version2_native_internal_producer_pruned",
+        "version2_native_internal_terminal_pruned",
+        "version2_native_internal_sequential_pruning",
+        "version2_creation_internal_dependency_retained",
+        "version2_creation_external_dependency_retained",
+        "version2_legacy_origin_pruning_rejected",
+        "version2_live_acceptance_pruning_rejected",
+        "version2_terminal_pair_pruning_rejected",
+        "version2_equal_pruning_cutoff",
+        "version2_equal_pruning_precedes_stale_cas",
+        "version2_invalid_pruning_cutoff_rejected",
+        "version2_lower_pruning_cutoff_rejected",
+        "wrapped_legacy_terminal_replay",
     }
 )
 
@@ -374,6 +524,14 @@ EXECUTION_CHECKPOINT_OPERATION_OUTCOMES: dict[
 }
 EXECUTION_CHECKPOINT_COVERAGE_RULES = {
     "creation_commit": ("create", "committed", None, "created", "create", None, "creation"),
+    "spawned_trace_creation": ("create", "committed", None, "created", "create", None, "creation"),
+    "spawned_trace_start": ("foreground_process_delivery", "committed", None, "changed", "dispatch", None, "foreground"),
+    "spawned_trace_child_acceptance": ("accept_delivery", "pending", None, "changed", "none", None, "pending_acceptance"),
+    "terminal_spawn_trace_creation": ("create", "committed", None, "created", "create", None, "creation"),
+    "terminal_spawn_trace_start": ("foreground_process_delivery", "committed", None, "changed", "dispatch", None, "foreground"),
+    "terminal_spawn_trace_child_acceptance": ("accept_delivery", "pending", None, "changed", "none", None, "pending_acceptance"),
+    "terminal_spawn_trace_child_processing": ("process_pending_delivery", "committed", None, "changed", "dispatch", None, "input_processing"),
+    "terminal_spawn_trace_completion_processing": ("process_pending_delivery", "committed", None, "changed", "dispatch", None, "internal_processing"),
     "creation_replay": ("create", "committed", None, "unchanged", "none", None, "creation"),
     "creation_conflict": ("create", "failure", "creation_id_conflict", "unchanged", "none", None, "creation_conflict"),
     "creation_rejection_without_checkpoint": ("create", "failure", "creation_rejected", "absent", "create", None, "creation_rejection"),
@@ -483,11 +641,29 @@ ARTIFACT_FORMAT_FIELDS = {
         "unsupported_aggregate_state_schema_version",
         "invalid_aggregate_state",
     ),
+    "aggregate_state_v2": (
+        "aggregate_state_format",
+        "determa.aggregate_state",
+        "aggregate_state_schema_version",
+        2,
+        "unsupported_aggregate_state_format",
+        "unsupported_aggregate_state_schema_version",
+        "invalid_aggregate_state",
+    ),
     "migration_descriptor": (
         "migration_descriptor_format",
         "determa.aggregate_migration",
         "migration_descriptor_schema_version",
         1,
+        "unsupported_migration_descriptor_format",
+        "unsupported_migration_descriptor_schema_version",
+        "invalid_migration_descriptor",
+    ),
+    "migration_descriptor_v2": (
+        "migration_descriptor_format",
+        "determa.aggregate_migration",
+        "migration_descriptor_schema_version",
+        2,
         "unsupported_migration_descriptor_format",
         "unsupported_migration_descriptor_schema_version",
         "invalid_migration_descriptor",
@@ -501,11 +677,38 @@ ARTIFACT_FORMAT_FIELDS = {
         "unsupported_aggregate_state_package_schema_version",
         "invalid_aggregate_state_package",
     ),
+    "aggregate_state_package_v2": (
+        "aggregate_state_package_format",
+        "determa.aggregate_state_package",
+        "aggregate_state_package_schema_version",
+        2,
+        "unsupported_aggregate_state_package_format",
+        "unsupported_aggregate_state_package_schema_version",
+        "invalid_aggregate_state_package",
+    ),
+    "core_step_result_v2": (
+        "core_step_result_format",
+        "determa.core_step_result",
+        "core_step_result_schema_version",
+        2,
+        "unsupported_core_step_result_format",
+        "unsupported_core_step_result_schema_version",
+        "invalid_core_step_result",
+    ),
     "execution_checkpoint": (
         "execution_checkpoint_format",
         "determa.execution_checkpoint",
         "execution_checkpoint_schema_version",
         1,
+        "unsupported_execution_checkpoint_format",
+        "unsupported_execution_checkpoint_schema_version",
+        "invalid_execution_checkpoint",
+    ),
+    "execution_checkpoint_v2": (
+        "execution_checkpoint_format",
+        "determa.execution_checkpoint",
+        "execution_checkpoint_schema_version",
+        2,
         "unsupported_execution_checkpoint_format",
         "unsupported_execution_checkpoint_schema_version",
         "invalid_execution_checkpoint",
@@ -612,6 +815,274 @@ def encode_typed_value(value: Any) -> list[Any]:
     raise ValidationFailure("operation input contains a non-JSON value")
 
 
+def normalized_bundle_value(path: Path) -> dict[str, Any]:
+    document = yaml_loader().load(path.read_text(encoding="utf-8"))
+    bundle = copy.deepcopy(document)
+
+    def normalize_payload(payload: dict[str, Any]) -> None:
+        for declaration in payload.values():
+            declaration.setdefault("required", False)
+            if declaration.get("type") == "float" and isinstance(declaration.get("default"), int):
+                declaration["default"] = float(declaration["default"])
+
+    def normalize_transition(transition: dict[str, Any], event_transition: bool) -> None:
+        if event_transition:
+            transition.setdefault("lang", "cel")
+        for action in transition.get("action", []):
+            send = action.get("send")
+            if send is not None and "to" not in send and "targets" not in send:
+                send["to"] = {"self": True}
+
+    def normalize_state(state: dict[str, Any]) -> None:
+        state.setdefault("type", "simple")
+        if state["type"] == "composite":
+            state.setdefault("history", "none")
+        for declaration in state.get("variables", {}).values():
+            if declaration.get("type") != "instance_reference":
+                declaration.setdefault("input", False)
+                declaration.setdefault("external", False)
+        for value in state.get("on_events", {}).values():
+            for transition in value if isinstance(value, list) else [value]:
+                normalize_transition(transition, True)
+        if "initial" in state:
+            normalize_transition(state["initial"], False)
+        for action_name in ("entry", "exit"):
+            for action in state.get(action_name, []):
+                send = action.get("send")
+                if send is not None and "to" not in send and "targets" not in send:
+                    send["to"] = {"self": True}
+        for child in state.get("states", {}).values():
+            if child.get("type") != "choice":
+                normalize_state(child)
+        for component in state.get("components", []):
+            if "root" in component:
+                normalize_state(component["root"])
+
+    for declaration in bundle.get("events", {}).values():
+        declaration.setdefault("direction", "internal")
+        normalize_payload(declaration.get("payload", {}))
+    for machine in bundle["machines"]:
+        machine.setdefault("version", 1)
+        languages = machine.setdefault("languages", {})
+        languages.setdefault("guard", "cel")
+        languages.setdefault("action", "determa")
+        for declaration in machine.get("events", {}).values():
+            declaration.setdefault("direction", "internal")
+            normalize_payload(declaration.get("payload", {}))
+        normalize_state(machine["root"])
+    return bundle
+
+
+def validated_bundle_fingerprint(path: Path) -> str:
+    return hash_value([
+        "determa-validated-bundle-fingerprint-1",
+        encode_typed_value(normalized_bundle_value(path)),
+    ])
+
+
+def aggregate_shape_fingerprint_for_path(path: Path) -> str:
+    bundle = normalized_bundle_value(path)
+
+    def state_projection(state: dict[str, Any], pointer: str) -> dict[str, Any]:
+        result: dict[str, Any] = {"definition_pointer": pointer, "type": state["type"]}
+        if state["type"] == "composite":
+            result["history"] = state.get("history", "none")
+        variables = []
+        for name, declaration in state.get("variables", {}).items():
+            item = {
+                "declaration_pointer": f"{pointer}/variables/{name}",
+                "type": declaration["type"],
+                "nullable": bool(declaration.get("nullable")) if declaration["type"] == "instance_reference" else False,
+                "input": bool(declaration.get("input")),
+                "external": bool(declaration.get("external")),
+            }
+            if declaration.get("machine_id") is not None:
+                item["machine_id"] = declaration["machine_id"]
+            variables.append(item)
+        variables.sort(key=lambda item: item["declaration_pointer"].encode("utf-8"))
+        if variables:
+            result["variables"] = variables
+        children = [
+            state_projection(child, f"{pointer}/states/{name}")
+            for name, child in sorted(state.get("states", {}).items(), key=lambda item: item[0].encode("utf-8"))
+            if child.get("type") != "choice"
+        ]
+        if children:
+            result["states"] = children
+        components = []
+        for index, placement in enumerate(state.get("components", [])):
+            item = {
+                "declaration_pointer": f"{pointer}/components/{index}",
+                "declaration_index": index,
+                "component_id": placement["component_id"],
+            }
+            if "machine_id" in placement:
+                item["machine_id"] = placement["machine_id"]
+            else:
+                item["inline_root"] = state_projection(
+                    placement["root"], f"{pointer}/components/{index}/root"
+                )
+            components.append(item)
+        if components:
+            result["components"] = components
+        return result
+
+    tree = {
+        "format": 1,
+        "namespace": bundle["namespace"],
+        "machines": [
+            {
+                "machine_id": machine["machine_id"],
+                "version": machine["version"],
+                "root": state_projection(machine["root"], f"/machines/{index}/root"),
+            }
+            for index, machine in enumerate(bundle["machines"])
+        ],
+    }
+    return hash_value(["determa-aggregate-shape-fingerprint-1", encode_typed_value(tree)])
+
+
+def validate_aggregate_against_bundle(
+    aggregate: dict[str, Any], bundle_path: Path, *historical_bundle_paths: Path
+) -> None:
+    bundle = normalized_bundle_value(bundle_path)
+    fingerprint = validated_bundle_fingerprint(bundle_path)
+    bundles_by_fingerprint = {fingerprint: bundle}
+    for historical_path in historical_bundle_paths:
+        bundles_by_fingerprint[validated_bundle_fingerprint(historical_path)] = (
+            normalized_bundle_value(historical_path)
+        )
+
+    def resolve(pointer: str, definition_bundle: dict[str, Any] = bundle) -> Any:
+        value: Any = definition_bundle
+        try:
+            for encoded in pointer.split("/")[1:]:
+                token = encoded.replace("~1", "/").replace("~0", "~")
+                value = value[int(token)] if isinstance(value, list) else value[token]
+        except (KeyError, IndexError, TypeError, ValueError) as error:
+            raise ValidationFailure(
+                f"aggregate v2: unresolved definition pointer {pointer}"
+            ) from error
+        return value
+
+    if aggregate["validated_bundle_fingerprint"] != fingerprint:
+        raise ValidationFailure("aggregate v2: current bundle fingerprint mismatch")
+    for runtime in aggregate["runtimes"]:
+        origin = runtime["identity_origin"]
+        origin_machine = origin["definition"]["machine"]
+        if origin["kind"] == "root":
+            expected_runtime_id = hash_value(
+                [
+                    "determa-root-runtime-identity-2",
+                    "1",
+                    origin["definition"]["validated_bundle_fingerprint"],
+                    origin_machine["namespace"],
+                    origin_machine["machine_id"],
+                    origin_machine["machine_version"],
+                    aggregate["root_instance_id"],
+                ]
+            )
+            expected_target = {
+                "root": {
+                    "root_instance_id": aggregate["root_instance_id"],
+                    "root_runtime_id": expected_runtime_id,
+                }
+            }
+        elif origin["kind"] == "component":
+            expected_runtime_id = hash_value(
+                [
+                    "determa-component-runtime-identity-1",
+                    "1",
+                    aggregate["root_instance_id"],
+                    origin["owner_runtime_id"],
+                    origin["component_definition_pointer"],
+                    origin["activation_sequence"],
+                    origin_machine["namespace"],
+                    origin_machine["machine_id"],
+                    origin_machine["machine_version"],
+                ]
+            )
+            origin_fingerprint = origin["definition"][
+                "validated_bundle_fingerprint"
+            ]
+            origin_bundle = bundles_by_fingerprint.get(origin_fingerprint)
+            if origin_bundle is None:
+                raise ValidationFailure(
+                    "aggregate v2: component identity definition is unavailable"
+                )
+            origin_placement = resolve(
+                origin["component_definition_pointer"], origin_bundle
+            )
+            expected_target = {
+                "component": {
+                    "root_instance_id": aggregate["root_instance_id"],
+                    "owner_runtime_id": origin["owner_runtime_id"],
+                    "component_id": origin_placement["component_id"],
+                    "activation_sequence": origin["activation_sequence"],
+                    "component_runtime_id": expected_runtime_id,
+                }
+            }
+        else:
+            expected_runtime_id = hash_value(
+                [
+                    "determa-spawned-runtime-identity-1",
+                    "1",
+                    aggregate["root_instance_id"],
+                    origin["owner_runtime_id"],
+                    origin["spawn_action_pointer"],
+                    origin["spawn_sequence"],
+                    origin_machine["namespace"],
+                    origin_machine["machine_id"],
+                    origin_machine["machine_version"],
+                ]
+            )
+            expected_target = runtime["target_identity"]
+            spawned_target = expected_target["spawned_instance"]
+            if (
+                spawned_target["root_instance_id"]
+                != aggregate["root_instance_id"]
+                or spawned_target["instance_id"] != expected_runtime_id
+                or spawned_target["machine_id"] != origin_machine["machine_id"]
+                or spawned_target["machine_version"]
+                != origin_machine["machine_version"]
+            ):
+                raise ValidationFailure("aggregate v2: spawned target identity mismatch")
+        if runtime["runtime_id"] != expected_runtime_id:
+            raise ValidationFailure("aggregate v2: noncanonical runtime identity")
+        if runtime["target_identity"] != expected_target:
+            raise ValidationFailure("aggregate v2: runtime target identity mismatch")
+        current = runtime["current_definition"]
+        if current["validated_bundle_fingerprint"] != fingerprint:
+            raise ValidationFailure("aggregate v2: runtime current definition mismatch")
+        resolve(current["machine"]["root_definition_pointer"])
+        for pointer in runtime["active_leaf_state_definition_pointers"]:
+            resolve(pointer)
+        for item in runtime["active_state_activations"]:
+            resolve(item["state_definition_pointer"])
+        for item in runtime["variables"]:
+            declaration = resolve(item["variable_declaration_pointer"])
+            if not isinstance(declaration, dict) or "type" not in declaration:
+                raise ValidationFailure("aggregate v2: variable pointer is not a declaration")
+        for item in runtime["next_state_activation_sequences"]:
+            resolve(item["definition_pointer"])
+        for item in runtime["next_component_activation_sequences"]:
+            resolve(item["definition_pointer"])
+        fault = runtime.get("fault")
+        if fault is not None and fault["source_locator"].startswith("/"):
+            fault_bundle = bundles_by_fingerprint.get(
+                fault["definition_fingerprint"]
+            )
+            if fault_bundle is None:
+                raise ValidationFailure(
+                    "aggregate v2: historical fault definition is unavailable"
+                )
+            resolve(fault["source_locator"], fault_bundle)
+        if runtime["relation"]["kind"] == "component":
+            placement = resolve(runtime["relation"]["current_component_definition_pointer"])
+            if placement["component_id"] != runtime["relation"]["component_id"]:
+                raise ValidationFailure("aggregate v2: component placement mismatch")
+
+
 def decode_typed_value(value: list[Any]) -> Any:
     tag = value[0]
     if tag == "null":
@@ -629,31 +1100,91 @@ def decode_typed_value(value: list[Any]) -> Any:
     raise ValidationFailure(f"unsupported typed-value tag {tag!r}")
 
 
+def validate_typed_value_canonical(value: list[Any], location: str) -> None:
+    tag = value[0]
+    if tag == "list":
+        for index, child in enumerate(value[1]):
+            validate_typed_value_canonical(child, f"{location}[{index}]")
+        return
+    if tag != "map":
+        return
+    entries = value[1]
+    keys = [entry[0] for entry in entries]
+    if keys != sorted(keys, key=lambda item: item.encode("utf-8")):
+        raise ValidationFailure(f"{location}: typed-map keys are not canonical")
+    if len(keys) != len(set(keys)):
+        raise ValidationFailure(f"{location}: typed-map keys are not unique")
+    for key, child in entries:
+        validate_typed_value_canonical(child, f"{location}.{key}")
+
+
+def validate_engine_fault_code(fault: Any, location: str) -> None:
+    if fault is None:
+        return
+    code = fault.get("code") if isinstance(fault, dict) else None
+    if code not in ENGINE_FAULT_CODES:
+        raise ValidationFailure(
+            f"{location}: fault record uses non-closed engine code {code!r}"
+        )
+
+
+def validate_aggregate_v1_fault_codes(document: dict[str, Any]) -> None:
+    """Validate only normative runtime fault records in a standalone v1 aggregate."""
+    for runtime in document["runtimes"]:
+        validate_engine_fault_code(runtime.get("fault"), "aggregate v1 runtime")
+
+
+def validate_reserved_failure_envelope(envelope: dict[str, Any], location: str) -> None:
+    if envelope["event"] not in {
+        "determa.component_failed",
+        "determa.spawned_instance_failed",
+    }:
+        return
+    payload = decode_typed_value(envelope["payload"])
+    validate_engine_fault_code(payload.get("fault"), location)
+
+
 def verify_artifact_digest(kind: str, document: Any, path: Path) -> None:
-    if kind == "aggregate_state":
+    if kind in {"aggregate_state", "aggregate_state_v2"}:
         digest = document.get("aggregate_state_digest")
         without_digest = dict(document)
         without_digest.pop("aggregate_state_digest", None)
-        expected = hash_value(
-            ["determa-aggregate-state-digest-1", without_digest]
+        domain = (
+            "determa-aggregate-state-digest-2"
+            if kind == "aggregate_state_v2"
+            else "determa-aggregate-state-digest-1"
         )
+        expected = hash_value([domain, without_digest])
         if digest != expected:
             raise ValidationFailure(
                 f"{path}: aggregate_state_digest {digest!r} != {expected!r}"
             )
-    elif kind == "migration_descriptor":
+    elif kind in {"migration_descriptor", "migration_descriptor_v2"}:
         digest = document.get("migration_descriptor_digest")
         without_digest = dict(document)
         without_digest.pop("migration_descriptor_digest", None)
-        expected = hash_value(
-            ["determa-migration-descriptor-1", without_digest]
+        domain = (
+            "determa-migration-descriptor-2"
+            if kind == "migration_descriptor_v2"
+            else "determa-migration-descriptor-1"
         )
+        expected = hash_value([domain, without_digest])
         if digest != expected:
             raise ValidationFailure(
                 f"{path}: migration_descriptor_digest {digest!r} != {expected!r}"
             )
-    elif kind == "aggregate_state_package":
-        verify_artifact_digest("aggregate_state", document["aggregate_state"], path)
+    elif kind in {"aggregate_state_package", "aggregate_state_package_v2"}:
+        aggregate_kind = (
+            "aggregate_state_v2"
+            if kind == "aggregate_state_package_v2"
+            else "aggregate_state"
+        )
+        descriptor_kind = (
+            "migration_descriptor_v2"
+            if kind == "aggregate_state_package_v2"
+            else "migration_descriptor"
+        )
+        verify_artifact_digest(aggregate_kind, document["aggregate_state"], path)
         definition_digests: set[str] = set()
         for attachment in document["normalized_definitions"]:
             digest = attachment["validated_bundle_fingerprint"]
@@ -670,25 +1201,30 @@ def verify_artifact_digest(kind: str, document: Any, path: Path) -> None:
             definition_digests.add(digest)
         descriptor_digests: set[str] = set()
         for descriptor in document["migration_descriptors"]:
-            verify_artifact_digest("migration_descriptor", descriptor, path)
+            verify_artifact_digest(descriptor_kind, descriptor, path)
             digest = descriptor["migration_descriptor_digest"]
             if digest in descriptor_digests:
                 raise ValidationFailure(
                     f"{path}: duplicate descriptor attachment {digest}"
                 )
             descriptor_digests.add(digest)
-    elif kind == "execution_checkpoint":
+    elif kind in {"execution_checkpoint", "execution_checkpoint_v2"}:
         root_record = document["root_record"]
         if root_record["status"] == "retained":
             verify_artifact_digest(
-                "aggregate_state", root_record["aggregate_state"], path
+                "aggregate_state_v2" if kind == "execution_checkpoint_v2" else "aggregate_state",
+                root_record["aggregate_state"],
+                path,
             )
         digest = document.get("execution_checkpoint_digest")
         without_digest = dict(document)
         without_digest.pop("execution_checkpoint_digest", None)
-        expected = hash_value(
-            ["determa-execution-checkpoint-digest-1", without_digest]
+        domain = (
+            "determa-execution-checkpoint-digest-2"
+            if kind == "execution_checkpoint_v2"
+            else "determa-execution-checkpoint-digest-1"
         )
+        expected = hash_value([domain, without_digest])
         if digest != expected:
             raise ValidationFailure(
                 f"{path}: execution_checkpoint_digest {digest!r} != {expected!r}"
@@ -715,6 +1251,8 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
         raise ValidationFailure("checkpoint: creation receipt must remain first")
     if root_record["status"] == "retained":
         aggregate = root_record["aggregate_state"]
+        for runtime in aggregate["runtimes"]:
+            validate_engine_fault_code(runtime["fault"], "checkpoint runtime")
         if aggregate["root_instance_id"] != root_id:
             raise ValidationFailure("checkpoint: retained aggregate root mismatch")
         creation_id = aggregate["creation_id"]
@@ -724,6 +1262,13 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
         root_runtime_id = root_record["root_runtime_id"]
     if creation["creation_id"] != creation_id:
         raise ValidationFailure("checkpoint: creation identity mismatch")
+    for receipt in receipts:
+        validate_engine_fault_code(receipt.get("fault"), "checkpoint receipt")
+        outcome = receipt.get("outcome")
+        if isinstance(outcome, dict):
+            validate_engine_fault_code(
+                outcome.get("fault"), "checkpoint terminal outcome"
+            )
 
     next_receipt = canonical_decimal(
         document["next_operation_receipt_sequence"],
@@ -875,6 +1420,10 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
         }
     )
     for item in pending:
+        validate_typed_value_canonical(
+            item["envelope"]["payload"],
+            "checkpoint pending delivery envelope payload",
+        )
         accepted_revision = canonical_decimal(
             item["accepted_revision"], "checkpoint pending accepted revision"
         )
@@ -948,6 +1497,16 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
     pending_outbox = document["pending_outbox_intents"]
     terminal_outbox = document["terminal_outbox_records"]
     outbox_tombstones = document["outbox_effect_tombstones"]
+    for index, item in enumerate(pending_outbox):
+        validate_typed_value_canonical(
+            item["intent"]["payload"],
+            f"checkpoint pending outbox intent {index} payload",
+        )
+    for index, item in enumerate(terminal_outbox):
+        validate_typed_value_canonical(
+            item["intent"]["payload"],
+            f"checkpoint terminal outbox intent {index} payload",
+        )
     pending_intent_sequences = [
         canonical_decimal(
             item["intent"]["sequence"], "checkpoint outbox intent sequence"
@@ -1071,6 +1630,1682 @@ def validate_execution_checkpoint_semantics(document: dict[str, Any]) -> None:
             )
 
 
+def validate_aggregate_v2_semantics(document: dict[str, Any]) -> None:
+    runtime_ids: set[str] = set()
+    event_ids: set[str] = set()
+    acceptance_sequences: set[int] = set()
+    queue_sequences: set[int] = set()
+    entries: list[dict[str, Any]] = []
+    root_runtime = None
+
+    runtime_order = [runtime["runtime_id"].encode("utf-8") for runtime in document["runtimes"]]
+    if runtime_order != sorted(runtime_order) or len(runtime_order) != len(set(runtime_order)):
+        raise ValidationFailure("aggregate v2: runtime order is not canonical")
+
+    def require_canonical_collection(
+        values: list[dict[str, Any]], key, label: str
+    ) -> None:
+        keys = [key(item) for item in values]
+        if keys != sorted(keys) or len(keys) != len(set(keys)):
+            raise ValidationFailure(f"aggregate v2: {label} order is not canonical")
+
+    for runtime in document["runtimes"]:
+        validate_engine_fault_code(runtime["fault"], "aggregate v2 runtime")
+        runtime_id = runtime["runtime_id"]
+        if runtime_id in runtime_ids:
+            raise ValidationFailure("aggregate v2: duplicate runtime id")
+        runtime_ids.add(runtime_id)
+        if runtime["relation"]["kind"] == "root":
+            if root_runtime is not None:
+                raise ValidationFailure("aggregate v2: multiple root runtimes")
+            root_runtime = runtime
+        if runtime["status"] == "completed" and (
+            runtime["ready_mailbox"] or runtime["deferred_mailbox"]
+        ):
+            raise ValidationFailure("aggregate v2: completed runtime retains mailbox work")
+        leaves = runtime["active_leaf_state_definition_pointers"]
+        if leaves != sorted(leaves, key=lambda item: item.encode("utf-8")) or len(leaves) != len(set(leaves)):
+            raise ValidationFailure("aggregate v2: active leaf order is not canonical")
+        require_canonical_collection(
+            runtime["active_state_activations"],
+            lambda item: (item["state_definition_pointer"].encode("utf-8"), canonical_decimal(item["activation_sequence"], "state activation sequence")),
+            "state activation",
+        )
+        require_canonical_collection(
+            runtime["variables"],
+            lambda item: (item["variable_declaration_pointer"].encode("utf-8"), canonical_decimal(item["declaring_state_activation_sequence"], "variable activation sequence")),
+            "variable",
+        )
+        for variable in runtime["variables"]:
+            validate_typed_value_canonical(
+                variable["value"],
+                f"aggregate v2 variable {variable['variable_declaration_pointer']}",
+            )
+        for mailbox_name in ("ready_mailbox", "deferred_mailbox"):
+            for entry in runtime[mailbox_name]:
+                validate_typed_value_canonical(
+                    entry["envelope"]["payload"],
+                    f"aggregate v2 {mailbox_name} envelope payload",
+                )
+        require_canonical_collection(
+            runtime["history"],
+            lambda item: item["history_declaration_pointer"].encode("utf-8"),
+            "history",
+        )
+        state_counters = runtime["next_state_activation_sequences"]
+        component_counters = runtime["next_component_activation_sequences"]
+        require_canonical_collection(
+            state_counters,
+            lambda item: item["definition_pointer"].encode("utf-8"),
+            "state counter",
+        )
+        require_canonical_collection(
+            component_counters,
+            lambda item: item["definition_pointer"].encode("utf-8"),
+            "component counter",
+        )
+        state_next = {
+            item["definition_pointer"]: canonical_decimal(item["next_sequence"], "next state activation sequence")
+            for item in state_counters
+        }
+        for activation in runtime["active_state_activations"]:
+            pointer = activation["state_definition_pointer"]
+            sequence = canonical_decimal(activation["activation_sequence"], "state activation sequence")
+            if pointer not in state_next or state_next[pointer] <= sequence:
+                raise ValidationFailure("aggregate v2: state activation counter regression")
+        if runtime["relation"]["kind"] == "component":
+            owner_id = runtime["relation"]["owner_runtime_id"]
+            owner = next((item for item in document["runtimes"] if item["runtime_id"] == owner_id), None)
+            pointer = runtime["relation"]["current_component_definition_pointer"]
+            sequence = canonical_decimal(runtime["relation"]["activation_sequence"], "component activation sequence")
+            if owner is None:
+                raise ValidationFailure("aggregate v2: component owner is missing")
+            owner_next = {
+                item["definition_pointer"]: canonical_decimal(item["next_sequence"], "next component activation sequence")
+                for item in owner["next_component_activation_sequences"]
+            }
+            if pointer not in owner_next or owner_next[pointer] <= sequence:
+                raise ValidationFailure("aggregate v2: component activation counter regression")
+        for mailbox_name in ("ready_mailbox", "deferred_mailbox"):
+            mailbox = runtime[mailbox_name]
+            order = [
+                canonical_decimal(entry["queue_sequence"], "mailbox queue sequence")
+                for entry in mailbox
+            ]
+            if order != sorted(order) or len(order) != len(set(order)):
+                raise ValidationFailure("aggregate v2: mailbox order is not strict")
+            for entry in mailbox:
+                event_id = entry["envelope"]["event_id"]
+                acceptance = canonical_decimal(
+                    entry["acceptance_sequence"], "mailbox acceptance sequence"
+                )
+                queue = canonical_decimal(
+                    entry["queue_sequence"], "mailbox queue sequence"
+                )
+                if event_id in event_ids or acceptance in acceptance_sequences:
+                    raise ValidationFailure("aggregate v2: duplicate mailbox identity")
+                if queue in queue_sequences:
+                    raise ValidationFailure("aggregate v2: reused queue sequence")
+                event_ids.add(event_id)
+                acceptance_sequences.add(acceptance)
+                queue_sequences.add(queue)
+                if entry["envelope"]["target"] != runtime["target_identity"]:
+                    raise ValidationFailure("aggregate v2: mailbox target mismatch")
+                validate_reserved_failure_envelope(
+                    entry["envelope"], "aggregate v2 reserved failure event"
+                )
+                expected_digest = hash_value(
+                    [
+                        "determa-inbox-envelope-digest-2",
+                        "2",
+                        document["root_instance_id"],
+                        entry["delivery_mode"],
+                        entry["envelope"],
+                    ]
+                )
+                if entry["envelope_digest"] != expected_digest:
+                    raise ValidationFailure(
+                        f"aggregate v2: envelope digest mismatch for {event_id}"
+                    )
+                entries.append(entry)
+
+    if root_runtime is None:
+        raise ValidationFailure("aggregate v2: missing root runtime")
+    if (
+        root_runtime["runtime_id"] != document["root_runtime_id"]
+        or root_runtime["target_identity"].get("root", {}).get("root_instance_id")
+        != document["root_instance_id"]
+    ):
+        raise ValidationFailure("aggregate v2: root identity mismatch")
+    next_acceptance = canonical_decimal(
+        document["next_acceptance_sequence"], "next acceptance sequence"
+    )
+    next_queue = canonical_decimal(
+        document["next_queue_sequence"], "next queue sequence"
+    )
+    if acceptance_sequences and next_acceptance <= max(acceptance_sequences):
+        raise ValidationFailure("aggregate v2: acceptance counter regression")
+    if queue_sequences and next_queue <= max(queue_sequences):
+        raise ValidationFailure("aggregate v2: queue counter regression")
+
+
+def validate_core_step_v2_semantics(document: dict[str, Any]) -> None:
+    validate_engine_fault_code(document["fault"], "core step v2")
+    disposition = document["disposition"]
+    rejection = document["rejection"]
+    if disposition == "rejected":
+        if rejection is None or document["fault"] is not None:
+            raise ValidationFailure("core step v2: malformed rejection")
+        if document["emissions"] or document["lifecycle_dispositions"]:
+            raise ValidationFailure("core step v2: rejection has side effects")
+    elif rejection is not None:
+        raise ValidationFailure("core step v2: non-rejection carries rejection")
+    if disposition == "faulted":
+        if document["fault"] is None:
+            raise ValidationFailure("core step v2: faulted result lacks fault")
+    elif document["fault"] is not None:
+        raise ValidationFailure("core step v2: non-fault result carries fault")
+    if disposition == "not_runnable" and (
+        document["emissions"] or document["lifecycle_dispositions"]
+    ):
+        raise ValidationFailure("core step v2: not-runnable result mutated output")
+
+    mailbox_entries: dict[str, dict[str, Any]] = {}
+    for runtime in document["state"]["runtimes"]:
+        for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"]):
+            for entry in mailbox:
+                mailbox_entries[entry["envelope"]["event_id"]] = entry
+    lifecycle_dispositions = document["lifecycle_dispositions"]
+    disposition_event_ids = [item["event_id"] for item in lifecycle_dispositions]
+    if len(disposition_event_ids) != len(set(disposition_event_ids)):
+        raise ValidationFailure("core step v2: duplicate lifecycle disposition")
+    if mailbox_entries.keys() & set(disposition_event_ids):
+        raise ValidationFailure("core step v2: emitted event has two locations")
+
+    internal_event_ids: set[str] = set()
+    for emission in document["emissions"]:
+        kind = emission.get("kind")
+        if kind not in {"internal_mailbox", "internal_disposed"}:
+            continue
+        event_id = emission["event_id"]
+        if event_id in internal_event_ids:
+            raise ValidationFailure("core step v2: duplicate internal emission reference")
+        internal_event_ids.add(event_id)
+        if kind == "internal_mailbox":
+            entry = mailbox_entries.get(event_id)
+            if entry is None or (
+                entry["acceptance_sequence"] != emission["acceptance_sequence"]
+                or entry["queue_sequence"] != emission["queue_sequence"]
+            ):
+                raise ValidationFailure(
+                    "core step v2: unresolved internal mailbox emission"
+                )
+            continue
+        index = canonical_decimal(
+            emission["lifecycle_disposition_index"],
+            "lifecycle disposition index",
+        )
+        if index >= len(lifecycle_dispositions):
+            raise ValidationFailure(
+                "core step v2: unresolved internal disposed emission"
+            )
+        lifecycle = lifecycle_dispositions[index]
+        if (
+            lifecycle["event_id"] != event_id
+            or lifecycle["acceptance_sequence"] != emission["acceptance_sequence"]
+        ):
+            raise ValidationFailure(
+                "core step v2: mismatched internal disposed emission"
+            )
+
+
+def validate_execution_checkpoint_v2_semantics(document: dict[str, Any]) -> None:
+    revision = canonical_decimal(document["revision"], "checkpoint v2 revision")
+    root_record = document["root_record"]
+    mailbox_entries: dict[str, dict[str, Any]] = {}
+    mailbox_acceptance_sequences: set[str] = set()
+    if root_record["status"] == "retained":
+        aggregate = root_record["aggregate_state"]
+        validate_aggregate_v2_semantics(aggregate)
+        if aggregate["root_instance_id"] != document["root_instance_id"]:
+            raise ValidationFailure("checkpoint v2: root mismatch")
+        for runtime in aggregate["runtimes"]:
+            for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"]):
+                for entry in mailbox:
+                    event_id = entry["envelope"]["event_id"]
+                    if event_id in mailbox_entries:
+                        raise ValidationFailure("checkpoint v2: duplicate mailbox event identity")
+                    if entry["acceptance_sequence"] in mailbox_acceptance_sequences:
+                        raise ValidationFailure("checkpoint v2: duplicate mailbox acceptance identity")
+                    mailbox_entries[event_id] = entry
+                    mailbox_acceptance_sequences.add(entry["acceptance_sequence"])
+
+    receipts = document["operation_receipts"]
+    if not receipts or receipts[0]["receipt_sequence"] != "0":
+        raise ValidationFailure("checkpoint v2: creation receipt must remain first")
+    creation_wrapper = receipts[0]
+    if creation_wrapper["operation_kind"] == "legacy_v1_creation":
+        creation_receipt = creation_wrapper["legacy_receipt"]
+    elif creation_wrapper["operation_kind"] == "creation":
+        creation_receipt = creation_wrapper
+    else:
+        raise ValidationFailure("checkpoint v2: creation receipt must remain first")
+    checkpoint_creation_id = (
+        root_record["aggregate_state"]["creation_id"]
+        if root_record["status"] == "retained"
+        else root_record["creation_id"]
+    )
+    if creation_receipt["creation_id"] != checkpoint_creation_id:
+        raise ValidationFailure("checkpoint v2: creation identity mismatch")
+    legacy_terminal_events: dict[str, dict[str, Any]] = {}
+    legacy_terminal_acceptance_sequences: set[str] = set()
+    for receipt in receipts:
+        receipt_revision = receipt.get("committed_revision")
+        if receipt_revision is not None and canonical_decimal(
+            receipt_revision, "checkpoint v2 receipt revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: receipt revision is in the future")
+        accepted_revision = receipt.get("accepted_revision")
+        if accepted_revision is not None and canonical_decimal(
+            accepted_revision, "checkpoint v2 accepted revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: accepted revision is in the future")
+        validate_engine_fault_code(receipt.get("fault"), "checkpoint v2 receipt")
+        outcome = receipt.get("outcome")
+        if isinstance(outcome, dict):
+            validate_engine_fault_code(
+                outcome.get("fault"), "checkpoint v2 terminal outcome"
+            )
+        legacy_receipt = receipt.get("legacy_receipt")
+        if isinstance(legacy_receipt, dict):
+            legacy_committed_revision = legacy_receipt.get("committed_revision")
+            if legacy_committed_revision is not None and canonical_decimal(
+                legacy_committed_revision, "checkpoint v2 legacy receipt revision"
+            ) > revision:
+                raise ValidationFailure(
+                    "checkpoint v2: legacy receipt revision is in the future"
+                )
+            legacy_accepted_revision = legacy_receipt.get("accepted_revision")
+            if legacy_accepted_revision is not None and canonical_decimal(
+                legacy_accepted_revision, "checkpoint v2 legacy accepted revision"
+            ) > revision:
+                raise ValidationFailure(
+                    "checkpoint v2: legacy accepted revision is in the future"
+                )
+            if (
+                legacy_committed_revision is not None
+                and legacy_accepted_revision is not None
+                and canonical_decimal(
+                    legacy_accepted_revision,
+                    "checkpoint v2 legacy accepted revision",
+                )
+                > canonical_decimal(
+                    legacy_committed_revision,
+                    "checkpoint v2 legacy committed revision",
+                )
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: legacy terminal revision precedes acceptance"
+                )
+            if legacy_receipt.get("receipt_sequence") != receipt["receipt_sequence"]:
+                raise ValidationFailure(
+                    "checkpoint v2: legacy receipt wrapper sequence mismatch"
+                )
+            validate_engine_fault_code(
+                legacy_receipt.get("fault"), "checkpoint v2 legacy receipt"
+            )
+            legacy_outcome = legacy_receipt.get("outcome")
+            if isinstance(legacy_outcome, dict):
+                validate_engine_fault_code(
+                    legacy_outcome.get("fault"),
+                    "checkpoint v2 legacy terminal outcome",
+                )
+            if legacy_receipt.get("operation_kind") == "delivery":
+                event_id = legacy_receipt["event_id"]
+                acceptance_sequence = legacy_receipt["accepted_delivery_sequence"]
+                if (
+                    event_id in legacy_terminal_events
+                    or acceptance_sequence in legacy_terminal_acceptance_sequences
+                ):
+                    raise ValidationFailure(
+                        "checkpoint v2: duplicate legacy terminal event identity"
+                    )
+                legacy_terminal_events[event_id] = legacy_receipt
+                legacy_terminal_acceptance_sequences.add(acceptance_sequence)
+    sequences = [
+        canonical_decimal(receipt["receipt_sequence"], "receipt sequence")
+        for receipt in receipts
+    ]
+    if sequences != sorted(sequences) or len(sequences) != len(set(sequences)):
+        raise ValidationFailure("checkpoint v2: receipt order is invalid")
+
+    terminal_location_receipts = {
+        receipt["event_id"]: receipt
+        for receipt in receipts
+        if receipt["operation_kind"] == "event_terminal"
+    }
+    tombstone_locations = {
+        item["event_id"]: item for item in document["event_identity_tombstones"]
+    }
+
+    def verify_legacy_acceptance_evidence(
+        receipt: dict[str, Any], entry: dict[str, Any] | None
+    ) -> None:
+        evidence = receipt.get("legacy_v1_delivery")
+        if evidence is None:
+            return
+        origin = evidence["origin"]
+        if (
+            evidence["delivery_sequence"] != receipt["acceptance_sequence"]
+            or evidence["envelope_digest"] == "sha256:" + ("0" * 64)
+            or evidence["envelope_digest"] == receipt["request_digest"]
+        ):
+            raise ValidationFailure(
+                "checkpoint v2: legacy acceptance provenance mismatch"
+            )
+        if entry is None:
+            valid_origin = (
+                receipt["delivery_mode"] == "input"
+                and origin == {"kind": "host_input"}
+            ) or (
+                receipt["delivery_mode"] == "internal"
+                and origin.get("kind") == "internal_emission"
+                and set(origin)
+                == {"kind", "producing_receipt_sequence", "emission_index"}
+            )
+            if not valid_origin:
+                raise ValidationFailure(
+                    "checkpoint v2: legacy acceptance provenance mismatch"
+                )
+            return
+        source = entry["envelope"]["source"]
+        legacy_envelope = copy.deepcopy(entry["envelope"])
+        legacy_envelope.pop("cause_id")
+        legacy_envelope.pop("source")
+        expected_legacy_digest = hash_value(
+            [
+                "determa-inbox-envelope-digest-1",
+                "1",
+                document["root_instance_id"],
+                entry["delivery_mode"],
+                legacy_envelope,
+            ]
+        )
+        valid_origin = (
+            "host" in source and origin == {"kind": "host_input"}
+        ) or (
+            "legacy_v1_internal" in source
+            and origin
+            == {
+                "kind": "internal_emission",
+                **source["legacy_v1_internal"],
+            }
+        )
+        if evidence["envelope_digest"] != expected_legacy_digest or not valid_origin:
+            raise ValidationFailure(
+                "checkpoint v2: legacy acceptance provenance mismatch"
+            )
+
+    upgrade_acceptance_sequences: set[int] = set()
+    legacy_wrappers = [
+        receipt
+        for receipt in receipts
+        if receipt["operation_kind"]
+        in {"legacy_v1_creation", "legacy_v1_operation"}
+    ]
+    if legacy_wrappers:
+        if receipts[: len(legacy_wrappers)] != legacy_wrappers:
+            raise ValidationFailure("checkpoint v2: legacy receipt prefix is invalid")
+        source_revision = max(
+            canonical_decimal(
+                receipt["legacy_receipt"]["committed_revision"],
+                "legacy source committed revision",
+            )
+            for receipt in legacy_wrappers
+        )
+        next_upgrade_sequence = None
+        for receipt in receipts[len(legacy_wrappers) :]:
+            receipt_sequence = canonical_decimal(
+                receipt["receipt_sequence"], "upgrade acceptance sequence"
+            )
+            accepted_revision = canonical_decimal(
+                receipt.get("accepted_revision", "0"),
+                "upgrade preserved accepted revision",
+            )
+            if (
+                receipt["operation_kind"] != "acceptance"
+                or (
+                    next_upgrade_sequence is not None
+                    and receipt_sequence != next_upgrade_sequence
+                )
+                or accepted_revision > source_revision + 1
+            ):
+                break
+            entry = mailbox_entries.get(receipt["event_id"])
+            terminal = terminal_location_receipts.get(receipt["event_id"])
+            tombstone = tombstone_locations.get(receipt["event_id"])
+            live_match = entry is not None and (
+                receipt["request_digest"] == entry["envelope_digest"]
+                and receipt["acceptance_sequence"] == entry["acceptance_sequence"]
+                and receipt["delivery_mode"] == entry["delivery_mode"]
+            )
+            terminal_match = terminal is not None and (
+                receipt["request_digest"] == terminal["request_digest"]
+                and receipt["acceptance_sequence"] == terminal["acceptance_sequence"]
+            )
+            tombstone_match = tombstone is not None and (
+                tombstone.get(
+                    "request_digest_domain", "determa-inbox-envelope-digest-2"
+                )
+                == "determa-inbox-envelope-digest-2"
+                and receipt["request_digest"] == tombstone["request_digest"]
+                and receipt["acceptance_sequence"] == tombstone["acceptance_sequence"]
+            )
+            if not (live_match or terminal_match or tombstone_match):
+                break
+            verify_legacy_acceptance_evidence(receipt, entry if live_match else None)
+            if (
+                receipt["delivery_mode"] == "internal"
+                and "legacy_v1_delivery" not in receipt
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: converted internal acceptance lacks legacy evidence"
+                )
+            upgrade_acceptance_sequences.add(receipt_sequence)
+            next_upgrade_sequence = receipt_sequence + 1
+            source_revision = max(source_revision, accepted_revision)
+
+    preserved_acceptance_history = [
+        (
+            canonical_decimal(
+                receipt["legacy_receipt"]["accepted_delivery_sequence"],
+                "legacy acceptance sequence",
+            ),
+            canonical_decimal(
+                receipt["legacy_receipt"]["accepted_revision"],
+                "legacy accepted revision",
+            ),
+        )
+        for receipt in legacy_wrappers
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+    ] + [
+        (
+            canonical_decimal(
+                receipt["acceptance_sequence"],
+                "converted acceptance sequence",
+            ),
+            canonical_decimal(
+                receipt["accepted_revision"],
+                "converted accepted revision",
+            ),
+        )
+        for receipt in receipts
+        if canonical_decimal(receipt["receipt_sequence"], "receipt sequence")
+        in upgrade_acceptance_sequences
+    ]
+    preserved_acceptance_history.sort()
+    if (
+        len({sequence for sequence, _ in preserved_acceptance_history})
+        != len(preserved_acceptance_history)
+        or [revision for _, revision in preserved_acceptance_history]
+        != sorted(revision for _, revision in preserved_acceptance_history)
+    ):
+        raise ValidationFailure(
+            "checkpoint v2: preserved acceptance history is not monotonic"
+        )
+
+    receipt_chronology: list[tuple[int, int]] = []
+    for receipt, receipt_sequence in zip(receipts, sequences, strict=True):
+        if receipt_sequence in upgrade_acceptance_sequences:
+            continue
+        if "committed_revision" in receipt:
+            effective_revision = receipt["committed_revision"]
+        elif "accepted_revision" in receipt:
+            effective_revision = receipt["accepted_revision"]
+        else:
+            effective_revision = receipt["legacy_receipt"]["committed_revision"]
+        receipt_chronology.append(
+            (
+                canonical_decimal(
+                    effective_revision,
+                    "checkpoint v2 receipt chronology revision",
+                ),
+                receipt_sequence,
+            )
+        )
+    if receipt_chronology != sorted(receipt_chronology):
+        raise ValidationFailure("checkpoint v2: receipt chronology is invalid")
+    if sequences and canonical_decimal(
+        document["next_operation_receipt_sequence"], "next receipt sequence"
+    ) <= max(sequences):
+        raise ValidationFailure("checkpoint v2: receipt counter regression")
+    pruning_cutoff = document["replay_retention"][
+        "pruned_through_receipt_sequence"
+    ]
+    if pruning_cutoff is not None:
+        cutoff = canonical_decimal(pruning_cutoff, "checkpoint pruning cutoff")
+        if any(sequence != 0 and sequence <= cutoff for sequence in sequences):
+            raise ValidationFailure(
+                "checkpoint v2: retained receipt contradicts pruning cutoff"
+            )
+
+    def require_sequence_order(values: list[dict[str, Any]], field: str, label: str) -> set[int]:
+        allocations = [canonical_decimal(item[field], label) for item in values]
+        if allocations != sorted(allocations) or len(allocations) != len(set(allocations)):
+            raise ValidationFailure(f"checkpoint v2: {label} order is invalid")
+        return set(allocations)
+
+    pending_intent_sequences = [
+        canonical_decimal(item["intent"]["sequence"], "pending outbox sequence")
+        for item in document["pending_outbox_intents"]
+    ]
+    for index, item in enumerate(document["pending_outbox_intents"]):
+        validate_typed_value_canonical(
+            item["intent"]["payload"],
+            f"checkpoint v2 pending outbox intent {index} payload",
+        )
+        if canonical_decimal(
+            item["state_revision"], "checkpoint v2 pending outbox revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: outbox revision is in the future")
+    if (
+        pending_intent_sequences != sorted(pending_intent_sequences)
+        or len(pending_intent_sequences) != len(set(pending_intent_sequences))
+    ):
+        raise ValidationFailure("checkpoint v2: pending outbox order is invalid")
+    terminal_outbox_sequences = require_sequence_order(
+        document["terminal_outbox_records"], "terminal_sequence", "terminal outbox sequence"
+    )
+    for index, item in enumerate(document["terminal_outbox_records"]):
+        validate_typed_value_canonical(
+            item["intent"]["payload"],
+            f"checkpoint v2 terminal outbox intent {index} payload",
+        )
+        if canonical_decimal(
+            item["committed_revision"], "checkpoint v2 terminal outbox revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: outbox revision is in the future")
+    for item in document["outbox_effect_tombstones"]:
+        if canonical_decimal(
+            item["committed_revision"], "checkpoint v2 outbox tombstone revision"
+        ) > revision:
+            raise ValidationFailure("checkpoint v2: outbox revision is in the future")
+    tombstone_outbox_sequences = require_sequence_order(
+        document["outbox_effect_tombstones"], "terminal_sequence", "outbox tombstone sequence"
+    )
+    audit_sequences = require_sequence_order(
+        document["migration_audit_records"], "migration_sequence", "migration audit sequence"
+    )
+    if terminal_outbox_sequences & tombstone_outbox_sequences:
+        raise ValidationFailure("checkpoint v2: outbox terminal sequence overlap")
+    next_terminal = canonical_decimal(
+        document["next_outbox_terminal_sequence"], "next outbox terminal sequence"
+    )
+    if terminal_outbox_sequences | tombstone_outbox_sequences:
+        if max(terminal_outbox_sequences | tombstone_outbox_sequences) >= next_terminal:
+            raise ValidationFailure("checkpoint v2: outbox terminal counter regression")
+    full_intent_sequences = pending_intent_sequences + [
+        canonical_decimal(item["intent"]["sequence"], "terminal outbox intent sequence")
+        for item in document["terminal_outbox_records"]
+    ]
+    if len(full_intent_sequences) != len(set(full_intent_sequences)):
+        raise ValidationFailure("checkpoint v2: outbox intent sequence overlap")
+    effect_ids = [
+        item["intent"]["effect_id"]
+        for item in document["pending_outbox_intents"]
+    ]
+    effect_ids += [
+        item["intent"]["effect_id"]
+        for item in document["terminal_outbox_records"]
+    ]
+    effect_ids += [item["effect_id"] for item in document["outbox_effect_tombstones"]]
+    if len(effect_ids) != len(set(effect_ids)):
+        raise ValidationFailure("checkpoint v2: outbox effect identity overlap")
+    if len(audit_sequences) != len(document["migration_audit_records"]):
+        raise ValidationFailure("checkpoint v2: duplicate migration audit sequence")
+
+    acceptance_list = [receipt for receipt in receipts if receipt["operation_kind"] == "acceptance"]
+    acceptance_receipts: dict[str, dict[str, Any]] = {}
+    acceptance_sequences: set[str] = set()
+    for receipt in acceptance_list:
+        if receipt["event_id"] in acceptance_receipts or receipt["acceptance_sequence"] in acceptance_sequences:
+            raise ValidationFailure("checkpoint v2: duplicate acceptance receipt identity")
+        acceptance_receipts[receipt["event_id"]] = receipt
+        acceptance_sequences.add(receipt["acceptance_sequence"])
+    terminal_list = [receipt for receipt in receipts if receipt["operation_kind"] == "event_terminal"]
+    terminal_receipts: dict[str, dict[str, Any]] = {}
+    terminal_acceptance_sequences: set[str] = set()
+    for receipt in terminal_list:
+        if receipt["event_id"] in terminal_receipts or receipt["acceptance_sequence"] in terminal_acceptance_sequences:
+            raise ValidationFailure("checkpoint v2: duplicate terminal event identity")
+        terminal_receipts[receipt["event_id"]] = receipt
+        terminal_acceptance_sequences.add(receipt["acceptance_sequence"])
+    tombstone_list = document["event_identity_tombstones"]
+    tombstone_order = [
+        canonical_decimal(item["terminal_receipt_sequence"], "tombstone terminal receipt sequence")
+        for item in tombstone_list
+    ]
+    if tombstone_order != sorted(tombstone_order) or len(tombstone_order) != len(set(tombstone_order)):
+        raise ValidationFailure("checkpoint v2: event tombstone order is invalid")
+    tombstones: dict[str, dict[str, Any]] = {}
+    tombstone_acceptance_sequences: set[str] = set()
+    for item in tombstone_list:
+        if item["event_id"] in tombstones or item["acceptance_sequence"] in tombstone_acceptance_sequences:
+            raise ValidationFailure("checkpoint v2: duplicate event tombstone identity")
+        tombstones[item["event_id"]] = item
+        tombstone_acceptance_sequences.add(item["acceptance_sequence"])
+    if terminal_acceptance_sequences & tombstone_acceptance_sequences:
+        raise ValidationFailure(
+            "checkpoint v2: terminal and tombstone acceptance allocations overlap"
+        )
+    if mailbox_acceptance_sequences & (
+        terminal_acceptance_sequences
+        | tombstone_acceptance_sequences
+        | legacy_terminal_acceptance_sequences
+    ):
+        raise ValidationFailure(
+            "checkpoint v2: live and terminal acceptance allocations overlap"
+        )
+    for sequence in acceptance_sequences & terminal_acceptance_sequences:
+        acceptance_event = next(
+            event_id
+            for event_id, receipt in acceptance_receipts.items()
+            if receipt["acceptance_sequence"] == sequence
+        )
+        terminal_event = next(
+            event_id
+            for event_id, receipt in terminal_receipts.items()
+            if receipt["acceptance_sequence"] == sequence
+        )
+        if acceptance_event != terminal_event:
+            raise ValidationFailure(
+                "checkpoint v2: acceptance allocation names conflicting events"
+            )
+    if acceptance_sequences & tombstone_acceptance_sequences:
+        raise ValidationFailure(
+            "checkpoint v2: acceptance receipt overlaps replacement tombstone allocation"
+        )
+    if acceptance_sequences & legacy_terminal_acceptance_sequences:
+        raise ValidationFailure(
+            "checkpoint v2: acceptance receipt overlaps legacy terminal allocation"
+        )
+    if legacy_terminal_acceptance_sequences & (
+        terminal_acceptance_sequences | tombstone_acceptance_sequences
+    ):
+        raise ValidationFailure(
+            "checkpoint v2: legacy and version-2 terminal allocations overlap"
+        )
+    mailbox_event_ids = set(mailbox_entries)
+    if mailbox_event_ids & terminal_receipts.keys():
+        raise ValidationFailure("checkpoint v2: event is live and terminal")
+    if mailbox_event_ids & tombstones.keys() or terminal_receipts.keys() & tombstones.keys():
+        raise ValidationFailure("checkpoint v2: event overlaps tombstone")
+    if acceptance_receipts.keys() & tombstones.keys():
+        raise ValidationFailure("checkpoint v2: acceptance receipt overlaps replacement tombstone")
+    if acceptance_receipts.keys() & legacy_terminal_events.keys():
+        raise ValidationFailure("checkpoint v2: acceptance receipt overlaps legacy terminal event")
+    if mailbox_event_ids & legacy_terminal_events.keys():
+        raise ValidationFailure("checkpoint v2: legacy terminal event remains in a mailbox")
+    if (terminal_receipts.keys() | tombstones.keys()) & legacy_terminal_events.keys():
+        raise ValidationFailure("checkpoint v2: legacy terminal event has multiple lifecycle locations")
+    next_receipt = canonical_decimal(
+        document["next_operation_receipt_sequence"], "next receipt sequence"
+    )
+    if any(sequence >= next_receipt for sequence in tombstone_order):
+        raise ValidationFailure("checkpoint v2: tombstone receipt counter regression")
+    if root_record["status"] == "retained":
+        next_acceptance = canonical_decimal(
+            root_record["aggregate_state"]["next_acceptance_sequence"],
+            "next acceptance sequence",
+        )
+        retained_acceptance_allocations = [
+            canonical_decimal(value, "retained acceptance sequence")
+            for value in (
+                list(acceptance_sequences)
+                + list(terminal_acceptance_sequences)
+                + list(tombstone_acceptance_sequences)
+                + list(legacy_terminal_acceptance_sequences)
+            )
+        ]
+        if retained_acceptance_allocations and max(retained_acceptance_allocations) >= next_acceptance:
+            raise ValidationFailure("checkpoint v2: acceptance counter regression")
+    producer_references: dict[str, list[tuple[dict[str, Any], dict[str, Any]]]] = {}
+    legacy_producer_references: dict[
+        str, list[tuple[dict[str, Any], dict[str, Any]]]
+    ] = {}
+    referenced_effects: set[str] = set()
+    for producer in receipts:
+        for reference in producer.get("emission_references", []):
+            if reference.get("kind") in {"internal_mailbox", "internal_terminal"}:
+                producer_references.setdefault(reference["event_id"], []).append((producer, reference))
+            elif reference.get("kind") == "external_outbox":
+                referenced_effects.add(reference["effect_id"])
+        legacy_receipt = producer.get("legacy_receipt")
+        if isinstance(legacy_receipt, dict):
+            for reference in legacy_receipt.get("emission_references", []):
+                if reference.get("kind") == "internal_delivery":
+                    legacy_producer_references.setdefault(
+                        reference["event_id"], []
+                    ).append((producer, reference))
+                elif reference.get("kind") == "external_outbox":
+                    referenced_effects.add(reference["effect_id"])
+
+    available_effects = set(effect_ids)
+    if not referenced_effects.issubset(available_effects):
+        raise ValidationFailure("checkpoint v2: outbox emission reference is dangling")
+    if (
+        document["replay_retention"]["mode"] == "permanent"
+        and available_effects != referenced_effects
+    ):
+        raise ValidationFailure("checkpoint v2: permanent outbox record lacks producer")
+
+    def validate_producer(event_id: str, entry: dict[str, Any] | None, terminal: dict[str, Any] | None) -> None:
+        matches = producer_references.get(event_id, [])
+        if len(matches) != 1:
+            raise ValidationFailure("checkpoint v2: internal event producer is not unique")
+        producer, reference = matches[0]
+        if entry is not None:
+            if reference["kind"] != "internal_mailbox" or reference["acceptance_sequence"] != entry["acceptance_sequence"] or reference["queue_sequence"] != entry["queue_sequence"]:
+                raise ValidationFailure("checkpoint v2: internal mailbox producer mismatch")
+        else:
+            assert terminal is not None
+            if reference["kind"] != "internal_terminal" or reference["acceptance_sequence"] != terminal["acceptance_sequence"] or reference["terminal_receipt_sequence"] != terminal["receipt_sequence"]:
+                raise ValidationFailure("checkpoint v2: internal terminal producer mismatch")
+            producer_revision = producer.get("committed_revision")
+            if producer_revision is None and isinstance(
+                producer.get("legacy_receipt"), dict
+            ):
+                producer_revision = producer["legacy_receipt"].get(
+                    "committed_revision"
+                )
+            if (
+                producer_revision is not None
+                and canonical_decimal(
+                    terminal["committed_revision"],
+                    "checkpoint v2 internal terminal revision",
+                )
+                < canonical_decimal(
+                    producer_revision,
+                    "checkpoint v2 producer committed revision",
+                )
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: internal terminal precedes its producer"
+                )
+
+    for event_id, entry in mailbox_entries.items():
+        source = entry["envelope"]["source"]
+        receipt = acceptance_receipts.get(event_id)
+        requires_acceptance = "host" in source or "legacy_v1_internal" in source
+        if requires_acceptance:
+            if receipt is None:
+                raise ValidationFailure("checkpoint v2: accepted mailbox event lacks receipt")
+            if receipt["request_digest"] != entry["envelope_digest"] or receipt["acceptance_sequence"] != entry["acceptance_sequence"] or receipt["delivery_mode"] != entry["delivery_mode"]:
+                raise ValidationFailure("checkpoint v2: mailbox acceptance identity mismatch")
+            legacy_evidence = receipt.get("legacy_v1_delivery")
+            if legacy_evidence is not None:
+                verify_legacy_acceptance_evidence(receipt, entry)
+            if "legacy_v1_internal" in source:
+                evidence = legacy_evidence
+                origin = source["legacy_v1_internal"]
+                if evidence is None or evidence["delivery_sequence"] != entry["acceptance_sequence"] or evidence["origin"].get("producing_receipt_sequence") != origin["producing_receipt_sequence"] or evidence["origin"].get("emission_index") != origin["emission_index"]:
+                    raise ValidationFailure("checkpoint v2: legacy internal evidence mismatch")
+                producers = legacy_producer_references.get(event_id, [])
+                if (
+                    len(producers) != 1
+                    or producers[0][0]["receipt_sequence"]
+                    != origin["producing_receipt_sequence"]
+                    or producers[0][1]["emission_index"]
+                    != origin["emission_index"]
+                    or producers[0][1]["delivery_sequence"]
+                    != entry["acceptance_sequence"]
+                ):
+                    raise ValidationFailure("checkpoint v2: legacy internal producer is missing")
+        else:
+            if receipt is not None:
+                raise ValidationFailure("checkpoint v2: native internal event has host acceptance receipt")
+            validate_producer(event_id, entry, None)
+    for event_id, terminal in terminal_receipts.items():
+        acceptance = acceptance_receipts.get(event_id)
+        if acceptance is not None:
+            if acceptance["request_digest"] != terminal["request_digest"] or acceptance["acceptance_sequence"] != terminal["acceptance_sequence"]:
+                raise ValidationFailure("checkpoint v2: terminal identity mismatch")
+            if (
+                canonical_decimal(
+                    terminal["committed_revision"],
+                    "checkpoint v2 terminal committed revision",
+                )
+                < canonical_decimal(
+                    acceptance["accepted_revision"],
+                    "checkpoint v2 acceptance revision",
+                )
+                or canonical_decimal(
+                    terminal["receipt_sequence"],
+                    "checkpoint v2 terminal receipt sequence",
+                )
+                <= canonical_decimal(
+                    acceptance["receipt_sequence"],
+                    "checkpoint v2 acceptance receipt sequence",
+                )
+            ):
+                raise ValidationFailure(
+                    "checkpoint v2: terminal evidence precedes acceptance"
+                )
+            legacy_evidence = acceptance.get("legacy_v1_delivery")
+            if (
+                acceptance["delivery_mode"] == "internal"
+                and legacy_evidence is not None
+            ):
+                origin = legacy_evidence["origin"]
+                producers = legacy_producer_references.get(event_id, [])
+                if (
+                    len(producers) != 1
+                    or producers[0][0]["receipt_sequence"]
+                    != origin["producing_receipt_sequence"]
+                    or producers[0][1]["emission_index"]
+                    != origin["emission_index"]
+                    or producers[0][1]["delivery_sequence"]
+                    != terminal["acceptance_sequence"]
+                ):
+                    raise ValidationFailure(
+                        "checkpoint v2: terminal legacy internal producer mismatch"
+                    )
+        else:
+            references = producer_references.get(event_id, [])
+            producer_was_attested_pruned = (
+                not references
+                and pruning_cutoff is not None
+                and canonical_decimal(
+                    pruning_cutoff, "checkpoint pruning cutoff"
+                )
+                < canonical_decimal(
+                    terminal["receipt_sequence"],
+                    "checkpoint v2 internal terminal receipt sequence",
+                )
+            )
+            if not producer_was_attested_pruned:
+                validate_producer(event_id, None, terminal)
+    located = (
+        mailbox_event_ids
+        | set(terminal_receipts)
+        | set(tombstones)
+        | set(legacy_terminal_events)
+    )
+    if set(acceptance_receipts) - located:
+        raise ValidationFailure("checkpoint v2: orphan acceptance receipt")
+    for event_id, references in producer_references.items():
+        if event_id not in located:
+            raise ValidationFailure("checkpoint v2: orphan internal producer reference")
+        if len(references) != 1:
+            raise ValidationFailure("checkpoint v2: duplicate internal producer reference")
+    for event_id, references in legacy_producer_references.items():
+        if event_id not in located:
+            raise ValidationFailure("checkpoint v2: orphan legacy producer reference")
+        if len(references) != 1:
+            raise ValidationFailure("checkpoint v2: duplicate legacy producer reference")
+        _, reference = references[0]
+        located_entry = mailbox_entries.get(event_id)
+        located_terminal = terminal_receipts.get(event_id)
+        located_tombstone = tombstones.get(event_id)
+        located_legacy_terminal = legacy_terminal_events.get(event_id)
+        location_evidence = (
+            located_entry
+            or located_terminal
+            or located_tombstone
+            or located_legacy_terminal
+        )
+        acceptance_sequence = location_evidence.get(
+            "acceptance_sequence",
+            location_evidence.get("accepted_delivery_sequence"),
+        )
+        if reference["delivery_sequence"] != acceptance_sequence:
+            raise ValidationFailure(
+                "checkpoint v2: legacy producer allocation does not match surviving event"
+            )
+
+
+def validate_version2_checkpoint_adversarial_probes(repository_root: Path) -> None:
+    from generate_version2_vectors import upgrade_checkpoint
+
+    case = repository_root / "conformance/profiles/execution-checkpoint/checkpoint-04-version2-mailboxes"
+
+    def reseal(value: dict[str, Any]) -> dict[str, Any]:
+        result = copy.deepcopy(value)
+        aggregate = result["root_record"].get("aggregate_state")
+        if aggregate is not None:
+            aggregate.pop("aggregate_state_digest", None)
+            aggregate["aggregate_state_digest"] = hash_value(["determa-aggregate-state-digest-2", aggregate])
+        result.pop("execution_checkpoint_digest", None)
+        result["execution_checkpoint_digest"] = hash_value(["determa-execution-checkpoint-digest-2", result])
+        return result
+
+    admitted = analyze_artifact(case / "admitted-checkpoint-v2.json").document
+    upgraded = analyze_artifact(case / "upgraded-checkpoint-v2.json").document
+    upgraded_outbox = analyze_artifact(
+        case / "upgraded-outbox-checkpoint-v2.json"
+    ).document
+    probes: dict[str, dict[str, Any]] = {}
+    creation_mismatch = copy.deepcopy(admitted)
+    creation_mismatch["root_record"]["aggregate_state"]["creation_id"] = (
+        "different-creation"
+    )
+    probes["retained root creation identity mismatch"] = reseal(creation_mismatch)
+    tombstoned = analyze_artifact(case / "tombstoned-checkpoint-v2.json").document
+    tombstone_creation_mismatch = copy.deepcopy(tombstoned)
+    tombstone_creation_mismatch["root_record"]["creation_id"] = (
+        "different-creation"
+    )
+    probes["tombstone creation identity mismatch"] = reseal(
+        tombstone_creation_mismatch
+    )
+    future_native_revision = copy.deepcopy(admitted)
+    next(
+        receipt
+        for receipt in future_native_revision["operation_receipts"]
+        if receipt["operation_kind"] == "acceptance"
+    )["accepted_revision"] = "999"
+    probes["native receipt revision beyond checkpoint"] = reseal(
+        future_native_revision
+    )
+    future_legacy_revision = copy.deepcopy(upgraded)
+    future_legacy_revision["operation_receipts"][0]["legacy_receipt"][
+        "committed_revision"
+    ] = "999"
+    probes["legacy receipt revision beyond checkpoint"] = reseal(
+        future_legacy_revision
+    )
+    native_terminal_before_acceptance = analyze_artifact(
+        case / "terminal-checkpoint-v2.json"
+    ).document
+    next(
+        receipt
+        for receipt in native_terminal_before_acceptance["operation_receipts"]
+        if receipt["operation_kind"] == "event_terminal"
+    )["committed_revision"] = "0"
+    probes["native terminal revision precedes acceptance"] = reseal(
+        native_terminal_before_acceptance
+    )
+    legacy_terminal_before_acceptance = copy.deepcopy(upgraded)
+    next(
+        receipt["legacy_receipt"]
+        for receipt in legacy_terminal_before_acceptance["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+        and receipt["legacy_receipt"].get("accepted_revision") == "1"
+    )["committed_revision"] = "0"
+    probes["wrapped legacy terminal revision precedes acceptance"] = reseal(
+        legacy_terminal_before_acceptance
+    )
+    native_global_chronology = analyze_artifact(
+        case / "native-internal-checkpoint-v2.json"
+    ).document
+    next(
+        receipt
+        for receipt in native_global_chronology["operation_receipts"]
+        if receipt["operation_kind"] == "acceptance"
+        and receipt["receipt_sequence"] == "3"
+    )["accepted_revision"] = "2"
+    probes["native receipt global chronology regression"] = reseal(
+        native_global_chronology
+    )
+    legacy_global_chronology = copy.deepcopy(upgraded)
+    next(
+        receipt["legacy_receipt"]
+        for receipt in legacy_global_chronology["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["receipt_sequence"] == "2"
+    )["accepted_revision"] = "1"
+    next(
+        receipt["legacy_receipt"]
+        for receipt in legacy_global_chronology["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["receipt_sequence"] == "2"
+    )["committed_revision"] = "1"
+    probes["wrapped legacy global chronology regression"] = reseal(
+        legacy_global_chronology
+    )
+    orphan = copy.deepcopy(admitted)
+    orphan["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"] = []
+    probes["orphan acceptance"] = reseal(orphan)
+    duplicate_acceptance = copy.deepcopy(admitted)
+    receipt = copy.deepcopy(next(item for item in duplicate_acceptance["operation_receipts"] if item["operation_kind"] == "acceptance"))
+    receipt["receipt_sequence"] = duplicate_acceptance["next_operation_receipt_sequence"]
+    duplicate_acceptance["next_operation_receipt_sequence"] = str(int(receipt["receipt_sequence"]) + 1)
+    duplicate_acceptance["operation_receipts"].append(receipt)
+    probes["duplicate acceptance identity"] = reseal(duplicate_acceptance)
+    wrong_digest = copy.deepcopy(admitted)
+    wrong_digest["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"][0]["envelope"]["payload"] = encode_typed_value({"amount": 9})
+    probes["envelope digest mismatch"] = reseal(wrong_digest)
+    missing_producer = copy.deepcopy(upgraded)
+    internal_entry = missing_producer["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"][0]
+    producer_sequence = internal_entry["envelope"]["source"]["legacy_v1_internal"]["producing_receipt_sequence"]
+    missing_producer["operation_receipts"] = [item for item in missing_producer["operation_receipts"] if item["receipt_sequence"] != producer_sequence]
+    probes["missing legacy producer"] = reseal(missing_producer)
+    missing_legacy_mailbox = copy.deepcopy(upgraded)
+    missing_legacy_mailbox["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"] = []
+    probes["removed upgraded legacy mailbox work"] = reseal(missing_legacy_mailbox)
+    missing_legacy_acceptance = copy.deepcopy(upgraded)
+    missing_legacy_acceptance["operation_receipts"] = [
+        item
+        for item in missing_legacy_acceptance["operation_receipts"]
+        if not (
+            item["operation_kind"] == "acceptance"
+            and item.get("event_id") == internal_entry["envelope"]["event_id"]
+        )
+    ]
+    probes["removed upgraded legacy acceptance receipt"] = reseal(missing_legacy_acceptance)
+    removed_legacy_event = copy.deepcopy(missing_legacy_acceptance)
+    removed_legacy_event["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"] = []
+    probes["removed upgraded legacy work and receipt"] = reseal(removed_legacy_event)
+    processed_legacy_internal = analyze_artifact(
+        case / "processed-upgraded-internal-checkpoint-v2.json"
+    ).document
+    for field in ("producing_receipt_sequence", "emission_index"):
+        invalid_provenance = copy.deepcopy(processed_legacy_internal)
+        acceptance = next(
+            receipt
+            for receipt in invalid_provenance["operation_receipts"]
+            if receipt.get("operation_kind") == "acceptance"
+            and receipt.get("delivery_mode") == "internal"
+        )
+        acceptance["legacy_v1_delivery"]["origin"][field] = "999"
+        probes[f"processed legacy internal {field} mismatch"] = reseal(
+            invalid_provenance
+        )
+    for filename, label in (
+        (
+            "multi-pending-processed-checkpoint-v2.json",
+            "converted acceptance history regression without metadata",
+        ),
+        (
+            "multi-pending-processed-with-metadata-checkpoint-v2.json",
+            "converted acceptance history regression with metadata",
+        ),
+    ):
+        backwards_history = analyze_artifact(case / filename).document
+        next(
+            receipt
+            for receipt in backwards_history["operation_receipts"]
+            if receipt.get("operation_kind") == "acceptance"
+            and receipt.get("event_id") == "delivery-unhandled"
+        )["accepted_revision"] = "0"
+        probes[label] = reseal(backwards_history)
+    legacy_counter = copy.deepcopy(upgraded_outbox)
+    legacy_counter["root_record"]["aggregate_state"][
+        "next_acceptance_sequence"
+    ] = "0"
+    probes["legacy terminal acceptance counter"] = reseal(legacy_counter)
+    legacy_duplicate_location = copy.deepcopy(upgraded)
+    legacy_duplicate_aggregate = legacy_duplicate_location["root_record"][
+        "aggregate_state"
+    ]
+    duplicate_entry = copy.deepcopy(
+        legacy_duplicate_aggregate["runtimes"][0]["ready_mailbox"][0]
+    )
+    legacy_receipt = next(
+        receipt["legacy_receipt"]
+        for receipt in legacy_duplicate_location["operation_receipts"]
+        if receipt["operation_kind"] == "legacy_v1_operation"
+        and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+    )
+    duplicate_entry["acceptance_sequence"] = legacy_receipt[
+        "accepted_delivery_sequence"
+    ]
+    duplicate_entry["envelope"]["event_id"] = legacy_receipt["event_id"]
+    duplicate_entry["envelope"]["cause_id"] = legacy_receipt["event_id"]
+    duplicate_entry["envelope_digest"] = hash_value(
+        [
+            "determa-inbox-envelope-digest-2",
+            "2",
+            legacy_duplicate_aggregate["root_instance_id"],
+            duplicate_entry["delivery_mode"],
+            duplicate_entry["envelope"],
+        ]
+    )
+    legacy_duplicate_aggregate["runtimes"][0]["deferred_mailbox"] = [
+        duplicate_entry
+    ]
+    probes["legacy terminal duplicated into mailbox"] = reseal(
+        legacy_duplicate_location
+    )
+    duplicate_location = copy.deepcopy(admitted)
+    duplicate_location["root_record"]["aggregate_state"]["runtimes"][0]["deferred_mailbox"] = copy.deepcopy(
+        duplicate_location["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"]
+    )
+    probes["duplicate mailbox location"] = reseal(duplicate_location)
+    overlap = analyze_artifact(case / "compact-checkpoint-v2.json").document
+    acceptance = copy.deepcopy(
+        next(
+            item
+            for item in analyze_artifact(case / "terminal-checkpoint-v2.json").document["operation_receipts"]
+            if item["operation_kind"] == "acceptance"
+        )
+    )
+    acceptance["receipt_sequence"] = overlap["next_operation_receipt_sequence"]
+    overlap["operation_receipts"].append(acceptance)
+    overlap["next_operation_receipt_sequence"] = str(int(acceptance["receipt_sequence"]) + 1)
+    probes["acceptance and replacement tombstone overlap"] = reseal(overlap)
+    allocation_conflict = analyze_artifact(case / "compact-checkpoint-v2.json").document
+    terminal = copy.deepcopy(
+        next(
+            item
+            for item in analyze_artifact(case / "terminal-checkpoint-v2.json").document["operation_receipts"]
+            if item["operation_kind"] == "event_terminal"
+        )
+    )
+    terminal["event_id"] = "different-event-for-same-acceptance"
+    terminal["receipt_sequence"] = allocation_conflict["next_operation_receipt_sequence"]
+    allocation_conflict["operation_receipts"].append(terminal)
+    allocation_conflict["next_operation_receipt_sequence"] = str(
+        int(terminal["receipt_sequence"]) + 1
+    )
+    probes["terminal and tombstone acceptance allocation conflict"] = reseal(
+        allocation_conflict
+    )
+    tombstone_counter = analyze_artifact(case / "compact-checkpoint-v2.json").document
+    tombstone_counter["event_identity_tombstones"][0]["terminal_receipt_sequence"] = (
+        tombstone_counter["next_operation_receipt_sequence"]
+    )
+    probes["tombstone allocation reaches next counter"] = reseal(tombstone_counter)
+    populated_outbox = analyze_artifact(case / "upgraded-outbox-checkpoint-v2.json").document
+    reversed_outbox = copy.deepcopy(populated_outbox)
+    reversed_outbox["pending_outbox_intents"].reverse()
+    probes["populated outbox order"] = reseal(reversed_outbox)
+    duplicate_effect = copy.deepcopy(populated_outbox)
+    duplicate_effect["pending_outbox_intents"][1]["intent"]["effect_id"] = (
+        duplicate_effect["pending_outbox_intents"][0]["intent"]["effect_id"]
+    )
+    probes["populated outbox effect identity"] = reseal(duplicate_effect)
+    for label, payload in (
+        (
+            "nested reordered pending outbox payload",
+            [
+                "map",
+                [["details", ["map", [["beta", ["integer", "2"]], ["alpha", ["integer", "1"]]]]]],
+            ],
+        ),
+        (
+            "duplicate pending outbox payload key",
+            [
+                "map",
+                [
+                    ["transaction_id", ["string", "tx-1"]],
+                    ["transaction_id", ["string", "tx-2"]],
+                ],
+            ],
+        ),
+    ):
+        malformed_outbox = copy.deepcopy(populated_outbox)
+        malformed_outbox["pending_outbox_intents"][0]["intent"]["payload"] = payload
+        probes[label] = reseal(malformed_outbox)
+    terminal_outbox = upgrade_checkpoint(
+        analyze_artifact(
+            repository_root
+            / "conformance/profiles/execution-checkpoint/checkpoint-02-outbox-lifecycle/outbox-total-checkpoint.json"
+        ).document
+    )
+    terminal_outbox["terminal_outbox_records"][0]["intent"]["payload"] = [
+        "map",
+        [["details", ["map", [["beta", ["integer", "2"]], ["alpha", ["integer", "1"]]]]]],
+    ]
+    probes["nested reordered terminal outbox payload"] = reseal(terminal_outbox)
+    for label, members in (
+        (
+            "checkpoint reversed envelope payload",
+            [["transaction_id", ["string", "tx-1"]], ["alpha", ["string", "a"]]],
+        ),
+        (
+            "checkpoint duplicate envelope payload key",
+            [
+                ["transaction_id", ["string", "tx-1"]],
+                ["transaction_id", ["string", "tx-2"]],
+            ],
+        ),
+    ):
+        malformed_payload = copy.deepcopy(admitted)
+        entry = malformed_payload["root_record"]["aggregate_state"]["runtimes"][0][
+            "ready_mailbox"
+        ][0]
+        entry["envelope"]["payload"] = ["map", members]
+        entry["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                malformed_payload["root_instance_id"],
+                entry["delivery_mode"],
+                entry["envelope"],
+            ]
+        )
+        acceptance = next(
+            receipt
+            for receipt in malformed_payload["operation_receipts"]
+            if receipt.get("operation_kind") == "acceptance"
+            and receipt.get("event_id") == entry["envelope"]["event_id"]
+        )
+        acceptance["request_digest"] = entry["envelope_digest"]
+        probes[label] = reseal(malformed_payload)
+    for name, probe in probes.items():
+        try:
+            validate_execution_checkpoint_v2_semantics(probe)
+        except ValidationFailure:
+            continue
+        raise ValidationFailure(f"version-2 adversarial probe was accepted: {name}")
+
+    spawned_v1 = analyze_artifact(case / "spawned-child-checkpoint-v1.json").document
+    for label, members in (
+        (
+            "version-1 reversed envelope payload",
+            [["transaction_id", ["string", "tx-1"]], ["alpha", ["string", "a"]]],
+        ),
+        (
+            "version-1 duplicate envelope payload key",
+            [
+                ["transaction_id", ["string", "tx-1"]],
+                ["transaction_id", ["string", "tx-2"]],
+            ],
+        ),
+    ):
+        probe = copy.deepcopy(spawned_v1)
+        pending = probe["pending_deliveries"][0]
+        pending["envelope"]["payload"] = ["map", members]
+        pending["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-1",
+                "1",
+                probe["root_instance_id"],
+                pending["delivery_mode"],
+                pending["envelope"],
+            ]
+        )
+        probe.pop("execution_checkpoint_digest")
+        probe["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-1", probe]
+        )
+        try:
+            validate_execution_checkpoint_semantics(probe)
+        except ValidationFailure:
+            continue
+        raise ValidationFailure(f"adversarial probe was accepted: {label}")
+
+    outbox_case = (
+        repository_root
+        / "conformance/profiles/execution-checkpoint/checkpoint-02-outbox-lifecycle"
+    )
+    for outbox_location, filename, collection in (
+        ("pending", "outbox-created-checkpoint.json", "pending_outbox_intents"),
+        ("terminal", "outbox-total-checkpoint.json", "terminal_outbox_records"),
+    ):
+        source = analyze_artifact(outbox_case / filename).document
+        for shape, payload in (
+            (
+                "reordered",
+                [
+                    "map",
+                    [
+                        [
+                            "details",
+                            [
+                                "map",
+                                [
+                                    ["beta", ["integer", "2"]],
+                                    ["alpha", ["integer", "1"]],
+                                ],
+                            ],
+                        ]
+                    ],
+                ],
+            ),
+            (
+                "duplicate",
+                [
+                    "map",
+                    [
+                        ["transaction_id", ["string", "tx-1"]],
+                        ["transaction_id", ["string", "tx-2"]],
+                    ],
+                ],
+            ),
+        ):
+            probe = copy.deepcopy(source)
+            probe[collection][0]["intent"]["payload"] = payload
+            probe.pop("execution_checkpoint_digest")
+            probe["execution_checkpoint_digest"] = hash_value(
+                ["determa-execution-checkpoint-digest-1", probe]
+            )
+            try:
+                validate_execution_checkpoint_semantics(probe)
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                "adversarial probe was accepted: "
+                f"v1 {outbox_location} outbox {shape} payload"
+            )
+
+
+def validate_all_retained_version1_checkpoint_upgrades(repository_root: Path) -> None:
+    from generate_version2_vectors import target_runtime_id, upgrade_checkpoint
+
+    target_probe_paths = (
+        repository_root
+        / "conformance/profiles/execution-checkpoint/checkpoint-01-delivery-lifecycle/created-checkpoint.json",
+        repository_root
+        / "conformance/core/117-version2-mailboxes/component-isolation-aggregate.json",
+        repository_root
+        / "conformance/core/105-owned-runtime-migration/source-aggregate-state.json",
+    )
+    targets = []
+    for path in target_probe_paths:
+        document = analyze_artifact(path).document
+        aggregate = document.get("root_record", {}).get("aggregate_state", document)
+        runtime = next(
+            item
+            for item in aggregate["runtimes"]
+            if item["relation"]["kind"]
+            in {"root", "component", "owned_spawned_instance"}
+            and not any(
+                next(iter(existing)) == next(iter(item["target_identity"]))
+                for existing in targets
+            )
+        )
+        targets.append(runtime["target_identity"])
+        if target_runtime_id(runtime["target_identity"]) != runtime["runtime_id"]:
+            raise ValidationFailure(
+                "version-1 checkpoint target resolver changed runtime identity"
+            )
+    if {next(iter(target)) for target in targets} != {
+        "root",
+        "component",
+        "spawned_instance",
+    }:
+        raise ValidationFailure("checkpoint target resolver probe is incomplete")
+
+    checkpoint_root = repository_root / "conformance/profiles/execution-checkpoint"
+    retained_paths: set[Path] = set()
+    for test_path in checkpoint_root.rglob("test.yaml"):
+        test = yaml_loader().load(test_path.read_text(encoding="utf-8"))
+        for entry in test.get("artifacts", {}).get("documents", []):
+            if entry.get("kind") != "execution_checkpoint" or not entry.get("valid"):
+                continue
+            path = test_path.parent / entry["file"]
+            checkpoint = analyze_artifact(path).document
+            if checkpoint["root_record"]["status"] == "retained":
+                retained_paths.add(path)
+    if len(retained_paths) != 42:
+        raise ValidationFailure(
+            "version-1 retained checkpoint upgrade probe set is incomplete"
+        )
+    for path in sorted(retained_paths):
+        upgraded = upgrade_checkpoint(analyze_artifact(path).document)
+        validate_execution_checkpoint_v2_semantics(upgraded)
+
+
+def validate_version1_fault_code_adversarial_probes(repository_root: Path) -> None:
+    faulted = analyze_artifact(
+        repository_root
+        / "conformance/core/94-aggregate-wire-round-trip/faulted-aggregate-state.json"
+    ).document
+    invalid = copy.deepcopy(faulted)
+    next(runtime for runtime in invalid["runtimes"] if runtime["fault"] is not None)[
+        "fault"
+    ]["code"] = "action_evaluation_failed"
+    try:
+        validate_aggregate_v1_fault_codes(invalid)
+    except ValidationFailure:
+        pass
+    else:
+        raise ValidationFailure(
+            "version-1 fault-code probe accepted action_evaluation_failed"
+        )
+
+    application_data = copy.deepcopy(
+        analyze_artifact(
+            repository_root
+            / "conformance/core/105-owned-runtime-migration/source-aggregate-state.json"
+        ).document
+    )
+    runtime = next(item for item in application_data["runtimes"] if item["variables"])
+    runtime["variables"][0]["value"] = encode_typed_value(
+        {"fault": {"code": "payment_declined"}}
+    )
+    validate_aggregate_v1_fault_codes(application_data)
+
+
+def validate_version2_aggregate_adversarial_probes(repository_root: Path) -> None:
+    from generate_version2_vectors import upgrade_aggregate
+
+    case = repository_root / "conformance/core/117-version2-mailboxes"
+    component = analyze_artifact(case / "component-isolation-aggregate.json").document
+    mailbox = analyze_artifact(case / "base-aggregate.json").document
+    payload_mailbox = analyze_artifact(case / "repeated-before.json").document
+    probes: dict[str, dict[str, Any]] = {}
+
+    def reseal(value: dict[str, Any]) -> dict[str, Any]:
+        result = copy.deepcopy(value)
+        result.pop("aggregate_state_digest", None)
+        result["aggregate_state_digest"] = hash_value(
+            ["determa-aggregate-state-digest-2", result]
+        )
+        return result
+
+    runtime_order = copy.deepcopy(component)
+    runtime_order["runtimes"].reverse()
+    probes["runtime order"] = runtime_order
+
+    component_runtime = next(
+        runtime for runtime in component["runtimes"] if runtime["relation"]["kind"] == "component"
+    )
+    for field, label in (
+        ("active_state_activations", "state activation order"),
+        ("next_state_activation_sequences", "state counter order"),
+    ):
+        probe = copy.deepcopy(component)
+        target = next(runtime for runtime in probe["runtimes"] if runtime["runtime_id"] == component_runtime["runtime_id"])
+        target[field].reverse()
+        probes[label] = probe
+
+    leaf_duplicate = copy.deepcopy(component)
+    target = next(runtime for runtime in leaf_duplicate["runtimes"] if runtime["runtime_id"] == component_runtime["runtime_id"])
+    target["active_leaf_state_definition_pointers"].append(target["active_leaf_state_definition_pointers"][0])
+    probes["duplicate active leaf"] = leaf_duplicate
+
+    variable_duplicate = copy.deepcopy(component)
+    target = next(runtime for runtime in variable_duplicate["runtimes"] if runtime["runtime_id"] == component_runtime["runtime_id"])
+    target["variables"].append(copy.deepcopy(target["variables"][0]))
+    probes["duplicate variable key"] = variable_duplicate
+
+    application_fault_data = copy.deepcopy(component)
+    application_runtime = next(
+        runtime
+        for runtime in application_fault_data["runtimes"]
+        if runtime["variables"]
+    )
+    application_runtime["variables"][0]["value"] = encode_typed_value(
+        [{"fault": {"code": "payment_declined"}}]
+    )
+    application_fault_data = reseal(application_fault_data)
+    validate_aggregate_v2_semantics(application_fault_data)
+    validate_aggregate_against_bundle(
+        application_fault_data, case / "component-machine.yaml"
+    )
+
+    reversed_nested_map = copy.deepcopy(application_fault_data)
+    reversed_nested_map["runtimes"][
+        reversed_nested_map["runtimes"].index(
+            next(
+                runtime
+                for runtime in reversed_nested_map["runtimes"]
+                if runtime["variables"]
+            )
+        )
+    ]["variables"][0]["value"] = [
+        "list",
+        [["map", [["beta", ["integer", "2"]], ["alpha", ["integer", "1"]]]]],
+    ]
+    probes["reversed recursive typed-map keys"] = reseal(reversed_nested_map)
+
+    duplicate_nested_map = copy.deepcopy(application_fault_data)
+    duplicate_runtime = next(
+        runtime
+        for runtime in duplicate_nested_map["runtimes"]
+        if runtime["variables"]
+    )
+    duplicate_runtime["variables"][0]["value"] = [
+        "list",
+        [["map", [["alpha", ["integer", "1"]], ["alpha", ["integer", "2"]]]]],
+    ]
+    probes["duplicate recursive typed-map keys"] = reseal(duplicate_nested_map)
+
+    payload_entry = next(
+        entry
+        for runtime in payload_mailbox["runtimes"]
+        for mailbox_entries in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+        for entry in mailbox_entries
+        if any(
+            member[0] == "transaction_id"
+            for member in entry["envelope"]["payload"][1]
+        )
+    )
+    for label, members in (
+        (
+            "reversed envelope payload map",
+            [["transaction_id", ["string", "tx-1"]], ["alpha", ["string", "a"]]],
+        ),
+        (
+            "duplicate envelope payload map key",
+            [
+                ["transaction_id", ["string", "tx-1"]],
+                ["transaction_id", ["string", "tx-2"]],
+            ],
+        ),
+    ):
+        probe = copy.deepcopy(payload_mailbox)
+        candidate = next(
+            entry
+            for runtime in probe["runtimes"]
+            for mailbox_entries in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+            for entry in mailbox_entries
+            if entry["envelope"]["event_id"]
+            == payload_entry["envelope"]["event_id"]
+        )
+        candidate["envelope"]["payload"] = ["map", members]
+        candidate["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                probe["root_instance_id"],
+                candidate["delivery_mode"],
+                candidate["envelope"],
+            ]
+        )
+        probes[label] = reseal(probe)
+
+    component_counter_order = copy.deepcopy(component)
+    root = next(runtime for runtime in component_counter_order["runtimes"] if runtime["relation"]["kind"] == "root")
+    root["next_component_activation_sequences"].reverse()
+    probes["component counter order"] = component_counter_order
+
+    mailbox_order = copy.deepcopy(mailbox)
+    root = next(runtime for runtime in mailbox_order["runtimes"] if runtime["relation"]["kind"] == "root")
+    root["ready_mailbox"].reverse()
+    probes["mailbox order"] = mailbox_order
+
+    nested_fault = analyze_artifact(
+        case / "faulted-component-aggregate.json"
+    ).document
+    nested_fault = copy.deepcopy(nested_fault)
+    faulted_runtime = next(
+        runtime for runtime in nested_fault["runtimes"] if runtime["fault"] is not None
+    )
+    faulted_runtime["fault"]["code"] = "action_evaluation_failed"
+    probes["nested non-closed fault code"] = nested_fault
+
+    reserved_failure = copy.deepcopy(
+        analyze_artifact(
+            case / "internal-emission-retained-faulted-result.json"
+        ).document["state"]
+    )
+    failure_entry = next(
+        entry
+        for runtime in reserved_failure["runtimes"]
+        for entry in runtime["ready_mailbox"]
+        if entry["envelope"]["event"] == "determa.component_failed"
+    )
+    payload_members = dict(failure_entry["envelope"]["payload"][1])
+    fault_members = dict(payload_members["fault"][1])
+    fault_members["code"] = ["string", "action_evaluation_failed"]
+    payload_members["fault"] = [
+        "map",
+        [[key, fault_members[key]] for key in sorted(fault_members)],
+    ]
+    failure_entry["envelope"]["payload"] = [
+        "map",
+        [[key, payload_members[key]] for key in sorted(payload_members)],
+    ]
+    failure_entry["envelope_digest"] = hash_value(
+        [
+            "determa-inbox-envelope-digest-2",
+            "2",
+            reserved_failure["root_instance_id"],
+            failure_entry["delivery_mode"],
+            failure_entry["envelope"],
+        ]
+    )
+    probes["reserved failure non-closed fault code"] = reseal(reserved_failure)
+
+    for name, probe in probes.items():
+        try:
+            validate_aggregate_v2_semantics(probe)
+        except ValidationFailure:
+            continue
+        raise ValidationFailure(f"version-2 aggregate adversarial probe was accepted: {name}")
+
+    fabricated = copy.deepcopy(mailbox)
+    original_root_id = fabricated["root_runtime_id"]
+    fabricated_root_id = "sha256:" + "0" * 64
+    fabricated = json.loads(
+        json.dumps(fabricated).replace(original_root_id, fabricated_root_id)
+    )
+    for runtime in fabricated["runtimes"]:
+        for mailbox_name in ("ready_mailbox", "deferred_mailbox"):
+            for entry in runtime[mailbox_name]:
+                entry["envelope_digest"] = hash_value(
+                    [
+                        "determa-inbox-envelope-digest-2",
+                        "2",
+                        fabricated["root_instance_id"],
+                        entry["delivery_mode"],
+                        entry["envelope"],
+                    ]
+                )
+    fabricated.pop("aggregate_state_digest", None)
+    fabricated["aggregate_state_digest"] = hash_value(
+        ["determa-aggregate-state-digest-2", fabricated]
+    )
+    validate_aggregate_v2_semantics(fabricated)
+    try:
+        validate_aggregate_against_bundle(fabricated, case / "machine.yaml")
+    except ValidationFailure:
+        pass
+    else:
+        raise ValidationFailure(
+            "version-2 aggregate adversarial probe accepted fabricated root identity"
+        )
+
+    component_migration_case = repository_root / "conformance/core/104-component-migration"
+    migrated_component = upgrade_aggregate(
+        analyze_artifact(
+            component_migration_case / "expected-aggregate-state.json"
+        ).document
+    )
+    validate_aggregate_v2_semantics(migrated_component)
+    validate_aggregate_against_bundle(
+        migrated_component,
+        component_migration_case / "target.yaml",
+        component_migration_case / "machine.yaml",
+    )
+
+
 def artifact_error(
     kind: str,
     document: Any,
@@ -1099,12 +3334,35 @@ def artifact_error(
         return version_error
     if next(validator.iter_errors(document), None) is not None:
         return structural_error
-    if kind == "execution_checkpoint":
+    if kind == "aggregate_state":
+        try:
+            validate_aggregate_v1_fault_codes(document)
+        except ValidationFailure:
+            return structural_error
+    if kind == "aggregate_state_v2":
+        try:
+            validate_aggregate_v2_semantics(document)
+        except ValidationFailure:
+            return structural_error
+    if kind == "migration_descriptor_v2":
+        selectors = [
+            (rule["machine_id"], rule["event"], rule["delivery_mode"])
+            for rule in document["queued_event_rules"]
+        ]
+        if len(selectors) != len(set(selectors)):
+            return structural_error
+    if kind == "core_step_result_v2":
+        try:
+            validate_aggregate_v2_semantics(document["state"])
+            validate_core_step_v2_semantics(document)
+        except ValidationFailure:
+            return structural_error
+    if kind in {"execution_checkpoint", "execution_checkpoint_v2"}:
         root_record = document["root_record"]
         if root_record["status"] == "retained":
             try:
                 verify_artifact_digest(
-                    "aggregate_state",
+                    "aggregate_state_v2" if kind == "execution_checkpoint_v2" else "aggregate_state",
                     root_record["aggregate_state"],
                     Path("<embedded aggregate>"),
                 )
@@ -1113,14 +3371,25 @@ def artifact_error(
         without_digest = dict(document)
         without_digest.pop("execution_checkpoint_digest", None)
         expected_digest = hash_value(
-            ["determa-execution-checkpoint-digest-1", without_digest]
+            [
+                "determa-execution-checkpoint-digest-2"
+                if kind == "execution_checkpoint_v2"
+                else "determa-execution-checkpoint-digest-1",
+                without_digest,
+            ]
         )
         if document["execution_checkpoint_digest"] != expected_digest:
             return "execution_checkpoint_digest_mismatch"
-        try:
-            validate_execution_checkpoint_semantics(document)
-        except ValidationFailure:
-            return structural_error
+        if kind == "execution_checkpoint":
+            try:
+                validate_execution_checkpoint_semantics(document)
+            except ValidationFailure:
+                return structural_error
+        else:
+            try:
+                validate_execution_checkpoint_v2_semantics(document)
+            except ValidationFailure:
+                return structural_error
     return None
 
 
@@ -1570,6 +3839,3880 @@ def validate_direct_descriptor_expectation_probes() -> None:
         except ValidationFailure:
             continue
         raise ValidationFailure(f"{name}: adversarial expectation was accepted")
+
+
+def checkpoint_replay_result(
+    checkpoint: dict[str, Any], delivery: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Return the exact replay response justified by retained v2 evidence."""
+    event_id = delivery["envelope"]["event_id"]
+    digest_domain = delivery.get(
+        "request_digest_domain", "determa-inbox-envelope-digest-2"
+    )
+    digest_version = "1" if digest_domain.endswith("-1") else "2"
+    request_digest = hash_value(
+        [
+            digest_domain,
+            digest_version,
+            checkpoint["root_instance_id"],
+            delivery["delivery_mode"],
+            delivery["envelope"],
+        ]
+    )
+    if digest_domain == "determa-inbox-envelope-digest-1":
+        legacy = next(
+            (
+                receipt
+                for receipt in checkpoint["operation_receipts"]
+                if receipt.get("operation_kind") == "legacy_v1_operation"
+                and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+                and receipt["legacy_receipt"].get("event_id") == event_id
+                and receipt["legacy_receipt"].get("request_digest")
+                == request_digest
+            ),
+            None,
+        )
+        if legacy is not None:
+            nested = legacy["legacy_receipt"]
+            return {
+                "result": "replay",
+                "event_id": event_id,
+                "acceptance_sequence": nested["accepted_delivery_sequence"],
+                "terminal_receipt_sequence": legacy["receipt_sequence"],
+                "terminal_disposition": nested["outcome"]["disposition"],
+                "request_digest_domain": digest_domain,
+            }
+        legacy_tombstone = next(
+            (
+                item
+                for item in checkpoint["event_identity_tombstones"]
+                if item["event_id"] == event_id
+                and item["request_digest"] == request_digest
+                and item["request_digest_domain"] == digest_domain
+            ),
+            None,
+        )
+        if legacy_tombstone is None:
+            return None
+        return {
+            "result": "replay",
+            "event_id": event_id,
+            "acceptance_sequence": legacy_tombstone["acceptance_sequence"],
+            "terminal_receipt_sequence": legacy_tombstone[
+                "terminal_receipt_sequence"
+            ],
+            "terminal_disposition": legacy_tombstone["terminal_disposition"],
+            "request_digest_domain": digest_domain,
+        }
+    root_record = checkpoint["root_record"]
+    if root_record["status"] == "retained":
+        for runtime in root_record["aggregate_state"]["runtimes"]:
+            for location, mailbox in (
+                ("ready", runtime["ready_mailbox"]),
+                ("deferred", runtime["deferred_mailbox"]),
+            ):
+                for entry in mailbox:
+                    if (
+                        entry["envelope"]["event_id"] == event_id
+                        and entry["envelope_digest"] == request_digest
+                    ):
+                        return {
+                            "result": "replay",
+                            "event_id": event_id,
+                            "acceptance_sequence": entry["acceptance_sequence"],
+                            "location": location,
+                        }
+    acceptance = next(
+        (
+            receipt
+            for receipt in checkpoint["operation_receipts"]
+            if receipt.get("operation_kind") == "acceptance"
+            and receipt.get("event_id") == event_id
+            and receipt.get("request_digest") == request_digest
+        ),
+        None,
+    )
+    terminal = next(
+        (
+            receipt
+            for receipt in checkpoint["operation_receipts"]
+            if receipt.get("operation_kind") == "event_terminal"
+            and receipt.get("event_id") == event_id
+            and receipt.get("request_digest") == request_digest
+        ),
+        None,
+    )
+    if acceptance is not None and terminal is not None:
+        return {
+            "result": "replay",
+            "acceptance_receipt_sequence": acceptance["receipt_sequence"],
+            "terminal_receipt_sequence": terminal["receipt_sequence"],
+        }
+    tombstone = next(
+        (
+            item
+            for item in checkpoint["event_identity_tombstones"]
+            if item["event_id"] == event_id
+            and item["request_digest"] == request_digest
+        ),
+        None,
+    )
+    if tombstone is not None:
+        return {
+            "result": "replay",
+            "terminal_receipt_sequence": tombstone["terminal_receipt_sequence"],
+            "terminal_disposition": tombstone["terminal_disposition"],
+        }
+    return None
+
+
+def validate_version2_vectors(
+    case: Path,
+    test: dict[str, Any],
+    bundle_paths: set[Path],
+    artifact_paths: set[Path],
+    *,
+    artifact_overrides: dict[str, Any] | None = None,
+    run_mutation_probes: bool = True,
+) -> set[str]:
+    """Validate the closed language-neutral version-2 operation table."""
+    from generate_version2_vectors import upgrade_checkpoint
+
+    bundle_names = {path.name for path in bundle_paths}
+    artifact_names = {path.name for path in artifact_paths}
+    manifests = {
+        entry["file"]: entry for entry in test["artifacts"]["documents"]
+    }
+    coverage: set[str] = set()
+    names: set[str] = set()
+    artifact_overrides = artifact_overrides or {}
+
+    def artifact(filename: str) -> ArtifactAnalysis:
+        if filename not in artifact_overrides:
+            return analyze_artifact(case / filename)
+        document = artifact_overrides[filename]
+        return ArtifactAnalysis(None, document, canonical_json_bytes(document))
+
+    state_operations = {
+        "admit_v2",
+        "step_v2",
+        "downgrade_aggregate_v2_to_v1",
+        "migrate_aggregate_v2",
+    }
+    checkpoint_operations = {
+        "checkpoint_admit_v2",
+        "checkpoint_step_v2",
+        "checkpoint_prune_v2",
+        "checkpoint_tombstone_v2",
+        "checkpoint_migrate_v2",
+        "checkpoint_v1_accept",
+        "downgrade_checkpoint_v2_to_v1",
+    }
+    descriptor_operations = {"migrate_aggregate_v2", "checkpoint_migrate_v2"}
+    core_admission_rejection_codes = {
+        "malformed_delivery",
+        "duplicate_event_id_in_batch",
+        "event_id_conflict",
+        "invalid_delivery_mode",
+        "invalid_delivery_source",
+        "invalid_instance_target",
+        "inactive_component_target",
+        "invalid_event",
+        "invalid_payload",
+        "invalid_correlation",
+        "delivery_digest_mismatch",
+    }
+    checkpoint_admission_rejection_codes = core_admission_rejection_codes | {
+        "wrong_root",
+        "terminal_root",
+        "tombstoned_root",
+        "checkpoint_revision_conflict",
+    }
+    aggregate_artifact_failure_codes = {
+        "unsupported_aggregate_state_format",
+        "unsupported_aggregate_state_schema_version",
+        "invalid_aggregate_state",
+        "aggregate_state_digest_mismatch",
+    }
+    checkpoint_artifact_failure_codes = {
+        "unsupported_execution_checkpoint_format",
+        "unsupported_execution_checkpoint_schema_version",
+        "invalid_execution_checkpoint",
+        "execution_checkpoint_digest_mismatch",
+    }
+    migration_failure_codes = {
+        "invalid_aggregate_state",
+        "invalid_aggregate_state_package",
+        "definition_fingerprint_mismatch",
+        "definition_untrusted",
+        "invalid_migration_request",
+        "source_definition_unavailable",
+        "target_definition_unavailable",
+        "migration_descriptor_untrusted",
+        "invalid_migration_descriptor",
+        "migration_route_missing",
+        "migration_route_mismatch",
+        "migration_transform_fault",
+        "migration_totality_failure",
+        "migration_resource_limit_exceeded",
+        "terminal_migration_requires_maintenance",
+        "terminal_migration_rejected",
+        "unsupported_aggregate_state_format",
+        "unsupported_aggregate_state_schema_version",
+        "unsupported_migration_descriptor_format",
+        "unsupported_migration_descriptor_schema_version",
+    }
+    operation_failure_codes = {
+        "create_v2": {
+            "invalid_creation_request",
+            "invalid_machine_target",
+            "invalid_binding",
+        },
+        "admit_v2": core_admission_rejection_codes
+        | aggregate_artifact_failure_codes,
+        "step_v2": aggregate_artifact_failure_codes,
+        "upgrade_aggregate_v1_to_v2": aggregate_artifact_failure_codes,
+        "downgrade_aggregate_v2_to_v1": aggregate_artifact_failure_codes
+        | {"migration_totality_failure"},
+        "migrate_aggregate_v2": migration_failure_codes,
+        "upgrade_checkpoint_v1_to_v2": checkpoint_artifact_failure_codes
+        | {"checkpoint_revision_conflict"},
+        "downgrade_checkpoint_v2_to_v1": checkpoint_artifact_failure_codes
+        | {"checkpoint_revision_conflict"},
+        "checkpoint_admit_v2": checkpoint_artifact_failure_codes
+        | checkpoint_admission_rejection_codes,
+        "checkpoint_step_v2": checkpoint_artifact_failure_codes
+        | {"checkpoint_revision_conflict"},
+        "checkpoint_prune_v2": checkpoint_artifact_failure_codes
+        | {"checkpoint_revision_conflict"},
+        "checkpoint_tombstone_v2": checkpoint_artifact_failure_codes
+        | {"checkpoint_revision_conflict", "operation_id_conflict"},
+        "checkpoint_migrate_v2": checkpoint_artifact_failure_codes
+        | migration_failure_codes
+        | {"checkpoint_revision_conflict", "operation_id_conflict"},
+        "checkpoint_v1_accept": checkpoint_artifact_failure_codes
+        | {"checkpoint_upgrade_required"},
+    }
+    declared_version2_operations = set(
+        json.loads(
+            (
+                Path(__file__).resolve().parent
+                / "schemas/version2-vectors.schema.json"
+            ).read_text(encoding="utf-8")
+        )["$defs"]["vector"]["properties"]["operation"]["enum"]
+    )
+    if set(operation_failure_codes) != declared_version2_operations:
+        raise ValidationFailure(
+            "version-2 operation failure vocabulary is not total"
+        )
+
+    def require_allowed_operation_failure_code(operation: str, code: str) -> None:
+        if code not in operation_failure_codes[operation]:
+            raise ValidationFailure(
+                f"rejection code {code} is not allowed for {operation}"
+            )
+
+    if run_mutation_probes:
+        all_registered_codes = {
+            entry["code"] for entry in _CLOSED_CODE_REGISTRY["entries"]
+        }
+        for probed_operation, allowed_codes in operation_failure_codes.items():
+            disallowed_code = next(
+                code for code in all_registered_codes if code not in allowed_codes
+            )
+            try:
+                require_allowed_operation_failure_code(
+                    probed_operation, disallowed_code
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                f"operation-code relabel probe was accepted for {probed_operation}"
+            )
+
+    def aggregate_from_vector(vector: dict[str, Any]) -> dict[str, Any] | None:
+        filename = vector.get("state_before")
+        if filename is not None:
+            return artifact(filename).document
+        filename = vector.get("checkpoint_before")
+        if filename is None:
+            return None
+        checkpoint = artifact(filename).document
+        root_record = checkpoint["root_record"]
+        return root_record.get("aggregate_state") if root_record["status"] == "retained" else None
+
+    def target_runtime(aggregate: dict[str, Any], runtime_id: str) -> dict[str, Any] | None:
+        return next((runtime for runtime in aggregate["runtimes"] if runtime["runtime_id"] == runtime_id), None)
+
+    def delivery_validation_error(
+        delivery: dict[str, Any], aggregate_or_root: dict[str, Any] | str, location: str
+    ) -> str | None:
+        if delivery["delivery_mode"] not in {"input", "internal"}:
+            return "invalid_delivery_mode"
+        validate_typed_value_canonical(
+            delivery["envelope"]["payload"], f"{location}: delivery payload"
+        )
+        digest_domain = delivery.get(
+            "request_digest_domain", "determa-inbox-envelope-digest-2"
+        )
+        digest_version = "1" if digest_domain.endswith("-1") else "2"
+        root_instance_id = (
+            aggregate_or_root["root_instance_id"]
+            if isinstance(aggregate_or_root, dict)
+            else aggregate_or_root
+        )
+        expected = hash_value([
+            digest_domain, digest_version, root_instance_id,
+            delivery["delivery_mode"], delivery["envelope"],
+        ])
+        if delivery["envelope_digest"] != expected:
+            return "delivery_digest_mismatch"
+        return None
+
+    def delivery_root_instance_id(delivery: dict[str, Any]) -> str:
+        target = delivery["envelope"]["target"]
+        return next(iter(target.values()))["root_instance_id"]
+
+    def aggregate_has_conflicting_identity(
+        aggregate: dict[str, Any], delivery: dict[str, Any]
+    ) -> bool:
+        event_id = delivery["envelope"]["event_id"]
+        digest = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                aggregate["root_instance_id"],
+                delivery["delivery_mode"],
+                delivery["envelope"],
+            ]
+        )
+        return any(
+            entry["envelope"]["event_id"] == event_id
+            and entry["envelope_digest"] != digest
+            for runtime in aggregate["runtimes"]
+            for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+            for entry in mailbox
+        )
+
+    def checkpoint_has_conflicting_identity(
+        checkpoint: dict[str, Any], delivery: dict[str, Any]
+    ) -> bool:
+        event_id = delivery["envelope"]["event_id"]
+        digest_domain = delivery.get(
+            "request_digest_domain", "determa-inbox-envelope-digest-2"
+        )
+        digest_version = "1" if digest_domain.endswith("-1") else "2"
+        digest = hash_value(
+            [
+                digest_domain,
+                digest_version,
+                checkpoint["root_instance_id"],
+                delivery["delivery_mode"],
+                delivery["envelope"],
+            ]
+        )
+        retained_digests: list[str] = []
+        if digest_domain == "determa-inbox-envelope-digest-1":
+            retained_digests.extend(
+                receipt["legacy_receipt"]["request_digest"]
+                for receipt in checkpoint["operation_receipts"]
+                if receipt.get("operation_kind") == "legacy_v1_operation"
+                and receipt["legacy_receipt"].get("operation_kind") == "delivery"
+                and receipt["legacy_receipt"].get("event_id") == event_id
+            )
+        else:
+            if checkpoint["root_record"]["status"] == "retained":
+                retained_digests.extend(
+                    entry["envelope_digest"]
+                    for runtime in checkpoint["root_record"]["aggregate_state"][
+                        "runtimes"
+                    ]
+                    for mailbox in (
+                        runtime["ready_mailbox"],
+                        runtime["deferred_mailbox"],
+                    )
+                    for entry in mailbox
+                    if entry["envelope"]["event_id"] == event_id
+                )
+            retained_digests.extend(
+                receipt["request_digest"]
+                for receipt in checkpoint["operation_receipts"]
+                if receipt.get("operation_kind")
+                in {"acceptance", "event_terminal"}
+                and receipt.get("event_id") == event_id
+            )
+        retained_digests.extend(
+            item["request_digest"]
+            for item in checkpoint["event_identity_tombstones"]
+            if item["event_id"] == event_id
+            and item.get(
+                "request_digest_domain", "determa-inbox-envelope-digest-2"
+            )
+            == digest_domain
+        )
+        return any(retained_digest != digest for retained_digest in retained_digests)
+
+    def delivery_contract_error(
+        delivery: dict[str, Any],
+        aggregate: dict[str, Any],
+        bundle_path: Path,
+        *,
+        checkpoint_host: bool,
+    ) -> str | None:
+        envelope = delivery["envelope"]
+        root = next(
+            runtime
+            for runtime in aggregate["runtimes"]
+            if runtime["relation"]["kind"] == "root"
+        )
+        runtime = next(
+            (
+                item
+                for item in aggregate["runtimes"]
+                if item["target_identity"] == envelope["target"]
+            ),
+            None,
+        )
+        if runtime is None:
+            return "invalid_instance_target"
+        if root["status"] != "running":
+            return (
+                "terminal_root"
+                if checkpoint_host and runtime["relation"]["kind"] == "root"
+                else "invalid_instance_target"
+            )
+        if runtime["relation"]["kind"] == "component":
+            if runtime["status"] != "running":
+                return "inactive_component_target"
+            if delivery["delivery_mode"] == "input":
+                return "invalid_instance_target"
+        elif runtime["status"] != "running":
+            return "invalid_instance_target"
+
+        bundle = normalized_bundle_value(bundle_path)
+        machine_identity = runtime["current_definition"]["machine"]
+        machine = next(
+            (
+                item
+                for item in bundle["machines"]
+                if item["machine_id"] == machine_identity["machine_id"]
+                and str(item["version"]) == machine_identity["machine_version"]
+            ),
+            None,
+        )
+        if machine is None:
+            return "invalid_instance_target"
+        def value_matches_type(value: Any, expected_type: str) -> bool:
+            return {
+                "string": isinstance(value, str),
+                "int": isinstance(value, int) and not isinstance(value, bool),
+                "float": isinstance(value, (int, float))
+                and not isinstance(value, bool),
+                "bool": isinstance(value, bool),
+                "map": isinstance(value, dict),
+                "list": isinstance(value, list),
+            }[expected_type]
+
+        if delivery["delivery_mode"] == "input":
+            if envelope["source"] != {"host": True} or envelope["cause_id"] != envelope["event_id"]:
+                return "invalid_delivery_source"
+
+        reserved_event = envelope["event"]
+        if reserved_event in {
+            "done",
+            "determa.component_completed",
+            "determa.component_failed",
+            "determa.spawned_instance_failed",
+        }:
+            if delivery["delivery_mode"] != "internal" or "host" in envelope["source"]:
+                return "invalid_event"
+            payload = decode_typed_value(envelope["payload"])
+            if not isinstance(payload, dict):
+                return "invalid_payload"
+            public_fault_fields = {
+                "runtime_id",
+                "cause_id",
+                "code",
+                "step_sequence",
+                "source_locator",
+            }
+            if reserved_event == "determa.component_completed":
+                valid = set(payload) == {"component_id", "component_runtime_id"} and all(
+                    isinstance(payload[field], str) for field in payload
+                )
+            elif reserved_event == "determa.component_failed":
+                fault = payload.get("fault")
+                valid = (
+                    set(payload) == {"component_id", "component_runtime_id", "fault"}
+                    and isinstance(payload.get("component_id"), str)
+                    and isinstance(payload.get("component_runtime_id"), str)
+                    and isinstance(fault, dict)
+                    and set(fault) == public_fault_fields
+                    and all(isinstance(fault[field], str) for field in fault)
+                )
+            elif reserved_event == "determa.spawned_instance_failed":
+                fault = payload.get("fault")
+                valid = (
+                    set(payload) == {"instance", "instance_id", "machine_id", "machine_version", "fault"}
+                    and isinstance(payload.get("instance"), dict)
+                    and isinstance(payload.get("instance_id"), str)
+                    and isinstance(payload.get("machine_id"), str)
+                    and isinstance(payload.get("machine_version"), int)
+                    and not isinstance(payload.get("machine_version"), bool)
+                    and isinstance(fault, dict)
+                    and set(fault) == public_fault_fields
+                    and all(isinstance(fault[field], str) for field in fault)
+                )
+            elif payload.get("relationship") == "parallel":
+                valid = set(payload) == {"relationship", "state_path", "owner_runtime_id"} and all(
+                    isinstance(payload[field], str) for field in payload
+                )
+            elif payload.get("relationship") == "spawned_instance":
+                valid = (
+                    set(payload) == {"relationship", "instance", "instance_id", "machine_id", "machine_version"}
+                    and isinstance(payload.get("instance"), dict)
+                    and isinstance(payload.get("instance_id"), str)
+                    and isinstance(payload.get("machine_id"), str)
+                    and isinstance(payload.get("machine_version"), int)
+                    and not isinstance(payload.get("machine_version"), bool)
+                )
+            else:
+                valid = False
+            return None if valid else "invalid_payload"
+
+        declaration = bundle.get("events", {}).get(envelope["event"])
+        if declaration is None:
+            declaration = machine.get("events", {}).get(envelope["event"])
+        if envelope["event"] == "env":
+            if "correlation_id" in envelope:
+                return "invalid_correlation"
+            payload = decode_typed_value(envelope["payload"])
+            changed = payload.get("changed") if isinstance(payload, dict) else None
+            external_variables = {
+                name: field
+                for name, field in machine["root"].get("variables", {}).items()
+                if field.get("external", False)
+            }
+            if (
+                not isinstance(changed, dict)
+                or not changed
+                or set(payload) != {"changed"}
+                or not set(changed) <= set(external_variables)
+                or any(
+                    not value_matches_type(value, external_variables[name]["type"])
+                    for name, value in changed.items()
+                )
+            ):
+                return "invalid_payload"
+            return None
+        if declaration is None:
+            return "invalid_event"
+        direction = declaration.get("direction", "internal")
+        required_direction = (
+            "input" if delivery["delivery_mode"] == "input" else "internal"
+        )
+        if direction != required_direction:
+            return "invalid_event"
+        if declaration.get("correlates_to") is not None and not isinstance(
+            envelope.get("correlation_id"), str
+        ):
+            return "invalid_correlation"
+
+        payload = decode_typed_value(envelope["payload"])
+        if not isinstance(payload, dict):
+            return "invalid_payload"
+        fields = declaration.get("payload", {})
+        if set(payload) - set(fields):
+            return "invalid_payload"
+        for name, field in fields.items():
+            if field.get("required", False) and name not in payload:
+                return "invalid_payload"
+            if name not in payload:
+                continue
+            value = payload[name]
+            expected_type = field["type"]
+            if not value_matches_type(value, expected_type):
+                return "invalid_payload"
+        return None
+
+    def validate_embedded_checkpoint(
+        checkpoint: dict[str, Any], location: str
+    ) -> None:
+        root_record = checkpoint["root_record"]
+        if root_record["status"] == "retained":
+            aggregate = root_record["aggregate_state"]
+            expected_aggregate_digest = hash_value(
+                [
+                    "determa-aggregate-state-digest-2",
+                    {
+                        key: value
+                        for key, value in aggregate.items()
+                        if key != "aggregate_state_digest"
+                    },
+                ]
+            )
+            if aggregate["aggregate_state_digest"] != expected_aggregate_digest:
+                raise ValidationFailure(
+                    f"{location}: embedded aggregate digest mismatch"
+                )
+        expected_checkpoint_digest = hash_value(
+            [
+                "determa-execution-checkpoint-digest-2",
+                {
+                    key: value
+                    for key, value in checkpoint.items()
+                    if key != "execution_checkpoint_digest"
+                },
+            ]
+        )
+        if checkpoint["execution_checkpoint_digest"] != expected_checkpoint_digest:
+            raise ValidationFailure(
+                f"{location}: embedded checkpoint digest mismatch"
+            )
+        validate_execution_checkpoint_v2_semantics(checkpoint)
+
+    def project_bounded_prune(
+        checkpoint: dict[str, Any], cutoff: int
+    ) -> dict[str, Any]:
+        projected = copy.deepcopy(checkpoint)
+        receipts = projected["operation_receipts"]
+        removed = [
+            receipt
+            for receipt in receipts
+            if receipt["receipt_sequence"] != "0"
+            and canonical_decimal(
+                receipt["receipt_sequence"], "pruned receipt sequence"
+            )
+            <= cutoff
+        ]
+        projected["operation_receipts"] = [
+            receipt for receipt in receipts if receipt not in removed
+        ]
+        acceptance_by_event = {
+            receipt["event_id"]: receipt
+            for receipt in receipts
+            if receipt["operation_kind"] == "acceptance"
+        }
+        derived_tombstones = list(projected["event_identity_tombstones"])
+        for receipt in removed:
+            if receipt["operation_kind"] == "event_terminal":
+                acceptance = acceptance_by_event.get(receipt["event_id"])
+                if acceptance is not None:
+                    if (
+                        acceptance["acceptance_sequence"]
+                        != receipt["acceptance_sequence"]
+                    ):
+                        raise ValidationFailure(
+                            "bounded pruning terminal acceptance mismatch"
+                        )
+                else:
+                    producer_matches = [
+                        reference
+                        for producer in receipts
+                        for reference in producer.get(
+                            "emission_references", []
+                        )
+                        if reference.get("kind") == "internal_terminal"
+                        and reference.get("event_id")
+                        == receipt["event_id"]
+                        and reference.get("acceptance_sequence")
+                        == receipt["acceptance_sequence"]
+                        and reference.get("terminal_receipt_sequence")
+                        == receipt["receipt_sequence"]
+                    ]
+                    prior_cutoff_value = checkpoint["replay_retention"][
+                        "pruned_through_receipt_sequence"
+                    ]
+                    producer_was_attested_pruned = (
+                        not producer_matches
+                        and prior_cutoff_value is not None
+                        and canonical_decimal(
+                            prior_cutoff_value,
+                            "prior pruning cutoff",
+                        )
+                        < canonical_decimal(
+                            receipt["receipt_sequence"],
+                            "native terminal receipt sequence",
+                        )
+                    )
+                    if (
+                        len(producer_matches) != 1
+                        and not producer_was_attested_pruned
+                    ):
+                        raise ValidationFailure(
+                            "bounded pruning native terminal lacks exact producer"
+                        )
+                derived_tombstones.append(
+                    {
+                        "event_id": receipt["event_id"],
+                        "request_digest": receipt["request_digest"],
+                        "request_digest_domain": (
+                            "determa-inbox-envelope-digest-2"
+                        ),
+                        "acceptance_sequence": receipt[
+                            "acceptance_sequence"
+                        ],
+                        "terminal_receipt_sequence": receipt[
+                            "receipt_sequence"
+                        ],
+                        "terminal_disposition": receipt["outcome"][
+                            "disposition"
+                        ],
+                    }
+                )
+            elif (
+                receipt["operation_kind"] == "legacy_v1_operation"
+                and receipt["legacy_receipt"].get("operation_kind")
+                == "delivery"
+            ):
+                legacy = receipt["legacy_receipt"]
+                derived_tombstones.append(
+                    {
+                        "event_id": legacy["event_id"],
+                        "request_digest": legacy["request_digest"],
+                        "request_digest_domain": (
+                            "determa-inbox-envelope-digest-1"
+                        ),
+                        "acceptance_sequence": legacy[
+                            "accepted_delivery_sequence"
+                        ],
+                        "terminal_receipt_sequence": receipt[
+                            "receipt_sequence"
+                        ],
+                        "terminal_disposition": legacy["outcome"][
+                            "disposition"
+                        ],
+                    }
+                )
+        projected["event_identity_tombstones"] = sorted(
+            derived_tombstones,
+            key=lambda item: canonical_decimal(
+                item["terminal_receipt_sequence"],
+                "projected tombstone terminal sequence",
+            ),
+        )
+        projected["replay_retention"][
+            "pruned_through_receipt_sequence"
+        ] = str(cutoff)
+        projected["revision"] = str(int(checkpoint["revision"]) + 1)
+        projected.pop("execution_checkpoint_digest", None)
+        projected["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-2", projected]
+        )
+        return projected
+
+    operation_signatures: dict[tuple[str, str | None, str], str] = {}
+
+    for index, vector in enumerate(test["version2_vectors"]):
+        location = f"{case.name}: version2 vector {index}"
+        name = vector["name"]
+        if name in names:
+            raise ValidationFailure(f"{location}: duplicate name {name}")
+        names.add(name)
+
+        duplicate = coverage & set(vector["covers"])
+        if duplicate:
+            raise ValidationFailure(
+                f"{location}: duplicate coverage {sorted(duplicate)}"
+            )
+        coverage.update(vector["covers"])
+        covers = set(vector["covers"])
+
+        operation = vector["operation"]
+        if operation == "create_v2" and "bundle" not in vector:
+            raise ValidationFailure(f"{location}: create_v2 requires bundle")
+        if operation in state_operations and "state_before" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires state_before")
+        if operation == "upgrade_aggregate_v1_to_v2" and "state_before" not in vector:
+            raise ValidationFailure(f"{location}: aggregate upgrade requires state_before")
+        if operation in checkpoint_operations and "checkpoint_before" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires checkpoint_before")
+        if operation == "upgrade_checkpoint_v1_to_v2" and "checkpoint_before" not in vector:
+            raise ValidationFailure(f"{location}: checkpoint upgrade requires checkpoint_before")
+        if operation in descriptor_operations and "descriptor_file" not in vector:
+            raise ValidationFailure(f"{location}: {operation} requires descriptor_file")
+        if "request_file" not in vector or "request_pointer" not in vector:
+            raise ValidationFailure(f"{location}: operation requires a closed request")
+
+        if "bundle" in vector and vector["bundle"] not in bundle_names:
+            raise ValidationFailure(f"{location}: undeclared bundle {vector['bundle']}")
+        for field in (
+            "state_before",
+            "checkpoint_before",
+            "source_checkpoint_v1",
+            "request_file",
+            "descriptor_file",
+        ):
+            filename = vector.get(field)
+            if filename is not None and filename not in artifact_names:
+                raise ValidationFailure(f"{location}: undeclared artifact {filename}")
+        if "source_checkpoint_v1" in vector:
+            source_manifest = manifests[vector["source_checkpoint_v1"]]
+            if (
+                source_manifest["kind"] != "execution_checkpoint"
+                or not source_manifest["valid"]
+            ):
+                raise ValidationFailure(
+                    f"{location}: source checkpoint must be a valid version-1 checkpoint"
+                )
+        request_manifest = manifests.get(vector["request_file"])
+        if request_manifest is None or request_manifest["kind"] != "version2_operation_inputs" or not request_manifest["valid"]:
+            raise ValidationFailure(f"{location}: request must use the closed operation-input artifact")
+        request = artifact(vector["request_file"])
+        selected: Any = request.document
+        try:
+            for encoded in vector["request_pointer"].split("/")[1:]:
+                token = encoded.replace("~1", "/").replace("~0", "~")
+                selected = selected[int(token)] if isinstance(selected, list) else selected[token]
+        except (KeyError, IndexError, TypeError, ValueError) as error:
+            raise ValidationFailure(
+                f"{location}: unresolved request pointer {vector['request_pointer']}"
+            ) from error
+        if not isinstance(selected, dict) or selected.get("operation") != operation:
+            raise ValidationFailure(f"{location}: selected request operation mismatch")
+
+        expectation = vector["expect"]
+        failure_evidence: set[str] = set()
+        if expectation["result"] == "failure":
+            require_allowed_operation_failure_code(operation, expectation["code"])
+        signature = (
+            operation,
+            vector.get("state_before", vector.get("checkpoint_before")),
+            vector["request_pointer"],
+        )
+        if signature in operation_signatures:
+            raise ValidationFailure(
+                f"{location}: duplicates executable input of "
+                f"{operation_signatures[signature]}"
+            )
+        operation_signatures[signature] = name
+
+        invalid_input_error = None
+        for field in ("state_before", "checkpoint_before", "descriptor_file"):
+            filename = vector.get(field)
+            if filename is None or manifests[filename]["valid"]:
+                continue
+            manifest_error = manifests[filename]["error"]
+            if manifest_error in ARTIFACT_SOURCE_ERROR_CODES:
+                manifest_error = {
+                    "state_before": "invalid_aggregate_state",
+                    "checkpoint_before": "invalid_execution_checkpoint",
+                    "descriptor_file": "invalid_migration_descriptor",
+                }[field]
+            invalid_input_error = manifest_error
+            break
+        if invalid_input_error is not None:
+            if (
+                expectation
+                != {
+                    "result": "failure",
+                    "code": invalid_input_error,
+                    "unchanged_file": vector.get(
+                        "state_before", vector.get("checkpoint_before")
+                    ),
+                }
+            ):
+                raise ValidationFailure(
+                    f"{location}: invalid input artifact requires exact "
+                    f"{invalid_input_error} rejection"
+                )
+            if "checkpoint_admission_invalid_artifact" in covers and (
+                operation != "checkpoint_admit_v2"
+                or manifests[vector["checkpoint_before"]]["kind"]
+                != "execution_checkpoint_v2"
+                or manifests[vector["checkpoint_before"]]["error"]
+                != "invalid_execution_checkpoint"
+                or not any(not delivery for delivery in selected["deliveries"])
+            ):
+                raise ValidationFailure(
+                    f"{location}: invalid checkpoint admission does not prove "
+                    "artifact validation precedence"
+                )
+            continue
+        if operation.startswith("checkpoint_") or operation in {
+            "upgrade_checkpoint_v1_to_v2",
+            "downgrade_checkpoint_v2_to_v1",
+        }:
+            checkpoint_before = artifact(vector["checkpoint_before"]).document
+            cas_matches = (
+                selected.get("expected_revision")
+                == checkpoint_before["revision"]
+                and selected.get("expected_checkpoint_digest")
+                == checkpoint_before["execution_checkpoint_digest"]
+            )
+            malformed_deliveries = (
+                operation == "checkpoint_admit_v2"
+                and any(
+                    not isinstance(delivery, dict)
+                    or not {"delivery_mode", "envelope", "envelope_digest"}
+                    <= set(delivery)
+                    for delivery in selected["deliveries"]
+                )
+            )
+            replay_results = (
+                [
+                    checkpoint_replay_result(checkpoint_before, delivery)
+                    for delivery in selected["deliveries"]
+                ]
+                if operation == "checkpoint_admit_v2" and not malformed_deliveries
+                else []
+            )
+            all_replay = bool(replay_results) and all(
+                result is not None for result in replay_results
+            )
+            equal_prune_replay = False
+            if operation == "checkpoint_prune_v2":
+                prior_cutoff = checkpoint_before["replay_retention"][
+                    "pruned_through_receipt_sequence"
+                ]
+                equal_prune_replay = (
+                    prior_cutoff is not None
+                    and selected["cutoff_receipt_sequence"] == prior_cutoff
+                )
+            if (
+                not cas_matches
+                and not (all_replay or equal_prune_replay)
+                and expectation.get("code") != "checkpoint_revision_conflict"
+            ):
+                raise ValidationFailure(
+                    f"{location}: checkpoint write lacks exact compare-and-swap input"
+                )
+            if (
+                expectation.get("code") == "checkpoint_revision_conflict"
+                and (cas_matches or all_replay or equal_prune_replay)
+            ):
+                raise ValidationFailure(
+                    f"{location}: checkpoint revision rejection lacks a distinct stale write"
+                )
+            if (
+                expectation.get("code") == "checkpoint_revision_conflict"
+                and not cas_matches
+                and not (all_replay or equal_prune_replay)
+            ):
+                failure_evidence.add("checkpoint_revision_conflict")
+            if "terminal_replay_precedes_stale_cas" in covers:
+                original_request = request.document["admit"]
+                if (
+                    selected != original_request
+                    or cas_matches
+                    or not all_replay
+                    or int(selected["expected_revision"])
+                    >= int(checkpoint_before["revision"])
+                ):
+                    raise ValidationFailure(
+                        f"{location}: terminal replay did not reuse the exact old request"
+                    )
+            if "checkpoint_pending_replay_precedes_stale_cas" in covers:
+                if (
+                    selected != request.document["admit"]
+                    or cas_matches
+                    or not all_replay
+                    or replay_results[0].get("location") not in {"ready", "deferred"}
+                ):
+                    raise ValidationFailure(
+                        f"{location}: pending replay is not derived from retained evidence"
+                    )
+            if "distinct_stale_checkpoint_writer_rejected" in covers:
+                candidate_ids = {
+                    delivery["envelope"]["event_id"]
+                    for delivery in selected["deliveries"]
+                }
+                aggregate = checkpoint_before["root_record"]["aggregate_state"]
+                retained_ids = {
+                    entry["envelope"]["event_id"]
+                    for runtime in aggregate["runtimes"]
+                    for mailbox in (
+                        runtime["ready_mailbox"],
+                        runtime["deferred_mailbox"],
+                    )
+                    for entry in mailbox
+                }
+                terminal_ids = {
+                    receipt["event_id"]
+                    for receipt in checkpoint_before["operation_receipts"]
+                    if receipt["operation_kind"] == "event_terminal"
+                }
+                tombstone_ids = {
+                    item["event_id"]
+                    for item in checkpoint_before["event_identity_tombstones"]
+                }
+                if (
+                    cas_matches
+                    or candidate_ids & (retained_ids | terminal_ids | tombstone_ids)
+                    or expectation.get("code") != "checkpoint_revision_conflict"
+                ):
+                    raise ValidationFailure(
+                        f"{location}: stale writer is not distinct from replay"
+                    )
+            if "version2_equal_pruning_precedes_stale_cas" in covers and (
+                operation != "checkpoint_prune_v2"
+                or cas_matches
+                or not equal_prune_replay
+                or expectation["result"] != "success"
+            ):
+                raise ValidationFailure(
+                    f"{location}: equal-cutoff pruning did not precede stale CAS"
+                )
+        if operation in descriptor_operations and not isinstance(
+            selected.get("maintenance_mode"), bool
+        ):
+            raise ValidationFailure(
+                f"{location}: migration request lacks mandatory maintenance mode"
+            )
+
+        prior_aggregate = aggregate_from_vector(vector)
+        if (
+            prior_aggregate is not None
+            and prior_aggregate.get("aggregate_state_schema_version") == 2
+            and "bundle" in vector
+            and operation in {"admit_v2", "step_v2"}
+        ):
+            validate_aggregate_against_bundle(prior_aggregate, case / vector["bundle"])
+        if (
+            prior_aggregate is not None
+            and operation == "upgrade_checkpoint_v1_to_v2"
+            and "bundle" in vector
+        ):
+            validate_aggregate_against_bundle(
+                prior_aggregate, case / vector["bundle"]
+            )
+        if "deliveries" in selected:
+            delivery_identity: dict[str, Any] | str | None = prior_aggregate
+            if (
+                delivery_identity is None
+                and operation == "checkpoint_admit_v2"
+                and checkpoint_before["root_record"]["status"] == "tombstone"
+            ):
+                delivery_identity = checkpoint_before["root_instance_id"]
+            if delivery_identity is None:
+                raise ValidationFailure(f"{location}: delivery operation lacks a retained aggregate")
+            malformed_deliveries = any(
+                not isinstance(delivery, dict)
+                or not {"delivery_mode", "envelope", "envelope_digest"}
+                <= set(delivery)
+                for delivery in selected["deliveries"]
+            )
+            if malformed_deliveries:
+                if expectation.get("code") != "malformed_delivery":
+                    raise ValidationFailure(
+                        f"{location}: malformed delivery lacks precedence rejection"
+                    )
+                event_ids: list[str] = []
+            else:
+                if expectation.get("code") == "malformed_delivery":
+                    raise ValidationFailure(
+                        f"{location}: malformed rejection lacks a malformed member"
+                    )
+                event_ids = [
+                    delivery["envelope"]["event_id"]
+                    for delivery in selected["deliveries"]
+                ]
+            wrong_root = (
+                not malformed_deliveries
+                and operation == "checkpoint_admit_v2"
+                and any(
+                delivery_root_instance_id(delivery)
+                != checkpoint_before["root_instance_id"]
+                for delivery in selected["deliveries"]
+                )
+            )
+            if wrong_root:
+                if expectation.get("code") != "wrong_root":
+                    raise ValidationFailure(
+                        f"{location}: foreign root lacks precedence rejection"
+                    )
+            elif expectation.get("code") == "wrong_root":
+                raise ValidationFailure(
+                    f"{location}: wrong-root rejection lacks a foreign root"
+                )
+            duplicate_event_ids = (
+                not malformed_deliveries
+                and not wrong_root
+                and len(event_ids) != len(set(event_ids))
+            )
+            if duplicate_event_ids:
+                if expectation.get("code") != "duplicate_event_id_in_batch":
+                    raise ValidationFailure(
+                        f"{location}: duplicate input identity lacks exact rejection"
+                    )
+            elif expectation.get("code") == "duplicate_event_id_in_batch":
+                raise ValidationFailure(
+                    f"{location}: duplicate rejection lacks duplicate input identity"
+                )
+            conflicting_event_identity = (
+                not malformed_deliveries
+                and not wrong_root
+                and not duplicate_event_ids
+                and operation in {"admit_v2", "checkpoint_admit_v2"}
+                and any(
+                    checkpoint_has_conflicting_identity(checkpoint_before, delivery)
+                    if operation == "checkpoint_admit_v2"
+                    else aggregate_has_conflicting_identity(prior_aggregate, delivery)
+                    for delivery in selected["deliveries"]
+                )
+            )
+            if conflicting_event_identity:
+                if expectation.get("code") != "event_id_conflict":
+                    raise ValidationFailure(
+                        f"{location}: conflicting retained identity lacks exact rejection"
+                    )
+            elif expectation.get("code") == "event_id_conflict":
+                raise ValidationFailure(
+                    f"{location}: conflict rejection lacks retained conflicting evidence"
+                )
+            replay_evidence = (
+                [None for _ in selected["deliveries"]]
+                if malformed_deliveries
+                else [
+                    checkpoint_replay_result(checkpoint_before, delivery)
+                    for delivery in selected["deliveries"]
+                ]
+                if operation == "checkpoint_admit_v2"
+                else [
+                    next(
+                        (
+                            entry
+                            for runtime in prior_aggregate["runtimes"]
+                            for mailbox in (
+                                runtime["ready_mailbox"],
+                                runtime["deferred_mailbox"],
+                            )
+                            for entry in mailbox
+                            if entry["envelope"]["event_id"]
+                            == delivery["envelope"]["event_id"]
+                            and entry["envelope_digest"]
+                            == hash_value(
+                                [
+                                    "determa-inbox-envelope-digest-2",
+                                    "2",
+                                    prior_aggregate["root_instance_id"],
+                                    delivery["delivery_mode"],
+                                    delivery["envelope"],
+                                ]
+                            )
+                        ),
+                        None,
+                    )
+                    for delivery in selected["deliveries"]
+                ]
+                if operation == "admit_v2"
+                else [None for _ in selected["deliveries"]]
+            )
+            liveness_error = None
+            if (
+                operation == "checkpoint_admit_v2"
+                and not malformed_deliveries
+                and not wrong_root
+                and not duplicate_event_ids
+                and not conflicting_event_identity
+            ):
+                non_replay_deliveries = [
+                    delivery
+                    for delivery, replay in zip(
+                        selected["deliveries"], replay_evidence, strict=True
+                    )
+                    if replay is None
+                ]
+                if non_replay_deliveries:
+                    if checkpoint_before["root_record"]["status"] == "tombstone":
+                        liveness_error = "tombstoned_root"
+                    elif prior_aggregate is not None:
+                        aggregate_root = next(
+                            runtime
+                            for runtime in prior_aggregate["runtimes"]
+                            if runtime["relation"]["kind"] == "root"
+                        )
+                        if aggregate_root["status"] in {"completed", "faulted"} and any(
+                            delivery["envelope"]["target"]
+                            == aggregate_root["target_identity"]
+                            for delivery in non_replay_deliveries
+                        ):
+                            liveness_error = "terminal_root"
+            if liveness_error is not None:
+                if expectation.get("code") != liveness_error:
+                    raise ValidationFailure(
+                        f"{location}: checkpoint liveness requires {liveness_error}"
+                    )
+            elif expectation.get("code") in {"terminal_root", "tombstoned_root"}:
+                raise ValidationFailure(
+                    f"{location}: liveness rejection lacks matching checkpoint state"
+                )
+            delivery_errors: list[str] = []
+            contract_errors: list[str] = []
+            for delivery, replay in zip(
+                selected["deliveries"], replay_evidence, strict=True
+            ):
+                if (
+                    malformed_deliveries
+                    or wrong_root
+                    or duplicate_event_ids
+                    or conflicting_event_identity
+                    or liveness_error is not None
+                ):
+                    continue
+                if replay is not None:
+                    continue
+                delivery_error = delivery_validation_error(
+                    delivery, delivery_identity, location
+                )
+                if delivery_error is not None:
+                    delivery_errors.append(delivery_error)
+                    if expectation.get("code") != delivery_error:
+                        raise ValidationFailure(
+                            f"{location}: delivery requires {delivery_error}"
+                        )
+                    continue
+                if (
+                    replay is None
+                    and prior_aggregate is not None
+                    and "bundle" in vector
+                    and operation in {"admit_v2", "checkpoint_admit_v2"}
+                ):
+                    contract_error = delivery_contract_error(
+                        delivery,
+                        prior_aggregate,
+                        case / vector["bundle"],
+                        checkpoint_host=operation == "checkpoint_admit_v2",
+                    )
+                    if contract_error is not None:
+                        contract_errors.append(contract_error)
+                        if expectation.get("code") != contract_error:
+                            raise ValidationFailure(
+                                f"{location}: delivery contract requires {contract_error}"
+                            )
+            if expectation.get("code") in {
+                "delivery_digest_mismatch",
+                "invalid_delivery_mode",
+            } and expectation.get("code") not in delivery_errors:
+                raise ValidationFailure(
+                    f"{location}: delivery rejection lacks its declared violation"
+                )
+            if expectation.get("code") in {
+                "invalid_delivery_source",
+                "invalid_instance_target",
+                "inactive_component_target",
+                "invalid_event",
+                "invalid_payload",
+                "invalid_correlation",
+            } and expectation.get("code") not in contract_errors:
+                raise ValidationFailure(
+                    f"{location}: contract rejection lacks its declared violation"
+                )
+            if operation in {"admit_v2", "checkpoint_admit_v2"} and expectation["result"] == "failure":
+                evidenced_rejections = (
+                    {"malformed_delivery"}
+                    if malformed_deliveries
+                    else {"wrong_root"}
+                    if wrong_root
+                    else {"duplicate_event_id_in_batch"}
+                    if duplicate_event_ids
+                    else {"event_id_conflict"}
+                    if conflicting_event_identity
+                    else {liveness_error}
+                    if liveness_error is not None
+                    else set(delivery_errors) | set(contract_errors)
+                )
+                if (
+                    operation == "checkpoint_admit_v2"
+                    and expectation.get("code") == "checkpoint_revision_conflict"
+                ):
+                    evidenced_rejections.add("checkpoint_revision_conflict")
+                if expectation.get("code") not in evidenced_rejections:
+                    raise ValidationFailure(
+                        f"{location}: rejection label lacks relational evidence"
+                    )
+                failure_evidence.update(evidenced_rejections)
+
+        if operation in {"step_v2", "checkpoint_step_v2"}:
+            if prior_aggregate is None:
+                raise ValidationFailure(f"{location}: step lacks a retained aggregate")
+            runtime_id = selected["target_runtime_id"]
+            runtime = target_runtime(prior_aggregate, runtime_id)
+            aggregate_root = next(
+                item
+                for item in prior_aggregate["runtimes"]
+                if item["relation"]["kind"] == "root"
+            )
+            rejection = expectation.get("code")
+            if runtime is None and rejection != "invalid_instance_target" and expectation.get("result") != "success":
+                raise ValidationFailure(f"{location}: fabricated runtime target was accepted")
+            if aggregate_root["status"] != "running" and runtime is not None:
+                result_document = (
+                    artifact(expectation["exact_result_file"]).document
+                    if expectation.get("exact_result_file")
+                    else None
+                )
+                if (
+                    result_document is None
+                    or result_document.get("rejection", {}).get("code")
+                    != "invalid_instance_target"
+                ):
+                    raise ValidationFailure(
+                        f"{location}: terminal aggregate descendant step is not distinguished"
+                    )
+            elif runtime is not None and runtime["relation"]["kind"] == "component" and runtime["status"] in {"completed", "faulted"}:
+                result_document = artifact(expectation["exact_result_file"]).document if expectation.get("exact_result_file") else None
+                if result_document is None or result_document.get("rejection", {}).get("code") != "inactive_component_target":
+                    raise ValidationFailure(f"{location}: inactive component step is not distinguished")
+            if (
+                runtime is not None
+                and runtime["relation"]["kind"] != "component"
+                and runtime["status"] in {"completed", "faulted"}
+            ):
+                result_document = (
+                    artifact(expectation["exact_result_file"]).document
+                    if expectation.get("exact_result_file")
+                    else None
+                )
+                if (
+                    result_document is None
+                    or result_document.get("rejection", {}).get("code")
+                    != "invalid_instance_target"
+                ):
+                    raise ValidationFailure(
+                        f"{location}: terminal machine runtime step is not distinguished"
+                    )
+
+        if operation == "create_v2" and expectation["result"] == "success":
+            bundle_path = case / selected["bundle"]["bundle_file"]
+            fingerprint = validated_bundle_fingerprint(bundle_path)
+            if selected["bundle"]["bundle_source_digest"] != hash_bytes(bundle_path.read_bytes()) or selected["bundle"]["validated_bundle_fingerprint"] != fingerprint:
+                raise ValidationFailure(f"{location}: creation bundle binding mismatch")
+            result = artifact(expectation["exact_result_file"]).document
+            machine_index, machine = next(
+                (index, machine) for index, machine in enumerate(normalized_bundle_value(bundle_path)["machines"])
+                if machine["machine_id"] == selected["machine_id"] and str(machine["version"]) == selected["machine_version"]
+            )
+            root_pointer = f"/machines/{machine_index}/root"
+            expected_pointers = [root_pointer]
+            current = machine["root"]
+            while current.get("type") == "composite" and "initial" in current:
+                cursor = machine["root"]
+                pointer = root_pointer
+                for segment in current["initial"]["transition_to"].split("."):
+                    cursor = cursor["states"][segment]
+                    pointer += f"/states/{segment}"
+                expected_pointers.append(pointer)
+                current = cursor
+            expected_runtime_id = hash_value([
+                "determa-root-runtime-identity-2", "1", fingerprint,
+                normalized_bundle_value(bundle_path)["namespace"], selected["machine_id"],
+                selected["machine_version"], selected["root_instance_id"],
+            ])
+            root = result["runtimes"][0]
+            if (
+                result["validated_bundle_fingerprint"] != fingerprint
+                or result["root_runtime_id"] != expected_runtime_id
+                or root["runtime_id"] != expected_runtime_id
+                or root["active_leaf_state_definition_pointers"] != [expected_pointers[-1]]
+                or [item["state_definition_pointer"] for item in root["active_state_activations"]] != expected_pointers
+                or [item["definition_pointer"] for item in root["next_state_activation_sequences"]] != expected_pointers
+                or root["history"]
+                or result["migration_sequence"] != "0"
+                or result["next_logical_step_sequence"] != "1"
+                or result["next_output_sequence"] != "0"
+                or result["next_acceptance_sequence"] != "0"
+                or result["next_queue_sequence"] != "0"
+                or root["ready_mailbox"]
+                or root["deferred_mailbox"]
+            ):
+                raise ValidationFailure(f"{location}: creation result was not derived from its exact input")
+
+        if operation in descriptor_operations:
+            if prior_aggregate is None:
+                raise ValidationFailure(f"{location}: migration lacks source aggregate")
+            for key in ("source_bundle", "target_bundle"):
+                binding = selected[key]
+                bundle_path = case / binding["bundle_file"]
+                if binding["bundle_source_digest"] != hash_bytes(bundle_path.read_bytes()) or binding["validated_bundle_fingerprint"] != validated_bundle_fingerprint(bundle_path):
+                    raise ValidationFailure(f"{location}: {key} binding mismatch")
+            descriptor_name = selected["migration_descriptor_file"]
+            if descriptor_name != vector["descriptor_file"]:
+                raise ValidationFailure(f"{location}: descriptor request and vector differ")
+            descriptor = artifact(descriptor_name).document
+            if selected["migration_descriptor_digest_route"] != [descriptor["migration_descriptor_digest"]]:
+                raise ValidationFailure(f"{location}: migration descriptor route mismatch")
+            base_descriptor = descriptor["base_descriptor"]
+            if (
+                base_descriptor["source_validated_bundle_fingerprint"] != selected["source_bundle"]["validated_bundle_fingerprint"]
+                or base_descriptor["target_validated_bundle_fingerprint"] != selected["target_bundle"]["validated_bundle_fingerprint"]
+                or prior_aggregate["validated_bundle_fingerprint"] != selected["source_bundle"]["validated_bundle_fingerprint"]
+            ):
+                raise ValidationFailure(f"{location}: migration definition pair is not exact")
+            source_bundle_path = case / selected["source_bundle"]["bundle_file"]
+            target_bundle_path = case / selected["target_bundle"]["bundle_file"]
+            validate_aggregate_against_bundle(prior_aggregate, source_bundle_path)
+            if (
+                base_descriptor["source_aggregate_shape_fingerprint"]
+                != aggregate_shape_fingerprint_for_path(source_bundle_path)
+                or base_descriptor["target_aggregate_shape_fingerprint"]
+                != aggregate_shape_fingerprint_for_path(target_bundle_path)
+            ):
+                raise ValidationFailure(f"{location}: migration shape fingerprint is not exact")
+            if (
+                base_descriptor["source_validated_bundle_fingerprint"]
+                == base_descriptor["target_validated_bundle_fingerprint"]
+            ):
+                raise ValidationFailure(f"{location}: migration route contains a self-cycle")
+            if base_descriptor["mode"] == "compatible" and (
+                base_descriptor["source_aggregate_shape_fingerprint"]
+                != base_descriptor["target_aggregate_shape_fingerprint"]
+                or any(base_descriptor["mappings"].values())
+            ):
+                raise ValidationFailure(f"{location}: compatible descriptor is not shape-identical")
+            target_document = normalized_bundle_value(case / selected["target_bundle"]["bundle_file"])
+            queued_entries = [
+                entry for runtime in prior_aggregate["runtimes"]
+                for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+                for entry in mailbox
+            ]
+            if "migration_fault_frozen_preservation" in covers:
+                faulted = next(
+                    runtime
+                    for runtime in prior_aggregate["runtimes"]
+                    if runtime["status"] == "faulted"
+                )
+                fault = faulted["fault"]
+                retained_event_ids = {
+                    entry["envelope"]["event_id"]
+                    for runtime in prior_aggregate["runtimes"]
+                    for mailbox in (
+                        runtime["ready_mailbox"],
+                        runtime["deferred_mailbox"],
+                    )
+                    for entry in mailbox
+                }
+                if (
+                    fault["code"] != "action_fault"
+                    or int(prior_aggregate["next_logical_step_sequence"])
+                    != int(fault["step_sequence"]) + 1
+                    or fault["cause_id"] in retained_event_ids
+                ):
+                    raise ValidationFailure(
+                        f"{location}: fault-frozen seed is not a committed consumed fault"
+                    )
+            if "migration_removed_event_failure" in covers and not any(
+                entry["envelope"]["event"] not in target_document.get("events", {}) for entry in queued_entries
+            ):
+                raise ValidationFailure(f"{location}: removed-event failure has no removed queued event")
+            if "migration_payload_incompatible_failure" in covers:
+                incompatible = False
+                for entry in queued_entries:
+                    declaration = target_document.get("events", {}).get(entry["envelope"]["event"], {})
+                    payload_declarations = declaration.get("payload", {})
+                    payload_values = dict(entry["envelope"]["payload"][1])
+                    incompatible |= any(
+                        name in payload_values and payload_values[name][0] != {"int": "integer", "string": "string", "bool": "boolean", "float": "float"}.get(field["type"], field["type"])
+                        for name, field in payload_declarations.items()
+                    )
+                if not incompatible:
+                    raise ValidationFailure(f"{location}: payload failure has no incompatible queued payload")
+            if "migration_correlation_incompatible_failure" in covers and not any(
+                target_document.get("events", {}).get(entry["envelope"]["event"], {}).get("correlates_to")
+                and "correlation_id" not in entry["envelope"]
+                for entry in queued_entries
+            ):
+                raise ValidationFailure(f"{location}: correlation failure has no incompatible queued envelope")
+            if "migration_capacity_totality" in covers:
+                capacity = target_document["machines"][0]["root"].get("deferred_event_capacity")
+                deferred_count = sum(len(runtime["deferred_mailbox"]) for runtime in prior_aggregate["runtimes"])
+                if capacity is None or deferred_count <= capacity:
+                    raise ValidationFailure(f"{location}: capacity failure has no over-capacity retained mailbox")
+            if "migration_stale_target_transform" in covers:
+                pointers = {
+                    item
+                    for runtime in prior_aggregate["runtimes"]
+                    for item in runtime["active_leaf_state_definition_pointers"]
+                }
+                def resolves_pointer(pointer: str) -> bool:
+                    value: Any = target_document
+                    try:
+                        for token in pointer.split("/")[1:]:
+                            value = value[int(token)] if isinstance(value, list) else value[token]
+                    except (KeyError, IndexError, TypeError, ValueError):
+                        return False
+                    return True
+                if all(resolves_pointer(pointer) for pointer in pointers):
+                    raise ValidationFailure(
+                        f"{location}: stale-target transform has no renamed active state"
+                    )
+            if (
+                expectation["result"] == "failure"
+                and expectation.get("code") == "migration_totality_failure"
+                and covers
+                & {
+                    "migration_removed_event_failure",
+                    "migration_payload_incompatible_failure",
+                    "migration_correlation_incompatible_failure",
+                    "migration_capacity_totality",
+                }
+            ):
+                failure_evidence.add("migration_totality_failure")
+
+        if operation == "downgrade_aggregate_v2_to_v1" and expectation["result"] == "failure":
+            assert prior_aggregate is not None
+            has_version2_state = any(
+                runtime["ready_mailbox"] or runtime["deferred_mailbox"]
+                for runtime in prior_aggregate["runtimes"]
+            ) or any(
+                canonical_decimal(prior_aggregate[field], field) != 0
+                for field in ("next_acceptance_sequence", "next_queue_sequence")
+            )
+            if has_version2_state:
+                failure_evidence.add("migration_totality_failure")
+
+        if operation == "checkpoint_v1_accept" and expectation["result"] == "failure":
+            bundle_document = normalized_bundle_value(case / vector["bundle"])
+
+            def contains_deferred_events(value: Any) -> bool:
+                if isinstance(value, dict):
+                    return "deferred_events" in value or any(
+                        contains_deferred_events(item) for item in value.values()
+                    )
+                if isinstance(value, list):
+                    return any(contains_deferred_events(item) for item in value)
+                return False
+
+            if contains_deferred_events(bundle_document):
+                failure_evidence.add("checkpoint_upgrade_required")
+
+        result_file = expectation.get("exact_result_file")
+        if result_file is not None:
+            manifest = manifests.get(result_file)
+            if manifest is None or not manifest["valid"]:
+                raise ValidationFailure(
+                    f"{location}: exact result must be a valid declared artifact"
+                )
+            analysis = artifact(result_file)
+            if analysis.error is not None or analysis.source != canonical_json_bytes(
+                analysis.document
+            ):
+                raise ValidationFailure(
+                    f"{location}: exact result is not canonical RFC 8785 bytes"
+                )
+            result_document = analysis.document
+            expected_kinds = (
+                {"aggregate_state_v2"} if operation in {"create_v2", "upgrade_aggregate_v1_to_v2"}
+                else {"core_step_result_v2"} if operation == "step_v2"
+                else {"execution_checkpoint_v2"} if operation in {"upgrade_checkpoint_v1_to_v2", "checkpoint_step_v2", "checkpoint_prune_v2", "checkpoint_tombstone_v2", "checkpoint_migrate_v2"}
+                else {"execution_checkpoint_v2", "version2_operation_result"} if operation == "checkpoint_admit_v2"
+                else {"version2_operation_result"}
+            )
+            if manifests[result_file]["kind"] not in expected_kinds:
+                raise ValidationFailure(f"{location}: result artifact kind is not closed for {operation}")
+            if operation == "admit_v2":
+                assert prior_aggregate is not None
+                deliveries = selected["deliveries"]
+                result_state = result_document["state"]
+                validate_aggregate_v2_semantics(result_state)
+                validate_aggregate_against_bundle(
+                    result_state, case / vector["bundle"]
+                )
+                expected_digest = hash_value(
+                    [
+                        "determa-aggregate-state-digest-2",
+                        {
+                            key: value
+                            for key, value in result_state.items()
+                            if key != "aggregate_state_digest"
+                        },
+                    ]
+                )
+                if result_state["aggregate_state_digest"] != expected_digest:
+                    raise ValidationFailure(
+                        f"{location}: admit result aggregate digest mismatch"
+                    )
+                root = next(
+                    runtime
+                    for runtime in result_state["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                if (
+                    result_document["status"] != root["status"]
+                    or result_document["rejection"] is not None
+                ):
+                    raise ValidationFailure(
+                        f"{location}: admit result status or rejection is not exact"
+                    )
+                if result_document["result"] == "replay":
+                    if len(deliveries) != 1 or result_state != prior_aggregate:
+                        raise ValidationFailure(
+                            f"{location}: core replay mutated aggregate or batch shape"
+                        )
+                    delivery = deliveries[0]
+                    candidate_digest = hash_value(
+                        [
+                            "determa-inbox-envelope-digest-2",
+                            "2",
+                            prior_aggregate["root_instance_id"],
+                            delivery["delivery_mode"],
+                            delivery["envelope"],
+                        ]
+                    )
+                    matches = [
+                        (mailbox_name, entry)
+                        for runtime in prior_aggregate["runtimes"]
+                        for mailbox_name, mailbox in (
+                            ("ready", runtime["ready_mailbox"]),
+                            ("deferred", runtime["deferred_mailbox"]),
+                        )
+                        for entry in mailbox
+                        if entry["envelope"] == delivery["envelope"]
+                        and entry["envelope_digest"]
+                        == candidate_digest
+                    ]
+                    if len(matches) != 1:
+                        raise ValidationFailure(
+                            f"{location}: replay is not backed by one retained request"
+                        )
+                    mailbox_name, entry = matches[0]
+                    expected_replay = {
+                        "result": "replay",
+                        "status": root["status"],
+                        "event_id": delivery["envelope"]["event_id"],
+                        "acceptance_sequence": entry["acceptance_sequence"],
+                        "location": mailbox_name,
+                        "state": prior_aggregate,
+                        "rejection": None,
+                    }
+                    if result_document != expected_replay:
+                        raise ValidationFailure(
+                            f"{location}: core replay evidence is not request-bound"
+                        )
+                else:
+                    accepted = result_document["accepted"]
+                    if len(accepted) != len(deliveries):
+                        raise ValidationFailure(
+                            f"{location}: admission result count differs from request"
+                        )
+                    before_runtimes = {
+                        runtime["runtime_id"]: runtime
+                        for runtime in prior_aggregate["runtimes"]
+                    }
+                    after_runtimes = {
+                        runtime["runtime_id"]: runtime
+                        for runtime in result_state["runtimes"]
+                    }
+                    if before_runtimes.keys() != after_runtimes.keys():
+                        raise ValidationFailure(
+                            f"{location}: admission changed runtime identities"
+                        )
+                    admitted_entries: dict[str, dict[str, Any]] = {}
+                    for runtime_id, before_runtime in before_runtimes.items():
+                        after_runtime = after_runtimes[runtime_id]
+                        requested = [
+                            delivery
+                            for delivery in deliveries
+                            if delivery["envelope"]["target"]
+                            == before_runtime["target_identity"]
+                        ]
+                        before_ready = before_runtime["ready_mailbox"]
+                        appended = after_runtime["ready_mailbox"][len(before_ready) :]
+                        if (
+                            after_runtime["ready_mailbox"][: len(before_ready)]
+                            != before_ready
+                            or after_runtime["deferred_mailbox"]
+                            != before_runtime["deferred_mailbox"]
+                            or len(appended) != len(requested)
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: admission mailbox delta is not exact"
+                            )
+                        for delivery, entry in zip(requested, appended, strict=True):
+                            if (
+                                entry["envelope"] != delivery["envelope"]
+                                or entry["envelope_digest"]
+                                != delivery["envelope_digest"]
+                                or entry["delivery_mode"]
+                                != delivery["delivery_mode"]
+                                or entry["deferral_count"] != "0"
+                            ):
+                                raise ValidationFailure(
+                                    f"{location}: admitted mailbox entry metadata differs from request"
+                                )
+                            admitted_entries[entry["envelope"]["event_id"]] = entry
+                        before_projection = copy.deepcopy(before_runtime)
+                        after_projection = copy.deepcopy(after_runtime)
+                        for projection in (before_projection, after_projection):
+                            projection.pop("ready_mailbox")
+                            projection.pop("deferred_mailbox")
+                        if before_projection != after_projection:
+                            raise ValidationFailure(
+                                f"{location}: admission changed non-mailbox runtime state"
+                            )
+                    if set(admitted_entries) != {
+                        delivery["envelope"]["event_id"] for delivery in deliveries
+                    }:
+                        raise ValidationFailure(
+                            f"{location}: admission result contains an event not in request"
+                        )
+                    before_projection = copy.deepcopy(prior_aggregate)
+                    after_projection = copy.deepcopy(result_state)
+                    for projection in (before_projection, after_projection):
+                        projection.pop("aggregate_state_digest")
+                        projection.pop("next_acceptance_sequence")
+                        projection.pop("next_queue_sequence")
+                        for runtime in projection["runtimes"]:
+                            runtime.pop("ready_mailbox")
+                            runtime.pop("deferred_mailbox")
+                    if before_projection != after_projection:
+                        raise ValidationFailure(
+                            f"{location}: admission changed unrelated aggregate state"
+                        )
+                    expected_accepted = []
+                    for offset, delivery in enumerate(deliveries):
+                        event_id = delivery["envelope"]["event_id"]
+                        entry = admitted_entries[event_id]
+                        expected_acceptance = str(
+                            int(prior_aggregate["next_acceptance_sequence"])
+                            + offset
+                        )
+                        expected_queue = str(
+                            int(prior_aggregate["next_queue_sequence"]) + offset
+                        )
+                        if (
+                            entry["acceptance_sequence"] != expected_acceptance
+                            or entry["queue_sequence"] != expected_queue
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: admission allocation is not contiguous"
+                            )
+                        expected_accepted.append(
+                            {
+                                "event_id": event_id,
+                                "acceptance_sequence": expected_acceptance,
+                                "queue_sequence": expected_queue,
+                            }
+                        )
+                    if (
+                        accepted != expected_accepted
+                        or result_state["next_acceptance_sequence"]
+                        != str(
+                            int(prior_aggregate["next_acceptance_sequence"])
+                            + len(deliveries)
+                        )
+                        or result_state["next_queue_sequence"]
+                        != str(
+                            int(prior_aggregate["next_queue_sequence"])
+                            + len(deliveries)
+                        )
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: admission reply is not relationally bound"
+                        )
+            if operation == "step_v2":
+                assert prior_aggregate is not None
+                target_id = selected["target_runtime_id"]
+                prior_runtime = target_runtime(prior_aggregate, target_id)
+                result_state = result_document["state"]
+                validate_aggregate_against_bundle(result_state, case / vector["bundle"])
+                if result_state["root_instance_id"] != prior_aggregate["root_instance_id"]:
+                    raise ValidationFailure(f"{location}: step result switched root aggregate")
+                if prior_runtime is None:
+                    if result_document["disposition"] != "rejected" or result_document["rejection"]["code"] != "invalid_instance_target" or canonical_json_bytes(result_state) != canonical_json_bytes(prior_aggregate):
+                        raise ValidationFailure(f"{location}: fabricated runtime identity did not fail unchanged")
+                elif (
+                    result_document["disposition"] == "rejected"
+                    and result_document["rejection"]["code"]
+                    == "invalid_instance_target"
+                    and not (
+                        aggregate_root["status"] != "running"
+                        or (
+                            prior_runtime["relation"]["kind"] != "component"
+                            and prior_runtime["status"] in {"completed", "faulted"}
+                        )
+                    )
+                ):
+                    raise ValidationFailure(
+                        f"{location}: existing runtime was fabricated as invalid"
+                    )
+                elif result_document["disposition"] == "rejected" and canonical_json_bytes(result_state) != canonical_json_bytes(prior_aggregate):
+                    raise ValidationFailure(f"{location}: rejected target did not preserve exact state")
+                elif target_runtime(result_state, target_id) is None and not any(
+                    item["target_runtime_id"] == target_id for item in result_document["lifecycle_dispositions"]
+                ):
+                    raise ValidationFailure(f"{location}: result lost the input runtime identity without disposition")
+                if "fifo_recall_to_ready_tail" in covers:
+                    before_runtime = target_runtime(prior_aggregate, target_id)
+                    after_runtime = target_runtime(result_state, target_id)
+                    assert before_runtime is not None and after_runtime is not None
+                    if len(before_runtime["deferred_mailbox"]) < 2 or len(before_runtime["ready_mailbox"]) < 2 or len(after_runtime["deferred_mailbox"]) != 1:
+                        raise ValidationFailure(f"{location}: selective recall lacks multiple deferred entries and a ready competitor")
+                    competitor = before_runtime["ready_mailbox"][1]["envelope"]["event_id"]
+                    recalled = before_runtime["deferred_mailbox"][0]["envelope"]["event_id"]
+                    if [entry["envelope"]["event_id"] for entry in after_runtime["ready_mailbox"]] != [competitor, recalled]:
+                        raise ValidationFailure(f"{location}: recalled event is not appended behind existing ready work")
+                    recalled_event = before_runtime["deferred_mailbox"][0]["envelope"]["event"]
+                    retained_event = before_runtime["deferred_mailbox"][1]["envelope"]["event"]
+                    remaining = after_runtime["deferred_mailbox"][0]["envelope"]["event"]
+                    authorizing = normalized_bundle_value(case / vector["bundle"])["machines"][0]["root"]["states"]["busy"]["states"]["authorizing"]
+                    if (
+                        recalled_event != "retry"
+                        or authorizing["on_events"][recalled_event].get("guard") != "false"
+                        or retained_event != "held_request"
+                        or remaining != retained_event
+                        or retained_event not in authorizing["deferred_events"]
+                        or retained_event in authorizing.get("on_events", {})
+                    ):
+                        raise ValidationFailure(f"{location}: structural recall and deferral-only retention are not distinguished")
+                if "deferred_only_not_runnable" in covers:
+                    before_runtime = target_runtime(prior_aggregate, target_id)
+                    if before_runtime is None or before_runtime["ready_mailbox"] or not before_runtime["deferred_mailbox"] or result_document["disposition"] != "not_runnable":
+                        raise ValidationFailure(f"{location}: deferred-only mailbox is not truly non-runnable")
+                lifecycle_expectations = {
+                    "internal_emission_active_target": ("fanout", "handled"),
+                    "internal_emission_retained_faulted_target": ("enter_faulty", "handled"),
+                    "lifecycle_cancellation_disposal": ("cancel_after_send", "handled"),
+                    "lifecycle_natural_completion_disposal": ("component_finish", "handled"),
+                    "lifecycle_aggregate_completion_disposal": ("aggregate_finish", "handled"),
+                    "cleanup_fault_rollback": ("cleanup_rollback", "faulted"),
+                    "reserved_events_not_deferrable": ("determa.component_completed", "handled"),
+                }
+                for label, (event, disposition) in lifecycle_expectations.items():
+                    if label not in covers:
+                        continue
+                    if result_document["disposition"] != disposition:
+                        raise ValidationFailure(f"{location}: lifecycle disposition does not distinguish {label}")
+                    if event is not None:
+                        before_runtime = target_runtime(prior_aggregate, target_id)
+                        if before_runtime is None or not before_runtime["ready_mailbox"] or before_runtime["ready_mailbox"][0]["envelope"]["event"] != event:
+                            raise ValidationFailure(f"{location}: lifecycle input does not execute {event}")
+                if "lifecycle_cancellation_disposal" in covers and (
+                    result_document["status"] != "completed"
+                    or not result_document["lifecycle_dispositions"]
+                    or any(item["reason"] != "runtime_cancelled" for item in result_document["lifecycle_dispositions"])
+                ):
+                    raise ValidationFailure(f"{location}: cancellation result lacks exact disposal evidence")
+                if "lifecycle_cancellation_disposal" in covers:
+                    prior_root = next(
+                        runtime
+                        for runtime in prior_aggregate["runtimes"]
+                        if runtime["relation"]["kind"] == "root"
+                    )
+                    result_root = next(
+                        runtime
+                        for runtime in result_state["runtimes"]
+                        if runtime["relation"]["kind"] == "root"
+                    )
+                    expected_counters = copy.deepcopy(
+                        prior_root["next_state_activation_sequences"]
+                    )
+                    expected_counters.append(
+                        {
+                            "definition_pointer": "/machines/0/root/states/finished",
+                            "next_sequence": "1",
+                        }
+                    )
+                    expected_counters.sort(key=lambda item: item["definition_pointer"])
+                    if (
+                        result_root["active_state_activations"]
+                        or result_root["next_state_activation_sequences"]
+                        != expected_counters
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: completed root lost final-state allocation"
+                        )
+                if "lifecycle_natural_completion_disposal" in covers and not any(
+                    item["reason"] == "runtime_completed" for item in result_document["lifecycle_dispositions"]
+                ):
+                    raise ValidationFailure(f"{location}: natural completion lacks exact disposal evidence")
+                if "lifecycle_natural_completion_disposal" in covers:
+                    prior_completed_runtime = target_runtime(prior_aggregate, target_id)
+                    completed_runtime = target_runtime(result_state, target_id)
+                    assert prior_completed_runtime is not None
+                    assert completed_runtime is not None
+                    complete_pointer = (
+                        "/machines/0/root/states/processing/components/0/root/"
+                        "states/complete"
+                    )
+                    expected_counters = copy.deepcopy(
+                        prior_completed_runtime["next_state_activation_sequences"]
+                    )
+                    expected_counters.append(
+                        {"definition_pointer": complete_pointer, "next_sequence": "1"}
+                    )
+                    expected_counters.sort(key=lambda item: item["definition_pointer"])
+                    if (
+                        completed_runtime["status"] != "completed"
+                        or completed_runtime["active_state_activations"]
+                        or completed_runtime["next_state_activation_sequences"]
+                        != expected_counters
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: completed component lost final-state allocation"
+                        )
+                if "lifecycle_aggregate_completion_disposal" in covers and (
+                    result_document["status"] != "completed"
+                    or not any(item["reason"] == "aggregate_completed" for item in result_document["lifecycle_dispositions"])
+                ):
+                    raise ValidationFailure(f"{location}: aggregate completion lacks exact disposal evidence")
+                if "cleanup_fault_rollback" in covers and (result_document["emissions"] or result_document["lifecycle_dispositions"]):
+                    raise ValidationFailure(f"{location}: cleanup fault did not roll back emissions and disposal")
+                if "internal_emission_active_target" in covers:
+                    component_targets = {runtime["runtime_id"] for runtime in prior_aggregate["runtimes"] if runtime["relation"]["kind"] == "component"}
+                    emitted_targets = {
+                        entry["envelope"]["target"]["component"]["component_runtime_id"]
+                        for runtime in result_state["runtimes"]
+                        for entry in runtime["ready_mailbox"]
+                        if "component" in entry["envelope"]["target"] and entry["delivery_mode"] == "internal"
+                    }
+                    if emitted_targets != component_targets:
+                        raise ValidationFailure(f"{location}: fanout did not account for every component target")
+                if "internal_emission_retained_faulted_target" in covers:
+                    faulty = next(
+                        runtime
+                        for runtime in result_state["runtimes"]
+                        if runtime["relation"].get("component_id") == "faulty"
+                    )
+                    owner = next(
+                        runtime
+                        for runtime in result_state["runtimes"]
+                        if runtime["relation"]["kind"] == "root"
+                    )
+                    if (
+                        faulty["status"] != "faulted"
+                        or faulty["active_state_activations"]
+                        or faulty["variables"]
+                        or len(faulty["ready_mailbox"]) != 1
+                        or faulty["ready_mailbox"][0]["envelope"]["event"]
+                        != "component_work"
+                        or faulty["fault"]["code"] != "action_fault"
+                        or len(owner["ready_mailbox"]) != 1
+                        or owner["ready_mailbox"][0]["envelope"]["event"]
+                        != "determa.component_failed"
+                        or len(result_document["emissions"]) != 2
+                        or result_document["fault"] is not None
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: same-RTC retained fault is not closed"
+                        )
+            if operation == "migrate_aggregate_v2":
+                assert prior_aggregate is not None
+                migrated = result_document["aggregate_state"]
+                descriptor = artifact(vector["descriptor_file"]).document
+                validate_aggregate_against_bundle(
+                    migrated,
+                    case / selected["target_bundle"]["bundle_file"],
+                    case / selected["source_bundle"]["bundle_file"],
+                )
+                target_fingerprint = descriptor["base_descriptor"]["target_validated_bundle_fingerprint"]
+                if (
+                    migrated["validated_bundle_fingerprint"] != target_fingerprint
+                    or int(migrated["migration_sequence"])
+                    != int(prior_aggregate["migration_sequence"]) + 1
+                    or any(
+                        runtime["current_definition"]["validated_bundle_fingerprint"]
+                        != target_fingerprint
+                        for runtime in migrated["runtimes"]
+                    )
+                ):
+                    raise ValidationFailure(f"{location}: migration result does not bind the exact target")
+                prior_runtime_ids = {runtime["runtime_id"] for runtime in prior_aggregate["runtimes"]}
+                if {runtime["runtime_id"] for runtime in migrated["runtimes"]} != prior_runtime_ids:
+                    raise ValidationFailure(f"{location}: migration changed runtime identity")
+                if "migration_historical_fault_locator_preservation" in covers:
+                    faulted = next(
+                        runtime
+                        for runtime in migrated["runtimes"]
+                        if runtime["fault"] is not None
+                    )
+                    if (
+                        faulted["fault"]["definition_fingerprint"]
+                        != selected["source_bundle"][
+                            "validated_bundle_fingerprint"
+                        ]
+                        or faulted["fault"]["source_locator"]
+                        != (
+                            "/machines/0/root/states/busy/states/receiving/"
+                            "on_events/received/action/0/send/payload/amount"
+                        )
+                        or faulted["active_leaf_state_definition_pointers"]
+                        != [
+                            "/machines/0/root/states/busy/states/"
+                            "receiving_replacement"
+                        ]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: historical fault locator was rewritten"
+                        )
+            if operation == "migrate_aggregate_v2":
+                assert prior_aggregate is not None
+                migrated = result_document["aggregate_state"]
+                if migrated["validated_bundle_fingerprint"] != selected["target_bundle"]["validated_bundle_fingerprint"]:
+                    raise ValidationFailure(f"{location}: migration result is not bound to target definition")
+                before_ids = {
+                    entry["envelope"]["event_id"]
+                    for runtime in prior_aggregate["runtimes"]
+                    for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+                    for entry in mailbox
+                }
+                after_ids = {
+                    entry["envelope"]["event_id"]
+                    for runtime in migrated["runtimes"]
+                    for mailbox in (runtime["ready_mailbox"], runtime["deferred_mailbox"])
+                    for entry in mailbox
+                }
+                disposed_count = len(result_document["dispositions"])
+                if len(before_ids - after_ids) != disposed_count or not after_ids <= before_ids:
+                    raise ValidationFailure(f"{location}: migration preservation/disposal result is inconsistent")
+            if operation == "upgrade_aggregate_v1_to_v2":
+                source = artifact(vector["state_before"]).document
+                if result_document["next_acceptance_sequence"] != "0" or result_document["next_queue_sequence"] != "0" or any(
+                    runtime["ready_mailbox"] or runtime["deferred_mailbox"] for runtime in result_document["runtimes"]
+                ):
+                    raise ValidationFailure(f"{location}: aggregate upgrade did not insert empty version-2 mailboxes")
+                comparable = copy.deepcopy(result_document)
+                comparable["aggregate_state_schema_version"] = 1
+                comparable.pop("next_acceptance_sequence")
+                comparable.pop("next_queue_sequence")
+                comparable.pop("aggregate_state_digest")
+                for runtime in comparable["runtimes"]:
+                    runtime.pop("ready_mailbox")
+                    runtime.pop("deferred_mailbox")
+                source_without_digest = copy.deepcopy(source)
+                source_without_digest.pop("aggregate_state_digest")
+                if comparable != source_without_digest:
+                    raise ValidationFailure(f"{location}: aggregate upgrade changed version-1 logical state")
+            if operation == "upgrade_checkpoint_v1_to_v2":
+                source = artifact(vector["checkpoint_before"]).document
+                aggregate = result_document["root_record"]["aggregate_state"]
+                if "upgrade_checkpoint_v1_to_v2_legacy_evidence" in covers and (
+                    not source["pending_deliveries"]
+                    or int(source["next_delivery_sequence"]) == 0
+                ):
+                    raise ValidationFailure(f"{location}: checkpoint upgrade lacks nonempty legacy pending evidence")
+                if "upgrade_checkpoint_v1_to_v2_populated_outbox" in covers and (
+                    not source["pending_outbox_intents"]
+                    or result_document["pending_outbox_intents"]
+                    != source["pending_outbox_intents"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: checkpoint upgrade lost populated outbox"
+                    )
+                if "upgrade_checkpoint_v1_spawned_target" in covers:
+                    pending = source["pending_deliveries"]
+                    spawned = next(
+                        runtime
+                        for runtime in source["root_record"]["aggregate_state"][
+                            "runtimes"
+                        ]
+                        if runtime["relation"]["kind"]
+                        == "owned_spawned_instance"
+                    )
+                    if (
+                        len(pending) != 1
+                        or pending[0]["envelope"]["target"]
+                        != spawned["target_identity"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: source lacks an exact spawned-child target"
+                        )
+                if "upgrade_checkpoint_v1_multi_pending_history" in covers:
+                    pending = source["pending_deliveries"]
+                    terminal_receipts = [
+                        receipt
+                        for receipt in source["operation_receipts"]
+                        if receipt["operation_kind"] == "delivery"
+                    ]
+                    upgraded_acceptances = [
+                        receipt
+                        for receipt in result_document["operation_receipts"]
+                        if receipt["operation_kind"] == "acceptance"
+                    ]
+                    if (
+                        source["revision"] != "3"
+                        or len(pending) != 1
+                        or pending[0]["accepted_revision"] != "2"
+                        or len(terminal_receipts) != 1
+                        or terminal_receipts[0]["accepted_revision"] != "1"
+                        or terminal_receipts[0]["committed_revision"] != "3"
+                        or len(upgraded_acceptances) != 1
+                        or upgraded_acceptances[0]["accepted_revision"] != "2"
+                        or int(upgraded_acceptances[0]["receipt_sequence"])
+                        <= int(terminal_receipts[0]["receipt_sequence"])
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: multi-pending upgrade lacks the A1/B2/A3 host history"
+                        )
+                    optional_metadata_result = artifact(
+                        "multi-pending-upgraded-with-metadata-checkpoint-v2.json"
+                    ).document
+                    optional_acceptance = next(
+                        receipt
+                        for receipt in optional_metadata_result[
+                            "operation_receipts"
+                        ]
+                        if receipt["operation_kind"] == "acceptance"
+                    )
+                    if (
+                        "legacy_v1_delivery" in upgraded_acceptances[0]
+                        or optional_acceptance.get("legacy_v1_delivery")
+                        != {
+                            "delivery_sequence": pending[0]["delivery_sequence"],
+                            "envelope_digest": pending[0]["envelope_digest"],
+                            "origin": pending[0]["origin"],
+                        }
+                        or optional_acceptance["accepted_revision"] != "2"
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: optional host upgrade metadata changed acceptance history"
+                        )
+                converted = {
+                    entry["envelope"]["event_id"]: entry
+                    for runtime in aggregate["runtimes"]
+                    for entry in runtime["ready_mailbox"]
+                }
+                if aggregate["next_acceptance_sequence"] != source["next_delivery_sequence"]:
+                    raise ValidationFailure(f"{location}: checkpoint upgrade renumbered delivery allocation")
+                for pending in source["pending_deliveries"]:
+                    entry = converted.get(pending["envelope"]["event_id"])
+                    if entry is None or entry["acceptance_sequence"] != pending["delivery_sequence"] or entry["envelope_digest"] == pending["envelope_digest"]:
+                        raise ValidationFailure(f"{location}: legacy pending delivery conversion is incomplete")
+                    if entry["envelope"]["target"] != pending["envelope"]["target"]:
+                        raise ValidationFailure(
+                            f"{location}: checkpoint upgrade changed target identity"
+                        )
+                    acceptance = next((receipt for receipt in result_document["operation_receipts"] if receipt.get("operation_kind") == "acceptance" and receipt.get("event_id") == pending["envelope"]["event_id"]), None)
+                    expected_legacy_evidence = {
+                        "delivery_sequence": pending["delivery_sequence"],
+                        "envelope_digest": pending["envelope_digest"],
+                        "origin": pending["origin"],
+                    }
+                    if acceptance is None:
+                        raise ValidationFailure(
+                            f"{location}: converted delivery acceptance was lost"
+                        )
+                    if (
+                        "legacy_v1_delivery" in acceptance
+                        and acceptance["legacy_v1_delivery"]
+                        != expected_legacy_evidence
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: optional legacy pending evidence is invalid"
+                        )
+                    if (
+                        pending["delivery_mode"] == "internal"
+                        and (
+                            "legacy_v1_delivery" not in acceptance
+                            or "legacy_v1_internal"
+                            not in entry["envelope"]["source"]
+                        )
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: legacy internal delivery source was lost"
+                        )
+                if "upgrade_checkpoint_v1_to_v2_legacy_evidence" in covers:
+                    legacy_operations = [receipt["legacy_receipt"] for receipt in result_document["operation_receipts"] if receipt["operation_kind"] == "legacy_v1_operation"]
+                    if not any(receipt.get("emission_references") for receipt in legacy_operations) or not any(receipt.get("outcome") for receipt in legacy_operations):
+                        raise ValidationFailure(f"{location}: legacy internal or terminal replay evidence is absent")
+            processed_upgrade_coverage = {
+                "processed_upgrade_history_without_optional_metadata",
+                "processed_upgrade_history_with_optional_metadata",
+                "multiple_processed_upgrade_history_without_optional_metadata",
+                "multiple_processed_upgrade_history_with_optional_metadata",
+            }
+            if operation == "checkpoint_step_v2" and covers & processed_upgrade_coverage:
+                checkpoint_before = artifact(vector["checkpoint_before"]).document
+                before_aggregate = checkpoint_before["root_record"]["aggregate_state"]
+                result_aggregate = result_document["root_record"]["aggregate_state"]
+                event_id = "delivery-unhandled"
+                before_entry = next(
+                    entry
+                    for runtime in before_aggregate["runtimes"]
+                    for entry in runtime["ready_mailbox"]
+                    if entry["envelope"]["event_id"] == event_id
+                )
+                if any(
+                    entry["envelope"]["event_id"] == event_id
+                    for runtime in result_aggregate["runtimes"]
+                    for mailbox in (
+                        runtime["ready_mailbox"],
+                        runtime["deferred_mailbox"],
+                    )
+                    for entry in mailbox
+                ):
+                    raise ValidationFailure(
+                        f"{location}: processed upgraded event remained in a mailbox"
+                    )
+                before_acceptance = next(
+                    receipt
+                    for receipt in checkpoint_before["operation_receipts"]
+                    if receipt.get("operation_kind") == "acceptance"
+                    and receipt.get("event_id") == event_id
+                )
+                result_acceptance = next(
+                    receipt
+                    for receipt in result_document["operation_receipts"]
+                    if receipt.get("operation_kind") == "acceptance"
+                    and receipt.get("event_id") == event_id
+                )
+                terminal_receipt = next(
+                    receipt
+                    for receipt in result_document["operation_receipts"]
+                    if receipt.get("operation_kind") == "event_terminal"
+                    and receipt.get("event_id") == event_id
+                )
+                expects_metadata = any("with_optional_metadata" in item for item in covers)
+                if (
+                    result_acceptance != before_acceptance
+                    or result_acceptance["accepted_revision"] != "2"
+                    or ("legacy_v1_delivery" in result_acceptance)
+                    != expects_metadata
+                    or terminal_receipt["request_digest"]
+                    != before_entry["envelope_digest"]
+                    or terminal_receipt["acceptance_sequence"]
+                    != before_entry["acceptance_sequence"]
+                    or terminal_receipt["outcome"]["disposition"] != "unhandled"
+                    or before_aggregate["next_logical_step_sequence"] != "2"
+                    or result_aggregate["next_logical_step_sequence"] != "2"
+                    or result_document["revision"]
+                    != str(int(checkpoint_before["revision"]) + 1)
+                ):
+                    raise ValidationFailure(
+                        f"{location}: processed upgrade history is not exact"
+                    )
+                if "multiple" in next(iter(covers & processed_upgrade_coverage)):
+                    remaining = [
+                        entry
+                        for runtime in result_aggregate["runtimes"]
+                        for mailbox in (
+                            runtime["ready_mailbox"],
+                            runtime["deferred_mailbox"],
+                        )
+                        for entry in mailbox
+                    ]
+                    if len(remaining) != 1 or remaining[0]["envelope"]["event_id"] != "delivery-emit-internal":
+                        raise ValidationFailure(
+                            f"{location}: multiple converted history lost independent pending work"
+                        )
+            if (
+                operation == "checkpoint_step_v2"
+                and "processed_legacy_internal_producer_reference" in covers
+            ):
+                checkpoint_before = artifact(vector["checkpoint_before"]).document
+                before_aggregate = checkpoint_before["root_record"]["aggregate_state"]
+                before_entry = next(
+                    entry
+                    for runtime in before_aggregate["runtimes"]
+                    for entry in runtime["ready_mailbox"]
+                    if "legacy_v1_internal" in entry["envelope"]["source"]
+                )
+                result_aggregate = result_document["root_record"]["aggregate_state"]
+                result_root = next(
+                    runtime
+                    for runtime in result_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                terminal_receipt = next(
+                    receipt
+                    for receipt in result_document["operation_receipts"]
+                    if receipt.get("operation_kind") == "event_terminal"
+                    and receipt.get("event_id")
+                    == before_entry["envelope"]["event_id"]
+                )
+                if (
+                    result_root["variables"][0]["value"] != ["integer", "6"]
+                    or result_aggregate["next_logical_step_sequence"] != "4"
+                    or terminal_receipt["outcome"]["disposition"] != "handled"
+                    or terminal_receipt["acceptance_sequence"]
+                    != before_entry["acceptance_sequence"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: processed legacy internal event is not exact"
+                    )
+            if operation == "checkpoint_admit_v2":
+                checkpoint_before = artifact(vector["checkpoint_before"]).document
+                deliveries = selected["deliveries"]
+                replay_evidence = [
+                    checkpoint_replay_result(checkpoint_before, delivery)
+                    for delivery in deliveries
+                ]
+                if "compacted_legacy_terminal_replay" in covers:
+                    event_id = deliveries[0]["envelope"]["event_id"]
+                    if any(
+                        receipt["operation_kind"] == "legacy_v1_operation"
+                        and receipt["legacy_receipt"].get("event_id") == event_id
+                        for receipt in checkpoint_before["operation_receipts"]
+                    ) or not any(
+                        item["event_id"] == event_id
+                        and item["request_digest_domain"]
+                        == "determa-inbox-envelope-digest-1"
+                        for item in checkpoint_before["event_identity_tombstones"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: compacted legacy replay retained its wrapper or lacks tombstone evidence"
+                        )
+                if covers & {
+                    "tombstoned_root_single_replay",
+                    "tombstoned_root_batch_replay",
+                    "tombstoned_spawned_child_replay",
+                    "tombstoned_mixed_runtime_batch_replay",
+                } and (
+                    checkpoint_before["root_record"]["status"] != "tombstone"
+                    or not replay_evidence
+                    or any(evidence is None for evidence in replay_evidence)
+                ):
+                    raise ValidationFailure(
+                        f"{location}: tombstoned replay lacks retained exact evidence"
+                    )
+                if (
+                    "tombstoned_spawned_child_replay" in covers
+                    and set(deliveries[0]["envelope"]["target"])
+                    != {"spawned_instance"}
+                ):
+                    raise ValidationFailure(
+                        f"{location}: historical child replay lacks spawned target"
+                    )
+                if "tombstoned_mixed_runtime_batch_replay" in covers and {
+                    next(iter(delivery["envelope"]["target"]))
+                    for delivery in deliveries
+                } != {"root", "spawned_instance"}:
+                    raise ValidationFailure(
+                        f"{location}: mixed replay lacks root and spawned targets"
+                    )
+                new_deliveries = [
+                    delivery
+                    for delivery, evidence in zip(
+                        deliveries, replay_evidence, strict=True
+                    )
+                    if evidence is None
+                ]
+
+                def admitted_member(
+                    checkpoint: dict[str, Any], delivery: dict[str, Any]
+                ) -> tuple[dict[str, Any], dict[str, Any]]:
+                    event_id = delivery["envelope"]["event_id"]
+                    aggregate = checkpoint["root_record"]["aggregate_state"]
+                    entry = next(
+                        (
+                            entry
+                            for runtime in aggregate["runtimes"]
+                            for mailbox in (
+                                runtime["ready_mailbox"],
+                                runtime["deferred_mailbox"],
+                            )
+                            for entry in mailbox
+                            if entry["envelope"]["event_id"] == event_id
+                        ),
+                        None,
+                    )
+                    receipt = next(
+                        (
+                            receipt
+                            for receipt in checkpoint["operation_receipts"]
+                            if receipt.get("operation_kind") == "acceptance"
+                            and receipt.get("event_id") == event_id
+                        ),
+                        None,
+                    )
+                    if (
+                        entry is None
+                        or receipt is None
+                        or entry["envelope"] != delivery["envelope"]
+                        or entry["envelope_digest"] != delivery["envelope_digest"]
+                        or receipt["request_digest"] != delivery["envelope_digest"]
+                        or receipt["acceptance_sequence"]
+                        != entry["acceptance_sequence"]
+                        or entry["deferral_count"] != "0"
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: checkpoint admission result is not bound to delivery"
+                    )
+                    return entry, receipt
+
+                def validate_admission_checkpoint(
+                    checkpoint: dict[str, Any],
+                ) -> None:
+                    before_aggregate = checkpoint_before["root_record"]["aggregate_state"]
+                    after_aggregate = checkpoint["root_record"]["aggregate_state"]
+                    before_runtimes = {
+                        runtime["runtime_id"]: runtime
+                        for runtime in before_aggregate["runtimes"]
+                    }
+                    after_runtimes = {
+                        runtime["runtime_id"]: runtime
+                        for runtime in after_aggregate["runtimes"]
+                    }
+                    if before_runtimes.keys() != after_runtimes.keys():
+                        raise ValidationFailure(
+                            f"{location}: admission changed the runtime set"
+                        )
+                    for runtime_id, before_runtime in before_runtimes.items():
+                        after_runtime = after_runtimes[runtime_id]
+                        expected_new = [
+                            delivery["envelope"]["event_id"]
+                            for delivery in new_deliveries
+                            if delivery["envelope"]["target"]
+                            == before_runtime["target_identity"]
+                        ]
+                        before_ready = before_runtime["ready_mailbox"]
+                        after_ready = after_runtime["ready_mailbox"]
+                        if (
+                            after_ready[: len(before_ready)] != before_ready
+                            or [
+                                entry["envelope"]["event_id"]
+                                for entry in after_ready[len(before_ready) :]
+                            ]
+                            != expected_new
+                            or after_runtime["deferred_mailbox"]
+                            != before_runtime["deferred_mailbox"]
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: resulting mailbox is not the exact request append"
+                            )
+                        before_projection = copy.deepcopy(before_runtime)
+                        after_projection = copy.deepcopy(after_runtime)
+                        for projection in (before_projection, after_projection):
+                            projection.pop("ready_mailbox")
+                            projection.pop("deferred_mailbox")
+                        if before_projection != after_projection:
+                            raise ValidationFailure(
+                                f"{location}: admission changed non-mailbox runtime state"
+                            )
+                    unmatched_targets = [
+                        delivery["envelope"]["event_id"]
+                        for delivery in new_deliveries
+                        if not any(
+                            delivery["envelope"]["target"]
+                            == runtime["target_identity"]
+                            for runtime in before_aggregate["runtimes"]
+                        )
+                    ]
+                    if unmatched_targets:
+                        raise ValidationFailure(
+                            f"{location}: accepted delivery has no exact target runtime"
+                        )
+                    new_count = len(new_deliveries)
+                    expected_revision = str(
+                        int(checkpoint_before["revision"]) + (1 if new_count else 0)
+                    )
+                    expected_receipts = checkpoint_before["operation_receipts"]
+                    if (
+                        checkpoint["revision"] != expected_revision
+                        or after_aggregate["next_acceptance_sequence"]
+                        != str(
+                            int(before_aggregate["next_acceptance_sequence"])
+                            + new_count
+                        )
+                        or after_aggregate["next_queue_sequence"]
+                        != str(int(before_aggregate["next_queue_sequence"]) + new_count)
+                        or checkpoint["next_operation_receipt_sequence"]
+                        != str(
+                            int(checkpoint_before["next_operation_receipt_sequence"])
+                            + new_count
+                        )
+                        or checkpoint["operation_receipts"][: len(expected_receipts)]
+                        != expected_receipts
+                        or len(checkpoint["operation_receipts"])
+                        != len(expected_receipts) + new_count
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: admission counters or receipt history are not exact"
+                        )
+                    for index, delivery in enumerate(new_deliveries):
+                        entry, receipt = admitted_member(checkpoint, delivery)
+                        if (
+                            entry["acceptance_sequence"]
+                            != str(int(before_aggregate["next_acceptance_sequence"]) + index)
+                            or entry["queue_sequence"]
+                            != str(int(before_aggregate["next_queue_sequence"]) + index)
+                            or receipt
+                            != {
+                                "operation_kind": "acceptance",
+                                "receipt_sequence": str(
+                                    int(
+                                        checkpoint_before[
+                                            "next_operation_receipt_sequence"
+                                        ]
+                                    )
+                                    + index
+                                ),
+                                "event_id": delivery["envelope"]["event_id"],
+                                "request_digest": delivery["envelope_digest"],
+                                "acceptance_sequence": entry["acceptance_sequence"],
+                                "accepted_revision": expected_revision,
+                                "delivery_mode": delivery["delivery_mode"],
+                            }
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: admitted member allocation is not request-bound"
+                            )
+                    before_checkpoint_projection = copy.deepcopy(checkpoint_before)
+                    after_checkpoint_projection = copy.deepcopy(checkpoint)
+                    for projection in (
+                        before_checkpoint_projection,
+                        after_checkpoint_projection,
+                    ):
+                        projection.pop("execution_checkpoint_digest")
+                        projection.pop("revision")
+                        projection.pop("next_operation_receipt_sequence")
+                        projection.pop("operation_receipts")
+                        aggregate = projection["root_record"]["aggregate_state"]
+                        aggregate.pop("aggregate_state_digest")
+                        aggregate.pop("next_acceptance_sequence")
+                        aggregate.pop("next_queue_sequence")
+                        for runtime in aggregate["runtimes"]:
+                            runtime.pop("ready_mailbox")
+                            runtime.pop("deferred_mailbox")
+                    if before_checkpoint_projection != after_checkpoint_projection:
+                        raise ValidationFailure(
+                            f"{location}: admission changed unrelated checkpoint state"
+                        )
+
+                if manifests[result_file]["kind"] == "execution_checkpoint_v2":
+                    if any(evidence is not None for evidence in replay_evidence):
+                        raise ValidationFailure(
+                            f"{location}: checkpoint-only result omits replay evidence"
+                        )
+                    for delivery in deliveries:
+                        admitted_member(result_document, delivery)
+                    validate_admission_checkpoint(result_document)
+                    if "native_internal_handler_admission" in covers and (
+                        deliveries[0]["envelope"]["event"] != "emit_internal"
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: native internal source handler was not admitted"
+                        )
+                elif result_document["result"] == "batch":
+                    members = result_document["members"]
+                    result_checkpoint = result_document["checkpoint"]
+                    validate_embedded_checkpoint(result_checkpoint, location)
+                    if checkpoint_before["root_record"]["status"] == "tombstone":
+                        if (
+                            new_deliveries
+                            or result_checkpoint != checkpoint_before
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: tombstoned all-replay batch mutated checkpoint"
+                            )
+                    else:
+                        validate_admission_checkpoint(result_checkpoint)
+                    if len(members) != len(deliveries) or [
+                        member["event_id"] for member in members
+                    ] != [delivery["envelope"]["event_id"] for delivery in deliveries]:
+                        raise ValidationFailure(
+                            f"{location}: batch result is not in request order"
+                        )
+                    new_index = 0
+                    for delivery, evidence, member in zip(
+                        deliveries, replay_evidence, members, strict=True
+                    ):
+                        if evidence is not None:
+                            if member != {
+                                "event_id": delivery["envelope"]["event_id"],
+                                "disposition": "replay",
+                                "evidence": evidence,
+                            }:
+                                raise ValidationFailure(
+                                    f"{location}: batch replay evidence mismatch"
+                                )
+                            continue
+                        entry, receipt = admitted_member(result_checkpoint, delivery)
+                        if member != {
+                            "event_id": delivery["envelope"]["event_id"],
+                            "disposition": "accepted",
+                            "acceptance_sequence": entry["acceptance_sequence"],
+                            "queue_sequence": entry["queue_sequence"],
+                        }:
+                            raise ValidationFailure(
+                                f"{location}: batch acceptance evidence mismatch"
+                            )
+                        expected_acceptance = str(
+                            int(
+                                checkpoint_before["root_record"]["aggregate_state"][
+                                    "next_acceptance_sequence"
+                                ]
+                            )
+                            + new_index
+                        )
+                        expected_receipt = str(
+                            int(checkpoint_before["next_operation_receipt_sequence"])
+                            + new_index
+                        )
+                        if (
+                            entry["acceptance_sequence"] != expected_acceptance
+                            or receipt["receipt_sequence"] != expected_receipt
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: batch new-member allocation is not contiguous"
+                            )
+                        new_index += 1
+                    if new_index == 0:
+                        if result_checkpoint != checkpoint_before:
+                            raise ValidationFailure(
+                                f"{location}: all-replay batch mutated checkpoint"
+                            )
+                    elif (
+                        result_checkpoint["revision"]
+                        != str(int(checkpoint_before["revision"]) + 1)
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: mixed batch did not commit exactly once"
+                        )
+                else:
+                    if len(deliveries) != 1:
+                        raise ValidationFailure(
+                            f"{location}: multi-member replay lacks ordered evidence"
+                        )
+                    exact_replay = replay_evidence[0]
+                    if exact_replay is None or result_document != exact_replay:
+                        raise ValidationFailure(
+                            f"{location}: replay result does not match retained evidence"
+                        )
+            if "native_internal_handler_provenance" in covers:
+                checkpoint_before = artifact(vector["checkpoint_before"]).document
+                before_aggregate = checkpoint_before["root_record"]["aggregate_state"]
+                before_root = next(
+                    runtime
+                    for runtime in before_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                source_entry = before_root["ready_mailbox"][0]
+                result_aggregate = result_document["root_record"]["aggregate_state"]
+                result_root = next(
+                    runtime
+                    for runtime in result_aggregate["runtimes"]
+                    if runtime["relation"]["kind"] == "root"
+                )
+                produced = result_root["ready_mailbox"]
+                if len(produced) != 1:
+                    raise ValidationFailure(
+                        f"{location}: native handler did not produce exactly one event"
+                    )
+                expected_event_id = hash_value(
+                    [
+                        "determa-event-identity-1",
+                        "1",
+                        before_aggregate["root_instance_id"],
+                        before_root["runtime_id"],
+                        before_root["runtime_id"],
+                        source_entry["envelope"]["cause_id"],
+                        before_aggregate["next_logical_step_sequence"],
+                        "/machines/0/root/on_events/emit_internal/action/0/send",
+                        "0",
+                    ]
+                )
+                producer_receipt = result_document["operation_receipts"][-1]
+                if (
+                    source_entry["envelope"]["event"] != "emit_internal"
+                    or produced[0]["envelope"]["event"] != "internal_increment"
+                    or produced[0]["envelope"]["event_id"] != expected_event_id
+                    or producer_receipt["event_id"]
+                    != source_entry["envelope"]["event_id"]
+                    or producer_receipt["emission_references"][0]["event_id"]
+                    != expected_event_id
+                ):
+                    raise ValidationFailure(
+                        f"{location}: native internal provenance is not handler-derived"
+                    )
+            if operation == "checkpoint_prune_v2":
+                checkpoint_before = artifact(vector["checkpoint_before"]).document
+                cutoff = canonical_decimal(
+                    selected["cutoff_receipt_sequence"], "pruning cutoff"
+                )
+                prior_cutoff_value = checkpoint_before["replay_retention"][
+                    "pruned_through_receipt_sequence"
+                ]
+                prior_cutoff = (
+                    None
+                    if prior_cutoff_value is None
+                    else canonical_decimal(
+                        prior_cutoff_value, "prior pruning cutoff"
+                    )
+                )
+                if prior_cutoff == cutoff:
+                    if result_document != checkpoint_before:
+                        raise ValidationFailure(
+                            f"{location}: equal pruning cutoff mutated checkpoint"
+                        )
+                elif result_document != project_bounded_prune(
+                    checkpoint_before, cutoff
+                ):
+                    raise ValidationFailure(
+                        f"{location}: bounded pruning result is not the exact "
+                        "specification projection"
+                    )
+                if "version2_native_internal_sequential_pruning" in covers:
+                    retained_terminal = next(
+                        receipt
+                        for receipt in checkpoint_before[
+                            "operation_receipts"
+                        ]
+                        if receipt["receipt_sequence"] == "5"
+                    )
+                    if (
+                        prior_cutoff != 4
+                        or cutoff != 5
+                        or any(
+                            reference.get("event_id")
+                            == retained_terminal["event_id"]
+                            for receipt in checkpoint_before[
+                                "operation_receipts"
+                            ]
+                            for reference in receipt.get(
+                                "emission_references", []
+                            )
+                        )
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: sequential pruning is not based on "
+                            "prior cutoff attestation"
+                        )
+                if "version2_creation_internal_dependency_retained" in covers:
+                    creation = checkpoint_before["operation_receipts"][0]
+                    before_entries = [
+                        entry
+                        for runtime in checkpoint_before["root_record"][
+                            "aggregate_state"
+                        ]["runtimes"]
+                        for entry in runtime["ready_mailbox"]
+                    ]
+                    after_entries = [
+                        entry
+                        for runtime in result_document["root_record"][
+                            "aggregate_state"
+                        ]["runtimes"]
+                        for entry in runtime["ready_mailbox"]
+                    ]
+                    references = creation["legacy_receipt"][
+                        "emission_references"
+                    ]
+                    if (
+                        cutoff != 1
+                        or len(before_entries) != 1
+                        or after_entries != before_entries
+                        or len(references) != 1
+                        or references[0].get("kind")
+                        != "internal_delivery"
+                        or references[0].get("event_id")
+                        != before_entries[0]["envelope"]["event_id"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: creation-owned internal work is not "
+                            "distinguishing"
+                        )
+                if "version2_creation_external_dependency_retained" in covers:
+                    creation = checkpoint_before["operation_receipts"][0]
+                    before_outbox = checkpoint_before[
+                        "pending_outbox_intents"
+                    ]
+                    references = creation["legacy_receipt"][
+                        "emission_references"
+                    ]
+                    if (
+                        cutoff != 1
+                        or len(before_outbox) != 1
+                        or result_document["pending_outbox_intents"]
+                        != before_outbox
+                        or len(references) != 1
+                        or references[0].get("kind") != "external_outbox"
+                        or references[0].get("effect_id")
+                        != before_outbox[0]["intent"]["effect_id"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: creation-owned external work is not "
+                            "distinguishing"
+                        )
+                if covers & {
+                    "version2_creation_internal_dependency_retained",
+                    "version2_creation_external_dependency_retained",
+                }:
+                    if "source_checkpoint_v1" not in vector:
+                        raise ValidationFailure(
+                            f"{location}: creation-owned work lacks its version-1 source trace"
+                        )
+                    source_checkpoint = artifact(
+                        vector["source_checkpoint_v1"]
+                    ).document
+                    if upgrade_checkpoint(source_checkpoint) != checkpoint_before:
+                        raise ValidationFailure(
+                            f"{location}: version-2 checkpoint is not the exact upgrade "
+                            "of its bound version-1 host trace"
+                        )
+                    creation = checkpoint_before["operation_receipts"][0][
+                        "legacy_receipt"
+                    ]
+                    aggregate = checkpoint_before["root_record"][
+                        "aggregate_state"
+                    ]
+                    expected_creation_digest = hash_value(
+                        [
+                            "determa-creation-request-digest-1",
+                            "1",
+                            validated_bundle_fingerprint(
+                                case / vector["bundle"]
+                            ),
+                            aggregate["namespace"],
+                            aggregate["root_machine_id"],
+                            aggregate["root_machine_version"],
+                            aggregate["root_instance_id"],
+                            aggregate["creation_id"],
+                            encode_typed_value(
+                                {"input": {}, "external": {}}
+                            ),
+                        ]
+                    )
+                    if creation["request_digest"] != expected_creation_digest:
+                        raise ValidationFailure(
+                            f"{location}: creation-owned work trace has an "
+                            "invalid creation request digest"
+                        )
+                    source_aggregate = source_checkpoint["root_record"][
+                        "aggregate_state"
+                    ]
+                    source_receipts = source_checkpoint["operation_receipts"]
+                    if (
+                        len(source_receipts) != 2
+                        or source_receipts[0]["operation_kind"] != "creation"
+                        or source_receipts[1]["operation_kind"] != "delivery"
+                        or source_receipts[1]["event_id"]
+                        != "creation-unrelated"
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: source trace is not a complete create/delivery history"
+                        )
+                    root_runtime = next(
+                        runtime
+                        for runtime in source_aggregate["runtimes"]
+                        if runtime["relation"]["kind"] == "root"
+                    )
+                    expected_root_runtime_id = hash_value(
+                        [
+                            "determa-root-runtime-identity-2",
+                            "1",
+                            source_aggregate["validated_bundle_fingerprint"],
+                            source_aggregate["namespace"],
+                            source_aggregate["root_machine_id"],
+                            source_aggregate["root_machine_version"],
+                            source_aggregate["root_instance_id"],
+                        ]
+                    )
+                    if root_runtime["runtime_id"] != expected_root_runtime_id:
+                        raise ValidationFailure(
+                            f"{location}: source root identity does not use the normative operands"
+                        )
+                    root_index = (
+                        "0"
+                        if source_aggregate["root_machine_id"]
+                        == "internal_creator"
+                        else "1"
+                    )
+                    root_pointer = f"/machines/{root_index}/root"
+                    initialization_cause_id = hash_value(
+                        [
+                            "determa-cause-identity-1",
+                            "1",
+                            "root_initialization",
+                            source_aggregate["root_instance_id"],
+                            root_runtime["runtime_id"],
+                            root_runtime["runtime_id"],
+                            source_aggregate["creation_id"],
+                            "0",
+                            root_pointer,
+                            "0",
+                        ]
+                    )
+                    created_aggregate = copy.deepcopy(source_aggregate)
+                    created_aggregate.pop("aggregate_state_digest")
+                    created_aggregate["next_logical_step_sequence"] = "1"
+                    root_variable = created_aggregate["runtimes"][0][
+                        "variables"
+                    ][0]
+                    root_variable["value"] = ["integer", "0"]
+                    created_digest = hash_value(
+                        ["determa-aggregate-state-digest-1", created_aggregate]
+                    )
+                    if (
+                        source_receipts[0]["resulting_aggregate_state_digest"]
+                        != created_digest
+                        or source_receipts[1]["resulting_aggregate_state_digest"]
+                        != source_aggregate["aggregate_state_digest"]
+                    ):
+                        raise ValidationFailure(
+                            f"{location}: legacy receipts do not retain exact version-1 "
+                            "before/after aggregate digests"
+                        )
+                    presented_envelope = {
+                        "event": "increment",
+                        "event_id": "creation-unrelated",
+                        "target": copy.deepcopy(root_runtime["target_identity"]),
+                        "payload": ["map", []],
+                    }
+                    expected_delivery_digest = hash_value(
+                        [
+                            "determa-inbox-envelope-digest-1",
+                            "1",
+                            source_aggregate["root_instance_id"],
+                            "input",
+                            presented_envelope,
+                        ]
+                    )
+                    if source_receipts[1]["request_digest"] != expected_delivery_digest:
+                        raise ValidationFailure(
+                            f"{location}: legacy delivery receipt does not hash the complete envelope"
+                        )
+                    creation_reference = source_receipts[0][
+                        "emission_references"
+                    ][0]
+                    if source_aggregate["root_machine_id"] == "internal_creator":
+                        expected_event_id = hash_value(
+                            [
+                                "determa-event-identity-1",
+                                "1",
+                                source_aggregate["root_instance_id"],
+                                root_runtime["runtime_id"],
+                                root_runtime["runtime_id"],
+                                initialization_cause_id,
+                                "0",
+                                f"{root_pointer}/entry/0/send",
+                                "0",
+                            ]
+                        )
+                        pending = source_checkpoint["pending_deliveries"]
+                        if (
+                            len(pending) != 1
+                            or pending[0]["envelope"]["event_id"]
+                            != expected_event_id
+                            or creation_reference.get("event_id")
+                            != expected_event_id
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: internal creation identity/reference is not normative"
+                            )
+                    else:
+                        expected_effect_id = hash_value(
+                            [
+                                "determa-effect-identity-1",
+                                "1",
+                                [
+                                    source_aggregate["namespace"],
+                                    source_aggregate["root_machine_id"],
+                                    source_aggregate["root_machine_version"],
+                                ],
+                                source_aggregate["root_instance_id"],
+                                root_runtime["runtime_id"],
+                                initialization_cause_id,
+                                "0",
+                                f"{root_pointer}/entry/0/send",
+                                "0",
+                            ]
+                        )
+                        pending = source_checkpoint["pending_outbox_intents"]
+                        if (
+                            len(pending) != 1
+                            or pending[0]["intent"]["effect_id"]
+                            != expected_effect_id
+                            or creation_reference.get("effect_id")
+                            != expected_effect_id
+                        ):
+                            raise ValidationFailure(
+                                f"{location}: external creation identity/reference is not normative"
+                            )
+        if operation == "checkpoint_prune_v2" and expectation["result"] == "failure":
+            checkpoint_before = artifact(vector["checkpoint_before"]).document
+            cutoff = canonical_decimal(
+                selected["cutoff_receipt_sequence"], "pruning cutoff"
+            )
+            prior_cutoff_value = checkpoint_before["replay_retention"][
+                "pruned_through_receipt_sequence"
+            ]
+            prior_cutoff = (
+                None
+                if prior_cutoff_value is None
+                else canonical_decimal(prior_cutoff_value, "prior pruning cutoff")
+            )
+            lower_cutoff_invalid = (
+                prior_cutoff is not None and cutoff < prior_cutoff
+            )
+            skipped_cutoff_invalid = cutoff >= canonical_decimal(
+                checkpoint_before["next_operation_receipt_sequence"],
+                "next receipt sequence",
+            )
+            aggregate = checkpoint_before["root_record"].get("aggregate_state")
+            live_entries = (
+                [
+                    entry
+                    for runtime in aggregate["runtimes"]
+                    for mailbox in (
+                        runtime["ready_mailbox"],
+                        runtime["deferred_mailbox"],
+                    )
+                    for entry in mailbox
+                ]
+                if aggregate is not None
+                else []
+            )
+            live_event_ids = {
+                entry["envelope"]["event_id"] for entry in live_entries
+            }
+            receipts = checkpoint_before["operation_receipts"]
+            acceptance_by_event = {
+                receipt["event_id"]: receipt
+                for receipt in receipts
+                if receipt["operation_kind"] == "acceptance"
+            }
+            terminal_by_event = {
+                receipt["event_id"]: receipt
+                for receipt in receipts
+                if receipt["operation_kind"] == "event_terminal"
+            }
+            dependency_reasons: set[str] = set()
+            if any(
+                event_id in live_event_ids
+                and canonical_decimal(
+                    receipt["receipt_sequence"],
+                    "live acceptance receipt sequence",
+                )
+                <= cutoff
+                for event_id, receipt in acceptance_by_event.items()
+            ):
+                dependency_reasons.add("live_acceptance")
+            if any(
+                (
+                    canonical_decimal(
+                        acceptance_by_event[event_id]["receipt_sequence"],
+                        "acceptance receipt sequence",
+                    )
+                    <= cutoff
+                )
+                != (
+                    canonical_decimal(
+                        terminal["receipt_sequence"],
+                        "terminal receipt sequence",
+                    )
+                    <= cutoff
+                )
+                for event_id, terminal in terminal_by_event.items()
+                if event_id in acceptance_by_event
+            ):
+                dependency_reasons.add("terminal_pair")
+
+            retained_event_ids = live_event_ids
+            pending_effect_ids = {
+                item["intent"]["effect_id"]
+                for item in checkpoint_before["pending_outbox_intents"]
+            }
+            for producer in receipts:
+                producer_sequence = canonical_decimal(
+                    producer["receipt_sequence"], "producer receipt sequence"
+                )
+                if producer_sequence == 0 or producer_sequence > cutoff:
+                    continue
+                references = list(producer.get("emission_references", []))
+                legacy = producer.get("legacy_receipt")
+                if isinstance(legacy, dict):
+                    references.extend(legacy.get("emission_references", []))
+                if any(
+                    reference.get("event_id") in retained_event_ids
+                    for reference in references
+                    if reference.get("kind")
+                    in {
+                        "internal_mailbox",
+                        "internal_terminal",
+                        "internal_delivery",
+                    }
+                ):
+                    dependency_reasons.add("internal_producer")
+                if any(
+                    reference.get("effect_id") in pending_effect_ids
+                    for reference in references
+                    if reference.get("kind") == "external_outbox"
+                ):
+                    dependency_reasons.add("pending_outbox")
+            for entry in live_entries:
+                source = entry["envelope"]["source"]
+                legacy_origin = source.get("legacy_v1_internal")
+                if legacy_origin is not None:
+                    producer_sequence = canonical_decimal(
+                        legacy_origin["producing_receipt_sequence"],
+                        "legacy internal producer sequence",
+                    )
+                    if 0 < producer_sequence <= cutoff:
+                        dependency_reasons.add("internal_producer")
+            for receipt in receipts:
+                if canonical_decimal(
+                    receipt["receipt_sequence"],
+                    "retained receipt sequence",
+                ) <= cutoff:
+                    continue
+                legacy_evidence = receipt.get("legacy_v1_delivery")
+                if legacy_evidence is None and receipt.get(
+                    "operation_kind"
+                ) == "legacy_v1_operation":
+                    legacy_evidence = receipt.get("legacy_receipt")
+                if not isinstance(legacy_evidence, dict):
+                    continue
+                origin = legacy_evidence.get("origin")
+                if (
+                    isinstance(origin, dict)
+                    and origin.get("kind") == "internal_emission"
+                ):
+                    producer_sequence = canonical_decimal(
+                        origin["producing_receipt_sequence"],
+                        "retained legacy origin producer sequence",
+                    )
+                    if 0 < producer_sequence <= cutoff:
+                        dependency_reasons.add("legacy_origin")
+
+            dependency_invalid = bool(dependency_reasons)
+            if expectation.get("code") == "invalid_execution_checkpoint":
+                if lower_cutoff_invalid or skipped_cutoff_invalid or dependency_invalid:
+                    failure_evidence.add("invalid_execution_checkpoint")
+                if (
+                    "version2_lower_pruning_cutoff_rejected" in covers
+                    and not lower_cutoff_invalid
+                ):
+                    raise ValidationFailure(
+                        f"{location}: lower-cutoff rejection is not distinguishing"
+                    )
+                if (
+                    "version2_invalid_pruning_cutoff_rejected" in covers
+                    and not skipped_cutoff_invalid
+                ):
+                    raise ValidationFailure(
+                        f"{location}: skipped-cutoff rejection is not distinguishing"
+                    )
+                if (
+                    "version2_dependency_pruning_rejected" in covers
+                    and not dependency_invalid
+                ):
+                    raise ValidationFailure(
+                        f"{location}: dependency rejection has no retained producer"
+                    )
+                if (
+                    "version2_legacy_origin_pruning_rejected" in covers
+                    and "legacy_origin" not in dependency_reasons
+                ):
+                    raise ValidationFailure(
+                        f"{location}: legacy-origin pruning rejection lacks "
+                        "a retained dependency chain"
+                    )
+                if (
+                    "version2_live_acceptance_pruning_rejected" in covers
+                    and "live_acceptance" not in dependency_reasons
+                ):
+                    raise ValidationFailure(
+                        f"{location}: live-acceptance pruning rejection lacks "
+                        "protected live work"
+                    )
+                if (
+                    "version2_terminal_pair_pruning_rejected" in covers
+                    and "terminal_pair" not in dependency_reasons
+                ):
+                    raise ValidationFailure(
+                        f"{location}: terminal-pair pruning rejection is not "
+                        "distinguishing"
+                    )
+        if (
+            expectation["result"] == "failure"
+            and expectation["code"] not in failure_evidence
+        ):
+            raise ValidationFailure(
+                f"{location}: rejection label lacks an operation-specific supporting predicate"
+            )
+        unchanged_file = expectation.get("unchanged_file")
+        if unchanged_file is not None:
+            if unchanged_file not in artifact_names:
+                raise ValidationFailure(
+                    f"{location}: undeclared unchanged artifact {unchanged_file}"
+                )
+            prior = vector.get("state_before", vector.get("checkpoint_before"))
+            if prior is not None and unchanged_file != prior:
+                raise ValidationFailure(
+                    f"{location}: failure must preserve the exact supplied artifact"
+                )
+    if run_mutation_probes:
+        for index, original_vector in enumerate(test["version2_vectors"]):
+            operation = original_vector["operation"]
+            original_code = original_vector["expect"].get("code")
+            alternative_allowed = sorted(
+                operation_failure_codes[operation] - {original_code}
+            )
+            if operation == "step_v2" or not alternative_allowed:
+                relabeled_code = next(
+                    entry["code"]
+                    for entry in _CLOSED_CODE_REGISTRY["entries"]
+                    if entry["code"] not in operation_failure_codes[operation]
+                )
+            else:
+                relabeled_code = alternative_allowed[0]
+            relabeled = copy.deepcopy(test)
+            relabeled_vector = relabeled["version2_vectors"][index]
+            prior_file = relabeled_vector.get(
+                "state_before", relabeled_vector.get("checkpoint_before")
+            )
+            if prior_file is None:
+                prior_file = next(
+                    item["file"]
+                    for item in relabeled["artifacts"]["documents"]
+                    if item.get("valid") and item["kind"] != "version2_operation_inputs"
+                )
+            relabeled_vector["expect"] = {
+                "result": "failure",
+                "code": relabeled_code,
+                "unchanged_file": prior_file,
+            }
+            try:
+                validate_version2_vectors(
+                    case,
+                    relabeled,
+                    bundle_paths,
+                    artifact_paths,
+                    artifact_overrides=artifact_overrides,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                f"{case.name}: operation relabel was accepted for "
+                f"{original_vector['name']} as {relabeled_code}"
+            )
+        for index, original_vector in enumerate(test["version2_vectors"]):
+            if (
+                original_vector["operation"] != "checkpoint_prune_v2"
+                or original_vector["expect"]["result"] != "success"
+            ):
+                continue
+            relabeled = copy.deepcopy(test)
+            relabeled_vector = relabeled["version2_vectors"][index]
+            relabeled_vector["expect"] = {
+                "result": "failure",
+                "code": "invalid_execution_checkpoint",
+                "unchanged_file": relabeled_vector["checkpoint_before"],
+            }
+            try:
+                validate_version2_vectors(
+                    case,
+                    relabeled,
+                    bundle_paths,
+                    artifact_paths,
+                    artifact_overrides=artifact_overrides,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                f"{case.name}: successful pruning vector was relabeled as "
+                "invalid_execution_checkpoint"
+            )
+        if case.name == "checkpoint-04-version2-mailboxes":
+            for index, original_vector in enumerate(test["version2_vectors"]):
+                if not set(original_vector["covers"]) & {
+                    "version2_creation_internal_dependency_retained",
+                    "version2_creation_external_dependency_retained",
+                }:
+                    continue
+                source_name = original_vector["source_checkpoint_v1"]
+                before_name = original_vector["checkpoint_before"]
+                result_name = original_vector["expect"]["exact_result_file"]
+                source = copy.deepcopy(artifact(source_name).document)
+                source["operation_receipts"][1]["request_digest"] = hash_value(
+                    [
+                        "determa-inbox-envelope-digest-1",
+                        "1",
+                        source["root_instance_id"],
+                        "input",
+                        "creation-unrelated",
+                    ]
+                )
+                source.pop("execution_checkpoint_digest")
+                source["execution_checkpoint_digest"] = hash_value(
+                    ["determa-execution-checkpoint-digest-1", source]
+                )
+                before = upgrade_checkpoint(source)
+                result = project_bounded_prune(before, 1)
+                mutated = dict(artifact_overrides)
+                mutated.update(
+                    {
+                        source_name: source,
+                        before_name: before,
+                        result_name: result,
+                    }
+                )
+                try:
+                    validate_version2_vectors(
+                        case,
+                        test,
+                        bundle_paths,
+                        artifact_paths,
+                        artifact_overrides=mutated,
+                        run_mutation_probes=False,
+                    )
+                except ValidationFailure:
+                    pass
+                else:
+                    raise ValidationFailure(
+                        f"{case.name}: self-consistent abbreviated legacy request "
+                        f"history was accepted for {original_vector['name']}"
+                    )
+
+                source = copy.deepcopy(artifact(source_name).document)
+                replacement_id = "sha256:" + "0" * 64
+                creation_reference = source["operation_receipts"][0][
+                    "emission_references"
+                ][0]
+                if creation_reference["kind"] == "internal_delivery":
+                    creation_reference["event_id"] = replacement_id
+                    pending = source["pending_deliveries"][0]
+                    pending["envelope"]["event_id"] = replacement_id
+                    pending["envelope_digest"] = hash_value(
+                        [
+                            "determa-inbox-envelope-digest-1",
+                            "1",
+                            source["root_instance_id"],
+                            "internal",
+                            pending["envelope"],
+                        ]
+                    )
+                else:
+                    creation_reference["effect_id"] = replacement_id
+                    source["pending_outbox_intents"][0]["intent"][
+                        "effect_id"
+                    ] = replacement_id
+                source.pop("execution_checkpoint_digest")
+                source["execution_checkpoint_digest"] = hash_value(
+                    ["determa-execution-checkpoint-digest-1", source]
+                )
+                before = upgrade_checkpoint(source)
+                result = project_bounded_prune(before, 1)
+                mutated = dict(artifact_overrides)
+                mutated.update(
+                    {
+                        source_name: source,
+                        before_name: before,
+                        result_name: result,
+                    }
+                )
+                try:
+                    validate_version2_vectors(
+                        case,
+                        test,
+                        bundle_paths,
+                        artifact_paths,
+                        artifact_overrides=mutated,
+                        run_mutation_probes=False,
+                    )
+                except ValidationFailure:
+                    continue
+                raise ValidationFailure(
+                    f"{case.name}: self-consistent non-normative creation identity "
+                    f"was accepted for {original_vector['name']}"
+                )
+    if run_mutation_probes and case.name == "117-version2-mailboxes":
+        probes: dict[str, dict[str, Any]] = {
+            "creation expectation substitution": {
+                "empty-aggregate-v2.json": artifact("base-aggregate.json").document,
+            },
+            "lifecycle result substitution": {
+                "internal-emission-cancelled-result.json": artifact("internal-emission-active-result.json").document,
+            },
+        }
+        mutated_inputs = copy.deepcopy(artifact("operation-inputs.json").document)
+        mutated_inputs["invalid_runtime_step"]["target_runtime_id"] = artifact("empty-aggregate-v2.json").document["root_runtime_id"]
+        probes["fabricated runtime classification"] = {"operation-inputs.json": mutated_inputs}
+        admission = artifact("admission-success.json").document
+        admission_unknown = copy.deepcopy(admission)
+        admission_unknown["accepted"][0]["event_id"] = "not-in-request"
+        probes["admission event not in request"] = {
+            "admission-success.json": admission_unknown
+        }
+        admission_sequence = copy.deepcopy(admission)
+        admission_sequence["accepted"][0]["acceptance_sequence"] = "999"
+        probes["admission acceptance sequence 999"] = {
+            "admission-success.json": admission_sequence
+        }
+        admission_digest = copy.deepcopy(admission)
+        admission_digest["state"]["aggregate_state_digest"] = "sha256:" + "0" * 64
+        probes["admission all-zero aggregate digest"] = {
+            "admission-success.json": admission_digest
+        }
+        admission_deferral = copy.deepcopy(admission)
+        admitted_event_ids = {
+            item["event_id"] for item in admission_deferral["accepted"]
+        }
+        next(
+            entry
+            for runtime in admission_deferral["state"]["runtimes"]
+            for entry in runtime["ready_mailbox"]
+            if entry["envelope"]["event_id"] in admitted_event_ids
+        )["deferral_count"] = "99"
+        admission_deferral["state"].pop("aggregate_state_digest")
+        admission_deferral["state"]["aggregate_state_digest"] = hash_value(
+            ["determa-aggregate-state-digest-2", admission_deferral["state"]]
+        )
+        probes["admission nonzero initial deferral count"] = {
+            "admission-success.json": admission_deferral
+        }
+        replay = artifact("replay-success.json").document
+        replay_unknown = copy.deepcopy(replay)
+        replay_unknown["event_id"] = "not-in-request"
+        probes["core replay event not in request"] = {
+            "replay-success.json": replay_unknown
+        }
+        replay_sequence = copy.deepcopy(replay)
+        replay_sequence["acceptance_sequence"] = "999"
+        probes["core replay acceptance sequence 999"] = {
+            "replay-success.json": replay_sequence
+        }
+        corrected_contract_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        corrected_host = corrected_contract_inputs["host_cause_mismatch"][
+            "deliveries"
+        ][0]
+        corrected_host["envelope"]["cause_id"] = corrected_host["envelope"][
+            "event_id"
+        ]
+        corrected_host["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("base-aggregate.json").document["root_instance_id"],
+                corrected_host["delivery_mode"],
+                corrected_host["envelope"],
+            ]
+        )
+        probes["host cause rejection without cause violation"] = {
+            "operation-inputs.json": corrected_contract_inputs
+        }
+        corrected_digest_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        corrected_digest = corrected_digest_inputs["digest_mismatch_batch"][
+            "deliveries"
+        ][1]
+        corrected_digest["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("base-aggregate.json").document["root_instance_id"],
+                corrected_digest["delivery_mode"],
+                corrected_digest["envelope"],
+            ]
+        )
+        probes["digest rejection without digest violation"] = {
+            "operation-inputs.json": corrected_digest_inputs
+        }
+        nonduplicate_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        nonduplicate_inputs["duplicate_batch"]["deliveries"][1]["envelope"][
+            "event_id"
+        ] = "not-a-duplicate"
+        probes["duplicate rejection without duplicate identity"] = {
+            "operation-inputs.json": nonduplicate_inputs
+        }
+        undeclared_reserved_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        undeclared_reserved = undeclared_reserved_inputs["reserved_event_admit"][
+            "deliveries"
+        ][0]
+        undeclared_reserved["envelope"]["event"] = "unreserved.lifecycle_event"
+        undeclared_reserved["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("reserved-admission-before.json").document[
+                    "root_instance_id"
+                ],
+                undeclared_reserved["delivery_mode"],
+                undeclared_reserved["envelope"],
+            ]
+        )
+        probes["undeclared non-reserved internal event admission"] = {
+            "operation-inputs.json": undeclared_reserved_inputs
+        }
+        probes["running root descendant classified as terminal"] = {
+            "faulted-root-retained-component-aggregate.json": artifact(
+                "cleanup-rollback-before.json"
+            ).document
+        }
+        unseen_core_conflict_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        unseen_core_conflict = unseen_core_conflict_inputs[
+            "conflicting_replay"
+        ]["deliveries"][0]
+        unseen_core_conflict["envelope"]["event_id"] = "unseen-core-conflict"
+        unseen_core_conflict["envelope"]["cause_id"] = "unseen-core-conflict"
+        unseen_core_conflict["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("base-aggregate.json").document["root_instance_id"],
+                unseen_core_conflict["delivery_mode"],
+                unseen_core_conflict["envelope"],
+            ]
+        )
+        probes["core conflict expectation without retained identity"] = {
+            "operation-inputs.json": unseen_core_conflict_inputs
+        }
+        for probe_name, overrides in probes.items():
+            try:
+                validate_version2_vectors(
+                    case,
+                    test,
+                    bundle_paths,
+                    artifact_paths,
+                    artifact_overrides=overrides,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(f"{case.name}: adversarial probe was accepted: {probe_name}")
+        for relabeled_code in ("checkpoint_revision_conflict", "invalid_event"):
+            reserved_relabel = copy.deepcopy(test)
+            reserved_vector = next(
+                vector
+                for vector in reserved_relabel["version2_vectors"]
+                if vector["name"] == "reserved_component_completion_is_admitted"
+            )
+            reserved_vector["expect"] = {
+                "result": "failure",
+                "code": relabeled_code,
+                "unchanged_file": "reserved-admission-before.json",
+                "caller_still_owns_input": True,
+            }
+            try:
+                validate_version2_vectors(
+                    case,
+                    reserved_relabel,
+                    bundle_paths,
+                    artifact_paths,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                f"{case.name}: reserved component admission accepted "
+                f"unsupported rejection relabel {relabeled_code}"
+            )
+    if run_mutation_probes and case.name == "118-version2-persistence":
+        descriptor = copy.deepcopy(artifact("descriptor-compatible-v2.json").document)
+        wrong_shape = copy.deepcopy(descriptor)
+        wrong_shape["base_descriptor"]["source_aggregate_shape_fingerprint"] = "sha256:" + "0" * 64
+        source_cycle = copy.deepcopy(descriptor)
+        source_cycle["base_descriptor"]["target_validated_bundle_fingerprint"] = (
+            source_cycle["base_descriptor"]["source_validated_bundle_fingerprint"]
+        )
+        source = artifact("base-aggregate-v2.json").document
+        probes = {
+            "migration shape substitution": {"descriptor-compatible-v2.json": wrong_shape},
+            "migration self-cycle substitution": {"descriptor-compatible-v2.json": source_cycle},
+            "migration result without target binding or sequence": {
+                "migration-preserve-result.json": {
+                    "result": "success",
+                    "aggregate_state": source,
+                    "dispositions": [],
+                }
+            },
+        }
+        for probe_name, overrides in probes.items():
+            try:
+                validate_version2_vectors(
+                    case,
+                    test,
+                    bundle_paths,
+                    artifact_paths,
+                    artifact_overrides=overrides,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(f"{case.name}: adversarial probe was accepted: {probe_name}")
+    if run_mutation_probes and case.name == "checkpoint-04-version2-mailboxes":
+        terminal_result = artifact("terminal-replay-result.json").document
+        tombstone_result = artifact("tombstone-replay-result.json").document
+        all_replay_result = artifact("all-replay-batch-result.json").document
+        mixed_result = artifact("mixed-replay-new-batch-result.json").document
+        compacted_legacy_result = artifact(
+            "compacted-legacy-replay-result.json"
+        ).document
+        tombstoned_batch_result = artifact(
+            "tombstoned-batch-replay-result.json"
+        ).document
+        probes = {}
+        for label, mutation in (
+            ("pruning changed aggregate variable", "variable"),
+            ("pruning changed logical step counter", "logical_step"),
+            ("pruning omitted required replay tombstone", "tombstone"),
+        ):
+            compact_projection = copy.deepcopy(
+                artifact("compact-checkpoint-v2.json").document
+            )
+            aggregate = compact_projection["root_record"]["aggregate_state"]
+            if mutation == "variable":
+                aggregate["runtimes"][0]["variables"][0]["value"] = [
+                    "integer",
+                    "999",
+                ]
+            elif mutation == "logical_step":
+                aggregate["next_logical_step_sequence"] = "999"
+            else:
+                compact_projection["event_identity_tombstones"] = []
+            if mutation != "tombstone":
+                aggregate.pop("aggregate_state_digest")
+                aggregate["aggregate_state_digest"] = hash_value(
+                    ["determa-aggregate-state-digest-2", aggregate]
+                )
+            compact_projection.pop("execution_checkpoint_digest")
+            compact_projection["execution_checkpoint_digest"] = hash_value(
+                [
+                    "determa-execution-checkpoint-digest-2",
+                    compact_projection,
+                ]
+            )
+            probes[label] = {"compact-checkpoint-v2.json": compact_projection}
+        for field, value in (
+            ("acceptance_sequence", "999"),
+            ("request_digest", "sha256:" + "0" * 64),
+        ):
+            internal_projection = copy.deepcopy(
+                artifact(
+                    "native-internal-terminal-pruned-checkpoint-v2.json"
+                ).document
+            )
+            internal_event_id = next(
+                receipt["event_id"]
+                for receipt in artifact(
+                    "native-internal-terminal-checkpoint-v2.json"
+                ).document["operation_receipts"]
+                if receipt["receipt_sequence"] == "5"
+            )
+            next(
+                tombstone
+                for tombstone in internal_projection[
+                    "event_identity_tombstones"
+                ]
+                if tombstone["event_id"] == internal_event_id
+            )[field] = value
+            internal_projection.pop("execution_checkpoint_digest")
+            internal_projection["execution_checkpoint_digest"] = hash_value(
+                [
+                    "determa-execution-checkpoint-digest-2",
+                    internal_projection,
+                ]
+            )
+            probes[f"native internal pruning {field}"] = {
+                "native-internal-terminal-pruned-checkpoint-v2.json": (
+                    internal_projection
+                )
+            }
+        unseen_checkpoint_conflict_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        unseen_checkpoint_conflict = unseen_checkpoint_conflict_inputs[
+            "terminal_conflict"
+        ]["deliveries"][0]
+        unseen_checkpoint_conflict["envelope"]["event_id"] = (
+            "unseen-checkpoint-conflict"
+        )
+        unseen_checkpoint_conflict["envelope"]["cause_id"] = (
+            "unseen-checkpoint-conflict"
+        )
+        unseen_checkpoint_conflict["envelope_digest"] = hash_value(
+            [
+                "determa-inbox-envelope-digest-2",
+                "2",
+                artifact("terminal-checkpoint-v2.json").document[
+                    "root_instance_id"
+                ],
+                unseen_checkpoint_conflict["delivery_mode"],
+                unseen_checkpoint_conflict["envelope"],
+            ]
+        )
+        probes["checkpoint conflict expectation without retained identity"] = {
+            "operation-inputs.json": unseen_checkpoint_conflict_inputs
+        }
+        for field, sequence in (
+            ("acceptance_receipt_sequence", "999"),
+            ("terminal_receipt_sequence", "1000"),
+        ):
+            result = copy.deepcopy(terminal_result)
+            result[field] = sequence
+            probes[f"terminal replay {field}"] = {
+                "terminal-replay-result.json": result
+            }
+        wrong_disposition = copy.deepcopy(tombstone_result)
+        wrong_disposition["terminal_disposition"] = "faulted"
+        probes["tombstone replay disposition"] = {
+            "tombstone-replay-result.json": wrong_disposition
+        }
+        unknown_member = copy.deepcopy(all_replay_result)
+        unknown_member["members"][0]["event_id"] = "not-in-request"
+        probes["all-replay member not in request"] = {
+            "all-replay-batch-result.json": unknown_member
+        }
+        fabricated_member = copy.deepcopy(mixed_result)
+        fabricated_member["members"][1]["event_id"] = "not-in-request"
+        probes["mixed member not in request"] = {
+            "mixed-replay-new-batch-result.json": fabricated_member
+        }
+        fabricated_sequence = copy.deepcopy(mixed_result)
+        fabricated_sequence["members"][1]["acceptance_sequence"] = "999"
+        probes["mixed acceptance sequence 999"] = {
+            "mixed-replay-new-batch-result.json": fabricated_sequence
+        }
+        fabricated_queue_sequence = copy.deepcopy(mixed_result)
+        fabricated_queue_sequence["members"][1]["queue_sequence"] = "999"
+        probes["mixed queue sequence 999"] = {
+            "mixed-replay-new-batch-result.json": fabricated_queue_sequence
+        }
+        mixed_zero_digest = copy.deepcopy(mixed_result)
+        mixed_zero_digest["checkpoint"]["execution_checkpoint_digest"] = (
+            "sha256:" + "0" * 64
+        )
+        probes["mixed embedded all-zero checkpoint digest"] = {
+            "mixed-replay-new-batch-result.json": mixed_zero_digest
+        }
+        mixed_deferral = copy.deepcopy(mixed_result)
+        mixed_checkpoint = mixed_deferral["checkpoint"]
+        mixed_aggregate = mixed_checkpoint["root_record"]["aggregate_state"]
+        mixed_event_id = mixed_deferral["members"][1]["event_id"]
+        next(
+            entry
+            for runtime in mixed_aggregate["runtimes"]
+            for entry in runtime["ready_mailbox"]
+            if entry["envelope"]["event_id"] == mixed_event_id
+        )["deferral_count"] = "99"
+        mixed_aggregate.pop("aggregate_state_digest")
+        mixed_aggregate["aggregate_state_digest"] = hash_value(
+            ["determa-aggregate-state-digest-2", mixed_aggregate]
+        )
+        mixed_checkpoint.pop("execution_checkpoint_digest")
+        mixed_checkpoint["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-2", mixed_checkpoint]
+        )
+        probes["mixed new member deferral count 99"] = {
+            "mixed-replay-new-batch-result.json": mixed_deferral
+        }
+        mutated_legacy_inputs = copy.deepcopy(
+            artifact("operation-inputs.json").document
+        )
+        mutated_legacy_inputs["legacy_terminal_replay"]["deliveries"][0][
+            "request_digest_domain"
+        ] = "determa-inbox-envelope-digest-2"
+        probes["legacy replay digest domain substitution"] = {
+            "operation-inputs.json": mutated_legacy_inputs
+        }
+        compacted_legacy_sequence = copy.deepcopy(compacted_legacy_result)
+        compacted_legacy_sequence["acceptance_sequence"] = "999"
+        probes["compacted legacy replay acceptance sequence 999"] = {
+            "compacted-legacy-replay-result.json": compacted_legacy_sequence
+        }
+        tombstoned_batch_sequence = copy.deepcopy(tombstoned_batch_result)
+        tombstoned_batch_sequence["members"][1]["evidence"][
+            "acceptance_sequence"
+        ] = "999"
+        probes["tombstoned batch replay acceptance sequence 999"] = {
+            "tombstoned-batch-replay-result.json": tombstoned_batch_sequence
+        }
+        tombstoned_batch_digest = copy.deepcopy(tombstoned_batch_result)
+        tombstoned_batch_digest["checkpoint"]["execution_checkpoint_digest"] = (
+            "sha256:" + "0" * 64
+        )
+        probes["tombstoned batch embedded checkpoint digest"] = {
+            "tombstoned-batch-replay-result.json": tombstoned_batch_digest
+        }
+        tombstoned_batch_creation = copy.deepcopy(tombstoned_batch_result)
+        embedded_checkpoint = tombstoned_batch_creation["checkpoint"]
+        embedded_checkpoint["root_record"]["creation_id"] = "different-creation"
+        embedded_checkpoint.pop("execution_checkpoint_digest")
+        embedded_checkpoint["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-2", embedded_checkpoint]
+        )
+        probes["tombstoned batch embedded creation identity"] = {
+            "tombstoned-batch-replay-result.json": tombstoned_batch_creation
+        }
+        fabricated_legacy_metadata = copy.deepcopy(
+            artifact(
+                "multi-pending-upgraded-with-metadata-checkpoint-v2.json"
+            ).document
+        )
+        next(
+            receipt
+            for receipt in fabricated_legacy_metadata["operation_receipts"]
+            if receipt["operation_kind"] == "acceptance"
+        )["legacy_v1_delivery"]["envelope_digest"] = "sha256:" + ("0" * 64)
+        fabricated_legacy_metadata.pop("execution_checkpoint_digest")
+        fabricated_legacy_metadata["execution_checkpoint_digest"] = hash_value(
+            ["determa-execution-checkpoint-digest-2", fabricated_legacy_metadata]
+        )
+        probes["fabricated legacy host acceptance metadata"] = {
+            "multi-pending-upgraded-with-metadata-checkpoint-v2.json": (
+                fabricated_legacy_metadata
+            )
+        }
+        fabricated_processed_metadata = copy.deepcopy(
+            artifact(
+                "multi-pending-processed-with-metadata-checkpoint-v2.json"
+            ).document
+        )
+        next(
+            receipt
+            for receipt in fabricated_processed_metadata["operation_receipts"]
+            if receipt.get("operation_kind") == "acceptance"
+            and receipt.get("event_id") == "delivery-unhandled"
+        )["legacy_v1_delivery"]["envelope_digest"] = "sha256:" + ("0" * 64)
+        fabricated_processed_metadata.pop("execution_checkpoint_digest")
+        fabricated_processed_metadata["execution_checkpoint_digest"] = hash_value(
+            [
+                "determa-execution-checkpoint-digest-2",
+                fabricated_processed_metadata,
+            ]
+        )
+        probes["fabricated processed legacy host acceptance metadata"] = {
+            "multi-pending-processed-with-metadata-checkpoint-v2.json": (
+                fabricated_processed_metadata
+            )
+        }
+        for probe_name, overrides in probes.items():
+            try:
+                validate_version2_vectors(
+                    case,
+                    test,
+                    bundle_paths,
+                    artifact_paths,
+                    artifact_overrides=overrides,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                f"{case.name}: adversarial probe was accepted: {probe_name}"
+            )
+        relabel_probes = (
+            ("checkpoint_malformed_delivery_rejection", "invalid_delivery_mode"),
+            ("checkpoint_invalid_delivery_mode_rejection", "malformed_delivery"),
+            ("checkpoint_terminal_root_precedes_digest_validation", "delivery_digest_mismatch"),
+            ("checkpoint_tombstoned_root_precedes_digest_validation", "terminal_root"),
+            ("checkpoint_distinct_stale_writer", "tombstoned_root"),
+            ("checkpoint_malformed_delivery_rejection", "checkpoint_revision_conflict"),
+        )
+        for vector_name, relabeled_code in relabel_probes:
+            mutated_test = copy.deepcopy(test)
+            mutated_vector = next(
+                vector
+                for vector in mutated_test["version2_vectors"]
+                if vector["name"] == vector_name
+            )
+            mutated_vector["expect"]["code"] = relabeled_code
+            try:
+                validate_version2_vectors(
+                    case,
+                    mutated_test,
+                    bundle_paths,
+                    artifact_paths,
+                    run_mutation_probes=False,
+                )
+            except ValidationFailure:
+                continue
+            raise ValidationFailure(
+                f"{case.name}: adversarial expectation relabel was accepted: "
+                f"{vector_name} as {relabeled_code}"
+            )
+    return coverage
 
 
 def validate_vector_references(
@@ -4762,6 +10905,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     except RegistryValidationError as error:
         raise ValidationFailure(f"closed-code registry: {error}") from error
     validate_direct_descriptor_expectation_probes()
+    validate_version1_fault_code_adversarial_probes(repository_root)
+    validate_version2_aggregate_adversarial_probes(repository_root)
+    validate_version2_checkpoint_adversarial_probes(repository_root)
+    validate_all_retained_version1_checkpoint_upgrades(repository_root)
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
         **{
@@ -4783,6 +10930,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             / "scripts"
             / "schemas"
             / "execution-checkpoint-profile.schema.json"
+        ),
+        "version2_vectors": (
+            repository_root / "scripts" / "schemas" / "version2-vectors.schema.json"
         ),
     }
     schemas: dict[str, dict[str, Any]] = {}
@@ -4816,6 +10966,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     )
     execution_checkpoint_profile_validator = Draft202012Validator(
         schemas["execution_checkpoint_profile"], registry=registry
+    )
+    version2_vector_validator = Draft202012Validator(
+        schemas["version2_vectors"], registry=registry
     )
 
     conformance_version = (repository_root / "VERSION").read_text().strip()
@@ -4861,6 +11014,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     persistence_profile_steps = 0
     execution_checkpoint_vectors = 0
     execution_checkpoint_coverage: set[str] = set()
+    version2_vectors = 0
+    version2_coverage: set[str] = set()
 
     for case in cases:
         test = load_fixture_document(case / "test.yaml")
@@ -4871,6 +11026,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 "persistence_vectors",
                 "persistence_profile",
                 "execution_checkpoint_profile",
+                "version2_vectors",
             )
             if name in test
         }
@@ -4889,6 +11045,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             validate_execution_checkpoint_schema_totality(
                 test, execution_checkpoint_profile_validator, case
             )
+        if "version2_vectors" in test:
+            validate_fixture_schema(test, version2_vector_validator, case)
         if "load" in test and test["load"] != {"valid": True}:
             raise ValidationFailure(f"{case.name}: unsupported load assertion")
 
@@ -5092,6 +11250,14 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                     raise ValidationFailure(
                         f"{location} caller_still_owns_state is inspect-only true"
                     )
+                if "state_bytes_unchanged" in expected and (
+                    expected["state_bytes_unchanged"] is not True
+                    or expected.get("disposition") != "deferred"
+                    or expected.get("caller_still_owns_input") is not True
+                ):
+                    raise ValidationFailure(
+                        f"{location} state_bytes_unchanged requires caller-owned deferral"
+                    )
         elif "persistence_vectors" in test:
             validate_vector_references(
                 case, test, referenced, referenced_artifacts
@@ -5114,6 +11280,18 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 )
             execution_checkpoint_coverage.update(case_coverage)
             execution_checkpoint_vectors += vector_count
+        elif "version2_vectors" in test:
+            case_coverage = validate_version2_vectors(
+                case, test, referenced, referenced_artifacts
+            )
+            duplicate_coverage = version2_coverage & case_coverage
+            if duplicate_coverage:
+                raise ValidationFailure(
+                    f"{case.name}: version-2 coverage repeated across cases: "
+                    f"{sorted(duplicate_coverage)}"
+                )
+            version2_coverage.update(case_coverage)
+            version2_vectors += len(test["version2_vectors"])
 
         actual_bundles = {
             path
@@ -5168,6 +11346,15 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 f"missing={sorted(missing_coverage)}, "
                 f"unexpected={sorted(unexpected_coverage)}"
             )
+    if version2_vectors:
+        missing_coverage = REQUIRED_VERSION2_COVERAGE - version2_coverage
+        unexpected_coverage = version2_coverage - REQUIRED_VERSION2_COVERAGE
+        if missing_coverage or unexpected_coverage:
+            raise ValidationFailure(
+                "version-2 coverage mismatch: "
+                f"missing={sorted(missing_coverage)}, "
+                f"unexpected={sorted(unexpected_coverage)}"
+            )
 
     return (
         f"validated {registry_entries} closed-code entries across "
@@ -5180,7 +11367,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{static_schema_passes} schema-valid static documents, and "
         f"{scenarios} runtime scenarios, {persistence_vectors} persistence vectors, "
         f"{persistence_profile_steps} persistence-profile steps, and "
-        f"{execution_checkpoint_vectors} execution-checkpoint vectors"
+        f"{execution_checkpoint_vectors} execution-checkpoint vectors, "
+        f"{version2_vectors} version-2 vectors"
     )
 
 

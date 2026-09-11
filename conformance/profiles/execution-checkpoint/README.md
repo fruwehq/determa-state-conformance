@@ -66,7 +66,7 @@ successful call may change only the selected scope. Rejected missing, ambiguous,
 mismatched, or unauthorized selection preserves the complete artifact byte-for-byte
 and makes no ExecutionHost, store, or core call.
 
-Coverage is intentionally grouped into three scenario directories:
+Coverage is intentionally grouped into five scenario directories:
 
 - `checkpoint-01-delivery-lifecycle` covers creation commit/replay/conflict and
   rejection without reservation, durable pending acceptance/replay, injected
@@ -90,6 +90,15 @@ Coverage is intentionally grouped into three scenario directories:
   covers direct injection, bundled and third-party public registration, all four
   standard adapter capability boundaries, and complete positive/negative composed
   host-profile requirements.
+- `checkpoint-04-version2-mailboxes` covers explicit checkpoint version conversion,
+  aggregate-owned admission, acceptance versus terminal evidence, single and batched
+  replay, mixed replay/new admission, wrapped legacy replay, dependency-closed
+  compaction, tombstone replay, and version-2 artifact rejection. It uses the
+  repository-level `version2_vectors` driver and does not alter any released
+  version-1 checkpoint vector.
+- `checkpoint-05-spawned-host-trace` derives creation, foreground spawn, and delayed
+  spawned-child acceptance checkpoints from one complete Python-host trace against the
+  pinned implementation. Its creation request uses the exact SPEC section 17 digest.
 
 The invalid artifacts separately prove format/version classification, structural
 closure, digest mismatch, foreign-root delivery targets, permanent delivery-allocation

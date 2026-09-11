@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "ce5956e691e01cb666180ec0407fc62b2ed3bee0aa9f548087a7c1d287f5b25b",
+  "registry_sha256": "16028a33611f6851dd1560b78e5e6de892500e9cc339d92c7f45bed82386e7a7",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -29,11 +29,20 @@
     {
       "id": "checkpoint_pre_acceptance_failure",
       "codes": [
+        "checkpoint_upgrade_required",
         "delivery_digest_mismatch",
+        "duplicate_event_id_in_batch",
         "event_id_conflict",
+        "inactive_component_target",
+        "invalid_correlation",
         "invalid_delivery_mode",
         "invalid_delivery_origin",
+        "invalid_delivery_source",
+        "invalid_event",
+        "invalid_instance_target",
+        "invalid_payload",
         "malformed_delivery",
+        "terminal_root",
         "tombstoned_root",
         "wrong_root"
       ]
@@ -61,8 +70,10 @@
     {
       "id": "disposition",
       "codes": [
+        "deferred",
         "faulted",
         "handled",
+        "not_runnable",
         "rejected",
         "unhandled"
       ]
@@ -74,6 +85,7 @@
         "binding_not_empty",
         "cascade_fault",
         "contained_runtime_fault",
+        "deferred_event_capacity_exceeded",
         "guard_fault",
         "inactive_component_target",
         "invalid_instance_target",

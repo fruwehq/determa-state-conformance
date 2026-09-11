@@ -1,0 +1,11 @@
+format: 1
+namespace: conformance.case_04_invalid_nested_capacity
+events: {}
+machines:
+  - machine_id: invalid
+    root:
+      type: composite
+      initial: { transition_to: idle }
+      states:
+        idle:
+          deferred_event_capacity: 1
