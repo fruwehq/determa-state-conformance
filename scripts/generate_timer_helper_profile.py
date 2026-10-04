@@ -53,6 +53,7 @@ def render(spec_root: Path):
     admission = json.loads((spec_root / NORM / "timer-committed-admission-v1.json").read_text())
     delivery = json.loads((spec_root / "examples/delivery/execution-checkpoint-transfer-v1.json").read_text())
     target_source = (spec_root / "examples/portable-event-deferral.yaml").read_bytes()
+    intent_source = (CASE / "machine.yaml").read_bytes()
     first = source["cases"][0]
     intent_test = YAML(typ="safe").load((CASE / "test.yaml").read_text())
     rows = []
@@ -190,8 +191,19 @@ def render(spec_root: Path):
               "machine_id": "transaction_server", "machine_version": "1",
               "root_instance_id": "server-1", "creation_id": "create-server-1",
               "bindings": {"input": {}, "external": {}}}
+    intent_create = {"operation": "create_v1", "bundle": {"bundle_file": "machine.yaml",
+              "bundle_source_digest": "sha256:" + hashlib.sha256(intent_source).hexdigest(),
+              "validated_bundle_fingerprint": bundle_fingerprint_document(YAML(typ="safe").load(intent_source))},
+              "machine_id": "timer_client", "machine_version": "1",
+              "root_instance_id": "timer-intent-main", "creation_id": "create-timer-intent-main",
+              "bindings": {"input": {}, "external": {}}}
+    cancel_intent_create = copy.deepcopy(intent_create)
+    cancel_intent_create["root_instance_id"] = "timer-intent-cancel"
+    cancel_intent_create["creation_id"] = "create-timer-intent-cancel"
     lifecycle = {"fixture_format": "determa.timer_helper.lifecycle", "fixture_schema_version": 1,
                  "create_request": create,
+                 "intent_create_request": intent_create,
+                 "cancel_intent_create_request": cancel_intent_create,
                  "intent_inputs": [intent_test["steps"][0]["send"]],
                  "cancel_intent_inputs": [intent_test["steps"][0]["send"], intent_test["steps"][1]["send"]],
                  "expected_intent_emissions": intent_test["steps"][0]["expect"]["emissions"],

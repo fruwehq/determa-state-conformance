@@ -6,6 +6,8 @@
     "fixture_format": {"const": "determa.timer_helper.lifecycle"},
     "fixture_schema_version": {"const": 1},
     "create_request": {"type": "object"},
+    "intent_create_request": {"type": "object"},
+    "cancel_intent_create_request": {"type": "object"},
     "intent_inputs": {"type": "array", "minItems": 1},
     "cancel_intent_inputs": {"type": "array", "minItems": 2},
     "expected_intent_emissions": {"type": "array", "minItems": 1},
@@ -27,7 +29,8 @@
       "items": {"$ref": "https://determa.dev/state/schema/timer-helper-operation-v1.schema.json#/$defs/result"}},
     "expected_fire_envelope": {"type": "object"}
   },
-  "required": ["fixture_format", "fixture_schema_version", "create_request", "intent_inputs",
+  "required": ["fixture_format", "fixture_schema_version", "create_request",
+    "intent_create_request", "cancel_intent_create_request", "intent_inputs",
     "cancel_intent_inputs", "expected_intent_emissions", "expected_cancel_intent_emissions",
     "schedule_request", "cancel_request", "claim_request", "complete_request", "step_request",
     "trusted_clock_sequence", "expected_create_checkpoint", "expected_helper_after_schedule",

@@ -118,6 +118,8 @@ def main():
                        "intent_inputs": lifecycle["intent_inputs"],
                        "cancel_intent_inputs": lifecycle["cancel_intent_inputs"],
                        "create_request": lifecycle["create_request"],
+                       "intent_create_request": lifecycle["intent_create_request"],
+                       "cancel_intent_create_request": lifecycle["cancel_intent_create_request"],
                        "schedule_request": lifecycle["schedule_request"],
                        "cancel_request": lifecycle["cancel_request"],
                        "claim_request": lifecycle["claim_request"],

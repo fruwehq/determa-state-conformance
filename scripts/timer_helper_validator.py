@@ -1,6 +1,7 @@
 """Validate external helper vectors against pinned normative inputs and artifacts."""
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 
@@ -9,7 +10,7 @@ from referencing import Registry, Resource
 from ruamel.yaml import YAML
 
 from generate_timer_helper_profile import CASE, render, artifact
-from generate_version1_vectors import canonical, digest, typed_value
+from generate_version1_vectors import canonical, digest, typed_value, bundle_fingerprint_document
 from validate_portable_archive import (ArchiveValidationError, validate_archive_integrity,
                                        validator_registry, schema_valid)
 
@@ -161,6 +162,12 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
     fingerprint = lifecycle["create_request"]["bundle"]["validated_bundle_fingerprint"]
     if fingerprint != lifecycle["expected_create_checkpoint"]["root_record"]["aggregate_state"]["validated_bundle_fingerprint"]:
         raise TimerHelperValidationError("create request does not identify target definition")
+    for source, request in ((expected_files["target-machine.yaml"], lifecycle["create_request"]),
+                            (expected_files["machine.yaml"], lifecycle["intent_create_request"]),
+                            (expected_files["machine.yaml"], lifecycle["cancel_intent_create_request"])):
+        if request["bundle"]["bundle_source_digest"] != "sha256:" + hashlib.sha256(source).hexdigest() or \
+                request["bundle"]["validated_bundle_fingerprint"] != bundle_fingerprint_document(YAML(typ="safe").load(source)):
+            raise TimerHelperValidationError("create request is not bound to exact format-1 source")
     for label in ("expected_create_checkpoint", "expected_admitted_checkpoint", "expected_after_step_checkpoint"):
         checkpoint = lifecycle[label]
         errors = list(Draft202012Validator(spec_schemas["execution-checkpoint-v1.schema.json"],
