@@ -7,6 +7,8 @@ import copy
 import hashlib
 import json
 import subprocess
+
+import rfc8785
 from pathlib import Path
 
 from generate_execution_checkpoint_profile import admit, process, terminalize, processing_request
@@ -51,11 +53,36 @@ def result_response(status, effect_id, fence, *, report=None, outcome=None,
                 journal_revision=journal_revision, error_code=error)
 
 
+def handler_closure():
+    paths = sorted((CASE / 'handler').glob('test_handler.*'))
+    preimage = bytearray(b'determa-effect-handler-closure-1\0')
+    files = []
+    for path in paths:
+        name = str(path.relative_to(CASE))
+        name_bytes = name.encode('utf-8')
+        source = path.read_bytes()
+        preimage.extend(len(name_bytes).to_bytes(8, 'big'))
+        preimage.extend(name_bytes)
+        preimage.extend(len(source).to_bytes(8, 'big'))
+        preimage.extend(source)
+        files.append({'path': name, 'sha256': 'sha256:' + hashlib.sha256(source).hexdigest(),
+                      'byte_length': len(source)})
+    return {'format': 'determa.effect_handler_closure', 'schema_version': 1,
+            'files': files, 'closure_digest': 'sha256:' + hashlib.sha256(preimage).hexdigest()}
+
+
 def generate(spec_root: Path):
     source_head = subprocess.check_output(
         ['git', '-C', str(spec_root), 'rev-parse', 'HEAD'], text=True).strip()
     if source_head != SPEC_COMMIT:
         raise ValueError(f'specification source changed: {source_head}')
+    closure = handler_closure()
+    destination_configuration = {'format': 'determa.effect_destination_binding',
+                                 'schema_version': 1, 'scope_identity': SCOPE,
+                                 'destination': 'conformance.fake-native-destination',
+                                 'idempotency_namespace': SCOPE,
+                                 'connector_version': '1'}
+    destination_digest = 'sha256:' + hashlib.sha256(rfc8785.dumps(destination_configuration)).hexdigest()
     created = native_v1_checkpoint(CASE / 'machine.yaml', {
         'operation': 'create_v1', 'bundle': bundle_binding(CASE / 'machine.yaml'),
         'machine_id': 'workflow', 'machine_version': '1',
@@ -79,8 +106,8 @@ def generate(spec_root: Path):
     record = dict(effect_id=effect_id, operation_token=TOKEN,
                   intent_digest=digest(['determa-outbox-intent-digest-1', '1', pending['root_instance_id'], intent]),
                   handler_reference={'identifier': 'conformance.native-effect-handler', 'version': '1.0.0',
-                                     'content_digest': 'sha256:' + 'b' * 64},
-                  destination_binding_digest='sha256:' + 'c' * 64,
+                                     'content_digest': closure['closure_digest']},
+                  destination_binding_digest=destination_digest,
                   route_configuration_generation='7', result_mapping=mapping,
                   target={'root_instance_id': pending['root_instance_id'],
                           'runtime_id': runtime['runtime_id'],
@@ -211,7 +238,8 @@ def generate(spec_root: Path):
     # from production adapters by the runner.
     def vector(name, covers, operation, cp_before, j_before, cp_after, j_after,
                *, claim_file=None, arguments=None, auth=None, fault=None,
-               response_file=None, provider=0, core=0, claims=0, config=None):
+               response_file=None, provider=0, core=0, claims=0, config=None,
+               caller_kind=None, control_plan=None, control_events=None):
         return dict(name=name, covers=covers,
                     request=dict(operation=operation, checkpoint_before=cp_before,
                                  journal_before='data/' + j_before, claim=None if claim_file is None else 'data/' + claim_file,
@@ -220,20 +248,54 @@ def generate(spec_root: Path):
                                                         'handler_authorized': True, 'credential_available': True, 'credential_generation': '1'},
                                  auth_context=auth or {'scope_identity': SCOPE, 'principal': 'worker-a',
                                                        'scope_authority_epoch': '3', 'trusted_host_now': '1893455999999999999'},
-                                 arguments={} if arguments is None else arguments, fault=fault),
+                                 arguments={} if arguments is None else arguments, fault=fault,
+                                 control_plan=[] if control_plan is None else control_plan),
                     expected=dict(response=None if response_file is None else 'data/' + response_file,
+                                  caller_kind=caller_kind or ('response' if response_file else 'completed'),
+                                  control_events=[] if control_events is None else control_events,
                                   checkpoint_after=cp_after, journal_after='data/' + j_after,
                                   counts={'provider_calls': provider, 'core_calls': core,
                                           'new_claims': claims}))
+    proposed_journal = copy.deepcopy(unclaimed)
+    proposed_journal.pop('host_effect_journal_digest')
+    proposed_journal['operation_response_references'].append(
+        response_reference('produce-1', producer_response))
+    proposed_journal_digest = digest(['determa-host-effect-journal-digest-1', proposed_journal])
+    route_control_plan = [
+        {'action': 'start_call', 'barrier': None, 'route_generation': None},
+        {'action': 'await_barrier', 'barrier': 'route_resolved', 'route_generation': None},
+        {'action': 'release_barrier', 'barrier': 'route_resolved', 'route_generation': None},
+        {'action': 'await_barrier', 'barrier': 'before_commit_guard', 'route_generation': None},
+        {'action': 'set_route_generation', 'barrier': None, 'route_generation': '8'},
+        {'action': 'release_barrier', 'barrier': 'before_commit_guard', 'route_generation': None},
+        {'action': 'observe_native_fate', 'barrier': None, 'route_generation': None},
+    ]
+    route_control_events = [
+        {'event': 'started'},
+        {'event': 'barrier_reached', 'barrier': 'route_resolved',
+         'resolved_route_generation': '7', 'handler_reference': record['handler_reference'],
+         'destination_binding_digest': record['destination_binding_digest']},
+        {'event': 'released', 'barrier': 'route_resolved'},
+        {'event': 'barrier_reached', 'barrier': 'before_commit_guard',
+         'core_event_id': 'invoke-1',
+         'proposed_checkpoint_digest': pending['execution_checkpoint_digest'],
+         'proposed_journal_digest': proposed_journal_digest},
+        {'event': 'configuration_changed', 'route_generation': '8'},
+        {'event': 'released', 'barrier': 'before_commit_guard'},
+        {'event': 'native_fate', 'guard_result': 'scope_generation_conflict',
+         'transaction_fate': 'rolled_back',
+         'checkpoint_digest': accepted['execution_checkpoint_digest'],
+         'journal_digest': empty['host_effect_journal_digest']},
+    ]
     cp = 'pending-checkpoint.json'
     vectors = [
         vector('first_producing_commit', ['19.2:original_operation_evidence'], 'produce', 'accepted-checkpoint.json', 'empty-journal.json', cp, 'unclaimed-journal.json', arguments={'original_request': producer_request}, response_file='producer-response.json', core=1),
         vector('committed_selected_intent', ['19.1:committed_selected_intent'], 'claim', cp, 'unclaimed-journal.json', cp, 'leased-journal.json', arguments={'effect_id': effect_id}, claims=1),
-        vector('uncommitted_intent', ['19.1:uncommitted_intent'], 'dispatch', 'accepted-checkpoint.json', 'empty-journal.json', 'accepted-checkpoint.json', 'empty-journal.json', arguments={'effect_id': effect_id}, fault='before_intent_commit'),
-        vector('route_generation_changed', ['19.2:route_generation_changed'], 'produce', 'accepted-checkpoint.json', 'empty-journal.json', 'accepted-checkpoint.json', 'empty-journal.json', arguments={'original_request': producer_request}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}, fault='after_route_resolution_before_core'),
+        vector('uncommitted_intent', ['19.1:uncommitted_intent'], 'dispatch', 'accepted-checkpoint.json', 'empty-journal.json', 'accepted-checkpoint.json', 'empty-journal.json', arguments={'effect_id': effect_id}, fault='before_intent_commit', caller_kind='aborted'),
+        vector('route_generation_changed', ['19.2:route_generation_changed'], 'produce', 'accepted-checkpoint.json', 'empty-journal.json', 'accepted-checkpoint.json', 'empty-journal.json', arguments={'original_request': producer_request}, config={'route_generation': '7', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '1'}, fault='route_generation_changed_at_commit_guard', core=1, caller_kind='aborted', control_plan=route_control_plan, control_events=route_control_events),
         vector('equal_request_after_route_change', ['19.2:equal_request_after_route_change'], 'produce_replay', cp, 'unclaimed-journal.json', cp, 'unclaimed-journal.json', arguments={'original_request': producer_request}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}, response_file='producer-response.json'),
-        vector('revoked_dispatch', ['19.2:revoked_dispatch'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': False, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}),
-        vector('current_credential_revoked_dispatch', ['19.2:credential_revocation'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': False, 'credential_generation': '2'}),
+        vector('revoked_dispatch', ['19.2:revoked_dispatch'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': False, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}, caller_kind='aborted'),
+        vector('current_credential_revoked_dispatch', ['19.2:credential_revocation'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': False, 'credential_generation': '2'}, caller_kind='aborted'),
         vector('changed_alias_keeps_pinned_destination', ['19.2:immutable_route_after_alias_change'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}, provider=1),
         vector('accepted_outbox_pending_business', ['19.3:accepted_outbox_pending_business'], 'terminalize_outbox', cp, 'unclaimed-journal.json', 'confirmed-checkpoint.json', 'confirmed-journal.json', arguments={'effect_id': effect_id, 'status': 'confirmed'}),
         vector('sdk_native_objects_inside_handler', ['19.3:sdk_native_objects'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, provider=1),
@@ -249,6 +311,10 @@ def generate(spec_root: Path):
         vector('old_epoch_equal_replay_after_recovery', ['19.4:old_epoch_replay_refusal'], 'submit_result', 'admitted-checkpoint.json', 'result-admitted-journal.json', 'admitted-checkpoint.json', 'result-admitted-journal.json', claim_file='active-claim.json', auth={'scope_identity': SCOPE, 'principal': 'worker-a', 'scope_authority_epoch': '2', 'trusted_host_now': '1893456000000000000'}, arguments=request, response_file='rejected-stale_scope_authority.json'),
         vector('authorized_equal_replay_after_recovery', ['19.4:authorized_replay_after_expiry'], 'submit_result', 'admitted-checkpoint.json', 'result-admitted-journal.json', 'admitted-checkpoint.json', 'result-admitted-journal.json', claim_file='active-claim.json', auth={'scope_identity': SCOPE, 'principal': 'worker-a', 'scope_authority_epoch': '3', 'trusted_host_now': '1893456000000000000'}, arguments=request, response_file='committed-response.json'),
         vector('unequal_result_conflict', ['19.4:unequal_conflict'], 'submit_result', 'admitted-checkpoint.json', 'result-admitted-journal.json', 'admitted-checkpoint.json', 'result-admitted-journal.json', claim_file='active-claim.json', arguments={**request, 'payload': typed_value({'provider_reference': 'different'})}, response_file='rejected-effect_result_conflict.json'),
+        vector('intent_commit_lost_response', ['19.5:intent_commit_lost_response'], 'produce', 'accepted-checkpoint.json', 'empty-journal.json', cp, 'unclaimed-journal.json', arguments={'original_request': producer_request}, fault='after_intent_commit_before_response', core=1, caller_kind='no_response'),
+        vector('provider_acceptance_lost_before_outcome', ['19.5:provider_acceptance_lost_before_outcome'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, fault='after_provider_acceptance_before_outcome', provider=1, caller_kind='no_response'),
+        vector('outcome_commit_lost_before_admission', ['19.5:outcome_commit_lost_before_admission'], 'submit_result', cp, 'leased-journal.json', cp, 'outcome-recorded-journal.json', claim_file='active-claim.json', arguments=request, fault='after_outcome_before_admission', caller_kind='no_response'),
+        vector('admission_commit_lost_response', ['19.5:admission_commit_lost_response'], 'recover', cp, 'outcome-recorded-journal.json', 'admitted-checkpoint.json', 'result-admitted-journal.json', fault='after_admission_before_response', core=1, caller_kind='no_response'),
         vector('crash_after_intent_commit', ['19.5:crash_after_intent_commit'], 'recover', cp, 'unclaimed-journal.json', cp, 'unclaimed-journal.json', fault='after_intent_commit_before_dispatch'),
         vector('crash_after_provider_acceptance', ['19.5:provider_acceptance_before_outcome'], 'recover', cp, 'leased-journal.json', cp, 'ambiguous-journal.json', claim_file='active-claim.json', fault='after_provider_acceptance_before_outcome'),
         vector('crash_after_outcome_commit', ['19.5:outcome_before_admission'], 'recover', cp, 'outcome-recorded-journal.json', 'admitted-checkpoint.json', 'result-admitted-journal.json', fault='after_outcome_before_admission', core=1),
@@ -260,11 +326,11 @@ def generate(spec_root: Path):
         vector('duplicate_ambiguous_report', ['19.3:equal_ambiguous_report'], 'submit_result', cp, 'ambiguous-journal.json', cp, 'ambiguous-journal.json', claim_file='active-claim.json', arguments={**request, 'outcome_kind': 'ambiguous', 'payload': typed_value({})}, response_file='ambiguous-response.json'),
         vector('cancel_before_claim', ['19.3:cancel_before_claim'], 'cancel_effect', cp, 'unclaimed-journal.json', cp, 'preclaim-cancelled-journal.json', arguments=cancel_request, response_file='cancel-response.json'),
         vector('cancel_admission_recovery', ['19.3:cancel_admission_recovery'], 'recover', cp, 'preclaim-cancelled-journal.json', 'cancelled-admitted-checkpoint.json', 'cancelled-admitted-journal.json', fault='after_cancel_outcome_before_admission', core=1),
-        vector('claim_after_preclaim_cancel_refused', ['19.3:preclaim_cancel_blocks_dispatch'], 'claim', cp, 'preclaim-cancelled-journal.json', cp, 'preclaim-cancelled-journal.json', arguments={'effect_id': effect_id}),
+        vector('claim_after_preclaim_cancel_refused', ['19.3:preclaim_cancel_blocks_dispatch'], 'claim', cp, 'preclaim-cancelled-journal.json', cp, 'preclaim-cancelled-journal.json', arguments={'effect_id': effect_id}, caller_kind='aborted'),
         vector('cancel_before_claim_replay', ['19.3:cancel_equal_replay'], 'cancel_effect', cp, 'preclaim-cancelled-journal.json', cp, 'preclaim-cancelled-journal.json', arguments=cancel_request, response_file='cancel-response.json'),
         vector('cancel_after_possible_call', ['19.3:cancel_after_possible_call'], 'cancel_effect', cp, 'ambiguous-journal.json', cp, 'postcall-cancelled-journal.json', arguments={**cancel_request, 'operation_id': 'cancel-after-call'}, response_file='postcall-cancel-response.json'),
         vector('ambiguous_retry_with_proven_deduplication', ['19.3:ambiguous_retry_with_proof'], 'claim', cp, 'ambiguous-journal.json', cp, 'ambiguous-retry-claim-journal.json', arguments={'effect_id': effect_id}, claims=1),
-        vector('ambiguous_retry_requires_proof', ['19.3:ambiguous_retry_proof'], 'claim', cp, 'ambiguous-journal.json', cp, 'ambiguous-journal.json', arguments={'effect_id': effect_id}, config={'route_generation': '7', 'route_authorized': True, 'destination_deduplication_proven': False, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '1'}),
+        vector('ambiguous_retry_requires_proof', ['19.3:ambiguous_retry_proof'], 'claim', cp, 'ambiguous-journal.json', cp, 'ambiguous-journal.json', arguments={'effect_id': effect_id}, config={'route_generation': '7', 'route_authorized': True, 'destination_deduplication_proven': False, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '1'}, caller_kind='aborted'),
         vector('missing_cancel_mapping_refusal', ['19.3:missing_cancelled_mapping'], 'cancel_effect', cp, 'no-cancel-mapping-journal.json', cp, 'no-cancel-mapping-journal.json', arguments=cancel_request, response_file='cancel-rejected-response.json'),
     ]
     pins = {str(path.relative_to(spec_root)): 'sha256:' + hashlib.sha256(path.read_bytes()).hexdigest()
@@ -278,12 +344,12 @@ def generate(spec_root: Path):
             'revoked_dispatch': 'revoked_dispatch',
             'accepted_outbox_pending_business': 'accepted_outbox_pending_business',
             'wrong_token': 'wrong_token',
-            'wrong_scope_or_principal': 'wrong_scope',
-            'old_epoch_or_fence': 'stale_epoch',
-            'equal_and_conflicting_result': 'unequal_result_conflict',
+            'wrong_scope_or_principal': ['wrong_scope', 'wrong_principal'],
+            'old_epoch_or_fence': ['claim_expired_at_exact_boundary', 'stale_fence'],
+            'equal_and_conflicting_result': ['equal_result_replay', 'unequal_result_conflict'],
             'crash_after_provider_acceptance': 'crash_after_provider_acceptance',
             'crash_after_outcome_commit': 'crash_after_outcome_commit',
-            'cancellation_before_claim': 'cancel_before_claim',
+            'cancellation_before_claim': ['cancel_before_claim', 'claim_after_preclaim_cancel_refused'],
             'cancellation_after_possible_call': 'cancel_after_possible_call',
         },
         'result-admission-cases-v1.json': {
@@ -307,12 +373,17 @@ def generate(spec_root: Path):
             'after_possible_provider_call': 'cancel_after_possible_call',
         },
     }
+    case_mapping = {file_name: {name: value if isinstance(value, list) else [value]
+                                for name, value in coverage.items()}
+                    for file_name, coverage in case_mapping.items()}
     handler_sources = {str(path.relative_to(CASE)): 'sha256:' + hashlib.sha256(path.read_bytes()).hexdigest()
                        for path in sorted((CASE / 'handler').glob('test_handler.*'))}
     manifest = {'handler_sources': handler_sources, 'format': 'determa.committed_native_effects.vectors', 'schema_version': 1,
                 'spec_commit': SPEC_COMMIT, 'normative_examples': pins,
                 'normative_case_coverage': case_mapping, 'vectors': vectors}
     files = {
+        'handler-closure.json': closure,
+        'destination-configuration.json': destination_configuration,
         'no-cancel-mapping-journal.json': no_cancel_journal,
         'producer-request.json': producer_request, 'producer-response.json': producer_response,
         'ambiguous-retry-claim-journal.json': ambiguous_retry_journal,

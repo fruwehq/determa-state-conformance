@@ -4,6 +4,8 @@ from __future__ import annotations
 import hashlib
 import json
 import math
+
+import rfc8785
 import subprocess
 from pathlib import Path
 
@@ -19,6 +21,8 @@ SCHEMAS = {
     'active-claim.json': 'host-effect-claim-v1.schema.json',
     'producer-request.json': None,
     'producer-response.json': None,
+    'handler-closure.json': None,
+    'destination-configuration.json': None,
     'result-request.json': 'effect-result-request-v1.schema.json',
     'cancel-request.json': 'effect-cancellation-request-v1.schema.json',
     'committed-response.json': 'effect-result-response-v1.schema.json',
@@ -117,6 +121,27 @@ def validate_profile(spec_root: Path):
                 for path in sorted((CASE / 'handler').glob('test_handler.*'))}
     if manifest['handler_sources'] != handlers or len(handlers) != 2:
         raise ValueError('native handler source closure changed')
+    closure = strict_json((CASE / 'data/handler-closure.json').read_bytes())
+    preimage = bytearray(b'determa-effect-handler-closure-1\0')
+    entries = []
+    for path in sorted((CASE / 'handler').glob('test_handler.*')):
+        name = str(path.relative_to(CASE))
+        source = path.read_bytes()
+        name_bytes = name.encode('utf-8')
+        preimage += len(name_bytes).to_bytes(8, 'big') + name_bytes
+        preimage += len(source).to_bytes(8, 'big') + source
+        entries.append({'path': name, 'sha256': 'sha256:' + hashlib.sha256(source).hexdigest(),
+                        'byte_length': len(source)})
+    if closure != {'format': 'determa.effect_handler_closure', 'schema_version': 1,
+                   'files': entries, 'closure_digest': 'sha256:' + hashlib.sha256(preimage).hexdigest()}:
+        raise ValueError('handler closure digest is not bound to exact raw source')
+    destination_configuration = strict_json((CASE / 'data/destination-configuration.json').read_bytes())
+    if destination_configuration != {
+            'format': 'determa.effect_destination_binding', 'schema_version': 1,
+            'scope_identity': SCOPE_ID, 'destination': 'conformance.fake-native-destination',
+            'idempotency_namespace': SCOPE_ID, 'connector_version': '1'}:
+        raise ValueError('destination configuration identity differs')
+    destination_digest = 'sha256:' + hashlib.sha256(rfc8785.dumps(destination_configuration)).hexdigest()
     registry = schema_registry(spec_root)
     artifacts = {}
     for path in CASE.glob('*checkpoint.json'):
@@ -256,6 +281,10 @@ def validate_profile(spec_root: Path):
                         item['operation_token_location'] != {'kind': 'correlation_id'}
                         for item in mappings):
                 raise ValueError(f'{name}: result mapping is not declared, unique, or token pinned')
+            if record['destination_binding_digest'] != destination_digest:
+                raise ValueError(f'{name}: pinned destination configuration differs')
+            if record['handler_reference']['content_digest'] != closure['closure_digest']:
+                raise ValueError(f'{name}: pinned handler reference differs from executable closure')
             if record['effect_id'] != intent['effect_id'] or record['operation_token'] != intent['correlation_id'] or \
                     record['intent_digest'] != digest(['determa-outbox-intent-digest-1', '1', pending['root_instance_id'], intent]) or \
                     record['target'] != {'root_instance_id': pending['root_instance_id'],
@@ -289,7 +318,9 @@ def validate_profile(spec_root: Path):
     for file_name, coverage in manifest['normative_case_coverage'].items():
         source = strict_json((spec_root / SPEC_EXAMPLES / file_name).read_bytes())
         if {case['name'] for case in source['cases']} != set(coverage) or \
-                any(name not in named for name in coverage.values()):
+                any(type(targets) is not list or not targets or
+                    any(target not in named for target in targets)
+                    for targets in coverage.values()):
             raise ValueError(f'incomplete normative case mapping: {file_name}')
     if set(manifest['normative_case_coverage']) != {
         'host-native-effect-cases-v1.json', 'result-admission-cases-v1.json',
@@ -305,16 +336,46 @@ def validate_profile(spec_root: Path):
             replay['request']['checkpoint_before'] != 'pending-checkpoint.json' or \
             replay['expected']['checkpoint_after'] != 'pending-checkpoint.json':
         raise ValueError('original operation or old CAS replay evidence differs')
+    route = next(vector for vector in vectors if vector['name'] == 'route_generation_changed')
+    plan = route['request']['control_plan']
+    observed = route['expected']['control_events']
+    if [item['action'] for item in plan] != [
+            'start_call', 'await_barrier', 'release_barrier', 'await_barrier',
+            'set_route_generation', 'release_barrier', 'observe_native_fate'] or \
+            [item['event'] for item in observed] != [
+                'started', 'barrier_reached', 'released', 'barrier_reached',
+                'configuration_changed', 'released', 'native_fate'] or \
+            route['request']['host_configuration']['route_generation'] != '7' or \
+            plan[4]['route_generation'] != '8' or \
+            observed[1]['resolved_route_generation'] != '7' or \
+            observed[3]['proposed_checkpoint_digest'] != artifacts['pending-checkpoint.json']['execution_checkpoint_digest'] or \
+            observed[3]['proposed_journal_digest'] != artifacts['data/unclaimed-journal.json']['host_effect_journal_digest'] or \
+            observed[6]['guard_result'] != 'scope_generation_conflict' or \
+            observed[6]['transaction_fate'] != 'rolled_back' or \
+            observed[6]['checkpoint_digest'] != artifacts['accepted-checkpoint.json']['execution_checkpoint_digest'] or \
+            observed[6]['journal_digest'] != artifacts['data/empty-journal.json']['host_effect_journal_digest'] or \
+            route['expected']['counts'] != {'provider_calls': 0, 'core_calls': 1, 'new_claims': 0} or \
+            route['expected']['caller_kind'] != 'aborted':
+        raise ValueError('route change lacks two-stage core proposal and native rollback proof')
     allowed_counts = {'provider_calls', 'core_calls', 'new_claims'}
     for vector in vectors:
         if set(vector) != {'name', 'covers', 'request', 'expected'}:
             raise ValueError('unclosed vector')
         if set(vector['request']) != {'operation', 'checkpoint_before', 'journal_before', 'claim',
-                                     'host_configuration', 'auth_context', 'arguments', 'fault'}:
+                                     'host_configuration', 'auth_context', 'arguments', 'fault', 'control_plan'}:
             raise ValueError('unclosed adapter request')
-        if set(vector['expected']) != {'response', 'checkpoint_after', 'journal_after', 'counts'} or \
+        if set(vector['expected']) != {'response', 'caller_kind', 'control_events', 'checkpoint_after', 'journal_after', 'counts'} or \
                 set(vector['expected']['counts']) != allowed_counts:
             raise ValueError('unclosed expected observation')
+        caller_kind = vector['expected']['caller_kind']
+        if caller_kind not in {'response', 'completed', 'aborted', 'no_response'} or \
+                (caller_kind == 'response') != (vector['expected']['response'] is not None):
+            raise ValueError(f'{vector["name"]}: caller response kind and oracle disagree')
+        if type(vector['request']['control_plan']) is not list or \
+                type(vector['expected']['control_events']) is not list or \
+                (vector['request']['control_plan'] and vector['name'] != 'route_generation_changed') or \
+                (vector['expected']['control_events'] and vector['name'] != 'route_generation_changed'):
+            raise ValueError('invalid control plan or event scope')
         configuration = vector['request']['host_configuration']
         if type(configuration) is not dict or set(configuration) != {
                 'route_generation', 'route_authorized', 'destination_deduplication_proven',
@@ -343,4 +404,106 @@ def validate_profile(spec_root: Path):
             raise ValueError('absent claim')
         if any(type(n) is not int or n < 0 for n in vector['expected']['counts'].values()):
             raise ValueError('invalid count')
+    by_name = {item['name']: item for item in vectors}
+    source_results = strict_json((spec_root / SPEC_EXAMPLES / 'result-admission-cases-v1.json').read_bytes())
+    baseline_source = source_results['cases'][0]['request']
+    baseline_vector = by_name['first_terminal_result']['request']['arguments']
+    for case in source_results['cases']:
+        target_name = manifest['normative_case_coverage']['result-admission-cases-v1.json'][case['name']][0]
+        vector = by_name[target_name]
+        request = vector['request']['arguments']
+        response_name = vector['expected']['response']
+        response = artifacts[response_name] if response_name is not None else None
+        before = vector['request']
+        after = vector['expected']
+        changed = before['checkpoint_before'] != after['checkpoint_after'] or \
+                  before['journal_before'] != after['journal_after']
+        if before['operation'] != 'submit_result' or response is None or \
+                response['status'] != case['expected_response']['status'] or \
+                response['error_code'] != case['expected_response']['error_code'] or \
+                after['counts']['core_calls'] != case['new_core_admissions'] or \
+                changed != case['mutates_checkpoint_or_journal'] or \
+                (request['operation_token'] == baseline_vector['operation_token']) != \
+                    (case['request']['operation_token'] == baseline_source['operation_token']) or \
+                request['attempt_fence'] != case['request']['attempt_fence'] or \
+                request['outcome_kind'] != case['request']['outcome_kind'] or \
+                (request['payload'] == baseline_vector['payload']) != \
+                    (case['request']['payload'] == baseline_source['payload']):
+            raise ValueError(f'{case["name"]}: normative result request/response or mutation differs')
+    auth_expectations = {'wrong_worker_principal': ('principal', False),
+                         'wrong_scope': ('scope_identity', False),
+                         'stale_scope_epoch': ('scope_authority_epoch', False),
+                         'old_epoch_equal_replay_after_recovery': ('scope_authority_epoch', False)}
+    regular_auth = by_name['first_terminal_result']['request']['auth_context']
+    for source_name, (field, equal_expected) in auth_expectations.items():
+        target = manifest['normative_case_coverage']['result-admission-cases-v1.json'][source_name][0]
+        if (by_name[target]['request']['auth_context'][field] == regular_auth[field]) != equal_expected:
+            raise ValueError(f'{source_name}: normative authenticated context mismatch')
+    expiration = artifacts['data/active-claim.json']['expires_at']
+    for source_name in ('claim_expired_at_exact_boundary', 'expired_worker_after_outcome_commit'):
+        target = manifest['normative_case_coverage']['result-admission-cases-v1.json'][source_name][0]
+        if by_name[target]['request']['auth_context']['trusted_host_now'] != expiration:
+            raise ValueError(f'{source_name}: exact expiry boundary missing')
+    source_cancellations = strict_json((spec_root / SPEC_EXAMPLES / 'effect-cancellation-cases-v1.json').read_bytes())
+    for case in source_cancellations['cases']:
+        target = manifest['normative_case_coverage']['effect-cancellation-cases-v1.json'][case['name']][0]
+        vector = by_name[target]
+        response = artifacts[vector['expected']['response']]
+        changed = vector['request']['journal_before'] != vector['expected']['journal_after']
+        if vector['request']['operation'] != 'cancel_effect' or \
+                response['status'] != case['expected_response']['status'] or \
+                response['error_code'] != case['expected_response']['error_code'] or \
+                (response['cancellation'] or {}).get('state') != \
+                    (case['expected_response']['cancellation'] or {}).get('state') or \
+                vector['expected']['counts']['provider_calls'] != case['provider_calls'] or \
+                vector['expected']['counts']['new_claims'] != case['new_worker_claims'] or \
+                changed != case['mutates_journal']:
+            raise ValueError(f'{case["name"]}: normative cancellation disposition differs')
+    prevented = artifacts['data/preclaim-cancelled-journal.json']['effect_records'][0]
+    later_claim = by_name['claim_after_preclaim_cancel_refused']
+    if prevented['cancellation']['state'] != 'prevented_start' or \
+            prevented['outcome']['kind'] != 'cancelled' or \
+            prevented['attempt_records'] or \
+            later_claim['request']['operation'] != 'claim' or \
+            later_claim['request']['journal_before'] != 'data/preclaim-cancelled-journal.json' or \
+            later_claim['expected']['journal_after'] != 'data/preclaim-cancelled-journal.json' or \
+            later_claim['expected']['counts'] != {'provider_calls': 0, 'core_calls': 0, 'new_claims': 0}:
+        raise ValueError('preclaim cancellation did not prevent later claim and dispatch')
+    # The fourteen prose examples specify operations and observable consequences.
+    host_obligations = {
+        'committed_selected_intent': ('claim', True, 0, 1),
+        'uncommitted_intent': ('dispatch', False, 0, 0),
+        'route_generation_changed': ('produce', False, 0, 0),
+        'equal_request_after_route_change': ('produce_replay', False, 0, 0),
+        'revoked_dispatch': ('dispatch', False, 0, 0),
+        'accepted_outbox_pending_business': ('terminalize_outbox', True, 0, 0),
+        'wrong_token': ('submit_result', False, 0, 0),
+        'wrong_scope_or_principal': ('submit_result', False, 0, 0),
+        'old_epoch_or_fence': ('submit_result', False, 0, 0),
+        'equal_and_conflicting_result': ('submit_result', False, 0, 0),
+        'crash_after_provider_acceptance': ('recover', True, 0, 0),
+        'crash_after_outcome_commit': ('recover', True, 0, 0),
+        'cancellation_before_claim': ('cancel_effect', True, 0, 0),
+        'cancellation_after_possible_call': ('cancel_effect', True, 0, 0),
+    }
+    for source_name, (operation, mutation, provider_count, claim_count) in host_obligations.items():
+        targets = manifest['normative_case_coverage']['host-native-effect-cases-v1.json'][source_name]
+        primary = by_name[targets[0]]
+        changed = primary['request']['checkpoint_before'] != primary['expected']['checkpoint_after'] or \
+                  primary['request']['journal_before'] != primary['expected']['journal_after']
+        if primary['request']['operation'] != operation or changed != mutation or \
+                primary['expected']['counts']['provider_calls'] != provider_count or \
+                primary['expected']['counts']['new_claims'] != claim_count:
+            raise ValueError(f'{source_name}: normative host effect operation/evidence differs')
+    for source_name, target_names in {
+            'wrong_scope_or_principal': ['wrong_scope', 'wrong_principal'],
+            'old_epoch_or_fence': ['claim_expired_at_exact_boundary', 'stale_fence'],
+            'equal_and_conflicting_result': ['equal_result_replay', 'unequal_result_conflict'],
+            'cancellation_before_claim': ['cancel_before_claim', 'claim_after_preclaim_cancel_refused'],
+    }.items():
+        if manifest['normative_case_coverage']['host-native-effect-cases-v1.json'][source_name] != target_names:
+            raise ValueError(f'{source_name}: normative paired obligations incomplete')
+    if any(artifacts[by_name[target]['expected']['response']]['error_code'] != 'stale_attempt_fence'
+           for target in ('claim_expired_at_exact_boundary', 'stale_fence')):
+        raise ValueError('old epoch/fence source example requires stale attempt refusal')
     return len(vectors)

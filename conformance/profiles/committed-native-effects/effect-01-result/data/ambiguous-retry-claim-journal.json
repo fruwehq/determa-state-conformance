@@ -14,9 +14,9 @@
       "handler_reference": {
         "identifier": "conformance.native-effect-handler",
         "version": "1.0.0",
-        "content_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+        "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
       },
-      "destination_binding_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
       "route_configuration_generation": "7",
       "result_mapping": [
         {
@@ -76,5 +76,5 @@
       "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
     }
   ],
-  "host_effect_journal_digest": "sha256:f43c379d1ede87b030bfb213db0aa559bd6b5a92b712fa98228c5f2516461eb3"
+  "host_effect_journal_digest": "sha256:2fa58451dbc988c7d80faa58940a5fbd93a7ee7d92a594e054e5fc56a96d7c6e"
 }

@@ -34,40 +34,104 @@
   },
   "normative_case_coverage": {
     "host-native-effect-cases-v1.json": {
-      "committed_selected_intent": "committed_selected_intent",
-      "uncommitted_intent": "uncommitted_intent",
-      "route_generation_changed": "route_generation_changed",
-      "equal_request_after_route_change": "equal_request_after_route_change",
-      "revoked_dispatch": "revoked_dispatch",
-      "accepted_outbox_pending_business": "accepted_outbox_pending_business",
-      "wrong_token": "wrong_token",
-      "wrong_scope_or_principal": "wrong_scope",
-      "old_epoch_or_fence": "stale_epoch",
-      "equal_and_conflicting_result": "unequal_result_conflict",
-      "crash_after_provider_acceptance": "crash_after_provider_acceptance",
-      "crash_after_outcome_commit": "crash_after_outcome_commit",
-      "cancellation_before_claim": "cancel_before_claim",
-      "cancellation_after_possible_call": "cancel_after_possible_call"
+      "committed_selected_intent": [
+        "committed_selected_intent"
+      ],
+      "uncommitted_intent": [
+        "uncommitted_intent"
+      ],
+      "route_generation_changed": [
+        "route_generation_changed"
+      ],
+      "equal_request_after_route_change": [
+        "equal_request_after_route_change"
+      ],
+      "revoked_dispatch": [
+        "revoked_dispatch"
+      ],
+      "accepted_outbox_pending_business": [
+        "accepted_outbox_pending_business"
+      ],
+      "wrong_token": [
+        "wrong_token"
+      ],
+      "wrong_scope_or_principal": [
+        "wrong_scope",
+        "wrong_principal"
+      ],
+      "old_epoch_or_fence": [
+        "claim_expired_at_exact_boundary",
+        "stale_fence"
+      ],
+      "equal_and_conflicting_result": [
+        "equal_result_replay",
+        "unequal_result_conflict"
+      ],
+      "crash_after_provider_acceptance": [
+        "crash_after_provider_acceptance"
+      ],
+      "crash_after_outcome_commit": [
+        "crash_after_outcome_commit"
+      ],
+      "cancellation_before_claim": [
+        "cancel_before_claim",
+        "claim_after_preclaim_cancel_refused"
+      ],
+      "cancellation_after_possible_call": [
+        "cancel_after_possible_call"
+      ]
     },
     "result-admission-cases-v1.json": {
-      "first_terminal_result": "first_terminal_result",
-      "equal_replay": "equal_result_replay",
-      "wrong_business_token": "wrong_token",
-      "stale_attempt_fence": "stale_fence",
-      "unequal_result_after_commit": "unequal_result_conflict",
-      "wrong_worker_principal": "wrong_principal",
-      "stale_scope_epoch": "stale_epoch",
-      "wrong_scope": "wrong_scope",
-      "claim_expired_at_exact_boundary": "claim_expired_at_exact_boundary",
-      "expired_worker_after_outcome_commit": "expired_worker_after_outcome_commit",
-      "old_epoch_equal_replay_after_recovery": "old_epoch_equal_replay_after_recovery",
-      "authorized_equal_replay_after_recovery": "authorized_equal_replay_after_recovery"
+      "first_terminal_result": [
+        "first_terminal_result"
+      ],
+      "equal_replay": [
+        "equal_result_replay"
+      ],
+      "wrong_business_token": [
+        "wrong_token"
+      ],
+      "stale_attempt_fence": [
+        "stale_fence"
+      ],
+      "unequal_result_after_commit": [
+        "unequal_result_conflict"
+      ],
+      "wrong_worker_principal": [
+        "wrong_principal"
+      ],
+      "stale_scope_epoch": [
+        "stale_epoch"
+      ],
+      "wrong_scope": [
+        "wrong_scope"
+      ],
+      "claim_expired_at_exact_boundary": [
+        "claim_expired_at_exact_boundary"
+      ],
+      "expired_worker_after_outcome_commit": [
+        "expired_worker_after_outcome_commit"
+      ],
+      "old_epoch_equal_replay_after_recovery": [
+        "old_epoch_equal_replay_after_recovery"
+      ],
+      "authorized_equal_replay_after_recovery": [
+        "authorized_equal_replay_after_recovery"
+      ]
     },
     "effect-cancellation-cases-v1.json": {
-      "first_preclaim_cancel": "cancel_before_claim",
-      "equal_cancel_replay": "cancel_before_claim_replay",
-      "missing_cancelled_mapping": "missing_cancel_mapping_refusal",
-      "after_possible_provider_call": "cancel_after_possible_call"
+      "first_preclaim_cancel": [
+        "cancel_before_claim"
+      ],
+      "equal_cancel_replay": [
+        "cancel_before_claim_replay"
+      ],
+      "missing_cancelled_mapping": [
+        "missing_cancel_mapping_refusal"
+      ],
+      "after_possible_provider_call": [
+        "cancel_after_possible_call"
+      ]
     }
   },
   "vectors": [
@@ -123,10 +187,13 @@
             "queue_sequence": "0"
           }
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/producer-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/unclaimed-journal.json",
         "counts": {
@@ -163,10 +230,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -203,10 +273,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": "before_intent_commit"
+        "fault": "before_intent_commit",
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
         "checkpoint_after": "accepted-checkpoint.json",
         "journal_after": "data/empty-journal.json",
         "counts": {
@@ -227,12 +300,12 @@
         "journal_before": "data/empty-journal.json",
         "claim": null,
         "host_configuration": {
-          "route_generation": "8",
+          "route_generation": "7",
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
           "credential_available": true,
-          "credential_generation": "2"
+          "credential_generation": "1"
         },
         "auth_context": {
           "scope_identity": "effect-scope-1",
@@ -268,15 +341,95 @@
             "queue_sequence": "0"
           }
         },
-        "fault": "after_route_resolution_before_core"
+        "fault": "route_generation_changed_at_commit_guard",
+        "control_plan": [
+          {
+            "action": "start_call",
+            "barrier": null,
+            "route_generation": null
+          },
+          {
+            "action": "await_barrier",
+            "barrier": "route_resolved",
+            "route_generation": null
+          },
+          {
+            "action": "release_barrier",
+            "barrier": "route_resolved",
+            "route_generation": null
+          },
+          {
+            "action": "await_barrier",
+            "barrier": "before_commit_guard",
+            "route_generation": null
+          },
+          {
+            "action": "set_route_generation",
+            "barrier": null,
+            "route_generation": "8"
+          },
+          {
+            "action": "release_barrier",
+            "barrier": "before_commit_guard",
+            "route_generation": null
+          },
+          {
+            "action": "observe_native_fate",
+            "barrier": null,
+            "route_generation": null
+          }
+        ]
       },
       "expected": {
         "response": null,
+        "caller_kind": "aborted",
+        "control_events": [
+          {
+            "event": "started"
+          },
+          {
+            "event": "barrier_reached",
+            "barrier": "route_resolved",
+            "resolved_route_generation": "7",
+            "handler_reference": {
+              "identifier": "conformance.native-effect-handler",
+              "version": "1.0.0",
+              "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+            },
+            "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4"
+          },
+          {
+            "event": "released",
+            "barrier": "route_resolved"
+          },
+          {
+            "event": "barrier_reached",
+            "barrier": "before_commit_guard",
+            "core_event_id": "invoke-1",
+            "proposed_checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
+            "proposed_journal_digest": "sha256:539909be26674ea846282d73c549aec3fbf93f15f2265b95a46da3bc9fccd823"
+          },
+          {
+            "event": "configuration_changed",
+            "route_generation": "8"
+          },
+          {
+            "event": "released",
+            "barrier": "before_commit_guard"
+          },
+          {
+            "event": "native_fate",
+            "guard_result": "scope_generation_conflict",
+            "transaction_fate": "rolled_back",
+            "checkpoint_digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135",
+            "journal_digest": "sha256:e9527630bc363a8d690485fd0498dc2ad2661dde32638552cccc3a280e1a23c6"
+          }
+        ],
         "checkpoint_after": "accepted-checkpoint.json",
         "journal_after": "data/empty-journal.json",
         "counts": {
           "provider_calls": 0,
-          "core_calls": 0,
+          "core_calls": 1,
           "new_claims": 0
         }
       }
@@ -333,10 +486,13 @@
             "queue_sequence": "0"
           }
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/producer-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/unclaimed-journal.json",
         "counts": {
@@ -373,10 +529,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -413,10 +572,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -453,10 +615,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -494,10 +659,13 @@
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
           "status": "confirmed"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "confirmed-checkpoint.json",
         "journal_after": "data/confirmed-journal.json",
         "counts": {
@@ -534,10 +702,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -589,10 +760,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-effect_not_outstanding.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -644,10 +818,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-unauthorized_scope.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -699,10 +876,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-unauthorized_scope.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -754,10 +934,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-stale_scope_authority.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -809,10 +992,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-stale_attempt_fence_zero.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -864,10 +1050,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-stale_attempt_fence.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/leased-journal.json",
         "counts": {
@@ -919,10 +1108,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-stale_attempt_fence.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/outcome-recorded-journal.json",
         "counts": {
@@ -974,10 +1166,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/committed-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "admitted-checkpoint.json",
         "journal_after": "data/result-admitted-journal.json",
         "counts": {
@@ -1029,10 +1224,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/committed-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "admitted-checkpoint.json",
         "journal_after": "data/result-admitted-journal.json",
         "counts": {
@@ -1084,10 +1282,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-stale_scope_authority.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "admitted-checkpoint.json",
         "journal_after": "data/result-admitted-journal.json",
         "counts": {
@@ -1139,10 +1340,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/committed-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "admitted-checkpoint.json",
         "journal_after": "data/result-admitted-journal.json",
         "counts": {
@@ -1194,15 +1398,228 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-effect_result_conflict.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "admitted-checkpoint.json",
         "journal_after": "data/result-admitted-journal.json",
         "counts": {
           "provider_calls": 0,
           "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "intent_commit_lost_response",
+      "covers": [
+        "19.5:intent_commit_lost_response"
+      ],
+      "request": {
+        "operation": "produce",
+        "checkpoint_before": "accepted-checkpoint.json",
+        "journal_before": "data/empty-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "original_request": {
+            "operation": "checkpoint_step_v1",
+            "request_id": "produce-1",
+            "scope": {
+              "scope_id": "primary",
+              "ownership_binding": "owner:primary",
+              "principal": "conformance-host",
+              "authorization": "authorized"
+            },
+            "expected_checkpoint": {
+              "root_instance_id": "effect-root-1",
+              "revision": "1",
+              "digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135"
+            },
+            "event_id": "invoke-1",
+            "envelope_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+            "target": {
+              "root": {
+                "root_instance_id": "effect-root-1",
+                "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+              }
+            },
+            "processing_mode": "delayed",
+            "acceptance_sequence": "0",
+            "queue_sequence": "0"
+          }
+        },
+        "fault": "after_intent_commit_before_response",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "no_response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/unclaimed-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "provider_acceptance_lost_before_outcome",
+      "covers": [
+        "19.5:provider_acceptance_lost_before_outcome"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": "after_provider_acceptance_before_outcome",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "no_response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 1,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "outcome_commit_lost_before_admission",
+      "covers": [
+        "19.5:outcome_commit_lost_before_admission"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": "after_outcome_before_admission",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "no_response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/outcome-recorded-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "admission_commit_lost_response",
+      "covers": [
+        "19.5:admission_commit_lost_response"
+      ],
+      "request": {
+        "operation": "recover",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/outcome-recorded-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {},
+        "fault": "after_admission_before_response",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "no_response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
           "new_claims": 0
         }
       }
@@ -1232,10 +1649,13 @@
           "trusted_host_now": "1893455999999999999"
         },
         "arguments": {},
-        "fault": "after_intent_commit_before_dispatch"
+        "fault": "after_intent_commit_before_dispatch",
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/unclaimed-journal.json",
         "counts": {
@@ -1270,10 +1690,13 @@
           "trusted_host_now": "1893455999999999999"
         },
         "arguments": {},
-        "fault": "after_provider_acceptance_before_outcome"
+        "fault": "after_provider_acceptance_before_outcome",
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/ambiguous-journal.json",
         "counts": {
@@ -1308,10 +1731,13 @@
           "trusted_host_now": "1893455999999999999"
         },
         "arguments": {},
-        "fault": "after_outcome_before_admission"
+        "fault": "after_outcome_before_admission",
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "admitted-checkpoint.json",
         "journal_after": "data/result-admitted-journal.json",
         "counts": {
@@ -1346,10 +1772,13 @@
           "trusted_host_now": "1893455999999999999"
         },
         "arguments": {},
-        "fault": "after_admission_before_response"
+        "fault": "after_admission_before_response",
+        "control_plan": []
       },
       "expected": {
         "response": "data/committed-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "admitted-checkpoint.json",
         "journal_after": "data/result-admitted-journal.json",
         "counts": {
@@ -1393,10 +1822,13 @@
             []
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/retryable-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/retryable-journal.json",
         "counts": {
@@ -1440,10 +1872,13 @@
             []
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/retryable-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/retryable-journal.json",
         "counts": {
@@ -1495,10 +1930,13 @@
             ]
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/rejected-effect_result_conflict.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/retryable-journal.json",
         "counts": {
@@ -1535,10 +1973,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/retry-claim-journal.json",
         "counts": {
@@ -1582,10 +2023,13 @@
             []
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/ambiguous-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/ambiguous-journal.json",
         "counts": {
@@ -1628,10 +2072,13 @@
             []
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/cancel-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/preclaim-cancelled-journal.json",
         "counts": {
@@ -1666,10 +2113,13 @@
           "trusted_host_now": "1893455999999999999"
         },
         "arguments": {},
-        "fault": "after_cancel_outcome_before_admission"
+        "fault": "after_cancel_outcome_before_admission",
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "cancelled-admitted-checkpoint.json",
         "journal_after": "data/cancelled-admitted-journal.json",
         "counts": {
@@ -1706,10 +2156,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/preclaim-cancelled-journal.json",
         "counts": {
@@ -1752,10 +2205,13 @@
             []
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/cancel-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/preclaim-cancelled-journal.json",
         "counts": {
@@ -1798,10 +2254,13 @@
             []
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/postcall-cancel-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/postcall-cancelled-journal.json",
         "counts": {
@@ -1838,10 +2297,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/ambiguous-retry-claim-journal.json",
         "counts": {
@@ -1878,10 +2340,13 @@
         "arguments": {
           "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/ambiguous-journal.json",
         "counts": {
@@ -1924,10 +2389,13 @@
             []
           ]
         },
-        "fault": null
+        "fault": null,
+        "control_plan": []
       },
       "expected": {
         "response": "data/cancel-rejected-response.json",
+        "caller_kind": "response",
+        "control_events": [],
         "checkpoint_after": "pending-checkpoint.json",
         "journal_after": "data/no-cancel-mapping-journal.json",
         "counts": {
