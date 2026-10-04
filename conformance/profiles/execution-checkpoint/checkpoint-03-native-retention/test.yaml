@@ -33,6 +33,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/prune }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: checkpoint_equal_pruning_replay
+    replay_of: checkpoint_dependency_safe_pruning
     covers: [checkpoint_equal_pruning_replay]
     operation: checkpoint_prune_v1
     checkpoint_before: bounded-checkpoint-v1.json
@@ -79,6 +80,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/tombstone_running }
     expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
   - name: checkpoint_root_tombstone_replay
+    replay_of: checkpoint_root_tombstone
     covers: [checkpoint_root_tombstone_replay]
     operation: checkpoint_tombstone_v1
     checkpoint_before: root-tombstone-checkpoint-v1.json

@@ -40,6 +40,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/process_postcommit_response_loss }
     expect: { result: crashed, code: response_lost_after_commit, mutation: atomic, core_calls: 1, broker_acknowledged: false }
   - name: persistence_redelivery_after_commit
+    replay_of: persistence_crash_after_commit
     covers: [persistence_crash_redelivery_replay]
     operation: persistence_process_v1
     store_before: committed-store-v1.json

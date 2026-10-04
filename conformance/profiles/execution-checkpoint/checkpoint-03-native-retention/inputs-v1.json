@@ -59,8 +59,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
-        "revision": "3",
-        "digest": "sha256:695f6767d94b19c396949a8bfe9cea98c1a90dd62242034b413c78f1b88c73c0"
+        "revision": "2",
+        "digest": "sha256:02f3a0832c8f6b4853f00ff66a8797e9be6fdffd244a798505f4938f8b64ae7b"
       },
       "cutoff_receipt_sequence": "2",
       "target_mode": "bounded",
@@ -155,8 +155,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-retention-root",
-        "revision": "6",
-        "digest": "sha256:ad752b912dc3a5efc958d63698c547a9f2f109b993cb660f3d475980ca5be5aa"
+        "revision": "5",
+        "digest": "sha256:0bc41c7409e45789534e78bb91f84fb2b03ae5232cebc0e4cb4286cdc4694b40"
       },
       "tombstone_operation_id": "root-tombstone",
       "terminal_status": "completed",
@@ -187,12 +187,7 @@
       },
       "root_instance_id": "checkpoint-retention-root",
       "creation_id": "reuse",
-      "retention_mode": "permanent",
-      "existing_checkpoint": {
-        "root_instance_id": "checkpoint-retention-root",
-        "revision": "6",
-        "digest": "sha256:ad752b912dc3a5efc958d63698c547a9f2f109b993cb660f3d475980ca5be5aa"
-      }
+      "retention_mode": "permanent"
     },
     "delete": {
       "operation": "checkpoint_delete_retained_record_v1",

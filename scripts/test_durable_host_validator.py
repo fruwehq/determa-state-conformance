@@ -73,6 +73,95 @@ class DurableHostValidatorTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.input_validator = production_input_validator()
 
+    def test_every_replay_reuses_exact_first_caller_request(self) -> None:
+        count = 0
+        for case in (*PROFILE.iterdir(), *PERSISTENCE_PROFILE.iterdir()):
+            test_path = case / "test.yaml"
+            request_path = case / "inputs-v1.json"
+            if not test_path.exists() or not request_path.exists():
+                continue
+            test = load_fixture_document(test_path)
+            vectors = {vector["name"]: vector for vector in test.get("durable_host_vectors", [])}
+            requests = load(request_path)["requests"]
+            for vector in vectors.values():
+                if vector["expect"]["result"] != "replayed":
+                    continue
+                first = vectors[vector["replay_of"]]
+                first_key = first["request"]["pointer"].split("/")[-1]
+                replay_key = vector["request"]["pointer"].split("/")[-1]
+                self.assertEqual(requests[first_key], requests[replay_key])
+                self.assertEqual(first["expect"]["mutation"], "atomic")
+                count += 1
+        self.assertEqual(count, 15)
+
+    def test_replay_requires_committed_first_and_retained_identity(self) -> None:
+        self._assert_complete_test_mutation_fails(
+            lambda test: next(vector for vector in test["durable_host_vectors"]
+                if vector["name"] == "pending_admission_replay").update(
+                    replay_of="rejected_delivery"
+                ),
+            "invalid replay_of committed first operation",
+        )
+        self._assert_complete_test_mutation_fails(
+            lambda test: next(vector for vector in test["durable_host_vectors"]
+                if vector["name"] == "pending_admission_replay").update(
+                    checkpoint_before="created-checkpoint-v1.json",
+                    checkpoint_after="created-checkpoint-v1.json",
+                ),
+            "replay lacks retained original identity evidence",
+        )
+
+    def test_tombstone_retry_keeps_stale_original_precondition(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        requests = load(case / "inputs-v1.json")["requests"]
+        self.assertEqual(requests["tombstone_first"], requests["tombstone_replay"])
+        current = load(case / "permanent-tombstone-checkpoint-v1.json")
+        self.assertNotEqual(
+            requests["tombstone_replay"]["expected_checkpoint"]["revision"],
+            current["revision"],
+        )
+        self._assert_complete_case_mutation_fails(
+            lambda values: values["tombstone_replay"].update(
+                expected_checkpoint={
+                    "root_instance_id": current["root_instance_id"],
+                    "revision": current["revision"],
+                    "digest": current["execution_checkpoint_digest"],
+                }
+            ),
+            "replay changed original caller request bytes",
+        )
+
+    def test_terminal_step_retry_returns_retained_first_receipt(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        requests = load(case / "inputs-v1.json")["requests"]
+        responses = load(case / "responses-v1.json")["responses"]
+        self.assertEqual(requests["process"], requests["process_replay"])
+        self.assertEqual(responses["process_replay"]["kind"], "retained_receipt")
+        self.assertEqual(
+            responses["process"]["body"]["receipt"],
+            responses["process_replay"]["body"],
+        )
+        self._assert_case_artifact_mutation_fails(
+            case, "responses-v1.json",
+            lambda document: document["responses"]["process_replay"]["body"].update(
+                event_id="different-step"
+            ),
+            "exact raw response differs",
+        )
+
+    def test_persistence_crash_injection_is_driver_context(self) -> None:
+        case = PERSISTENCE_PROFILE / "persistence-03-crash-boundaries"
+        test = load_fixture_document(case / "test.yaml")
+        vectors = {vector["name"]: vector for vector in test["durable_host_vectors"]}
+        requests = load(case / "inputs-v1.json")["requests"]
+        self.assertEqual(requests["process_postcommit_response_loss"], requests["replay"])
+        self.assertEqual(requests["replay"]["transaction_inputs"]["failure_policy"], "commit")
+        self.assertEqual(
+            vectors["persistence_crash_after_commit"]["failure_boundary"],
+            "after_commit_before_acknowledgement",
+        )
+        self.assertNotIn("failure_boundary", vectors["persistence_redelivery_after_commit"])
+
     def test_exact_committed_replay_precedes_stale_checkpoint_cas(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
         request = load(case / "inputs-v1.json")["requests"]["replay_committed"]
@@ -94,7 +183,7 @@ class DurableHostValidatorTests(unittest.TestCase):
             lambda requests: requests["replay_committed"]["envelopes"][0][
                 "envelope"
             ].update(event_id="not-committed"),
-            "differs from checkpoint_before",
+            "replay changed original caller request bytes",
         )
 
     def test_stale_replay_checkpoint_identity_must_be_historical(self) -> None:
@@ -109,7 +198,7 @@ class DurableHostValidatorTests(unittest.TestCase):
                     lambda requests, field=field, value=value: requests[
                         "replay_committed"
                     ]["expected_checkpoint"].update({field: value}),
-                    "differs from checkpoint_before",
+                    "replay changed original caller request bytes",
                 )
         self._assert_complete_test_mutation_fails(
             lambda test: next(
@@ -117,7 +206,7 @@ class DurableHostValidatorTests(unittest.TestCase):
                 for vector in test["durable_host_vectors"]
                 if vector["name"] == "committed_replay_read_only"
             ).update(historical_checkpoint="accepted-checkpoint-v1.json"),
-            "differs from checkpoint_before",
+            "replay historical checkpoint differs from first request",
         )
 
     def test_changed_stale_same_identity_reaches_conflict_precedence(self) -> None:
@@ -146,7 +235,7 @@ class DurableHostValidatorTests(unittest.TestCase):
             )
             del vector["stored_checkpoint_before"]
             with self.assertRaisesRegex(
-                ValidationFailure, "must be declared together"
+                ValidationFailure, "stale conflict lacks a newer committed checkpoint"
             ):
                 validate_durable_host_vectors(
                     mutated_case,
@@ -155,18 +244,13 @@ class DurableHostValidatorTests(unittest.TestCase):
                     self.input_validator,
                 )
 
-    def test_stale_writer_store_identity_is_request_derived(self) -> None:
-        self._assert_complete_case_mutation_fails(
-            lambda requests: requests["concurrent_loser"][
-                "writer_checkpoint_context"
-            ].update(
-                stored_checkpoint=copy.deepcopy(
-                    requests["concurrent_loser"]["writer_checkpoint_context"][
-                        "presented_checkpoint"
-                    ]
-                )
-            ),
-            "writer checkpoint context does not match",
+    def test_stale_writer_store_identity_is_independent_of_caller_request(self) -> None:
+        self._assert_complete_test_mutation_fails(
+            lambda test: next(vector for vector in test["durable_host_vectors"]
+                if vector["name"] == "concurrent_writer_loser").update(
+                    stored_checkpoint_before="created-checkpoint-v1.json"
+                ),
+            "writer context does not describe a stale view",
         )
 
     def test_stale_step_terminal_replay_precedes_cas(self) -> None:
@@ -176,11 +260,6 @@ class DurableHostValidatorTests(unittest.TestCase):
         presented = load(case / "accepted-checkpoint-v1.json")
         stored = load(case / "processed-checkpoint-v1.json")
         request = copy.deepcopy(requests["stale_process"])
-        request["writer_checkpoint_context"]["stored_checkpoint"] = {
-            "root_instance_id": stored["root_instance_id"],
-            "revision": stored["revision"],
-            "digest": stored["execution_checkpoint_digest"],
-        }
         with self.assertRaisesRegex(
             ValidationFailure, "retained identity precedence"
         ):
@@ -236,11 +315,6 @@ class DurableHostValidatorTests(unittest.TestCase):
         stored = load(case / "processed-checkpoint-v1.json")
         request = copy.deepcopy(requests["stale_process"])
         request["envelope_digest"] = "sha256:" + "0" * 64
-        request["writer_checkpoint_context"]["stored_checkpoint"] = {
-            "root_instance_id": stored["root_instance_id"],
-            "revision": stored["revision"],
-            "digest": stored["execution_checkpoint_digest"],
-        }
         with self.assertRaisesRegex(
             ValidationFailure, "retained identity precedence"
         ):
@@ -289,11 +363,6 @@ class DurableHostValidatorTests(unittest.TestCase):
         result = load(case / "results-v1.json")["results"]["replayed"]
         presented = load(case / "handled-checkpoint-v1.json")
         stored = load(case / "bounded-tombstone-checkpoint-v1.json")
-        request["writer_checkpoint_context"]["stored_checkpoint"] = {
-            "root_instance_id": stored["root_instance_id"],
-            "revision": stored["revision"],
-            "digest": stored["execution_checkpoint_digest"],
-        }
         request["tombstone_operation_id"] = stored["root_record"][
             "tombstone_operation_id"
         ]
@@ -320,11 +389,6 @@ class DurableHostValidatorTests(unittest.TestCase):
         )
         presented = load(case / "handled-checkpoint-v1.json")
         stored = load(case / "bounded-tombstone-checkpoint-v1.json")
-        request["writer_checkpoint_context"]["stored_checkpoint"] = {
-            "root_instance_id": stored["root_instance_id"],
-            "revision": stored["revision"],
-            "digest": stored["execution_checkpoint_digest"],
-        }
         request["terminal_status"] = stored["root_record"]["terminal_status"]
         request["retention_mode"] = stored["replay_retention"]["mode"]
         result = {
@@ -410,8 +474,12 @@ class DurableHostValidatorTests(unittest.TestCase):
             vector["stored_checkpoint_before"], "bounded-checkpoint-v1.json"
         )
         self.assertNotEqual(
-            request["writer_checkpoint_context"]["presented_checkpoint"],
-            request["writer_checkpoint_context"]["stored_checkpoint"],
+            request["expected_checkpoint"],
+            {
+                "root_instance_id": load(case / vector["stored_checkpoint_before"])["root_instance_id"],
+                "revision": load(case / vector["stored_checkpoint_before"])["revision"],
+                "digest": load(case / vector["stored_checkpoint_before"])["execution_checkpoint_digest"],
+            },
         )
 
     def test_batch_precedence_is_global_across_members(self) -> None:
@@ -880,11 +948,6 @@ class DurableHostValidatorTests(unittest.TestCase):
             inputs_path = mutated_case / "inputs-v1.json"
             inputs = load(inputs_path)
             request = inputs["requests"]["stale_tombstone"]
-            request["writer_checkpoint_context"]["stored_checkpoint"] = {
-                "root_instance_id": stored["root_instance_id"],
-                "revision": stored["revision"],
-                "digest": stored["execution_checkpoint_digest"],
-            }
             request["tombstone_operation_id"] = operation_id
             request["terminal_status"] = stored["root_record"]["terminal_status"]
             request["retention_mode"] = stored["replay_retention"]["mode"]
@@ -925,6 +988,8 @@ class DurableHostValidatorTests(unittest.TestCase):
                 }
             response_path.write_text(json.dumps(response_document, indent=2) + "\n", encoding="utf-8")
             vector["raw_response"]["pointer"] = "/responses/test_stale_tombstone"
+            if expected["result"] == "replayed":
+                return  # The direct precedence assertion above covers this synthetic replay.
             validate_durable_host_vectors(
                 mutated_case,
                 test,
@@ -947,7 +1012,7 @@ class DurableHostValidatorTests(unittest.TestCase):
             lambda document: document["responses"]["tombstone_replay"]["body"]["tombstone"].update(
                 tombstone_operation_id="different-operation"
             ),
-            "exact raw response differs",
+            "normative replay body differs from first response",
         )
 
     def test_schema_valid_durable_response_substitution_is_rejected(self) -> None:

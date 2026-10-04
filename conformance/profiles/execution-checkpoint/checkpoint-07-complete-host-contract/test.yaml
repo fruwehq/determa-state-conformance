@@ -34,6 +34,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/creation_rejection }
     expect: { result: rejected, code: creation_rejected, mutation: none, core_calls: 1 }
   - name: pending_admission_replay
+    replay_of: concurrent_writer_winner
     covers: [pending_admission_replay, checkpoint_request_exact_before_identity]
     operation: checkpoint_admit_v1
     checkpoint_before: accepted-checkpoint-v1.json
@@ -78,6 +79,15 @@ durable_host_vectors:
     result: { file: results-v1.json, pointer: /results/invalid_event }
     raw_response: { file: responses-v1.json, pointer: /responses/rejected }
     expect: { result: rejected, code: invalid_event, mutation: none, core_calls: 0 }
+  - name: faulted_first_admission
+    covers: [faulted_first_admission]
+    operation: checkpoint_admit_v1
+    checkpoint_before: created-checkpoint-v1.json
+    checkpoint_after: faulted-accepted-checkpoint-v1.json
+    request: { file: inputs-v1.json, pointer: /requests/faulted_admission_first }
+    result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/faulted_admission_first }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: faulted_delivery
     covers: [faulted_delivery]
     operation: checkpoint_step_v1
@@ -124,6 +134,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/ordered_batch }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: all_replay_batch
+    replay_of: ordered_batch_admission
     covers: [all_replay_batch_read_only]
     operation: checkpoint_admit_v1
     checkpoint_before: ordered-batch-checkpoint-v1.json
@@ -197,6 +208,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/terminal_root }
     expect: { result: rejected, code: terminal_root, mutation: none, core_calls: 0 }
   - name: terminal_root_replay
+    replay_of: faulted_first_admission
     covers: [replay_precedes_terminal_root]
     operation: checkpoint_admit_v1
     checkpoint_before: faulted-checkpoint-v1.json
@@ -251,6 +263,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/replay_conflict }
     expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
   - name: committed_replay_read_only
+    replay_of: concurrent_writer_winner
     covers: [committed_replay_precedes_stale_writer, exact_committed_replay_identity_precedes_cas, stale_replay_historical_checkpoint_binding]
     operation: checkpoint_admit_v1
     checkpoint_before: handled-checkpoint-v1.json
@@ -345,6 +358,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/tombstone_first }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: permanent_root_tombstone_equal_retry
+    replay_of: permanent_root_tombstone_first
     covers: [permanent_root_tombstone_equal_retry]
     operation: checkpoint_tombstone_v1
     checkpoint_before: permanent-tombstone-checkpoint-v1.json
@@ -363,6 +377,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/tombstoned_ingress }
     expect: { result: rejected, code: tombstoned_root, mutation: none, core_calls: 0 }
   - name: tombstoned_replay
+    replay_of: concurrent_writer_winner
     covers: [tombstone_replay_precedes_tombstoned_root]
     operation: checkpoint_admit_v1
     checkpoint_before: bounded-tombstone-checkpoint-v1.json

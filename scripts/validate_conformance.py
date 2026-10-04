@@ -206,6 +206,7 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "checkpoint_stale_writer_rejected",
         "checkpoint_strict_outbox_requirements",
         "checkpoint_terminal_replay",
+        "checkpoint_terminal_step_replay",
         "checkpoint_third_party_adapter_registration",
         "creation_receipt_native_v1",
         "creation_rejection_without_checkpoint",
@@ -245,6 +246,7 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "exactly_once_profile_negative",
         "exactly_once_profile_positive",
         "faulted_delivery",
+        "faulted_first_admission",
         "file_capability_boundary",
         "foreground_delayed_equivalence",
         "foreground_processing",
@@ -5526,9 +5528,7 @@ def validate_request_checkpoint_binding(
     location: str,
     historical_checkpoint: dict[str, Any] | None = None,
 ) -> None:
-    expected = operation_input.get("expected_checkpoint") or operation_input.get(
-        "existing_checkpoint"
-    )
+    expected = operation_input.get("expected_checkpoint")
     if expected is None:
         return
     del artifacts
@@ -5703,15 +5703,9 @@ def validate_writer_checkpoint_context(
     checkpoint_after: dict[str, Any],
     location: str,
 ) -> str | None:
-    writer_context = operation_input["writer_checkpoint_context"]
-    if (
-        writer_context["presented_checkpoint"]
-        != checkpoint_identity(presented_checkpoint)
-        or writer_context["stored_checkpoint"]
-        != checkpoint_identity(stored_checkpoint)
-    ):
+    if operation_input.get("expected_checkpoint") != checkpoint_identity(presented_checkpoint):
         raise ValidationFailure(
-            f"{location}: writer checkpoint context does not match the explicit checkpoints"
+            f"{location}: caller checkpoint does not match the presented checkpoint"
         )
     if (
         presented_checkpoint["root_instance_id"]
@@ -6689,9 +6683,12 @@ def validate_persistence_derivation(
     store_after: dict[str, Any],
     location: str,
     artifacts: dict[str, Any],
+    replay_original_checkpoint: dict[str, Any] | None = None,
 ) -> None:
     checkpoint_before = store_before["checkpoint"]
-    if operation_input["expected_checkpoint"] != checkpoint_identity(checkpoint_before):
+    expected_before = replay_original_checkpoint or checkpoint_before
+    if (operation_input["expected_checkpoint"] != checkpoint_identity(expected_before)
+            or expected_before["root_instance_id"] != checkpoint_before["root_instance_id"]):
         raise ValidationFailure(f"{location}: persistence request checkpoint mismatch")
     if operation_input["operation"] == "persistence_release_quarantine_v1":
         if operation_result["mutation"] == "atomic" and (
@@ -6707,6 +6704,17 @@ def validate_persistence_derivation(
         raise ValidationFailure(
             f"{location}: persistence capabilities do not satisfy host_profile"
         )
+    if replay_original_checkpoint is not None:
+        event_id = operation_input["presented_envelope"]["event_id"]
+        digest = operation_input["envelope_digest"]
+        retained_inbox = [row for row in store_before["inbox"]
+            if row["event_id"] == event_id and row["request_digest"] == digest
+            and row["disposition"] == "committed"]
+        retained_receipts = [receipt for receipt in checkpoint_before["operation_receipts"]
+            if receipt["operation_kind"] == "event_terminal"
+            and receipt["event_id"] == event_id and receipt["request_digest"] == digest]
+        if len(retained_inbox) != 1 or len(retained_receipts) != 1:
+            raise ValidationFailure(f"{location}: persistence replay lacks committed inbox and receipt")
     envelope = operation_input["presented_envelope"]
     expected_digest = hash_value(
         [
@@ -6952,7 +6960,10 @@ def validate_exact_durable_response(
             raise ValidationFailure(f"{location}: processing response lacks committed evidence")
         receipt = next(item for item in reversed(checkpoint_after["operation_receipts"])
             if item["operation_kind"] == "event_terminal")
-        expected = {"kind": "processing", "body": {"core_result": expected_core_step_result(checkpoint_after), "receipt": receipt}}
+        if outcome == "replayed":
+            expected = {"kind": "retained_receipt", "body": receipt}
+        else:
+            expected = {"kind": "processing", "body": {"core_result": expected_core_step_result(checkpoint_after), "receipt": receipt}}
     elif operation == "persistence_process_v1":
         if store_after is None:
             raise ValidationFailure(f"{location}: persistence response lacks store evidence")
@@ -7001,6 +7012,7 @@ def validate_durable_host_vectors(
     names: set[str] = set()
     cross_scope_operations: list[dict[str, Any]] = []
     tombstone_responses: dict[tuple[str, str], dict[str, Any]] = {}
+    vectors_by_name = {vector["name"]: vector for vector in test["durable_host_vectors"]}
 
     def require_kind(filename: str, kind: str, location: str) -> Any:
         manifest = manifests.get(filename)
@@ -7035,6 +7047,36 @@ def validate_durable_host_vectors(
             )
         if operation_input["operation"] != vector["operation"]:
             raise ValidationFailure(f"{location}: operation input does not match vector")
+        replay_original_checkpoint = None
+        if "replay_of" in vector:
+            first = vectors_by_name.get(vector["replay_of"])
+            if (first is None or first is vector or "request" not in first
+                    or "request" not in vector or first["operation"] != vector["operation"]
+                    or first["expect"]["mutation"] != "atomic"
+                    or first["expect"]["result"] not in {"committed", "crashed"}
+                    or vector["expect"]["result"] != "replayed"
+                    or vector["expect"]["mutation"] != "none"
+                    or vector["expect"]["core_calls"] != 0):
+                raise ValidationFailure(f"{location}: invalid replay_of committed first operation")
+            first_ref = first["request"]
+            first_document = require_kind(first_ref["file"], "durable_host_inputs_v1", location)
+            first_request = resolve_artifact_pointer(first_document, first_ref["pointer"], location)
+            if canonical_json_bytes(first_request) != canonical_json_bytes(operation_input):
+                raise ValidationFailure(f"{location}: replay changed original caller request bytes")
+            if first["operation"].startswith("persistence_"):
+                first_store = require_kind(first["store_before"], "durable_host_store_v1", location)
+                replay_original_checkpoint = first_store["checkpoint"]
+            elif first.get("checkpoint_before") is not None:
+                replay_original_checkpoint = require_kind(first["checkpoint_before"], "execution_checkpoint_v1", location)
+            if replay_original_checkpoint is not None:
+                if operation_input.get("expected_checkpoint") != checkpoint_identity(replay_original_checkpoint):
+                    raise ValidationFailure(f"{location}: replay caller checkpoint differs from first request")
+            if first["expect"]["result"] == "crashed" and first.get("failure_boundary") not in {
+                "after_commit_before_acknowledgement"
+            }:
+                raise ValidationFailure(f"{location}: replay_of crash did not commit")
+        elif vector["expect"]["result"] == "replayed":
+            raise ValidationFailure(f"{location}: replay lacks original caller request")
         if {
             "equal_identity_separate_scope_a",
             "equal_identity_separate_scope_b",
@@ -7072,6 +7114,18 @@ def validate_durable_host_vectors(
         response = resolve_artifact_pointer(
             response_document, response_ref["pointer"], location
         )
+        if ("replay_of" in vector and operation_input["operation"] in {
+                "checkpoint_create_v1", "checkpoint_update_outbox_v1",
+                "checkpoint_terminalize_outbox_v1", "checkpoint_tombstone_v1"}):
+            first_response_ref = vectors_by_name[vector["replay_of"]]["raw_response"]
+            first_response_document = require_kind(
+                first_response_ref["file"], "durable_host_responses_v1", location
+            )
+            first_response = resolve_artifact_pointer(
+                first_response_document, first_response_ref["pointer"], location
+            )
+            if response != first_response:
+                raise ValidationFailure(f"{location}: normative replay body differs from first response")
 
         before_name = vector.get("checkpoint_before")
         stored_before_name = vector.get("stored_checkpoint_before")
@@ -7086,12 +7140,6 @@ def validate_durable_host_vectors(
                 checkpoint_before = require_kind(before_name, "execution_checkpoint_v1", location)
                 stored_checkpoint_before = None
                 writer_disposition = None
-                writer_context = operation_input.get("writer_checkpoint_context")
-                if (stored_before_name is None) != (writer_context is None):
-                    raise ValidationFailure(
-                        f"{location}: stored checkpoint and writer context must be "
-                        "declared together"
-                    )
                 if stored_before_name is not None:
                     stored_checkpoint_before = require_kind(
                         stored_before_name, "execution_checkpoint_v1", location
@@ -7117,13 +7165,25 @@ def validate_durable_host_vectors(
                     validate_execution_checkpoint_v1_semantics(
                         historical_checkpoint
                     )
-                validate_request_checkpoint_binding(
-                    operation_input,
-                    checkpoint_before,
-                    artifacts,
-                    location,
-                    historical_checkpoint,
-                )
+                if replay_original_checkpoint is not None:
+                    if replay_original_checkpoint["root_instance_id"] != checkpoint_before["root_instance_id"]:
+                        raise ValidationFailure(f"{location}: replay changed root identity")
+                    if "historical_checkpoint" in vector and historical_checkpoint != replay_original_checkpoint:
+                        raise ValidationFailure(f"{location}: replay historical checkpoint differs from first request")
+                    if operation_input["operation"] in {"checkpoint_admit_v1", "checkpoint_step_v1", "checkpoint_tombstone_v1"}:
+                        if retained_writer_identity_disposition(operation_input, checkpoint_before) != "replayed":
+                            raise ValidationFailure(f"{location}: replay lacks retained original identity evidence")
+                        first_after = require_kind(first["checkpoint_after"], "execution_checkpoint_v1", location)
+                        if retained_writer_identity_disposition(operation_input, first_after) != "replayed":
+                            raise ValidationFailure(f"{location}: first operation lacks committed identity evidence")
+                else:
+                    validate_request_checkpoint_binding(
+                        operation_input,
+                        checkpoint_before,
+                        artifacts,
+                        location,
+                        historical_checkpoint,
+                    )
                 if vector["expect"]["mutation"] == "none":
                     stale_conflict = (
                         operation_result.get("code")
@@ -7324,6 +7384,7 @@ def validate_durable_host_vectors(
                 store_after,
                 location,
                 artifacts,
+                replay_original_checkpoint,
             )
 
         response_checkpoint = (

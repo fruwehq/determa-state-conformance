@@ -14,6 +14,12 @@
       "core_calls": 0,
       "broker_acknowledged": true
     },
+    "step_replayed": {
+      "result": "replayed",
+      "mutation": "none",
+      "core_calls": 0,
+      "broker_acknowledged": false
+    },
     "creation_conflict": {
       "result": "rejected",
       "mutation": "none",

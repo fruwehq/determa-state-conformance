@@ -69,8 +69,10 @@ and checkpoint maintenance-migration boundaries from SPEC §§16–17. Their ope
 names are driver-only adapters. Named artifacts, canonical result bytes, audit records,
 dispositions, exact failures, checkpoint revisions, retained receipts, and request
 digests are normative. Existing-checkpoint writers name the exact revision and digest
-they read; replay repeats the original operation and input rather than using a synthetic
-replay or compare-and-swap operation.
+they read; replay repeats the original operation and exact caller input, including its original
+checkpoint identity. The current host checkpoint or store is a separate driver
+observation; `replay_of` binds every retry to its first atomic operation. A crash
+injection is a one-attempt vector boundary, not a caller transaction policy.
 
 The durable source/schema validator uses YAML 1.2 and the specification's Draft
 2020-12 schema:

@@ -60,8 +60,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
-        "revision": "3",
-        "digest": "sha256:0d5dedb893eb4961075954c39b4d9dbc781e5f59b328a2fd7bd9d739908bfbfe"
+        "revision": "2",
+        "digest": "sha256:a1450b5251c7fee60f0df30550a52cf6b4abd9ae261813fd6b6e4130c165c590"
       },
       "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e",
       "target_disposition": "retryable_failure",
@@ -207,8 +207,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "checkpoint-outbox-root",
-        "revision": "9",
-        "digest": "sha256:183de311434576d358317539c8db4d8dfd3e380dfcb741adfb3267b6cfc5a242"
+        "revision": "8",
+        "digest": "sha256:6c151c0a01715ec3470b73484153fe5e93b296253bedba695dd6f09770e2cbcb"
       },
       "effect_id": "sha256:05c0a454f49ed1eb6f89aea0926b8e83507903343e4227731f285af25258e9cc",
       "target_disposition": "dead_lettered",

@@ -176,6 +176,26 @@
         }
       }
     },
+    "process_replay": {
+      "kind": "retained_receipt",
+      "body": {
+        "operation_kind": "event_terminal",
+        "receipt_sequence": "2",
+        "event_id": "delivery-increment",
+        "request_digest": "sha256:8422c8a572a52b2c01ac7abbf545789407b8b8ea14fa27517b18ba2597c45e6e",
+        "acceptance_sequence": "0",
+        "final_queue_sequence": "0",
+        "committed_revision": "2",
+        "resulting_aggregate_state_digest": "sha256:2151f66a7408bc40f4ed99cd5c2588db36e9882420957f1dedda2451a55f3b67",
+        "outcome": {
+          "disposition": "handled",
+          "status": "running",
+          "fault": null,
+          "rejection": null
+        },
+        "emission_references": []
+      }
+    },
     "accept_replay": {
       "kind": "admission",
       "body": {

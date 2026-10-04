@@ -28,6 +28,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/process }
     expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
   - name: persistence_inbox_equal_replay
+    replay_of: persistence_inbox_first_commit
     covers: [persistence_inbox_idempotency, persistence_inbox_replay_no_core_call]
     operation: persistence_process_v1
     store_before: committed-store-v1.json

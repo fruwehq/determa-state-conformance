@@ -31,8 +31,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
-        "revision": "5",
-        "digest": "sha256:53a00e785c0a7940b039ed387499109da97d51e58ea11fb2ca6747bc215f34a3"
+        "revision": "4",
+        "digest": "sha256:dcd86510800154e00c461d513e852250e433283dacd38b9332e69e8cf7dc890a"
       },
       "tombstone_operation_id": "permanent-tombstone",
       "terminal_status": "faulted",
@@ -81,8 +81,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
-        "revision": "1",
-        "digest": "sha256:c5846378fc3dfd5f07e379ae5cb456cea9b0b901acf7d59aa1bf0438e7fd43fb"
+        "revision": "0",
+        "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
       },
       "envelopes": [
         {
@@ -231,6 +231,45 @@
             ]
           },
           "envelope_digest": "sha256:99766c2c726b5e30b962961a1fba6e7eddb7e7e92459f99f79fd5d2cfe882599"
+        }
+      ]
+    },
+    "faulted_admission_first": {
+      "operation": "checkpoint_admit_v1",
+      "request_id": "complete-faulted",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "0",
+        "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+      },
+      "envelopes": [
+        {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "fail",
+            "event_id": "complete-faulted",
+            "cause_id": "complete-faulted",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              }
+            },
+            "payload": [
+              "map",
+              []
+            ]
+          },
+          "envelope_digest": "sha256:e71ab6a19349fd33188a1bb4df52562bc86d4f309a7354599cde580225e496f3"
         }
       ]
     },
@@ -579,7 +618,7 @@
     },
     "all_replay_batch": {
       "operation": "checkpoint_admit_v1",
-      "request_id": "all-replay-batch",
+      "request_id": "ordered-batch",
       "scope": {
         "scope_id": "primary",
         "ownership_binding": "owner:primary",
@@ -588,8 +627,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
-        "revision": "1",
-        "digest": "sha256:069d3049153f58f98295ebe19805f5105504ccaebe198964d5319dacf1b6b4df"
+        "revision": "0",
+        "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
       },
       "envelopes": [
         {
@@ -943,8 +982,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
-        "revision": "2",
-        "digest": "sha256:b6f43dc1780b497147118b683be5c1a1ea57366e554c0682a588000bb3c765f8"
+        "revision": "0",
+        "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
       },
       "envelopes": [
         {
@@ -1290,19 +1329,7 @@
           },
           "envelope_digest": "sha256:123a625cc8408d4eb7e4db611c5483accc097999f59529e91d9984b65fca7120"
         }
-      ],
-      "writer_checkpoint_context": {
-        "presented_checkpoint": {
-          "root_instance_id": "complete-host-root",
-          "revision": "0",
-          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
-        },
-        "stored_checkpoint": {
-          "root_instance_id": "complete-host-root",
-          "revision": "1",
-          "digest": "sha256:c5846378fc3dfd5f07e379ae5cb456cea9b0b901acf7d59aa1bf0438e7fd43fb"
-        }
-      }
+      ]
     },
     "dependency_live": {
       "operation": "checkpoint_prune_v1",
@@ -1404,19 +1431,7 @@
       },
       "tombstone_operation_id": "stale-tombstone",
       "terminal_status": "completed",
-      "retention_mode": "permanent",
-      "writer_checkpoint_context": {
-        "presented_checkpoint": {
-          "root_instance_id": "complete-host-root",
-          "revision": "2",
-          "digest": "sha256:fa999504c57ae7f534cdc0e868ca016b8cd63c1134bce2a19ae6f864544a9f3b"
-        },
-        "stored_checkpoint": {
-          "root_instance_id": "complete-host-root",
-          "revision": "3",
-          "digest": "sha256:2fe6b23655b527106abf76b3b8e5311a7c1a40910d1415558e2b66b48123d17a"
-        }
-      }
+      "retention_mode": "permanent"
     },
     "tombstoned_ingress": {
       "operation": "checkpoint_admit_v1",
@@ -1476,8 +1491,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "complete-host-root",
-        "revision": "6",
-        "digest": "sha256:5de4c43bc3f07136ec6d109b4a0dad5ddab8cb258a25ac9024f236537ed68ebb"
+        "revision": "0",
+        "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
       },
       "envelopes": [
         {

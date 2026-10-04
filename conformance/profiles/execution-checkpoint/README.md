@@ -41,7 +41,7 @@ The response union retains every normative returned field used by these operatio
 |---|---|
 | creation, pending outbox update, terminal outbox transition, root tombstone | Exact SPEC §17 literal receipt, record, terminal record, or tombstone body; first and equal replay use the same body. |
 | admission | Ordered acceptance receipts or retained event-identity tombstone evidence for every requested member. |
-| processing | Full §16 core step result, including state, disposition, emissions, lifecycle dispositions, fault, and rejection, plus the committed terminal receipt. First-commit persistence processing also retains migration audit records; its equal retry returns the retained terminal receipt without a core call. |
+| processing | Full §16 core step result, including state, disposition, emissions, lifecycle dispositions, fault, and rejection, plus the committed terminal receipt. An equal terminal step retry returns only its retained terminal receipt, without calling core. First-commit persistence processing also retains migration audit records; its equal retry returns the retained terminal receipt without a core call. |
 | adapter registration/resolution, capability validation, store injection, scope operation | The exact registration, resolved registration and configuration, configured capability report, injected adapter reference, or authorized scope record returned by the adapter. |
 | pruning, compaction, backup/restore, quarantine release | The operation's direct committed, replayed, validated, or released acknowledgement; persisted bytes are checked separately. |
 | rejection, quarantine, crash | Direct typed code, typed code plus quarantine record, or explicit no response. |
@@ -67,20 +67,26 @@ mode, and dependencies; adapter registration or configuration; composed capabili
 or the complete persistence transaction input. There is no generic parameter map and
 replay repeats the original operation request.
 
-Stale and concurrent-writer requests carry a closed `writer_checkpoint_context`
-containing both the writer-presented checkpoint identity and the currently stored
-checkpoint identity. Their vectors name the complete presented artifact as
-`checkpoint_before` and the complete committed artifact as
-`stored_checkpoint_before`; `checkpoint_after` is the unchanged committed artifact.
-The two identities have the same root and differ by revision, digest, or both. Before
-reporting compare-and-swap failure, runners inspect the stored pending and terminal
-identities so retained replay or identity conflict takes precedence. Runners derive
-all outcomes from these explicit inputs rather than from a vector name, coverage label,
-expected code, or post-operation golden.
+Each replay vector names its first operation with the closed `replay_of` relation.
+The caller request is byte-identical after normalization, including scope, operation
+identity, digest, transaction inputs, and the original checkpoint revision/digest.
+A retry does not acquire a fresh caller precondition. The host reads the current
+checkpoint or store independently; the vector names it as `checkpoint_before` or
+`store_before`. A stale-writer vector additionally names the committed store artifact
+as `stored_checkpoint_before`, distinct from the presented `checkpoint_before`.
+These are driver observations, never extra caller request fields. The validator checks
+the first atomic commit, retained identity evidence, unchanged replay state, and
+replay before stale compare-and-swap failure. It rejects a changed caller request,
+a missing first commit, or missing current receipt/idempotency evidence.
+
+The vector's `failure_boundary` is a one-attempt host fault injection. In particular,
+a post-commit lost response does not alter `transaction_inputs.failure_policy`;
+redelivery repeats that exact caller transaction input after the one-shot fault clears.
 
 The repository validator derives operation-specific invariants from those requests. It
-requires every request checkpoint identity to equal its vector's actual
-`checkpoint_before` and binds canonical envelope digests, ordered allocation, targets,
+requires each first writer's request checkpoint identity to equal its
+`checkpoint_before` and each replay's identity to equal the first writer's original
+checkpoint and binds canonical envelope digests, ordered allocation, targets,
 receipts, effects,
 disposition, retention transition, store inbox, and application writes to the named
 before/after artifacts. Creation commits revision `0`; each admission, processing,

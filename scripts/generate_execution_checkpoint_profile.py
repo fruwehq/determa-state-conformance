@@ -74,15 +74,6 @@ def expected_checkpoint(checkpoint: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def writer_checkpoint_context(
-    presented_checkpoint: dict[str, Any], stored_checkpoint: dict[str, Any]
-) -> dict[str, Any]:
-    return {
-        "presented_checkpoint": expected_checkpoint(presented_checkpoint),
-        "stored_checkpoint": expected_checkpoint(stored_checkpoint),
-    }
-
-
 def aggregate_of(checkpoint: dict[str, Any]) -> dict[str, Any]:
     return checkpoint["root_record"]["aggregate_state"]
 
@@ -137,7 +128,6 @@ def creation_request(
     checkpoint: dict[str, Any],
     request_id: str,
     *,
-    existing: bool = False,
     creation_id: str | None = None,
 ) -> dict[str, Any]:
     aggregate = aggregate_of(checkpoint)
@@ -158,8 +148,6 @@ def creation_request(
         "creation_id": creation_id or aggregate["creation_id"],
         "retention_mode": checkpoint["replay_retention"]["mode"],
     }
-    if existing:
-        value["existing_checkpoint"] = expected_checkpoint(checkpoint)
     return value
 
 
@@ -1173,18 +1161,14 @@ def generate_delivery() -> dict[Path, bytes]:
     )
     processed = process(accepted)
     stale_process = processing_request(accepted, "stale-process")
-    stale_process["writer_checkpoint_context"] = writer_checkpoint_context(
-        accepted, stale_writer_store
-    )
     inputs = request_document(
         {
             "create": creation_request(case, created, "create"),
-            "create_replay": creation_request(case, created, "create", existing=True),
+            "create_replay": creation_request(case, created, "create"),
             "create_conflict": creation_request(
                 case,
                 created,
                 "different-create",
-                existing=True,
                 creation_id="different-create",
             ),
             "accept": admission_request(
@@ -1198,6 +1182,7 @@ def generate_delivery() -> dict[Path, bytes]:
                 payload={"amount": 2},
             ),
             "process": processing_request(accepted, "process-delivery"),
+            "process_replay": processing_request(processed, "process-delivery"),
             "process_crash": processing_request(accepted, "process-crash"),
             "stale_process": stale_process,
             "wrong_root": admission_batch_request(
@@ -1235,6 +1220,7 @@ def generate_delivery() -> dict[Path, bytes]:
         {
             "committed": result("committed", "atomic", 1, acknowledged=True),
             "replayed": result("replayed", "none", 0, acknowledged=True),
+            "step_replayed": result("replayed", "none", 0),
             "creation_conflict": result("rejected", "none", 0, code="creation_id_conflict"),
             "crash": result("crashed", "none", 1, code="injected_pre_commit_failure"),
             "stale": result("rejected", "none", 0, code="checkpoint_revision_conflict"),
@@ -1370,7 +1356,6 @@ def generate_retention() -> dict[Path, bytes]:
         "reuse",
         creation_id="reuse",
     )
-    reuse["existing_checkpoint"] = expected_checkpoint(tombstoned)
     operations = {
         "complete_process": processing_request(
             completion_accepted,
@@ -2246,8 +2231,8 @@ def generate_persistence_case(index: int, slug: str) -> dict[Path, bytes]:
         case / "released-store-v1.json": write_json(case / "x", released),
         case / "inputs-v1.json": write_json(case / "x", request_document({
             "process": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, **request_options),
-            "process_precommit_failure": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="inject_pre_commit", **request_options),
-            "process_postcommit_response_loss": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="inject_post_commit_response_loss", **request_options),
+            "process_precommit_failure": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, **request_options),
+            "process_postcommit_response_loss": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, **request_options),
             "process_transient": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="transient_retry", **request_options),
             "process_permanent": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="permanent_quarantine", **request_options),
             "replay": persistence_request(committed_checkpoint, f"persistence-{index}-process", presented_envelope, presented_digest, **request_options),
@@ -2368,13 +2353,7 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
         created,
         "concurrent-loser",
     )
-    concurrent_loser["writer_checkpoint_context"] = writer_checkpoint_context(
-        created, accepted
-    )
     stale_tombstone = tombstone_request(handled, "stale-tombstone")
-    stale_tombstone["writer_checkpoint_context"] = writer_checkpoint_context(
-        handled, bounded
-    )
     tombstoned_ingress = admission_request(
         bounded_tombstone,
         "after-tombstone",
@@ -2414,6 +2393,7 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
             event="undeclared",
             payload={},
         ),
+        "faulted_admission_first": admission_request(created, "complete-faulted", event="fail", payload={}),
         "faulted": processing_request(faulted_accepted, "faulted"),
         "invalid_mode": invalid_mode,
         "invalid_digest": invalid_digest,
@@ -2686,6 +2666,21 @@ def outputs() -> dict[Path, bytes]:
         result_map.update(generate_persistence_case(index, slug))
     for test_path in PROFILE.rglob("test.yaml"):
         case = test_path.parent
+        vectors = load_yaml(test_path).get("durable_host_vectors", [])
+        if vectors:
+            request_path = case / "inputs-v1.json"
+            request_document_value = json.loads(result_map[request_path])
+            vectors_by_name = {vector["name"]: vector for vector in vectors}
+            for vector in vectors:
+                if "replay_of" not in vector:
+                    continue
+                first = vectors_by_name[vector["replay_of"]]
+                replay_key = vector["request"]["pointer"].split("/")[-1]
+                first_key = first["request"]["pointer"].split("/")[-1]
+                request_document_value["requests"][replay_key] = copy.deepcopy(
+                    request_document_value["requests"][first_key]
+                )
+            result_map[request_path] = write_json(request_path, request_document_value)
         responses: dict[str, dict[str, Any]] = {}
         for vector in load_yaml(test_path).get("durable_host_vectors", []):
             reference = vector.get("raw_response")
@@ -2746,7 +2741,10 @@ def outputs() -> dict[Path, bytes]:
                 response = {"kind": "admission", "body": {"evidence": evidence}}
             elif operation == "checkpoint_step_v1":
                 receipt = next(item for item in reversed(checkpoint["operation_receipts"]) if item["operation_kind"] == "event_terminal")
-                response = {"kind": "processing", "body": {"core_result": expected_core_step_result(checkpoint), "receipt": receipt}}
+                if outcome["result"] == "replayed":
+                    response = {"kind": "retained_receipt", "body": receipt}
+                else:
+                    response = {"kind": "processing", "body": {"core_result": expected_core_step_result(checkpoint), "receipt": receipt}}
             elif operation == "persistence_process_v1":
                 persisted = json.loads(result_map[case / vector["store_after"]])["checkpoint"]
                 receipt = next(item for item in reversed(persisted["operation_receipts"]) if item["operation_kind"] == "event_terminal")

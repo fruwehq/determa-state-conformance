@@ -384,6 +384,22 @@
         "code": "invalid_event"
       }
     },
+    "faulted_admission_first": {
+      "kind": "admission",
+      "body": {
+        "evidence": [
+          {
+            "operation_kind": "acceptance",
+            "receipt_sequence": "1",
+            "event_id": "complete-faulted",
+            "request_digest": "sha256:e71ab6a19349fd33188a1bb4df52562bc86d4f309a7354599cde580225e496f3",
+            "acceptance_sequence": "0",
+            "accepted_revision": "1",
+            "delivery_mode": "input"
+          }
+        ]
+      }
+    },
     "faulted": {
       "kind": "processing",
       "body": {

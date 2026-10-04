@@ -22,6 +22,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/create }
     expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
   - name: checkpoint_creation_replay
+    replay_of: checkpoint_create_commit
     covers: [checkpoint_creation_replay]
     operation: checkpoint_create_v1
     checkpoint_before: created-checkpoint-v1.json
@@ -57,7 +58,18 @@ durable_host_vectors:
     result: { file: results-v1.json, pointer: /results/committed }
     raw_response: { file: responses-v1.json, pointer: /responses/process }
     expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
+  - name: checkpoint_terminal_step_replay
+    replay_of: checkpoint_processing_commit
+    covers: [checkpoint_terminal_step_replay]
+    operation: checkpoint_step_v1
+    checkpoint_before: processed-checkpoint-v1.json
+    checkpoint_after: processed-checkpoint-v1.json
+    request: { file: inputs-v1.json, pointer: /requests/process_replay }
+    result: { file: results-v1.json, pointer: /results/step_replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/process_replay }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: checkpoint_terminal_replay
+    replay_of: checkpoint_admission_commit
     covers: [checkpoint_terminal_replay, replay_precedes_stale_writer]
     operation: checkpoint_admit_v1
     checkpoint_before: processed-checkpoint-v1.json

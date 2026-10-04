@@ -37,6 +37,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/retryable }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_equal_pending_replay
+    replay_of: outbox_retryable_failure
     covers: [outbox_equal_pending_replay]
     operation: checkpoint_update_outbox_v1
     checkpoint_before: retryable-checkpoint-v1.json
@@ -100,6 +101,7 @@ durable_host_vectors:
     raw_response: { file: responses-v1.json, pointer: /responses/terminal_dead_lettered }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_terminal_replay
+    replay_of: outbox_terminal_dead_lettered
     covers: [outbox_equal_terminal_replay]
     operation: checkpoint_terminalize_outbox_v1
     checkpoint_before: terminal-checkpoint-v1.json

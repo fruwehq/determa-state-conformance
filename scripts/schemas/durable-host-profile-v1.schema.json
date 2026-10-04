@@ -217,6 +217,7 @@
         "raw_admission_request": { "$ref": "#/$defs/rawAdmissionRequest" },
         "result": { "$ref": "#/$defs/artifactPointer" },
         "raw_response": { "$ref": "#/$defs/artifactPointer" },
+        "replay_of": { "$ref": "#/$defs/name" },
         "checkpoint_before": {
           "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
         },
@@ -247,6 +248,11 @@
         { "required": ["raw_admission_request"], "not": { "required": ["request"] } }
       ],
       "allOf": [
+        {
+          "if": { "properties": { "expect": { "properties": { "result": { "const": "replayed" } }, "required": ["result"] } }, "required": ["expect"] },
+          "then": { "required": ["replay_of"] },
+          "else": { "not": { "required": ["replay_of"] } }
+        },
         {
           "if": { "properties": { "operation": { "pattern": "^checkpoint_" } } },
           "then": { "required": ["checkpoint_before", "checkpoint_after"] }

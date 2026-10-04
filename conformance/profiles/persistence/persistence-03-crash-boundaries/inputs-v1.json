@@ -111,7 +111,7 @@
         "application_writes": {
           "aggregate_version": 1
         },
-        "failure_policy": "inject_pre_commit"
+        "failure_policy": "commit"
       },
       "store_adapter_identifier": "sqlite",
       "store_capabilities": [
@@ -173,7 +173,7 @@
         "application_writes": {
           "aggregate_version": 1
         },
-        "failure_policy": "inject_post_commit_response_loss"
+        "failure_policy": "commit"
       },
       "store_adapter_identifier": "sqlite",
       "store_capabilities": [
@@ -323,8 +323,8 @@
       },
       "expected_checkpoint": {
         "root_instance_id": "persistence-3-root",
-        "revision": "1",
-        "digest": "sha256:76bb150bd60c823e607146a204fd8d1d5f8d15d3c8d1de54e02dcd5e3bb8aa3d"
+        "revision": "0",
+        "digest": "sha256:9c115e4d0d991ac60114dd1b92e6d81a155670951ad0854b33b88c694336f12a"
       },
       "presented_envelope": {
         "event": "increment",

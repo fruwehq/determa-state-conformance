@@ -41,7 +41,11 @@ authorization.
 Every vector names a closed exact operation response separately from its durable
 store snapshot and call trace. The first committed processing call returns the
 complete core step result, retained terminal receipt, and migration audit records.
-Equal redelivery returns the retained terminal receipt without another core call. Quarantine returns the typed code and quarantine record;
-release returns its direct acknowledgement. A crash has an explicit no-response
+Equal redelivery returns the retained terminal receipt without another core call.
+The `replay_of` relation requires the exact original caller request, including its
+stale checkpoint identity and `transaction_inputs`; `store_before` supplies current
+host state separately. A crash `failure_boundary` applies once to that attempt.
+Quarantine returns the typed code and quarantine record; release returns its direct
+acknowledgement. A crash has an explicit no-response
 expectation. The runner records those values directly from the production call or
 typed error, never by rereading the store or consulting expected fixtures.

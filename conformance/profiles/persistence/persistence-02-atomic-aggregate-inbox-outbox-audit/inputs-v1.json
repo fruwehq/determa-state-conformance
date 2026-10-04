@@ -115,7 +115,7 @@
         "application_writes": {
           "aggregate_version": 1
         },
-        "failure_policy": "inject_pre_commit"
+        "failure_policy": "commit"
       },
       "store_adapter_identifier": "sqlite",
       "store_capabilities": [
@@ -179,7 +179,7 @@
         "application_writes": {
           "aggregate_version": 1
         },
-        "failure_policy": "inject_post_commit_response_loss"
+        "failure_policy": "commit"
       },
       "store_adapter_identifier": "sqlite",
       "store_capabilities": [
