@@ -1,0 +1,134 @@
+{
+  "kind": "processing",
+  "body": {
+    "core_result": {
+      "core_step_result_format": "determa.core_step_result",
+      "core_step_result_schema_version": 1,
+      "status": "running",
+      "disposition": "handled",
+      "state": {
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "machine_format": 1,
+        "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+        "namespace": "conformance.committed_native_effects",
+        "root_machine_id": "workflow",
+        "root_machine_version": "1",
+        "root_instance_id": "effect-root-1",
+        "creation_id": "effect-create-1",
+        "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+        "migration_sequence": "0",
+        "next_logical_step_sequence": "2",
+        "next_output_sequence": "1",
+        "next_acceptance_sequence": "1",
+        "next_queue_sequence": "1",
+        "runtimes": [
+          {
+            "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+            "identity_origin": {
+              "kind": "root",
+              "definition": {
+                "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                "machine": {
+                  "namespace": "conformance.committed_native_effects",
+                  "machine_id": "workflow",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "root_instance_id": "effect-root-1"
+            },
+            "target_identity": {
+              "root": {
+                "root_instance_id": "effect-root-1",
+                "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+              }
+            },
+            "current_definition": {
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "machine": {
+                "namespace": "conformance.committed_native_effects",
+                "machine_id": "workflow",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "relation": {
+              "kind": "root"
+            },
+            "status": "running",
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root"
+            ],
+            "active_state_activations": [
+              {
+                "state_definition_pointer": "/machines/0/root",
+                "activation_sequence": "0"
+              }
+            ],
+            "variables": [],
+            "history": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              }
+            ],
+            "next_component_activation_sequences": [],
+            "fault": null,
+            "ready_mailbox": [],
+            "deferred_mailbox": []
+          }
+        ],
+        "aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb"
+      },
+      "emissions": [
+        {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "sequence": "0",
+          "event": "native_request",
+          "payload": [
+            "map",
+            [
+              [
+                "index",
+                [
+                  "integer",
+                  "0"
+                ]
+              ]
+            ]
+          ],
+          "correlation_id": "business-order-42"
+        }
+      ],
+      "lifecycle_dispositions": [],
+      "fault": null,
+      "rejection": null
+    },
+    "receipt": {
+      "operation_kind": "event_terminal",
+      "receipt_sequence": "2",
+      "event_id": "invoke-1",
+      "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+      "acceptance_sequence": "0",
+      "final_queue_sequence": "0",
+      "committed_revision": "2",
+      "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+      "outcome": {
+        "disposition": "handled",
+        "status": "running",
+        "fault": null,
+        "rejection": null
+      },
+      "emission_references": [
+        {
+          "kind": "external_outbox",
+          "emission_index": "0",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        }
+      ]
+    }
+  }
+}

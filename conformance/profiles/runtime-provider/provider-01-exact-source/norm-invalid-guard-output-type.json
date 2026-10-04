@@ -1,0 +1,120 @@
+{
+  "format": 1,
+  "namespace": "example.runtime_providers",
+  "events": {
+    "submit": {
+      "direction": "input",
+      "payload": {
+        "approved": {
+          "type": "bool",
+          "required": true
+        }
+      }
+    },
+    "accepted": {
+      "direction": "output"
+    }
+  },
+  "machines": [
+    {
+      "machine_id": "order",
+      "root": {
+        "type": "composite",
+        "variables": {
+          "accepted": {
+            "type": "bool",
+            "init": false
+          }
+        },
+        "initial": {
+          "transition_to": "pending"
+        },
+        "states": {
+          "pending": {
+            "on_events": {
+              "submit": [
+                {
+                  "guard": "event.payload.approved",
+                  "action": [
+                    {
+                      "assign": {
+                        "accepted": "true"
+                      }
+                    }
+                  ],
+                  "transition_to": "complete"
+                },
+                {
+                  "guard": {
+                    "provider": {
+                      "provider_reference": {
+                        "identifier": "example.native-review",
+                        "version": "1.0.0",
+                        "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                      },
+                      "source_media_type": "application/octet-stream",
+                      "source_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                      "dependencies": [],
+                      "capabilities": {
+                        "deterministic": false,
+                        "pure": false,
+                        "portable": false,
+                        "semantically_introspectable": false,
+                        "process_contained": false,
+                        "external_io_capable": true
+                      },
+                      "input_types": {
+                        "event": "event_envelope",
+                        "variables": "typed_variables"
+                      },
+                      "output_type": "structured_actions"
+                    }
+                  },
+                  "action": [
+                    {
+                      "provider_actions": {
+                        "provider_reference": {
+                          "identifier": "example.native-actions",
+                          "version": "1.0.0",
+                          "content_digest": "sha256:cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+                        },
+                        "source_media_type": "application/octet-stream",
+                        "source_digest": "sha256:dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+                        "dependencies": [],
+                        "capabilities": {
+                          "deterministic": false,
+                          "pure": false,
+                          "portable": false,
+                          "semantically_introspectable": false,
+                          "process_contained": false,
+                          "external_io_capable": true
+                        },
+                        "input_types": {
+                          "event": "event_envelope",
+                          "variables": "typed_variables"
+                        },
+                        "output_type": "structured_actions"
+                      }
+                    },
+                    {
+                      "send": {
+                        "event": "accepted",
+                        "to": {
+                          "external": true
+                        }
+                      }
+                    }
+                  ],
+                  "transition_to": "complete"
+                }
+              ]
+            }
+          },
+          "complete": {
+            "type": "final"
+          }
+        }
+      }
+    }
+  ]
+}

@@ -52,6 +52,9 @@ jobs:
       - name: Test durable-host relational validation
         run: python scripts/test_durable_host_validator.py
 
+      - name: Test application-projection relational validation
+        run: python scripts/test_application_projection_validator.py
+
       - name: Test version-1 substitution-free validation
         run: python scripts/test_version1_validator.py
 
@@ -66,6 +69,14 @@ jobs:
           python scripts/generate_extension_negotiation_profile.py
           --spec-root .determa-state-spec --check
 
+      - name: Check generated host authority fixtures
+        run: >-
+          python scripts/generate_host_authority_profile.py
+          --spec-root .determa-state-spec --check
+
+      - name: Test host authority relational validation
+        run: python scripts/test_host_authority_validator.py --spec-root .determa-state-spec
+
       - name: Install Rust provider test toolchain
         run: rustup toolchain install 1.86.0 --profile minimal
 
@@ -79,6 +90,8 @@ jobs:
       - name: Check generated durable-host fixtures
         run: python scripts/generate_execution_checkpoint_profile.py --check
 
+      - name: Check generated application-projection fixtures
+        run: python scripts/generate_application_projection_profile.py --check
       - name: Test inspection relational validation
         run: python scripts/test_inspection_validator.py
 
@@ -87,3 +100,29 @@ jobs:
 
       - name: Check generated optional inspection provider fixtures
         run: python scripts/generate_inspection_provider_profile.py --check
+
+      - name: Test exact runtime provider source and relational validation
+        run: >-
+          python scripts/test_runtime_provider_validator.py
+          --spec-root .determa-state-spec
+
+      - name: Check generated runtime provider fixtures
+        run: >-
+          python scripts/generate_runtime_provider_profile.py
+          --spec-root .determa-state-spec --check
+
+      - name: Check generated committed native effect fixtures
+        run: >-
+          python scripts/generate_committed_native_effects_profile.py
+          --spec-root .determa-state-spec --check
+
+      - name: Test committed native effect relational and adapter gates
+        run: >-
+          python scripts/test_committed_native_effects_validator.py
+          --spec-root .determa-state-spec
+
+      - name: Test Rust native effect handler source
+        run: >-
+          rustc --test
+          conformance/profiles/committed-native-effects/effect-01-result/handler/test_handler.rs
+          -o /tmp/determa-effect-handler-test && /tmp/determa-effect-handler-test

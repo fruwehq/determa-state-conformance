@@ -1,0 +1,89 @@
+{
+  "host_effect_journal_format": "determa.host_effect_journal",
+  "host_effect_journal_schema_version": 1,
+  "scope_identity": "effect-scope-1",
+  "root_instance_id": "effect-root-1",
+  "checkpoint_revision": "2",
+  "checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
+  "journal_revision": "2",
+  "effect_records": [
+    {
+      "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+      "operation_token": "business-order-42",
+      "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+      "handler_reference": {
+        "identifier": "conformance.native-effect-handler",
+        "version": "1.0.0",
+        "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+      },
+      "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+      "route_configuration_generation": "7",
+      "result_mapping": [
+        {
+          "outcome_kind": "succeeded",
+          "event": "native_succeeded",
+          "result_slot": "success",
+          "operation_token_location": {
+            "kind": "correlation_id"
+          }
+        },
+        {
+          "outcome_kind": "cancelled",
+          "event": "native_cancelled",
+          "result_slot": "cancelled",
+          "operation_token_location": {
+            "kind": "correlation_id"
+          }
+        }
+      ],
+      "target": {
+        "root_instance_id": "effect-root-1",
+        "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+        "runtime_incarnation": {
+          "kind": "root",
+          "definition": {
+            "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+            "machine": {
+              "namespace": "conformance.committed_native_effects",
+              "machine_id": "workflow",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "root_instance_id": "effect-root-1"
+        }
+      },
+      "idempotency_policy": "destination_deduplicates",
+      "attempt_fence": "0",
+      "attempt_records": [],
+      "invocation_state": "outcome_recorded",
+      "outcome": {
+        "kind": "cancelled",
+        "payload": [
+          "map",
+          []
+        ],
+        "digest": "sha256:0a6dbb14c62e2360dd459d47b446a11486f5e9d44cfd2c65d3e07abe83fc4afb",
+        "attempt_fence": "0"
+      },
+      "result_event_id": "sha256:2ce08b38cc758cee230e6bca9404de1306237539184b2ee539f653ef60620e7a",
+      "admission_receipt": null,
+      "cancellation": {
+        "operation_id": "cancel-1",
+        "reason": "operator_request",
+        "state": "prevented_start"
+      }
+    }
+  ],
+  "operation_response_references": [
+    {
+      "operation_id": "cancel-1",
+      "response_digest": "sha256:0cd134fb0efd283db37164624f412bfc85af6e84423926d889b799ea351409d5"
+    },
+    {
+      "operation_id": "produce-1",
+      "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+    }
+  ],
+  "host_effect_journal_digest": "sha256:01faca8788315d7c870d8ad29c8dc970c6974ac1ffeede1f5a6391efd99c2233"
+}

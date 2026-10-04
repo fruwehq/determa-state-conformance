@@ -61,6 +61,10 @@
     {
       "id": "persistence_failure",
       "description": "Closed decoder, resolver, migration, and persistence-policy failures."
+    },
+    {
+      "id": "projection_failure",
+      "description": "Closed projection-specific facade failures for selected application rows."
     }
   ],
   "entries": [
@@ -777,6 +781,36 @@
       "code": "unsupported_migration_descriptor_schema_version",
       "condition": "The selected descriptor decoder receives an unsupported descriptor schema version.",
       "source": "SPEC.md section 16.12"
+    },
+    {
+      "category": "projection_failure",
+      "code": "invalid_projection_input",
+      "condition": "A row-derived field is undeclared, invalidly typed, or incompatible with its declaration.",
+      "source": "SPEC.md section 20.3"
+    },
+    {
+      "category": "projection_failure",
+      "code": "invalid_projection_selection",
+      "condition": "Selected application rows are missing, ambiguous, or owned by another mapping or root.",
+      "source": "SPEC.md section 20.3"
+    },
+    {
+      "category": "projection_failure",
+      "code": "projection_not_lossless",
+      "condition": "The configured storage cannot exactly reconstruct a prior or proposed complete portable artifact.",
+      "source": "SPEC.md section 20.3"
+    },
+    {
+      "category": "projection_failure",
+      "code": "projection_transaction_unavailable",
+      "condition": "The requested native shared application and checkpoint transaction is not proved.",
+      "source": "SPEC.md section 20.3"
+    },
+    {
+      "category": "projection_failure",
+      "code": "unsupported_projection_boundary",
+      "condition": "A requested row value has no declared create, input, or external-refresh path.",
+      "source": "SPEC.md section 20.3"
     }
   ]
 }

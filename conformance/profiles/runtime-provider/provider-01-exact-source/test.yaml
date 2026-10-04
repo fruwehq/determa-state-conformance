@@ -1,0 +1,57 @@
+title: Exact runtime provider and compiler source profile
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+    - file: machine-safe.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: actions-descriptor.json
+      kind: json_value
+      valid: true
+    - file: guard-descriptor.json
+      kind: json_value
+      valid: true
+    - file: norm-action-output.json
+      kind: json_value
+      valid: true
+    - file: norm-compilation-manifest-v1.json
+      kind: json_value
+      valid: true
+    - file: norm-compiled-machine.json
+      kind: json_value
+      valid: true
+    - file: norm-guard-descriptor-v1.json
+      kind: json_value
+      valid: true
+    - file: norm-invalid-action-output.json
+      kind: json_value
+      valid: true
+    - file: norm-invalid-guard-output-type.json
+      kind: json_value
+      valid: true
+    - file: norm-invalid-provider-digest.json
+      kind: json_value
+      valid: true
+    - file: norm-language-source-v1.json
+      kind: json_value
+      valid: true
+    - file: provider-closure.json
+      kind: json_value
+      valid: true
+    - file: safe-actions-descriptor.json
+      kind: json_value
+      valid: true
+    - file: safe-guard-descriptor.json
+      kind: json_value
+      valid: true
+    - file: source-manifest.json
+      kind: json_value
+      valid: true
+    - file: source-package.json
+      kind: json_value
+      valid: true
+    - file: vectors.generated.json
+      kind: json_value
+      valid: true
