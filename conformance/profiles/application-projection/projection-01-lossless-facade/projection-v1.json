@@ -49,7 +49,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -64,7 +64,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -200,7 +200,7 @@
           "declaration": "integer",
           "value": [
             "integer",
-            "1"
+            "7"
           ]
         },
         "delivery": {
@@ -225,13 +225,13 @@
                   "amount",
                   [
                     "integer",
-                    "1"
+                    "7"
                   ]
                 ]
               ]
             ]
           },
-          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+          "envelope_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b"
         },
         "expected_checkpoint": {
           "root_instance_id": "complete-host-root",
@@ -250,7 +250,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -265,7 +265,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -380,13 +380,13 @@
                             "amount",
                             [
                               "integer",
-                              "1"
+                              "7"
                             ]
                           ]
                         ]
                       ]
                     },
-                    "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf",
+                    "envelope_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b",
                     "delivery_mode": "input",
                     "acceptance_sequence": "0",
                     "queue_sequence": "0",
@@ -396,7 +396,7 @@
                 "deferred_mailbox": []
               }
             ],
-            "aggregate_state_digest": "sha256:5b79586502b53c79a53aa41c2676bb93ee5c278f9354ccbf84f0105e69602956"
+            "aggregate_state_digest": "sha256:5ab488e94f31202dc65552f0cd9f55703393f799c042b004722390cc0b375deb"
           },
           "rejection": null
         },
@@ -433,7 +433,7 @@
         "expected_checkpoint": {
           "root_instance_id": "complete-host-root",
           "revision": "1",
-          "digest": "sha256:c5846378fc3dfd5f07e379ae5cb456cea9b0b901acf7d59aa1bf0438e7fd43fb"
+          "digest": "sha256:e948cb08cfdb8793de64ae0f27550d4b28bbb2c143633d540f1afc2f4fa77ed4"
         },
         "shared_transaction_requested": true,
         "shared_transaction_available": true,
@@ -447,7 +447,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -462,7 +462,7 @@
             "status": "done",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -543,7 +543,7 @@
                     "declaring_state_activation_sequence": "0",
                     "value": [
                       "integer",
-                      "1"
+                      "7"
                     ]
                   }
                 ],
@@ -561,7 +561,7 @@
                 "deferred_mailbox": []
               }
             ],
-            "aggregate_state_digest": "sha256:caaef4b16fb6fd67fa78bebdaeb11c554046aef5e583f2e29006887886c4d511"
+            "aggregate_state_digest": "sha256:f7b522d9d39b0529e727a46affd836190188879103b01916cb0988187d329f52"
           },
           "emissions": [],
           "lifecycle_dispositions": [],
@@ -681,7 +681,7 @@
           "declaration": "integer",
           "value": [
             "integer",
-            "1"
+            "7"
           ]
         },
         "delivery": null,
@@ -702,7 +702,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -717,7 +717,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -731,6 +731,124 @@
         "core_calls": 0,
         "committed": false
       }
+    },
+    {
+      "name": "equal_pending_delivery_replay",
+      "covers": "equal_pending_delivery_replay",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": {
+          "field": "amount",
+          "declaration": "integer",
+          "value": [
+            "integer",
+            "7"
+          ]
+        },
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "7"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "7"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "7"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "replay",
+        "code": null,
+        "result_value": {
+          "operation_kind": "acceptance",
+          "receipt_sequence": "1",
+          "event_id": "complete-increment",
+          "request_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b",
+          "acceptance_sequence": "0",
+          "accepted_revision": "1",
+          "delivery_mode": "input"
+        },
+        "core_calls": 0,
+        "committed": false
+      },
+      "replay_of": "typed_row_input_atomic_admit"
     },
     {
       "name": "equal_delivery_replay",
@@ -756,7 +874,14 @@
           "order-1"
         ],
         "boundary": "declared_input",
-        "mapped_input": null,
+        "mapped_input": {
+          "field": "amount",
+          "declaration": "integer",
+          "value": [
+            "integer",
+            "7"
+          ]
+        },
         "delivery": {
           "delivery_mode": "input",
           "envelope": {
@@ -779,13 +904,13 @@
                   "amount",
                   [
                     "integer",
-                    "1"
+                    "7"
                   ]
                 ]
               ]
             ]
           },
-          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+          "envelope_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b"
         },
         "expected_checkpoint": {
           "root_instance_id": "complete-host-root",
@@ -801,46 +926,58 @@
           {
             "row_id": "order-1",
             "root_instance_id": "complete-host-root",
-            "status": "pending",
+            "status": "done",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
-        "checkpoint": "accepted-checkpoint-v1.json",
-        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+        "checkpoint": "replay-migrated-checkpoint-v1.json",
+        "supplemental_checkpoint": "replay-migrated-checkpoint-v1.json"
       },
       "after": {
         "selected_rows": [
           {
             "row_id": "order-1",
             "root_instance_id": "complete-host-root",
-            "status": "pending",
+            "status": "done",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
-        "checkpoint": "accepted-checkpoint-v1.json",
-        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+        "checkpoint": "replay-migrated-checkpoint-v1.json",
+        "supplemental_checkpoint": "replay-migrated-checkpoint-v1.json"
       },
       "outcome": {
         "kind": "replay",
         "code": null,
         "result_value": {
-          "operation_kind": "acceptance",
-          "receipt_sequence": "1",
+          "operation_kind": "event_terminal",
+          "receipt_sequence": "2",
           "event_id": "complete-increment",
-          "request_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf",
+          "request_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b",
           "acceptance_sequence": "0",
-          "accepted_revision": "1",
-          "delivery_mode": "input"
+          "final_queue_sequence": "0",
+          "committed_revision": "2",
+          "resulting_aggregate_state_digest": "sha256:f7b522d9d39b0529e727a46affd836190188879103b01916cb0988187d329f52",
+          "outcome": {
+            "disposition": "handled",
+            "status": "running",
+            "fault": null,
+            "rejection": null
+          },
+          "emission_references": []
         },
         "core_calls": 0,
         "committed": false
-      }
+      },
+      "replay_of": "typed_row_input_atomic_admit",
+      "migration_source": "handled-checkpoint-v1.json",
+      "migration_descriptor": "replay-descriptor-v1.json",
+      "target_bundle": "replay-target.yaml"
     },
     {
       "name": "changed_identity_conflict_before_payload",
@@ -914,7 +1051,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -929,7 +1066,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -987,7 +1124,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1002,7 +1139,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1046,7 +1183,7 @@
         "expected_checkpoint": {
           "root_instance_id": "complete-host-root",
           "revision": "1",
-          "digest": "sha256:c5846378fc3dfd5f07e379ae5cb456cea9b0b901acf7d59aa1bf0438e7fd43fb"
+          "digest": "sha256:e948cb08cfdb8793de64ae0f27550d4b28bbb2c143633d540f1afc2f4fa77ed4"
         },
         "shared_transaction_requested": true,
         "shared_transaction_available": true,
@@ -1060,7 +1197,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1075,7 +1212,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1134,7 +1271,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1149,7 +1286,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1202,7 +1339,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "transaction_id": [
               "string",
@@ -1223,7 +1360,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "transaction_id": [
               "string",
@@ -1293,13 +1430,13 @@
                   "amount",
                   [
                     "integer",
-                    "1"
+                    "7"
                   ]
                 ]
               ]
             ]
           },
-          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+          "envelope_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b"
         },
         "expected_checkpoint": {
           "root_instance_id": "complete-host-root",
@@ -1318,7 +1455,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1333,7 +1470,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1395,13 +1532,13 @@
                   "amount",
                   [
                     "integer",
-                    "1"
+                    "7"
                   ]
                 ]
               ]
             ]
           },
-          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+          "envelope_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b"
         },
         "expected_checkpoint": {
           "root_instance_id": "complete-host-root",
@@ -1420,7 +1557,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1435,7 +1572,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1493,7 +1630,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1508,7 +1645,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ]
           }
         ],
@@ -1570,7 +1707,7 @@
             "target": {
               "root": {
                 "root_instance_id": "projection-env-success-root",
-                "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+                "root_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0"
               }
             },
             "payload": [
@@ -1601,12 +1738,12 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:8a1b520278c0f8ce38b2d57ee02d3ac031e0ba8b69951020969250245a0d80ea"
+          "envelope_digest": "sha256:27bb4c8830b962ce69fc00fc8a1c772f00faae5c40237eb2171e11bec70226cd"
         },
         "expected_checkpoint": {
           "root_instance_id": "projection-env-success-root",
           "revision": "0",
-          "digest": "sha256:3e7466b778faf0cb23f643452ccea5b427b91feb3da6354e8a6cadd7059dcedc"
+          "digest": "sha256:753b4f36f7fb0dff0526dc5358e405d4c9ea09cb3ee64066b44d54e717d5a845"
         },
         "shared_transaction_requested": true,
         "shared_transaction_available": true,
@@ -1620,7 +1757,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "token": [
               "string",
@@ -1643,7 +1780,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "token": [
               "string",
@@ -1668,13 +1805,13 @@
             "aggregate_state_format": "determa.aggregate_state",
             "aggregate_state_schema_version": 1,
             "machine_format": 1,
-            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
             "namespace": "conformance.application_projection_env",
             "root_machine_id": "refresh_all",
             "root_machine_version": "1",
             "root_instance_id": "projection-env-success-root",
             "creation_id": "projection-env-success-create",
-            "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+            "root_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0",
             "migration_sequence": "0",
             "next_logical_step_sequence": "1",
             "next_output_sequence": "0",
@@ -1682,11 +1819,11 @@
             "next_queue_sequence": "1",
             "runtimes": [
               {
-                "runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+                "runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0",
                 "identity_origin": {
                   "kind": "root",
                   "definition": {
-                    "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                    "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
                     "machine": {
                       "namespace": "conformance.application_projection_env",
                       "machine_id": "refresh_all",
@@ -1699,11 +1836,11 @@
                 "target_identity": {
                   "root": {
                     "root_instance_id": "projection-env-success-root",
-                    "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+                    "root_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0"
                   }
                 },
                 "current_definition": {
-                  "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
                   "machine": {
                     "namespace": "conformance.application_projection_env",
                     "machine_id": "refresh_all",
@@ -1764,7 +1901,7 @@
                       "target": {
                         "root": {
                           "root_instance_id": "projection-env-success-root",
-                          "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+                          "root_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0"
                         }
                       },
                       "payload": [
@@ -1795,7 +1932,7 @@
                         ]
                       ]
                     },
-                    "envelope_digest": "sha256:8a1b520278c0f8ce38b2d57ee02d3ac031e0ba8b69951020969250245a0d80ea",
+                    "envelope_digest": "sha256:27bb4c8830b962ce69fc00fc8a1c772f00faae5c40237eb2171e11bec70226cd",
                     "delivery_mode": "input",
                     "acceptance_sequence": "0",
                     "queue_sequence": "0",
@@ -1805,7 +1942,7 @@
                 "deferred_mailbox": []
               }
             ],
-            "aggregate_state_digest": "sha256:08cf34084c4e715707229f12cabb017b4b069bb5e16b2940ac6a9d9b7140e82b"
+            "aggregate_state_digest": "sha256:997ee8a284331113819f5f2a7f330def60c896adc44d015aa9e5d4cb3a38a78b"
           },
           "rejection": null
         },
@@ -1835,7 +1972,7 @@
           "supplemental_field": "supplemental_checkpoint"
         },
         "creation": null,
-        "target_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+        "target_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0",
         "selected_row_ids": [
           "order-1"
         ],
@@ -1845,7 +1982,7 @@
         "expected_checkpoint": {
           "root_instance_id": "projection-env-success-root",
           "revision": "1",
-          "digest": "sha256:569562358e32e5006f67e5323f3ecc6b58d3699b3460a4ea70843f9fbee1cae8"
+          "digest": "sha256:b93aaba0eb0b7949b6034df158724f9a57397cb0a5d0efd3d2f97e4c74ce7f08"
         },
         "shared_transaction_requested": true,
         "shared_transaction_available": true,
@@ -1859,7 +1996,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "token": [
               "string",
@@ -1882,7 +2019,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "token": [
               "string",
@@ -1909,13 +2046,13 @@
             "aggregate_state_format": "determa.aggregate_state",
             "aggregate_state_schema_version": 1,
             "machine_format": 1,
-            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
             "namespace": "conformance.application_projection_env",
             "root_machine_id": "refresh_all",
             "root_machine_version": "1",
             "root_instance_id": "projection-env-success-root",
             "creation_id": "projection-env-success-create",
-            "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+            "root_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0",
             "migration_sequence": "0",
             "next_logical_step_sequence": "2",
             "next_output_sequence": "0",
@@ -1923,11 +2060,11 @@
             "next_queue_sequence": "1",
             "runtimes": [
               {
-                "runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+                "runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0",
                 "identity_origin": {
                   "kind": "root",
                   "definition": {
-                    "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                    "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
                     "machine": {
                       "namespace": "conformance.application_projection_env",
                       "machine_id": "refresh_all",
@@ -1940,11 +2077,11 @@
                 "target_identity": {
                   "root": {
                     "root_instance_id": "projection-env-success-root",
-                    "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+                    "root_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0"
                   }
                 },
                 "current_definition": {
-                  "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
                   "machine": {
                     "namespace": "conformance.application_projection_env",
                     "machine_id": "refresh_all",
@@ -1997,7 +2134,7 @@
                 "deferred_mailbox": []
               }
             ],
-            "aggregate_state_digest": "sha256:5a26490eb5e6cd234ef28e41aecef0faafe9673600aa999a31dd891695f58d69"
+            "aggregate_state_digest": "sha256:2307d4079b2174f67d77bacb19459e38f57b23d65fd0fd7727906590fb8dc415"
           },
           "emissions": [],
           "lifecycle_dispositions": [],
@@ -2055,7 +2192,7 @@
             "target": {
               "root": {
                 "root_instance_id": "projection-env-fault-root",
-                "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+                "root_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5"
               }
             },
             "payload": [
@@ -2079,12 +2216,12 @@
               ]
             ]
           },
-          "envelope_digest": "sha256:45dc9f39b4b19888b2555328da779f6ae46a4b1a6479ec3fdfb284bf07149542"
+          "envelope_digest": "sha256:47191d5202f49aaa2190448659ddce6955ff4df21d018efc61f1cf156cc63219"
         },
         "expected_checkpoint": {
           "root_instance_id": "projection-env-fault-root",
           "revision": "0",
-          "digest": "sha256:858cecb7e89dda888f7228545d599695c7da1c04ff49a31b47f6807a70c2afbb"
+          "digest": "sha256:76a1dca5794fb251920d952e4f638ebffa00f26b5be8a2e6de062291826b39e6"
         },
         "shared_transaction_requested": true,
         "shared_transaction_available": true,
@@ -2098,7 +2235,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "token": [
               "string",
@@ -2121,7 +2258,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "token": [
               "string",
@@ -2146,13 +2283,13 @@
             "aggregate_state_format": "determa.aggregate_state",
             "aggregate_state_schema_version": 1,
             "machine_format": 1,
-            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
             "namespace": "conformance.application_projection_env",
             "root_machine_id": "refresh_only",
             "root_machine_version": "1",
             "root_instance_id": "projection-env-fault-root",
             "creation_id": "projection-env-fault-create",
-            "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+            "root_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
             "migration_sequence": "0",
             "next_logical_step_sequence": "1",
             "next_output_sequence": "0",
@@ -2160,11 +2297,11 @@
             "next_queue_sequence": "1",
             "runtimes": [
               {
-                "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+                "runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
                 "identity_origin": {
                   "kind": "root",
                   "definition": {
-                    "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                    "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
                     "machine": {
                       "namespace": "conformance.application_projection_env",
                       "machine_id": "refresh_only",
@@ -2177,11 +2314,11 @@
                 "target_identity": {
                   "root": {
                     "root_instance_id": "projection-env-fault-root",
-                    "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+                    "root_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5"
                   }
                 },
                 "current_definition": {
-                  "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
                   "machine": {
                     "namespace": "conformance.application_projection_env",
                     "machine_id": "refresh_only",
@@ -2242,7 +2379,7 @@
                       "target": {
                         "root": {
                           "root_instance_id": "projection-env-fault-root",
-                          "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+                          "root_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5"
                         }
                       },
                       "payload": [
@@ -2266,7 +2403,7 @@
                         ]
                       ]
                     },
-                    "envelope_digest": "sha256:45dc9f39b4b19888b2555328da779f6ae46a4b1a6479ec3fdfb284bf07149542",
+                    "envelope_digest": "sha256:47191d5202f49aaa2190448659ddce6955ff4df21d018efc61f1cf156cc63219",
                     "delivery_mode": "input",
                     "acceptance_sequence": "0",
                     "queue_sequence": "0",
@@ -2276,7 +2413,7 @@
                 "deferred_mailbox": []
               }
             ],
-            "aggregate_state_digest": "sha256:2c3af0754851579c46ce158c6650e903787de64e1e9d17abd4dc18b0d5c39d94"
+            "aggregate_state_digest": "sha256:30af22701ce7d3d73fedf289899d2898375d6f0c4540b57a87aa7fe4ab119ba6"
           },
           "rejection": null
         },
@@ -2306,7 +2443,7 @@
           "supplemental_field": "supplemental_checkpoint"
         },
         "creation": null,
-        "target_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+        "target_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
         "selected_row_ids": [
           "order-1"
         ],
@@ -2316,7 +2453,7 @@
         "expected_checkpoint": {
           "root_instance_id": "projection-env-fault-root",
           "revision": "1",
-          "digest": "sha256:6b32e82e3ad7f310689b02acbd024795a04e31067b38ff1bc1b4060f121c651f"
+          "digest": "sha256:44b6fed39fc2b8aa7d831566f0a6ac9a5557143dea72cadb286e26566327447e"
         },
         "shared_transaction_requested": true,
         "shared_transaction_available": true,
@@ -2330,7 +2467,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "token": [
               "string",
@@ -2353,7 +2490,7 @@
             "status": "pending",
             "amount": [
               "integer",
-              "1"
+              "7"
             ],
             "token": [
               "string",
@@ -2380,13 +2517,13 @@
             "aggregate_state_format": "determa.aggregate_state",
             "aggregate_state_schema_version": 1,
             "machine_format": 1,
-            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
             "namespace": "conformance.application_projection_env",
             "root_machine_id": "refresh_only",
             "root_machine_version": "1",
             "root_instance_id": "projection-env-fault-root",
             "creation_id": "projection-env-fault-create",
-            "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+            "root_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
             "migration_sequence": "0",
             "next_logical_step_sequence": "2",
             "next_output_sequence": "0",
@@ -2394,11 +2531,11 @@
             "next_queue_sequence": "1",
             "runtimes": [
               {
-                "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+                "runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
                 "identity_origin": {
                   "kind": "root",
                   "definition": {
-                    "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                    "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
                     "machine": {
                       "namespace": "conformance.application_projection_env",
                       "machine_id": "refresh_only",
@@ -2411,11 +2548,11 @@
                 "target_identity": {
                   "root": {
                     "root_instance_id": "projection-env-fault-root",
-                    "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+                    "root_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5"
                   }
                 },
                 "current_definition": {
-                  "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
                   "machine": {
                     "namespace": "conformance.application_projection_env",
                     "machine_id": "refresh_only",
@@ -2464,8 +2601,8 @@
                 ],
                 "next_component_activation_sequences": [],
                 "fault": {
-                  "definition_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
-                  "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+                  "definition_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+                  "runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
                   "cause_id": "projection-env-fault-event",
                   "code": "action_fault",
                   "step_sequence": "1",
@@ -2475,18 +2612,437 @@
                 "deferred_mailbox": []
               }
             ],
-            "aggregate_state_digest": "sha256:b2a65b0c9a4352fcb9fb0122bb69b09bb72be7362b026e0df4d03f2fbc30b883"
+            "aggregate_state_digest": "sha256:0e710a7b39eae5c3837ee74bbc950c6d75bc1c29ec43c692733d10596ecafd37"
           },
           "emissions": [],
           "lifecycle_dispositions": [],
           "fault": {
-            "definition_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
-            "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+            "definition_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+            "runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
             "cause_id": "projection-env-fault-event",
             "code": "action_fault",
             "step_sequence": "1",
             "source_locator": "/machines/1/root/on_events/env/action/0/refresh/only/0"
           },
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    },
+    {
+      "name": "env_integer_admission",
+      "covers": "env_integer_admission",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "projection-env-integer-root",
+        "mapping": {
+          "mapping_id": "external-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_fields": [
+            "amount"
+          ],
+          "target": "env.changed",
+          "declarations": [
+            "integer"
+          ],
+          "supplemental_field": "supplemental_checkpoint"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "external_refresh",
+        "mapped_input": {
+          "field": "amount",
+          "declaration": "integer",
+          "value": [
+            "integer",
+            "7"
+          ]
+        },
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "env",
+            "event_id": "projection-env-integer-event",
+            "cause_id": "projection-env-integer-event",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "projection-env-integer-root",
+                "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "changed",
+                  [
+                    "map",
+                    [
+                      [
+                        "amount",
+                        [
+                          "integer",
+                          "7"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:cd09f47b3efa861c5416ed33492c58aec6d7150afc546fddb496709a5dac9688"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "projection-env-integer-root",
+          "revision": "0",
+          "digest": "sha256:e65fb3470ac698f4f93a48657517d9f5f7c11906c7dc2de66cc85eebc23c03f1"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-integer-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "7"
+            ]
+          }
+        ],
+        "checkpoint": "env-integer-created-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-integer-created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-integer-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "7"
+            ]
+          }
+        ],
+        "checkpoint": "env-integer-accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-integer-accepted-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "status": "running",
+          "accepted": true,
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+            "namespace": "conformance.application_projection_env",
+            "root_machine_id": "refresh_integer",
+            "root_machine_version": "1",
+            "root_instance_id": "projection-env-integer-root",
+            "creation_id": "projection-env-integer-create",
+            "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "1",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+                    "machine": {
+                      "namespace": "conformance.application_projection_env",
+                      "machine_id": "refresh_integer",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/2/root"
+                    }
+                  },
+                  "root_instance_id": "projection-env-integer-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "projection-env-integer-root",
+                    "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+                  "machine": {
+                    "namespace": "conformance.application_projection_env",
+                    "machine_id": "refresh_integer",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/2/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/2/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/2/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/2/root/variables/amount",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "integer",
+                      "0"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/2/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [
+                  {
+                    "envelope": {
+                      "event": "env",
+                      "event_id": "projection-env-integer-event",
+                      "cause_id": "projection-env-integer-event",
+                      "source": {
+                        "host": true
+                      },
+                      "target": {
+                        "root": {
+                          "root_instance_id": "projection-env-integer-root",
+                          "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432"
+                        }
+                      },
+                      "payload": [
+                        "map",
+                        [
+                          [
+                            "changed",
+                            [
+                              "map",
+                              [
+                                [
+                                  "amount",
+                                  [
+                                    "integer",
+                                    "7"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    },
+                    "envelope_digest": "sha256:cd09f47b3efa861c5416ed33492c58aec6d7150afc546fddb496709a5dac9688",
+                    "delivery_mode": "input",
+                    "acceptance_sequence": "0",
+                    "queue_sequence": "0",
+                    "deferral_count": "0"
+                  }
+                ],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:8553b40e4ebe95a2a358170a3ddcc55d70e84d887fcb069adec40ddafebb205f"
+          },
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    },
+    {
+      "name": "env_integer_step",
+      "covers": "env_integer_step",
+      "request": {
+        "operation": "step",
+        "root_instance_id": "projection-env-integer-root",
+        "mapping": {
+          "mapping_id": "external-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_fields": [
+            "amount"
+          ],
+          "target": "env.changed",
+          "declarations": [
+            "integer"
+          ],
+          "supplemental_field": "supplemental_checkpoint"
+        },
+        "creation": null,
+        "target_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "external_refresh",
+        "mapped_input": null,
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "projection-env-integer-root",
+          "revision": "1",
+          "digest": "sha256:b9610fbd0e5bdf9341ad34ed4e3601e7ad3505f3809760d29afff59df3d941f4"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-integer-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "7"
+            ]
+          }
+        ],
+        "checkpoint": "env-integer-accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-integer-accepted-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-integer-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "7"
+            ]
+          }
+        ],
+        "checkpoint": "env-integer-processed-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-integer-processed-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "core_step_result_format": "determa.core_step_result",
+          "core_step_result_schema_version": 1,
+          "status": "running",
+          "disposition": "handled",
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+            "namespace": "conformance.application_projection_env",
+            "root_machine_id": "refresh_integer",
+            "root_machine_version": "1",
+            "root_instance_id": "projection-env-integer-root",
+            "creation_id": "projection-env-integer-create",
+            "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "2",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+                    "machine": {
+                      "namespace": "conformance.application_projection_env",
+                      "machine_id": "refresh_integer",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/2/root"
+                    }
+                  },
+                  "root_instance_id": "projection-env-integer-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "projection-env-integer-root",
+                    "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+                  "machine": {
+                    "namespace": "conformance.application_projection_env",
+                    "machine_id": "refresh_integer",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/2/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/2/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/2/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/2/root/variables/amount",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "integer",
+                      "7"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/2/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:8fa67ca4e561f92d6a9d37ef63df34bb17e56f128e6cae70876eb472b91a11a0"
+          },
+          "emissions": [],
+          "lifecycle_dispositions": [],
+          "fault": null,
           "rejection": null
         },
         "core_calls": 1,

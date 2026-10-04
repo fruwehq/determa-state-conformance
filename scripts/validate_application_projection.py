@@ -4,13 +4,16 @@ from __future__ import annotations
 from pathlib import Path
 
 from validate_conformance import (
-    ValidationFailure, analyze_artifact, canonical_json_bytes, hash_value,
+    ValidationFailure, aggregate_shape_fingerprint_for_path, analyze_artifact,
+    canonical_json_bytes, hash_value, normalized_bundle_value, validated_bundle_fingerprint,
 )
 
 REQUIRED = frozenset({
     'create_result_shape', 'typed_row_input_atomic_admit', 'step_preserves_complete_result',
     'row_float_to_integer_rejected', 'undeclared_row_field_rejected',
-    'equal_delivery_replay', 'changed_identity_conflict_before_payload',
+    'equal_pending_delivery_replay', 'equal_delivery_replay',
+    'env_integer_admission', 'env_integer_step',
+    'changed_identity_conflict_before_payload',
     'direct_state_edit_unsupported', 'enum_only_prior_unrepresentable',
     'proposed_supplement_truncation', 'wrong_root_row_selection',
     'shared_transaction_unavailable', 'stale_revision_rolls_back_rows',
@@ -35,8 +38,9 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
         'accepted-checkpoint-v1.json', 'handled-checkpoint-v1.json',
         'deferral-before-aggregate-v1.json', 'deferral-candidate-aggregate-v1.json',
         'deferral-candidate-result-v1.json', 'outbox-pending-checkpoint-v1.json',
+        'replay-migrated-checkpoint-v1.json', 'replay-descriptor-v1.json',
         *{f'env-{mode}-{stage}-checkpoint-v1.json'
-          for mode in ('success', 'fault') for stage in ('created', 'accepted', 'processed')}
+          for mode in ('success', 'fault', 'integer') for stage in ('created', 'accepted', 'processed')}
     }
     if {path.name for path in artifact_paths} != expected_files:
         fail(case.name, 'closed artifact manifest differs')
@@ -58,20 +62,36 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
             fail(name, 'unmanifested checkpoint reference')
         return artifacts[filename]
 
+    def first_committed_admission(index: int, request: dict, name: str) -> dict:
+        delivery = request.get('delivery')
+        if delivery is None:
+            fail(name, 'replay or conflict lacks an immutable caller delivery')
+        earlier = [candidate for candidate in vectors[:index]
+                   if candidate['outcome']['kind'] == 'result'
+                   and candidate['outcome']['committed']
+                   and candidate['request']['operation'] == 'admit'
+                   and candidate['request']['root_instance_id'] == request['root_instance_id']
+                   and candidate['request']['delivery'] is not None
+                   and candidate['request']['delivery']['envelope']['event_id']
+                       == delivery['envelope']['event_id']]
+        if not earlier:
+            fail(name, 'no earlier committed admission for retained identity')
+        return earlier[0]
+
     def identity(value: dict | None) -> dict | None:
         if value is None:
             return None
         return {'root_instance_id': value['root_instance_id'], 'revision': value['revision'],
                 'digest': value['execution_checkpoint_digest']}
 
-    for vector in vectors:
+    for vector_index, vector in enumerate(vectors):
         name = vector['name']
         request = vector['request']
         before = vector['before']
         after = vector['after']
         outcome = vector['outcome']
-        env_mapping = request['mapping']['mapping_id'] == 'external-token-region-v1'
-        if request['mapping']['mapping_id'] not in {'order-amount-v1', 'external-token-region-v1', 'transaction-deferral-v1'}:
+        env_mapping = request['mapping']['mapping_id'] in {'external-token-region-v1', 'external-amount-v1'}
+        if request['mapping']['mapping_id'] not in {'order-amount-v1', 'external-token-region-v1', 'external-amount-v1', 'transaction-deferral-v1'}:
             fail(name, 'unknown mapping identity')
         if name.startswith('env_') != env_mapping:
             fail(name, 'projection mapping and selected definition differ')
@@ -164,21 +184,19 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
         elif name in {'row_float_to_integer_rejected', 'undeclared_row_field_rejected'}:
             if mapped is None or (mapped['value'][0] == mapped['declaration'] and mapped['field'] == 'amount'):
                 fail(name, 'row-derived input is actually valid')
-        elif name == 'equal_delivery_replay':
-            if before_checkpoint is None or delivery is None or request['expected_checkpoint'] == identity(before_checkpoint):
-                fail(name, 'replay lacks historical caller identity')
-            receipts = before_checkpoint['operation_receipts']
-            if not any(receipt.get('event_id') == delivery['envelope']['event_id'] for receipt in receipts):
-                fail(name, 'replay lacks retained event identity')
-            if outcome['result_value'] != next(
-                receipt for receipt in receipts if receipt.get('event_id') == delivery['envelope']['event_id']
-            ):
-                fail(name, 'replay return differs from exact retained receipt')
         elif name == 'changed_identity_conflict_before_payload':
-            if before_checkpoint is None or delivery is None or delivery['envelope']['payload'][1][0][1][0] != 'float':
-                fail(name, 'conflict payload is not type changed')
-            if not any(receipt.get('event_id') == delivery['envelope']['event_id'] for receipt in before_checkpoint['operation_receipts']):
-                fail(name, 'conflict lacks retained event identity')
+            original = first_committed_admission(vector_index, request, name)['request']
+            original_delivery = original['delivery']
+            if (before_checkpoint is None or delivery is None or original_delivery is None
+                    or request['expected_checkpoint'] != original['expected_checkpoint']
+                    or delivery['envelope']['event_id'] != original_delivery['envelope']['event_id']
+                    or delivery['envelope_digest'] == original_delivery['envelope_digest']
+                    or delivery['envelope']['payload'][1][0][1][0] != 'float'):
+                fail(name, 'conflict is not a changed retained delivery from the original caller')
+            retained = [receipt for receipt in before_checkpoint['operation_receipts']
+                        if receipt.get('event_id') == delivery['envelope']['event_id']]
+            if not retained or any(receipt['request_digest'] == delivery['envelope_digest'] for receipt in retained):
+                fail(name, 'conflict digest does not differ from retained event identity')
         elif name == 'direct_state_edit_unsupported':
             if request['boundary'] != 'direct_state_write':
                 fail(name, 'unsupported state edit boundary absent')
@@ -233,7 +251,10 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
                             for v in before_checkpoint['root_record']['aggregate_state']['runtimes'][0]['variables']}
                 updated = {v['variable_declaration_pointer'].rsplit('/',1)[-1]: v['value']
                            for v in after_checkpoint['root_record']['aggregate_state']['runtimes'][0]['variables']}
-                if name == 'env_success_step':
+                if name == 'env_integer_step':
+                    if previous != {'amount': ['integer', '0']} or updated != {'amount': ['integer', '7']} or outcome['result_value']['disposition'] != 'handled':
+                        fail(name, 'integer env refresh did not apply selected typed amount')
+                elif name == 'env_success_step':
                     if previous != {'token': ['string','old'], 'region': ['string','east']} or updated != {
                         'token': ['string','new'], 'region': ['string','west']
                     } or outcome['result_value']['disposition'] != 'handled':
@@ -246,6 +267,85 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
                         fail(name, 'facade fault return differs from committed fault')
                 if before['selected_rows'] != after['selected_rows']:
                     fail(name, 'env step committed a source row change')
+        if outcome['kind'] == 'replay':
+            original = first_committed_admission(vector_index, request, name)
+            original_request = original['request']
+            if (vector.get('replay_of') != original['name'] or original['outcome']['kind'] != 'result'
+                    or not original['outcome']['committed'] or before_checkpoint is None
+                    or canonical_json_bytes(request) != canonical_json_bytes(original_request)):
+                fail(name, 'replay changed the original complete caller request')
+            first_checkpoint = checkpoint(original['after']['checkpoint'], name)
+            first_before = checkpoint(original['before']['checkpoint'], name)
+            if (first_checkpoint is None or first_before is None
+                    or request['expected_checkpoint'] != identity(first_before)
+                    or request['delivery'] is None):
+                fail(name, 'replay lost its historical CAS and committed first witness')
+            event_id = request['delivery']['envelope']['event_id']
+            envelope_digest = request['delivery']['envelope_digest']
+            first_receipts = [item for item in first_checkpoint['operation_receipts']
+                              if item.get('event_id') == event_id and item['operation_kind'] == 'acceptance']
+            current_receipts = [item for item in before_checkpoint['operation_receipts']
+                                if item.get('event_id') == event_id]
+            if (len(first_receipts) != 1 or first_receipts[0]['request_digest'] != envelope_digest
+                    or not current_receipts or any(item['request_digest'] != envelope_digest
+                                                   for item in current_receipts)):
+                fail(name, 'replay envelope digest differs from retained original identity')
+            terminal = [item for item in current_receipts if item['operation_kind'] == 'event_terminal']
+            acceptance = [item for item in current_receipts if item['operation_kind'] == 'acceptance']
+            expected_receipt = terminal[0] if len(terminal) == 1 else acceptance[0] if len(acceptance) == 1 else None
+            if expected_receipt is None or outcome['result_value'] != expected_receipt:
+                fail(name, 'replay return differs from the applicable retained receipt')
+            if name == 'equal_delivery_replay':
+                source = checkpoint(vector.get('migration_source'), name)
+                descriptor = artifacts.get(vector.get('migration_descriptor'))
+                target_name = vector.get('target_bundle')
+                if (source is None or descriptor is None or target_name != 'replay-target.yaml'
+                        or len(terminal) != 1 or len(before_checkpoint['migration_audit_records']) != 1
+                        or before_checkpoint['operation_receipts'][:len(source['operation_receipts'])]
+                        != source['operation_receipts']):
+                    fail(name, 'completed replay lacks migration and terminal provenance')
+                source_path = case / 'machine.yaml'
+                target_path = case / target_name
+                source_definition = normalized_bundle_value(source_path)
+                target_definition = normalized_bundle_value(target_path)
+                source_fingerprint = validated_bundle_fingerprint(source_path)
+                target_fingerprint = validated_bundle_fingerprint(target_path)
+                descriptor_content = {key: value for key, value in descriptor.items()
+                                      if key != 'migration_descriptor_digest'}
+                if (source_definition['events']['increment']['payload']['amount']['type'] != 'int'
+                        or target_definition['events']['increment']['payload']['amount']['type'] != 'float'
+                        or request['delivery']['envelope']['payload'] != ['map', [['amount', ['integer', '7']]]]
+                        or source['root_record']['aggregate_state']['validated_bundle_fingerprint'] != source_fingerprint
+                        or before_checkpoint['root_record']['aggregate_state']['validated_bundle_fingerprint'] != target_fingerprint
+                        or descriptor['source_validated_bundle_fingerprint'] != source_fingerprint
+                        or descriptor['target_validated_bundle_fingerprint'] != target_fingerprint
+                        or descriptor['source_aggregate_shape_fingerprint'] != aggregate_shape_fingerprint_for_path(source_path)
+                        or descriptor['target_aggregate_shape_fingerprint'] != aggregate_shape_fingerprint_for_path(target_path)
+                        or descriptor['migration_descriptor_digest'] != hash_value(['determa-migration-descriptor-1', descriptor_content])
+                        or before_checkpoint['revision'] != str(int(source['revision']) + 1)):
+                    fail(name, 'current declaration is not a proved changed target')
+                audit = before_checkpoint['migration_audit_records'][0]
+                migration_receipt = before_checkpoint['operation_receipts'][-1]
+                migration_digest = hash_value([
+                    'determa-maintenance-migration-request-digest-1', '1',
+                    source['root_instance_id'], migration_receipt['operation_id'],
+                    source['root_record']['aggregate_state']['aggregate_state_digest'],
+                    target_fingerprint, [descriptor['migration_descriptor_digest']], True,
+                ])
+                if (audit['migration_descriptor_digest'] != descriptor['migration_descriptor_digest']
+                        or audit['source_aggregate_state_digest'] != source['root_record']['aggregate_state']['aggregate_state_digest']
+                        or audit['target_aggregate_state_digest'] != before_checkpoint['root_record']['aggregate_state']['aggregate_state_digest']
+                        or audit['migration_sequence'] != before_checkpoint['root_record']['aggregate_state']['migration_sequence']
+                        or audit['source_validated_bundle_fingerprint'] != source_fingerprint
+                        or audit['target_validated_bundle_fingerprint'] != target_fingerprint
+                        or migration_receipt['operation_kind'] != 'maintenance_migration'
+                        or migration_receipt['request_digest'] != migration_digest):
+                    fail(name, 'migration audit does not bind old receipt to current definition')
+            elif name == 'equal_pending_delivery_replay':
+                if terminal or before_checkpoint != first_checkpoint:
+                    fail(name, 'pending replay has terminal or changed checkpoint evidence')
+            else:
+                fail(name, 'unrecognized replay coverage')
         expected_code = {
             'row_float_to_integer_rejected': 'invalid_projection_input',
             'undeclared_row_field_rejected': 'invalid_projection_input',
@@ -260,6 +360,11 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
         }.get(name)
         if outcome['code'] != expected_code:
             fail(name, 'failure code does not match trigger')
+        expected_failure_calls = {
+            'proposed_supplement_truncation': 1, 'stale_revision_rolls_back_rows': 1,
+        }
+        if outcome['kind'] == 'failure' and outcome['core_calls'] != expected_failure_calls.get(name, 0):
+            fail(name, 'failure core-call count violates pre-core or post-evaluation boundary')
         if outcome['kind'] == 'result' and request['expected_checkpoint'] != identity(before_checkpoint):
             fail(name, 'committed result did not read exact prior checkpoint')
         if outcome['kind'] == 'result':

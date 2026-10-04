@@ -21,3 +21,12 @@ machines:
         env:
           action:
             - refresh: { only: [token] }
+  - machine_id: refresh_integer
+    version: 1
+    root:
+      variables:
+        amount: { type: int, external: true }
+      on_events:
+        env:
+          action:
+            - refresh: {}

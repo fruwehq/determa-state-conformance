@@ -9,13 +9,13 @@
       "aggregate_state_format": "determa.aggregate_state",
       "aggregate_state_schema_version": 1,
       "machine_format": 1,
-      "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+      "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
       "namespace": "conformance.application_projection_env",
       "root_machine_id": "refresh_all",
       "root_machine_version": "1",
       "root_instance_id": "projection-env-success-root",
       "creation_id": "projection-env-success-create",
-      "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+      "root_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0",
       "migration_sequence": "0",
       "next_logical_step_sequence": "1",
       "next_output_sequence": "0",
@@ -23,11 +23,11 @@
       "next_queue_sequence": "0",
       "runtimes": [
         {
-          "runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+          "runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0",
           "identity_origin": {
             "kind": "root",
             "definition": {
-              "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+              "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
               "machine": {
                 "namespace": "conformance.application_projection_env",
                 "machine_id": "refresh_all",
@@ -40,11 +40,11 @@
           "target_identity": {
             "root": {
               "root_instance_id": "projection-env-success-root",
-              "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+              "root_runtime_id": "sha256:a81a53d88c3cdf6fbff139b4d747fc48ae3c9a0b3d6bbfb488a8f74d03aa96c0"
             }
           },
           "current_definition": {
-            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
             "machine": {
               "namespace": "conformance.application_projection_env",
               "machine_id": "refresh_all",
@@ -97,7 +97,7 @@
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:60ac022276588421bac7751a49cb96acccf7956066d8a075787fef88674367c2"
+      "aggregate_state_digest": "sha256:3e9c08cea019807bea307b3aa6ceeb4ca94051a8e0900c9f185c750479355dbd"
     }
   },
   "operation_receipts": [
@@ -105,9 +105,9 @@
       "operation_kind": "creation",
       "receipt_sequence": "0",
       "creation_id": "projection-env-success-create",
-      "request_digest": "sha256:275d44b60edb46bf257cd3f38f24b591452df38a7224cdd1867d3d0538d5b409",
+      "request_digest": "sha256:a6ab3e24c94e1daa4347c04dbd8f1d237474647ba6fcf73f8244f5c4679ee8b5",
       "committed_revision": "0",
-      "resulting_aggregate_state_digest": "sha256:60ac022276588421bac7751a49cb96acccf7956066d8a075787fef88674367c2",
+      "resulting_aggregate_state_digest": "sha256:3e9c08cea019807bea307b3aa6ceeb4ca94051a8e0900c9f185c750479355dbd",
       "status": "running",
       "fault": null,
       "emission_references": []
@@ -126,5 +126,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:3e7466b778faf0cb23f643452ccea5b427b91feb3da6354e8a6cadd7059dcedc"
+  "execution_checkpoint_digest": "sha256:753b4f36f7fb0dff0526dc5358e405d4c9ea09cb3ee64066b44d54e717d5a845"
 }

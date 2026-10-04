@@ -8,8 +8,13 @@ import json
 import tempfile
 from pathlib import Path
 
-from generate_version1_vectors import digest, native_v1_checkpoint, seal_aggregate, seal_checkpoint
-from generate_execution_checkpoint_profile import admit, envelope_for
+from generate_version1_vectors import (
+    aggregate_shape_fingerprint_document, bundle_binding, bundle_fingerprint_document,
+    commit_v1_maintenance_migration, digest, load_yaml, maintenance_request_digest,
+    migrate_compatible_aggregate, native_v1_checkpoint, seal_aggregate, seal_checkpoint,
+    v1_migration_audit_record,
+)
+from generate_execution_checkpoint_profile import admit, envelope_for, process
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'conformance/profiles/execution-checkpoint/checkpoint-07-complete-host-contract'
@@ -39,6 +44,15 @@ machines:
         env:
           action:
             - refresh: { only: [token] }
+  - machine_id: refresh_integer
+    version: 1
+    root:
+      variables:
+        amount: { type: int, external: true }
+      on_events:
+        env:
+          action:
+            - refresh: {}
 """
 
 
@@ -108,8 +122,47 @@ def build() -> dict[str, bytes]:
         name: json.loads((SOURCE / name).read_bytes())
         for name in ('created-checkpoint-v1.json', 'accepted-checkpoint-v1.json', 'handled-checkpoint-v1.json')
     }
-    source_inputs = json.loads((SOURCE / 'inputs-v1.json').read_bytes())['requests']
+    checkpoints['accepted-checkpoint-v1.json'] = admit(
+        checkpoints['created-checkpoint-v1.json'], 'increment', 'complete-increment', {'amount': 7}
+    )
+    checkpoints['handled-checkpoint-v1.json'] = process(checkpoints['accepted-checkpoint-v1.json'])
     source_responses = json.loads((SOURCE / 'responses-v1.json').read_bytes())['responses']
+    source_bundle = load_yaml(SOURCE / 'machine.yaml')
+    target_bundle = copy.deepcopy(source_bundle)
+    target_bundle['events']['increment']['payload']['amount']['type'] = 'float'
+    target_bundle['machines'][0]['root']['on_events']['increment']['action'][0]['assign']['count'] = 'count + 1'
+    target_bundle_bytes = render(target_bundle)
+    source_fingerprint = checkpoints['handled-checkpoint-v1.json']['root_record']['aggregate_state']['validated_bundle_fingerprint']
+    target_fingerprint = bundle_fingerprint_document(target_bundle)
+    shape_before = aggregate_shape_fingerprint_document(source_bundle)
+    shape_after = aggregate_shape_fingerprint_document(target_bundle)
+    if shape_before != shape_after:
+        raise RuntimeError('replay target changed aggregate shape')
+    descriptor = json.loads((ROOT / 'conformance/profiles/execution-checkpoint/checkpoint-04-version1-mailboxes/maintenance-descriptor-one.json').read_bytes())
+    descriptor['source_validated_bundle_fingerprint'] = source_fingerprint
+    descriptor['target_validated_bundle_fingerprint'] = target_fingerprint
+    descriptor['source_aggregate_shape_fingerprint'] = shape_before
+    descriptor['target_aggregate_shape_fingerprint'] = shape_after
+    descriptor.pop('migration_descriptor_digest')
+    descriptor['migration_descriptor_digest'] = digest(['determa-migration-descriptor-1', descriptor])
+    migration_source = checkpoints['handled-checkpoint-v1.json']
+    migration_source_aggregate = migration_source['root_record']['aggregate_state']
+    migration_target_aggregate = migrate_compatible_aggregate(migration_source_aggregate, descriptor)
+    audit = v1_migration_audit_record(migration_source_aggregate, migration_target_aggregate, descriptor)
+    migration_id = 'projection-declaration-change'
+    operation = {
+        'operation_id': migration_id,
+        'target_bundle': {'validated_bundle_fingerprint': target_fingerprint},
+        'request_digest': maintenance_request_digest(
+            migration_source['root_instance_id'], migration_id,
+            migration_source_aggregate['aggregate_state_digest'], target_fingerprint,
+            [descriptor['migration_descriptor_digest']], True,
+        ),
+    }
+    migrated, _ = commit_v1_maintenance_migration(
+        migration_source, operation, migration_target_aggregate, [audit]
+    )
+    checkpoints['replay-migrated-checkpoint-v1.json'] = migrated
     with tempfile.TemporaryDirectory() as temporary:
         env_bundle = Path(temporary) / 'external-machine.yaml'
         env_bundle.write_text(ENV_MACHINE)
@@ -117,12 +170,15 @@ def build() -> dict[str, bytes]:
         for slug, machine, payload, faulted in (
             ('success', 'refresh_all', {'token': 'new', 'region': 'west'}, False),
             ('fault', 'refresh_only', {'region': 'west'}, True),
+            ('integer', 'refresh_integer', {'amount': 7}, False),
         ):
             env_root = f'projection-env-{slug}-root'
             creation = {
                 'machine_id': machine, 'machine_version': '1',
                 'root_instance_id': env_root, 'creation_id': f'projection-env-{slug}-create',
-                'bindings': {'input': {}, 'external': {'token': 'old', 'region': 'east'}},
+                'bindings': {'input': {}, 'external': (
+                    {'amount': 0} if slug == 'integer' else {'token': 'old', 'region': 'east'}
+                )},
             }
             initial = native_v1_checkpoint(env_bundle, creation)
             admitted = admit(initial, 'env', f'projection-env-{slug}-event', {'changed': payload})
@@ -138,13 +194,16 @@ def build() -> dict[str, bytes]:
     pending_outbox = json.loads((OUTBOX_SOURCE / 'pending-checkpoint-v1.json').read_bytes())
     checkpoints['outbox-pending-checkpoint-v1.json'] = pending_outbox
     root = checkpoints['created-checkpoint-v1.json']['root_instance_id']
-    envelope = source_inputs['concurrent_winner']['envelopes'][0]
+    envelope_value, envelope_digest = envelope_for(
+        checkpoints['created-checkpoint-v1.json'], 'increment', 'complete-increment', {'amount': 7}
+    )
+    envelope = {'delivery_mode': 'input', 'envelope': envelope_value, 'envelope_digest': envelope_digest}
     selected = 'order-1'
 
     def row(checkpoint: str | None, *, owner: str = root, amount: list | None = None,
             status: str = 'pending', token: str | None = None, region: str | None = None) -> dict:
         result = {'row_id': selected, 'root_instance_id': owner, 'status': status,
-                  'amount': amount or ['integer', '1']}
+                  'amount': amount or ['integer', '7']}
         if token is not None:
             result['token'] = ['string', token]
         if region is not None:
@@ -188,13 +247,19 @@ def build() -> dict[str, bytes]:
                     'source_field': 'transaction_id', 'input_event': 'new_request',
                     'input_payload_field': 'transaction_id', 'input_declaration': 'string',
                     'supplemental_field': 'supplemental_aggregate'
-                } if mapping == 'transaction-deferral-v1' else {
+                } if mapping == 'transaction-deferral-v1' else ({
+                    'mapping_id': 'external-amount-v1',
+                    'row_id_field': 'row_id', 'root_identity_field': 'root_instance_id',
+                    'source_fields': ['amount'], 'target': 'env.changed',
+                    'declarations': ['integer'],
+                    'supplemental_field': 'supplemental_checkpoint'
+                } if mapping == 'external-amount-v1' else {
                     'mapping_id': 'external-token-region-v1',
                     'row_id_field': 'row_id', 'root_identity_field': 'root_instance_id',
                     'source_fields': ['region', 'token'], 'target': 'env.changed',
                     'declarations': ['string', 'string'],
                     'supplemental_field': 'supplemental_checkpoint'
-                })), 'creation': creation,
+                }))), 'creation': creation,
                 'target_runtime_id': target_runtime_id,
                 'selected_row_ids': selected_ids or [selected], 'boundary': boundary,
                 'mapped_input': mapped, 'delivery': delivery,
@@ -202,15 +267,16 @@ def build() -> dict[str, bytes]:
                 'shared_transaction_requested': shared_requested,
                 'shared_transaction_available': shared_available, 'supplemental_capacity': capacity}
 
-    amount = {'field': 'amount', 'declaration': 'integer', 'value': ['integer', '1']}
+    amount = {'field': 'amount', 'declaration': 'integer', 'value': ['integer', '7']}
     wrong = {'field': 'amount', 'declaration': 'integer', 'value': ['float', '401c000000000000']}
-    undeclared = {'field': 'unknown', 'declaration': 'integer', 'value': ['integer', '1']}
+    undeclared = {'field': 'unknown', 'declaration': 'integer', 'value': ['integer', '7']}
     created, accepted, handled = (
         'created-checkpoint-v1.json', 'accepted-checkpoint-v1.json', 'handled-checkpoint-v1.json'
     )
     created_state = checkpoints[created]['root_record']['aggregate_state']
     accepted_state = checkpoints[accepted]['root_record']['aggregate_state']
-    core_step = source_responses['handled_delayed']['body']['core_result']
+    core_step = copy.deepcopy(source_responses['handled_delayed']['body']['core_result'])
+    core_step['state'] = checkpoints[handled]['root_record']['aggregate_state']
     vectors = []
 
     def add(name: str, before: dict, after: dict, req: dict, kind: str, code: str | None = None,
@@ -232,9 +298,21 @@ def build() -> dict[str, bytes]:
         request('admit', created, mapped=wrong), 'failure', 'invalid_projection_input')
     add('undeclared_row_field_rejected', snapshot(created), snapshot(created),
         request('admit', created, mapped=undeclared), 'failure', 'invalid_projection_input')
-    add('equal_delivery_replay', snapshot(accepted), snapshot(accepted),
-        request('admit', created, delivery=envelope), 'replay',
+    original_admission = copy.deepcopy(
+        next(vector['request'] for vector in vectors if vector['name'] == 'typed_row_input_atomic_admit')
+    )
+    add('equal_pending_delivery_replay', snapshot(accepted), snapshot(accepted),
+        copy.deepcopy(original_admission), 'replay',
         result=checkpoints[accepted]['operation_receipts'][-1])
+    vectors[-1]['replay_of'] = 'typed_row_input_atomic_admit'
+    add('equal_delivery_replay', snapshot('replay-migrated-checkpoint-v1.json', status='done'),
+        snapshot('replay-migrated-checkpoint-v1.json', status='done'),
+        copy.deepcopy(original_admission), 'replay',
+        result=checkpoints['handled-checkpoint-v1.json']['operation_receipts'][-1])
+    vectors[-1]['replay_of'] = 'typed_row_input_atomic_admit'
+    vectors[-1]['migration_source'] = 'handled-checkpoint-v1.json'
+    vectors[-1]['migration_descriptor'] = 'replay-descriptor-v1.json'
+    vectors[-1]['target_bundle'] = 'replay-target.yaml'
     changed_delivery = copy.deepcopy(envelope)
     changed_delivery['envelope']['payload'] = ['map', [['amount', ['float', '401c000000000000']]]]
     changed_delivery['envelope_digest'] = digest([
@@ -274,26 +352,27 @@ def build() -> dict[str, bytes]:
         'failure', 'projection_transaction_unavailable')
     add('stale_revision_rolls_back_rows', snapshot(accepted), snapshot(accepted),
         request('step', created), 'failure', 'checkpoint_revision_conflict', calls=1)
-    for slug in ('success', 'fault'):
+    for slug in ('success', 'fault', 'integer'):
         (initial_name, admitted_name, processed_name), env_delivery, env_core = env_results[slug]
         env_root = checkpoints[initial_name]['root_instance_id']
         source_token = 'new' if slug == 'success' else 'old'
-        env_rows = {'owner': env_root, 'token': source_token, 'region': 'west'}
-        mapped_field = 'token' if slug == 'success' else 'region'
-        mapped_value = ['string', source_token if slug == 'success' else 'west']
-        env_mapped = {'field': mapped_field, 'declaration': 'string', 'value': mapped_value}
+        env_rows = ({'owner': env_root} if slug == 'integer' else
+                    {'owner': env_root, 'token': source_token, 'region': 'west'})
+        mapped_field = 'amount' if slug == 'integer' else 'token' if slug == 'success' else 'region'
+        mapped_value = ['integer', '7'] if slug == 'integer' else ['string', source_token if slug == 'success' else 'west']
+        env_mapped = {'field': mapped_field, 'declaration': mapped_value[0], 'value': mapped_value}
         env_aggregate = checkpoints[admitted_name]['root_record']['aggregate_state']
         env_admit_result = {'status': 'running', 'accepted': True,
                             'state': env_aggregate, 'rejection': None}
         add(f'env_{slug}_admission', snapshot(initial_name, **env_rows),
             snapshot(admitted_name, **env_rows),
             request('admit', initial_name, boundary='external_refresh', mapped=env_mapped,
-                    delivery=env_delivery, root_id=env_root, mapping='external-token-region-v1'),
+                    delivery=env_delivery, root_id=env_root, mapping='external-amount-v1' if slug == 'integer' else 'external-token-region-v1'),
             'result', result=env_admit_result, calls=1, committed=True)
         add(f'env_{slug}_step', snapshot(admitted_name, **env_rows),
             snapshot(processed_name, **env_rows),
             request('step', admitted_name, boundary='external_refresh',
-                    root_id=env_root, mapping='external-token-region-v1'),
+                    root_id=env_root, mapping='external-amount-v1' if slug == 'integer' else 'external-token-region-v1'),
             'result', result=env_core, calls=1, committed=True)
     profile = {'application_projection_format': 'determa.conformance.application_projection',
                'application_projection_schema_version': 1, 'vectors': vectors}
@@ -302,6 +381,8 @@ def build() -> dict[str, bytes]:
              'external-machine.yaml': ENV_MACHINE.encode(),
              'deferral-machine.yaml': (DEFERRAL_SOURCE / 'machine.yaml').read_bytes(),
              'outbox-machine.yaml': (OUTBOX_SOURCE / 'machine.yaml').read_bytes(),
+             'replay-target.yaml': target_bundle_bytes,
+             'replay-descriptor-v1.json': render(descriptor),
              'deferral-before-aggregate-v1.json': render(deferral_before),
              'deferral-candidate-aggregate-v1.json': render(deferral_candidate),
              'deferral-candidate-result-v1.json': render(deferral_result)}
@@ -311,10 +392,12 @@ def build() -> dict[str, bytes]:
             '    - { file: external-machine.yaml, valid: true }',
             '    - { file: deferral-machine.yaml, valid: true }',
             '    - { file: outbox-machine.yaml, valid: true }',
+            '    - { file: replay-target.yaml, valid: true }',
             'artifacts:', '  documents:']
     for name in checkpoints:
         test.append(f'    - {{ file: {name}, kind: execution_checkpoint_v1, valid: true }}')
     test.extend([
+        '    - { file: replay-descriptor-v1.json, kind: migration_descriptor_v1, valid: true }',
         '    - { file: deferral-before-aggregate-v1.json, kind: aggregate_state_v1, valid: true }',
         '    - { file: deferral-candidate-aggregate-v1.json, kind: aggregate_state_v1, valid: true }',
         '    - { file: deferral-candidate-result-v1.json, kind: core_step_result_v1, valid: true }',

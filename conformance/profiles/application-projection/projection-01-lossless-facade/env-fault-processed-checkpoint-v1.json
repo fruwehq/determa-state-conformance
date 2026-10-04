@@ -9,13 +9,13 @@
       "aggregate_state_format": "determa.aggregate_state",
       "aggregate_state_schema_version": 1,
       "machine_format": 1,
-      "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+      "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
       "namespace": "conformance.application_projection_env",
       "root_machine_id": "refresh_only",
       "root_machine_version": "1",
       "root_instance_id": "projection-env-fault-root",
       "creation_id": "projection-env-fault-create",
-      "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+      "root_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
       "migration_sequence": "0",
       "next_logical_step_sequence": "2",
       "next_output_sequence": "0",
@@ -23,11 +23,11 @@
       "next_queue_sequence": "1",
       "runtimes": [
         {
-          "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+          "runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
           "identity_origin": {
             "kind": "root",
             "definition": {
-              "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+              "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
               "machine": {
                 "namespace": "conformance.application_projection_env",
                 "machine_id": "refresh_only",
@@ -40,11 +40,11 @@
           "target_identity": {
             "root": {
               "root_instance_id": "projection-env-fault-root",
-              "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+              "root_runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5"
             }
           },
           "current_definition": {
-            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
             "machine": {
               "namespace": "conformance.application_projection_env",
               "machine_id": "refresh_only",
@@ -93,8 +93,8 @@
           ],
           "next_component_activation_sequences": [],
           "fault": {
-            "definition_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
-            "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+            "definition_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+            "runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
             "cause_id": "projection-env-fault-event",
             "code": "action_fault",
             "step_sequence": "1",
@@ -104,7 +104,7 @@
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:b2a65b0c9a4352fcb9fb0122bb69b09bb72be7362b026e0df4d03f2fbc30b883"
+      "aggregate_state_digest": "sha256:0e710a7b39eae5c3837ee74bbc950c6d75bc1c29ec43c692733d10596ecafd37"
     }
   },
   "operation_receipts": [
@@ -112,9 +112,9 @@
       "operation_kind": "creation",
       "receipt_sequence": "0",
       "creation_id": "projection-env-fault-create",
-      "request_digest": "sha256:57fc4e19e10246b83be2eeb610b8551908e725730dc7fb82bbc057c03be80167",
+      "request_digest": "sha256:24ae0931cdcf511c294abc3d652c0b982e92dfcdf328d8d29c6c26bd111e8754",
       "committed_revision": "0",
-      "resulting_aggregate_state_digest": "sha256:767f6ea1cbca3c71c88ceebc93d9b43075f49f41f0d1ef4d512069535ce03453",
+      "resulting_aggregate_state_digest": "sha256:5a14521be1a0c532236b8f628643e9c10b23a9c5d4610118d653e0ca3331b113",
       "status": "running",
       "fault": null,
       "emission_references": []
@@ -123,7 +123,7 @@
       "operation_kind": "acceptance",
       "receipt_sequence": "1",
       "event_id": "projection-env-fault-event",
-      "request_digest": "sha256:45dc9f39b4b19888b2555328da779f6ae46a4b1a6479ec3fdfb284bf07149542",
+      "request_digest": "sha256:47191d5202f49aaa2190448659ddce6955ff4df21d018efc61f1cf156cc63219",
       "acceptance_sequence": "0",
       "accepted_revision": "1",
       "delivery_mode": "input"
@@ -132,17 +132,17 @@
       "operation_kind": "event_terminal",
       "receipt_sequence": "2",
       "event_id": "projection-env-fault-event",
-      "request_digest": "sha256:45dc9f39b4b19888b2555328da779f6ae46a4b1a6479ec3fdfb284bf07149542",
+      "request_digest": "sha256:47191d5202f49aaa2190448659ddce6955ff4df21d018efc61f1cf156cc63219",
       "acceptance_sequence": "0",
       "final_queue_sequence": "0",
       "committed_revision": "2",
-      "resulting_aggregate_state_digest": "sha256:b2a65b0c9a4352fcb9fb0122bb69b09bb72be7362b026e0df4d03f2fbc30b883",
+      "resulting_aggregate_state_digest": "sha256:0e710a7b39eae5c3837ee74bbc950c6d75bc1c29ec43c692733d10596ecafd37",
       "outcome": {
         "disposition": "faulted",
         "status": "faulted",
         "fault": {
-          "definition_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
-          "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+          "definition_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+          "runtime_id": "sha256:96b76c22821c9713db6bc44b802dc7a92708272911bbd7509c95b885bb7b19d5",
           "cause_id": "projection-env-fault-event",
           "code": "action_fault",
           "step_sequence": "1",
@@ -166,5 +166,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:4e103316afd6c156f9492bf65c38e7fd12a6d5b06614269d8da48fa8a65d447e"
+  "execution_checkpoint_digest": "sha256:21d255dcdc387336c16cea7e8a607aa50ba7154dd7e5e5d3558aee7d4079a604"
 }

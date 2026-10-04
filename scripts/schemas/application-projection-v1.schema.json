@@ -17,7 +17,7 @@
     },
     "vectors": {
       "type": "array",
-      "minItems": 18,
+      "minItems": 21,
       "items": {
         "$ref": "#/$defs/vector"
       }
@@ -322,7 +322,7 @@
               "$ref": "#/$defs/admitResult"
             },
             {
-              "$ref": "#/$defs/acceptanceReceipt"
+              "$ref": "https://determa.dev/state/schema/execution-checkpoint-v1.schema.json#/$defs/operationReceipt"
             }
           ]
         }
@@ -371,6 +371,19 @@
         },
         "prior_artifact": {
           "$ref": "#/$defs/checkpointFile"
+        },
+        "replay_of": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "migration_source": {
+          "const": "handled-checkpoint-v1.json"
+        },
+        "migration_descriptor": {
+          "const": "replay-descriptor-v1.json"
+        },
+        "target_bundle": {
+          "const": "replay-target.yaml"
         }
       }
     },
@@ -469,42 +482,6 @@
               "maxProperties": 0
             }
           }
-        }
-      }
-    },
-    "acceptanceReceipt": {
-      "type": "object",
-      "additionalProperties": false,
-      "required": [
-        "operation_kind",
-        "receipt_sequence",
-        "event_id",
-        "request_digest",
-        "acceptance_sequence",
-        "accepted_revision",
-        "delivery_mode"
-      ],
-      "properties": {
-        "operation_kind": {
-          "const": "acceptance"
-        },
-        "receipt_sequence": {
-          "type": "string"
-        },
-        "event_id": {
-          "type": "string"
-        },
-        "request_digest": {
-          "type": "string"
-        },
-        "acceptance_sequence": {
-          "type": "string"
-        },
-        "accepted_revision": {
-          "type": "string"
-        },
-        "delivery_mode": {
-          "const": "input"
         }
       }
     },
@@ -637,6 +614,46 @@
             },
             "supplemental_field": {
               "const": "supplemental_aggregate"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mapping_id",
+            "row_id_field",
+            "root_identity_field",
+            "source_fields",
+            "target",
+            "declarations",
+            "supplemental_field"
+          ],
+          "properties": {
+            "mapping_id": {
+              "const": "external-amount-v1"
+            },
+            "row_id_field": {
+              "const": "row_id"
+            },
+            "root_identity_field": {
+              "const": "root_instance_id"
+            },
+            "source_fields": {
+              "const": [
+                "amount"
+              ]
+            },
+            "target": {
+              "const": "env.changed"
+            },
+            "declarations": {
+              "const": [
+                "integer"
+              ]
+            },
+            "supplemental_field": {
+              "const": "supplemental_checkpoint"
             }
           }
         }

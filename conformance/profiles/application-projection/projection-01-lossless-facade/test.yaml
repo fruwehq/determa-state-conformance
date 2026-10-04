@@ -5,18 +5,24 @@ static:
     - { file: external-machine.yaml, valid: true }
     - { file: deferral-machine.yaml, valid: true }
     - { file: outbox-machine.yaml, valid: true }
+    - { file: replay-target.yaml, valid: true }
 artifacts:
   documents:
     - { file: created-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: accepted-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: handled-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: replay-migrated-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-success-created-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-success-accepted-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-success-processed-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-fault-created-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-fault-accepted-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-fault-processed-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: env-integer-created-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: env-integer-accepted-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: env-integer-processed-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: outbox-pending-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: replay-descriptor-v1.json, kind: migration_descriptor_v1, valid: true }
     - { file: deferral-before-aggregate-v1.json, kind: aggregate_state_v1, valid: true }
     - { file: deferral-candidate-aggregate-v1.json, kind: aggregate_state_v1, valid: true }
     - { file: deferral-candidate-result-v1.json, kind: core_step_result_v1, valid: true }
@@ -27,6 +33,7 @@ application_projection_vectors:
   - step_preserves_complete_result
   - row_float_to_integer_rejected
   - undeclared_row_field_rejected
+  - equal_pending_delivery_replay
   - equal_delivery_replay
   - changed_identity_conflict_before_payload
   - direct_state_edit_unsupported
@@ -40,3 +47,5 @@ application_projection_vectors:
   - env_success_step
   - env_fault_admission
   - env_fault_step
+  - env_integer_admission
+  - env_integer_step

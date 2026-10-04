@@ -1,7 +1,7 @@
 {
   "execution_checkpoint_format": "determa.execution_checkpoint",
   "execution_checkpoint_schema_version": 1,
-  "root_instance_id": "complete-host-root",
+  "root_instance_id": "projection-env-integer-root",
   "revision": "2",
   "root_record": {
     "status": "retained",
@@ -9,13 +9,13 @@
       "aggregate_state_format": "determa.aggregate_state",
       "aggregate_state_schema_version": 1,
       "machine_format": 1,
-      "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
-      "namespace": "conformance.execution_checkpoint_complete_host_contract",
-      "root_machine_id": "counter",
+      "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+      "namespace": "conformance.application_projection_env",
+      "root_machine_id": "refresh_integer",
       "root_machine_version": "1",
-      "root_instance_id": "complete-host-root",
-      "creation_id": "complete-host-create",
-      "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+      "root_instance_id": "projection-env-integer-root",
+      "creation_id": "projection-env-integer-create",
+      "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
       "migration_sequence": "0",
       "next_logical_step_sequence": "2",
       "next_output_sequence": "0",
@@ -23,33 +23,33 @@
       "next_queue_sequence": "1",
       "runtimes": [
         {
-          "runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+          "runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
           "identity_origin": {
             "kind": "root",
             "definition": {
-              "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+              "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
               "machine": {
-                "namespace": "conformance.execution_checkpoint_complete_host_contract",
-                "machine_id": "counter",
+                "namespace": "conformance.application_projection_env",
+                "machine_id": "refresh_integer",
                 "machine_version": "1",
-                "root_definition_pointer": "/machines/0/root"
+                "root_definition_pointer": "/machines/2/root"
               }
             },
-            "root_instance_id": "complete-host-root"
+            "root_instance_id": "projection-env-integer-root"
           },
           "target_identity": {
             "root": {
-              "root_instance_id": "complete-host-root",
-              "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              "root_instance_id": "projection-env-integer-root",
+              "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432"
             }
           },
           "current_definition": {
-            "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
             "machine": {
-              "namespace": "conformance.execution_checkpoint_complete_host_contract",
-              "machine_id": "counter",
+              "namespace": "conformance.application_projection_env",
+              "machine_id": "refresh_integer",
               "machine_version": "1",
-              "root_definition_pointer": "/machines/0/root"
+              "root_definition_pointer": "/machines/2/root"
             }
           },
           "relation": {
@@ -57,17 +57,17 @@
           },
           "status": "running",
           "active_leaf_state_definition_pointers": [
-            "/machines/0/root"
+            "/machines/2/root"
           ],
           "active_state_activations": [
             {
-              "state_definition_pointer": "/machines/0/root",
+              "state_definition_pointer": "/machines/2/root",
               "activation_sequence": "0"
             }
           ],
           "variables": [
             {
-              "variable_declaration_pointer": "/machines/0/root/variables/count",
+              "variable_declaration_pointer": "/machines/2/root/variables/amount",
               "declaring_state_activation_sequence": "0",
               "value": [
                 "integer",
@@ -79,7 +79,7 @@
           "next_spawn_sequence": "0",
           "next_state_activation_sequences": [
             {
-              "definition_pointer": "/machines/0/root",
+              "definition_pointer": "/machines/2/root",
               "next_sequence": "1"
             }
           ],
@@ -89,17 +89,17 @@
           "deferred_mailbox": []
         }
       ],
-      "aggregate_state_digest": "sha256:f7b522d9d39b0529e727a46affd836190188879103b01916cb0988187d329f52"
+      "aggregate_state_digest": "sha256:8fa67ca4e561f92d6a9d37ef63df34bb17e56f128e6cae70876eb472b91a11a0"
     }
   },
   "operation_receipts": [
     {
       "operation_kind": "creation",
       "receipt_sequence": "0",
-      "creation_id": "complete-host-create",
-      "request_digest": "sha256:388e40a2d259d7dc897d16bbe910290786b2e77dea299386d3e234d90d4d3b40",
+      "creation_id": "projection-env-integer-create",
+      "request_digest": "sha256:5152849bf87585567ee1de5d843eeb071370b8aedec2fa2cf21fb2530218cd0b",
       "committed_revision": "0",
-      "resulting_aggregate_state_digest": "sha256:63c5a178d608504baf5a37e8380cf286f0b15f3d0588ebf5dc70488de7907e77",
+      "resulting_aggregate_state_digest": "sha256:42a53c1b98efbfce4282be42cb0d3885506a791bfeca10d56c0dd35fa6e089d3",
       "status": "running",
       "fault": null,
       "emission_references": []
@@ -107,8 +107,8 @@
     {
       "operation_kind": "acceptance",
       "receipt_sequence": "1",
-      "event_id": "complete-increment",
-      "request_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b",
+      "event_id": "projection-env-integer-event",
+      "request_digest": "sha256:cd09f47b3efa861c5416ed33492c58aec6d7150afc546fddb496709a5dac9688",
       "acceptance_sequence": "0",
       "accepted_revision": "1",
       "delivery_mode": "input"
@@ -116,12 +116,12 @@
     {
       "operation_kind": "event_terminal",
       "receipt_sequence": "2",
-      "event_id": "complete-increment",
-      "request_digest": "sha256:5277530bfd3b6bd0b3e1a226aea46dc9ee0f5adc58ffc27386eee32e6813314b",
+      "event_id": "projection-env-integer-event",
+      "request_digest": "sha256:cd09f47b3efa861c5416ed33492c58aec6d7150afc546fddb496709a5dac9688",
       "acceptance_sequence": "0",
       "final_queue_sequence": "0",
       "committed_revision": "2",
-      "resulting_aggregate_state_digest": "sha256:f7b522d9d39b0529e727a46affd836190188879103b01916cb0988187d329f52",
+      "resulting_aggregate_state_digest": "sha256:8fa67ca4e561f92d6a9d37ef63df34bb17e56f128e6cae70876eb472b91a11a0",
       "outcome": {
         "disposition": "handled",
         "status": "running",
@@ -144,5 +144,5 @@
   "terminal_outbox_records": [],
   "outbox_effect_tombstones": [],
   "migration_audit_records": [],
-  "execution_checkpoint_digest": "sha256:6c57f2bbdb9c18eae44dfb00548f3783fc847a1f8c21d0944bf0efa3654ee89b"
+  "execution_checkpoint_digest": "sha256:8dd0318d73602810c20f841bf115216930591f751538a8c5adbadbecb85bf41d"
 }

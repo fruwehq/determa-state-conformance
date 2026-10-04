@@ -23,7 +23,7 @@
       "properties": {
         "documents": {
           "type": "array",
-          "minItems": 4,
+          "minItems": 5,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -37,7 +37,8 @@
                   "machine.yaml",
                   "external-machine.yaml",
                   "deferral-machine.yaml",
-                  "outbox-machine.yaml"
+                  "outbox-machine.yaml",
+                  "replay-target.yaml"
                 ]
               },
               "valid": {
@@ -76,7 +77,8 @@
                   "execution_checkpoint_v1",
                   "application_projection_v1",
                   "aggregate_state_v1",
-                  "core_step_result_v1"
+                  "core_step_result_v1",
+                  "migration_descriptor_v1"
                 ]
               },
               "valid": {
@@ -89,7 +91,7 @@
     },
     "application_projection_vectors": {
       "type": "array",
-      "minItems": 18,
+      "minItems": 21,
       "items": {
         "type": "string",
         "pattern": "^[a-z][a-z0-9_]*$"
