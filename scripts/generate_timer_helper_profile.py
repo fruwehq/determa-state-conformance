@@ -55,6 +55,9 @@ def render(spec_root: Path):
     target_source = (spec_root / "examples/portable-event-deferral.yaml").read_bytes()
     intent_source = (CASE / "machine.yaml").read_bytes()
     first = source["cases"][0]
+    first_claim = next(item for item in source["cases"] if item["name"] == "claim_at_deadline")
+    first_fire = next(item for item in source["cases"] if item["name"] == "coordinated_fire_commits")
+    retry_claim = next(item for item in source["cases"] if item["name"] == "uncommitted_fire_recovery")
     intent_test = YAML(typ="safe").load((CASE / "test.yaml").read_text())
     rows = []
     for sample in [*source["cases"], *source["early_errors"]]:
@@ -80,11 +83,18 @@ def render(spec_root: Path):
             receipts = [{"operation_id": first["request"]["operation_id"],
                          "request_digest": first["request"]["request_digest"],
                          "result": first["expected"]}]
-            if name == "complete_equal_replay":
-                committed = next(x for x in source["cases"] if x["name"] == "coordinated_fire_commits")
-                receipts.append({"operation_id": committed["request"]["operation_id"],
-                                 "request_digest": committed["request"]["request_digest"],
-                                 "result": committed["expected"]})
+            if record["state"] in ("claimed", "fired"):
+                receipts.append({"operation_id": first_claim["request"]["operation_id"],
+                                 "request_digest": first_claim["request"]["request_digest"],
+                                 "result": first_claim["expected"]})
+            if record["attempt_fence"] == "2":
+                receipts.append({"operation_id": retry_claim["request"]["operation_id"],
+                                 "request_digest": retry_claim["request"]["request_digest"],
+                                 "result": retry_claim["expected"]})
+            if record["state"] == "fired":
+                receipts.append({"operation_id": first_fire["request"]["operation_id"],
+                                 "request_digest": first_fire["request"]["request_digest"],
+                                 "result": first_fire["expected"]})
             before = artifact([record], receipts)
         after = copy.deepcopy(before)
         if expected["status"] == "accepted" and name not in ("schedule_equal_replay", "complete_equal_replay", "read_timer"):

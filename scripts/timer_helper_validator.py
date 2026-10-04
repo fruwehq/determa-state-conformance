@@ -75,6 +75,12 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
             value = row[side]["helper_artifact"]
             if value != artifact(value["records"], value["operation_receipts"]):
                 raise TimerHelperValidationError(f"{name}: {side} helper digest changed")
+            if value["records"]:
+                record = value["records"][0]
+                operations = [entry["result"]["operation"] for entry in value["operation_receipts"]]
+                if ((record["state"] in ("claimed", "fired") and "claim_fire" not in operations) or
+                        (record["state"] == "fired" and "complete_fire" not in operations)):
+                    raise TimerHelperValidationError(f"{name}: {side} lost a committed claim/fire receipt")
         before, after = row["before"], row["after"]
         if row["expected_result"]["status"] == "rejected" and before != after:
             raise TimerHelperValidationError(f"{name}: rejection mutated state")
