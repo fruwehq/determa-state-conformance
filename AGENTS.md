@@ -87,7 +87,9 @@ The version-1 generators and durable-host profiles are documented in their READM
 Durable validation proves fixture construction, schema dispositions, and cross-artifact
 semantics; it does not replace each implementation's runtime harness.
 
-CI checks both deterministic generators. Run
+The extension-negotiation profile has separate common-rule and real public-registration gates. The common-rule hypothetical premises never prove a configured production claim; loaded test provider reports carry no verified operational guarantee. See its README for category profile obligations.
+
+CI checks the deterministic generators. Run
 `python scripts/generate_execution_checkpoint_profile.py --check` after changing any
 durable-host request, result, checkpoint, store, call-log, or profile manifest.
 
