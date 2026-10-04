@@ -307,7 +307,9 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
     archive = read_json(CASE / 'archive-v1.json')
     machine_names = {f'definition-{index:02d}.json'
                      for index in range(1, len(archive['normalized_definitions']) + 1)}
-    require({path.name for path in CASE.iterdir()} == set(FILES) | {'test.yaml'} | machine_names,
+    owned_names = {'owned-component-machine.yaml', 'owned-component-checkpoint-v1.json',
+                   'owned-component-archive-v1.json', 'owned-component-vectors-v1.json'}
+    require({path.name for path in CASE.iterdir()} == set(FILES) | {'test.yaml'} | machine_names | owned_names,
             'archive fixture file inventory')
     if enforce_pin:
         for name in FILES:
@@ -317,10 +319,12 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
     validators = validator_registry(spec_root)
     stage = read_json(CASE / 'stage-cases-v1.json')
     export = read_json(CASE / 'export-cases-v1.json')
+    owned = read_json(CASE / 'owned-component-vectors-v1.json')
     hashes = read_json(CASE / 'hash-checks-v1.json')
     test = YAML(typ='safe').load((CASE / 'test.yaml').read_text(encoding='utf-8'))
     require(set(test) == {'title', 'archive_vectors'}, 'archive driver manifest shape')
-    require(set(test['archive_vectors']) == {'export', 'stage'}, 'archive driver modes')
+    require(set(test['archive_vectors']) == {'export', 'stage', 'owned_component'},
+            'archive driver modes')
     require(test['archive_vectors']['export'] == [c['case_id'] for c in export['cases']],
             'export case coverage')
     require(test['archive_vectors']['stage'] == [c['case_id'] for c in stage['cases']],
@@ -328,6 +332,22 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
     require(len(set(test['archive_vectors']['export'])) == len(export['cases']) and
             len(set(test['archive_vectors']['stage'])) == len(stage['cases']),
             'duplicate archive case')
+    require(test['archive_vectors']['owned_component'] ==
+            [owned['export_case']['case_id'], owned['stage_case']['case_id']],
+            'owned component coverage')
+    from generate_portable_archive_profile import build_owned_component
+    for name, generated in build_owned_component().items():
+        require((CASE / name).read_bytes() == generated,
+                name + ': independent lifecycle derivation')
+    owned_archive = read_json(CASE / 'owned-component-archive-v1.json')
+    owned_checkpoint = read_json(CASE / 'owned-component-checkpoint-v1.json')
+    require(owned_archive['checkpoints'] == [owned_checkpoint] and
+            len(owned_checkpoint['root_record']['aggregate_state']['runtimes']) == 2 and
+            any(runtime['relation']['kind'] == 'owned_spawned_instance' and
+                len(runtime['deferred_mailbox']) == 1
+                for runtime in owned_checkpoint['root_record']['aggregate_state']['runtimes']),
+            'owned instance and deferred envelope witness')
+    validate_archive_integrity(owned_archive, validators)
     for name in SCHEMAS:
         aliases = {'archive-v1': 'archive_schema_digest',
                    'archive-participant-v1': 'participant_schema_digest',
@@ -363,11 +383,20 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
             validate_aggregate_against_bundle(aggregate, current, *historical)
         except ValidationFailure as error:
             raise ArchiveValidationError(f'{checkpoint["root_instance_id"]}: {error}') from error
+    owned_machine = CASE / 'owned-component-machine.yaml'
+    require(validated_bundle_fingerprint(owned_machine) ==
+            owned_archive['normalized_definitions'][0]['validated_bundle_fingerprint'],
+            'owned component machine fingerprint')
+    try:
+        validate_aggregate_against_bundle(
+            owned_checkpoint['root_record']['aggregate_state'], owned_machine)
+    except ValidationFailure as error:
+        raise ArchiveValidationError(f'owned component resolver: {error}') from error
     require(hashes['archive_digest'] == archive['archive_digest'], 'archive golden digest')
     require(export['cases'][0]['expected_archive'] == archive and
             stage['cases'][0]['input_archive'] == archive,
             'golden archive/export/stage binding')
-    for item in export['cases']:
+    for item in [*export['cases'], owned['export_case']]:
         label = item['case_id']
         schema_valid(validators['archive-export-request-v1'], item['input_request'], label + ' request')
         schema_valid(validators['archive-export-source-v1'], item['source_capture'], label + ' source')
@@ -396,11 +425,12 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
                     label + ': source consistency point')
         else:
             require(item['expected_result']['status'] == 'refused', label + ': refusal output')
-    for item in stage['cases']:
+    for item in [*stage['cases'], owned['stage_case']]:
         label = item['case_id']
-        require(set(item['changed_paths_from_positive']) ==
-                changed_paths(stage['cases'][0]['input_archive'], item['input_archive']),
-                label + ': exact raw provenance path map')
+        if item is not owned['stage_case']:
+            require(set(item['changed_paths_from_positive']) ==
+                    changed_paths(stage['cases'][0]['input_archive'], item['input_archive']),
+                    label + ': exact raw provenance path map')
         schema_valid(validators['archive-import-request-v1'], item['input_request'], label + ' request')
         schema_valid(validators['archive-result-v1'], item['expected_result'], label + ' result')
         require(item['expected_host_effects'] == {
@@ -442,4 +472,4 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
         require(isinstance(configured['trusted_source_profiles'], list) and
                 isinstance(configured['trusted_participant_contracts'], list),
                 label + ': independent trusted import policy')
-    return len(export['cases']) + len(stage['cases'])
+    return len(export['cases']) + len(stage['cases']) + 2

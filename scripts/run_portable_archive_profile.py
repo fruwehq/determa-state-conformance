@@ -84,6 +84,10 @@ def main() -> int:
         for case in fixture['cases']:
             run_case(command, kind, case)
             count += 1
+    owned = read_json(CASE / 'owned-component-vectors-v1.json')
+    run_case(command, 'export', owned['export_case'])
+    run_case(command, 'stage', owned['stage_case'])
+    count += 2
     print(f'{count} portable archive vectors passed')
     return 0
 

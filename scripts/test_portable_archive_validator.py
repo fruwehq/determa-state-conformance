@@ -43,7 +43,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--spec-root', required=True, type=Path)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root) == 52
+    assert validate_profile(args.spec_root) == 54
     validators = validator_registry(args.spec_root)
     original = read_json(CASE / 'archive-v1.json')
     probes = [
