@@ -378,6 +378,8 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 
 The `extension-negotiation` profile fixes SPEC §11.5 public registration, exact provider identity, configuration, health, and closed capability decisions. Its 13 normative common-rule examples use hypothetical internal verification premises; 21 public API vectors bind the actually loaded test provider and publish no unproved claims. See [the profile README](conformance/profiles/extension-negotiation/README.md). Category-specific positive guarantees require their own operational profiles.
 
+The optional [host-authority profile](conformance/profiles/host-authority/README.md) fixes SPEC §18 authority requests, retained responses and ledger effects, configured profile reports, clock boundaries, and native proof obligations. Its fixture validator is not a production transaction certification; each advertised topology must run the production adapter and applicable race/crash probes.
+
 The `execution-checkpoint` profile fixes the portable SPEC §17 durable-host lifecycle
 over the schema-version-1 checkpoint artifact. It covers native creation, ordered-batch
 admission and its exact failure precedence, processing, replay, outbox transitions,

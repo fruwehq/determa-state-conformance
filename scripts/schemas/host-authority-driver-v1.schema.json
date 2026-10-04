@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/conformance/host-authority-driver-v1.schema.json",
+  "type": "object",
+  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "runtime_probes"],
+  "properties": {
+    "format": {"const": "determa.host-authority-driver-v1"},
+    "schema_version": {"const": 1},
+    "specification_commit": {"const": "6bd25e3fcdf068af861aa289903a8489bd8f0139"},
+    "operations": {"type": "array", "minItems": 22, "maxItems": 22, "items": {"$ref": "#/$defs/operation"}},
+    "profiles": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"$ref": "#/$defs/profile"}},
+    "clocks": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/clock"}},
+    "worker_checks": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/workerCheck"}},
+    "native_traces": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"$ref": "#/$defs/nativeTrace"}},
+    "runtime_probes": {"type": "array", "minItems": 9, "maxItems": 9, "uniqueItems": true, "items": {"type": "string"}}
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "ledger": {
+      "type": "object",
+      "required": ["allocated_scope_identities", "scope_identity", "owner_principal", "authority_epoch", "scope_generation", "state", "receipts", "mutation_bytes", "checkpoint_bytes", "journal_entries", "ingress_acknowledgements", "active_claims", "freeze", "inventory", "retirement_grants"],
+      "properties": {
+        "allocated_scope_identities": {"type": "array", "items": {"type": "string"}},
+        "scope_identity": {"type": "string"}, "owner_principal": {"type": "string"},
+        "authority_epoch": {"type": "string"}, "scope_generation": {"type": "string"},
+        "state": {"enum": ["active", "freezing", "frozen", "retired", "transaction_in_doubt"]},
+        "receipts": {"type": "array", "items": {"$ref": "#/$defs/receipt"}},
+        "mutation_bytes": {"type": "array", "items": {"type": "string"}},
+        "checkpoint_bytes": {"type": "array", "items": {"type": "string"}},
+        "journal_entries": {"type": "array", "items": {"type": "object"}},
+        "ingress_acknowledgements": {"type": "array", "items": {"type": "object"}},
+        "active_claims": {"type": "array", "items": {"type": "object"}},
+        "freeze": {"type": ["object", "null"]},
+        "inventory": {"type": "array", "items": {"type": "object"}},
+        "retirement_grants": {"type": "array", "items": {"type": "object"}}
+      }, "additionalProperties": false
+    },
+    "receipt": {
+      "type": "object",
+      "required": ["operation_id", "request_digest", "request_bytes", "result_bytes", "evidence_digest"],
+      "properties": {
+        "operation_id": {"type": "string"}, "request_digest": {"type": "string"},
+        "request_bytes": {"type": "string"}, "result_bytes": {"type": ["string", "null"]},
+        "evidence_digest": {"type": ["string", "null"]}
+      }, "additionalProperties": false
+    },
+    "operation": {
+      "type": "object",
+      "required": ["id", "source_disposition", "request", "request_bytes", "expected_response", "expected_response_bytes", "invocation", "native_mutation_bytes", "ledger_before", "ledger_after", "fault", "replay_of", "configuration"],
+      "properties": {
+        "id": {"type": "string"}, "source_disposition": {"enum": ["valid", "rejected"]},
+        "request": {"type": "object"}, "request_bytes": {"type": "string"},
+        "expected_response": {"type": "object"}, "expected_response_bytes": {"type": "string"},
+        "invocation": {"type": "object"}, "native_mutation_bytes": {"type": ["string", "null"]},
+        "ledger_before": {"$ref": "#/$defs/ledger"}, "ledger_after": {"$ref": "#/$defs/ledger"},
+        "fault": {"type": "object"}, "replay_of": {"type": ["string", "null"]},
+        "configuration": {"type": "object"}
+      }, "additionalProperties": false
+    },
+    "profile": {
+      "type": "object", "required": ["id", "source_disposition", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"],
+      "properties": {"id": {"type": "string"}, "source_disposition": {"enum": ["valid", "invalid"]},
+        "configured_facts": {"type": "object"}, "expected_report": {"type": "object"},
+        "expected_report_bytes": {"type": "string"}, "expected_outcome": {"type": "object"},
+        "expected_support": {"type": ["object", "null"]}},
+      "additionalProperties": false
+    },
+    "clock": {
+      "type": "object", "required": ["id", "source_disposition", "value"],
+      "properties": {"id": {"type": "string"}, "source_disposition": {"enum": ["valid", "invalid"]},
+        "value": {"type": "string"}}, "additionalProperties": false
+    },
+    "workerCheck": {
+      "type": "object", "required": ["id", "input", "expected"],
+      "properties": {"id": {"type": "string"}, "input": {"type": "object"},
+        "expected": {"type": "object", "required": ["accepted"],
+          "properties": {"accepted": {"type": "boolean"}}, "additionalProperties": false}},
+      "additionalProperties": false
+    },
+    "nativeTrace": {
+      "type": "object", "required": ["id", "required_guarantee", "setup", "schedule", "steps"],
+      "properties": {"id": {"type": "string"}, "required_guarantee": {"type": "string"},
+        "setup": {"$ref": "#/$defs/ledger"}, "schedule": {"type": "string"},
+        "steps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nativeStep"}}},
+      "additionalProperties": false
+    },
+    "nativeStep": {
+      "type": "object", "required": ["call", "expected_response_bytes", "expected_ledger_after"],
+      "properties": {"call": {"type": "object", "required": ["request_bytes", "invocation", "native_mutation_bytes", "fault"],
+          "properties": {"request_bytes": {"type": "string"}, "invocation": {"type": "object"},
+            "native_mutation_bytes": {"type": ["string", "null"]}, "fault": {"type": "string"}},
+          "additionalProperties": false},
+        "expected_response_bytes": {"type": ["string", "null"]},
+        "expected_ledger_after": {"$ref": "#/$defs/ledger"}},
+      "additionalProperties": false
+    }
+  }
+}

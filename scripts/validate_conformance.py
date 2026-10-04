@@ -36,6 +36,7 @@ from ruamel.yaml.tokens import (
 
 from closed_code_registry import RegistryValidationError, validate_registry
 from validate_extension_negotiation import ExtensionValidationError, validate_profile
+from validate_host_authority import AuthorityValidationError, validate_profile as validate_authority_profile
 
 
 JSON_NUMBER = re.compile(
@@ -7659,6 +7660,12 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         )
     except (ExtensionValidationError, OSError, ValueError) as error:
         raise ValidationFailure(f"extension negotiation profile: {error}") from error
+    try:
+        authority_counts = validate_authority_profile(
+            spec_root, repository_root / "conformance/profiles/host-authority"
+        )
+    except (AuthorityValidationError, OSError, ValueError) as error:
+        raise ValidationFailure(f"host authority profile: {error}") from error
     validate_direct_descriptor_expectation_probes()
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
@@ -8074,7 +8081,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{static_schema_passes} schema-valid static documents, and "
         f"{scenarios} runtime scenarios, {version1_vectors} version-1 vectors, "
         f"{durable_host_vectors} durable host vectors, and "
-        f"{extension_vectors} extension negotiation vectors"
+        f"{extension_vectors} extension negotiation vectors; "
+        f"{authority_counts[0]} host authority operations, "
+        f"{authority_counts[1]} profile reports, {authority_counts[2]} clock values"
     )
 
 

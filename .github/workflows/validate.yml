@@ -66,6 +66,14 @@ jobs:
           python scripts/generate_extension_negotiation_profile.py
           --spec-root .determa-state-spec --check
 
+      - name: Check generated host authority fixtures
+        run: >-
+          python scripts/generate_host_authority_profile.py
+          --spec-root .determa-state-spec --check
+
+      - name: Test host authority relational validation
+        run: python scripts/test_host_authority_validator.py
+
       - name: Install Rust provider test toolchain
         run: rustup toolchain install 1.86.0 --profile minimal
 
