@@ -12,12 +12,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance/profiles/extension-negotiation"
 SPEC_CASES = "examples/extensions/capability-cases-v1.json"
-SPEC_PIN = "6bd25e3fcdf068af861aa289903a8489bd8f0139"
+SPEC_PIN = "6207362e879ccca70f709e1eb4cc90448d910c0b"
 
 
 def render(spec_root: Path, profile: Path = PROFILE) -> bytes:
     source = json.loads((spec_root / SPEC_CASES).read_text())
-    assert source["schema_version"] == 1 and len(source["cases"]) == 13
+    assert source["schema_version"] == 1 and len(source["cases"]) == 15
     closure_files = ["provider/test_provider.py", "provider/test_provider.rs"]
     closure_hash = hashlib.sha256(b"determa-test-provider-closure-1\0")
     for relative in closure_files:
