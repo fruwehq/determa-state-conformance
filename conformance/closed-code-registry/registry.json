@@ -39,6 +39,10 @@
       "description": "Closed infrastructure outcomes surfaced by an execution-store transaction."
     },
     {
+      "id": "extension_negotiation_failure",
+      "description": "Closed failures from public extension registration, configuration, identity, and capability negotiation."
+    },
+    {
       "id": "inspection_disposition",
       "description": "Closed snapshot dispatch predictions from exact candidate inspection."
     },
@@ -425,6 +429,42 @@
       "code": "transient_processing_failure",
       "condition": "A durable-host ingress failure is classified as transient and must be retried from committed state.",
       "source": "SPEC.md section 15 durable persistence host behavior"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "duplicate_extension_registration",
+      "condition": "Registration attempts to replace a factory with the same category, identifier, and exact version.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "extension_capability_mismatch",
+      "condition": "An exact healthy configured instance lacks a required verified capability.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "extension_identity_mismatch",
+      "condition": "An exact provider version, digest, loaded closure, or configured reference differs.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "invalid_extension_configuration",
+      "condition": "Host-owned configuration fails validation before opening an instance.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "invalid_extension_descriptor",
+      "condition": "A descriptor, reference, report, or requirement violates its closed shape.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "unknown_extension",
+      "condition": "No registered factory matches the required category and identifier.",
+      "source": "SPEC.md section 11.5"
     },
     {
       "category": "inspection_disposition",

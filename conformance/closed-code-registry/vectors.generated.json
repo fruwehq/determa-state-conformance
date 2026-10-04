@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "e525320b36b3bc8a718d21930306ff3445b2177d421acfc86947195ba7a1090e",
+  "registry_sha256": "80a9425e1309c0649e20296dd14d745f96553c1ca6b6bc8d7f45f69b3bebb46c",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -106,6 +106,17 @@
         "permanent_processing_failure",
         "response_lost_after_commit",
         "transient_processing_failure"
+      ]
+    },
+    {
+      "id": "extension_negotiation_failure",
+      "codes": [
+        "duplicate_extension_registration",
+        "extension_capability_mismatch",
+        "extension_identity_mismatch",
+        "invalid_extension_configuration",
+        "invalid_extension_descriptor",
+        "unknown_extension"
       ]
     },
     {
