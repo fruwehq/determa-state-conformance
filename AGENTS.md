@@ -95,6 +95,8 @@ durable-host request, result, checkpoint, store, call-log, or profile manifest.
 
 The application-projection generator is checked with
 `python scripts/generate_application_projection_profile.py --check`.
+The lossless-delivery generator is checked with
+`python scripts/generate_lossless_delivery_profile.py --check`.
 
 The non-normative CLI profile runner is retained at
 `conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.

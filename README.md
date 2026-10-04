@@ -35,6 +35,8 @@ migrated suite.
   checkpoint profile.
 - `conformance/profiles/application-projection/` — the optional SPEC §20 selected-row
   lossless projection and embedded facade profile.
+- `conformance/profiles/lossless-delivery/` — the optional SPEC §21 source,
+  mailbox, dead-letter, and outbound responsibility profile.
 - `conformance/profiles/portable-archive/` — the optional SPEC §22 complete export
   and inert staging profile with declared participants.
 - `conformance/profiles/recovery/` — the optional SPEC §24 strict quarantine,
@@ -51,6 +53,8 @@ as release promises in prose.
 
 ## Unreleased 0.3.0 conformance additions
 
+Authority common-rule checks supply the complete submitted report separately from independent facts and proof predicates, so unsupported guarantee requests remain executable negative cases. The validator rejects conflicting outcomes for identical inputs; public certification still requires actual configured native evidence.
+
 The optional application-projection profile adds twenty-three closed, schema-version-1
 facade vectors for selected-row mapping, full checkpoint reconstruction, exact §8
 return fields, replay and conflict precedence, capacity rejection, transaction
@@ -59,8 +63,16 @@ capability, deferred-payload capacity, pending intents, declaration-change repla
 checkpoint-backed projection witnesses with unchanged selected row values on the
 fault path.
 
+The optional lossless-delivery profile adds sixty version-1 vectors for source
+ownership, atomic admission and crash recovery, mailbox placement, terminal
+disposition, ingress dead letters, complete outbound intents, destination receipts,
+malformed inputs, invalid evidence links, six complete core result observations,
+and five merged authority/effect
+relationships. Its [runner contract](conformance/profiles/lossless-delivery/README.md)
+uses the exact caller request and complete before/after host evidence.
+
 The optional [portable-archive profile](conformance/profiles/portable-archive/README.md)
-adds 52 complete export and inert staging vectors from the pinned §22 examples,
+ adds 54 complete export and inert staging vectors from the pinned §22 examples,
 plus an owned-instance, nested-component, and deferred-queue export and stage pair.
 The repository checks the raw artifacts and their relationships; implementations
 claiming the profile run the production adapter driver for an operational result.
