@@ -23,7 +23,7 @@
       "properties": {
         "documents": {
           "type": "array",
-          "minItems": 2,
+          "minItems": 4,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -35,7 +35,9 @@
               "file": {
                 "enum": [
                   "machine.yaml",
-                  "external-machine.yaml"
+                  "external-machine.yaml",
+                  "deferral-machine.yaml",
+                  "outbox-machine.yaml"
                 ]
               },
               "valid": {
@@ -72,7 +74,9 @@
               "kind": {
                 "enum": [
                   "execution_checkpoint_v1",
-                  "application_projection_v1"
+                  "application_projection_v1",
+                  "aggregate_state_v1",
+                  "core_step_result_v1"
                 ]
               },
               "valid": {
@@ -85,7 +89,7 @@
     },
     "application_projection_vectors": {
       "type": "array",
-      "minItems": 17,
+      "minItems": 18,
       "items": {
         "type": "string",
         "pattern": "^[a-z][a-z0-9_]*$"

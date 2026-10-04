@@ -13,6 +13,8 @@ from generate_execution_checkpoint_profile import admit, envelope_for
 
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'conformance/profiles/execution-checkpoint/checkpoint-07-complete-host-contract'
+DEFERRAL_SOURCE = ROOT / 'conformance/core/117-version1-mailboxes'
+OUTBOX_SOURCE = ROOT / 'conformance/profiles/execution-checkpoint/checkpoint-02-native-outbox'
 TARGET = ROOT / 'conformance/profiles/application-projection/projection-01-lossless-facade'
 ENV_MACHINE = """format: 1
 namespace: conformance.application_projection_env
@@ -130,6 +132,11 @@ def build() -> dict[str, bytes]:
             envelope_value, envelope_digest = envelope_for(initial, 'env', f'projection-env-{slug}-event', {'changed': payload})
             env_results[slug] = (names, {'delivery_mode': 'input', 'envelope': envelope_value,
                                          'envelope_digest': envelope_digest}, core)
+    deferral_before = json.loads((DEFERRAL_SOURCE / 'repeated-before.json').read_bytes())
+    deferral_result = json.loads((DEFERRAL_SOURCE / 'repeated-deferral-result.json').read_bytes())
+    deferral_candidate = deferral_result['state']
+    pending_outbox = json.loads((OUTBOX_SOURCE / 'pending-checkpoint-v1.json').read_bytes())
+    checkpoints['outbox-pending-checkpoint-v1.json'] = pending_outbox
     root = checkpoints['created-checkpoint-v1.json']['root_instance_id']
     envelope = source_inputs['concurrent_winner']['envelopes'][0]
     selected = 'order-1'
@@ -159,13 +166,14 @@ def build() -> dict[str, bytes]:
                 mapped: dict | None = None, delivery: dict | None = None,
                 root_id: str = root, selected_ids: list[str] | None = None,
                 shared_requested: bool = True, shared_available: bool = True,
-                capacity: str = 'complete', mapping: str = 'order-amount-v1') -> dict:
+                capacity: str = 'complete', mapping: str = 'order-amount-v1',
+                target_override: str | None = None) -> dict:
         aggregate = checkpoints[before or created]['root_record']['aggregate_state']
         creation = ({'machine_id': aggregate['root_machine_id'],
                      'machine_version': aggregate['root_machine_version'],
                      'creation_id': aggregate['creation_id'],
                      'bindings': {'input': {}, 'external': {}}} if operation == 'create' else None)
-        target_runtime_id = aggregate['root_runtime_id'] if operation == 'step' else None
+        target_runtime_id = (target_override or aggregate['root_runtime_id']) if operation == 'step' else None
         return {'operation': operation, 'root_instance_id': root_id,
                 'mapping': ({
                     'mapping_id': 'order-amount-v1',
@@ -174,13 +182,19 @@ def build() -> dict[str, bytes]:
                     'input_payload_field': 'amount', 'input_declaration': 'integer',
                     'supplemental_field': 'supplemental_checkpoint',
                     'status_field': 'status', 'status_rule': 'done_when_count_positive'
-                } if mapping == 'order-amount-v1' else {
+                } if mapping == 'order-amount-v1' else ({
+                    'mapping_id': 'transaction-deferral-v1',
+                    'row_id_field': 'row_id', 'root_identity_field': 'root_instance_id',
+                    'source_field': 'transaction_id', 'input_event': 'new_request',
+                    'input_payload_field': 'transaction_id', 'input_declaration': 'string',
+                    'supplemental_field': 'supplemental_aggregate'
+                } if mapping == 'transaction-deferral-v1' else {
                     'mapping_id': 'external-token-region-v1',
                     'row_id_field': 'row_id', 'root_identity_field': 'root_instance_id',
                     'source_fields': ['region', 'token'], 'target': 'env.changed',
                     'declarations': ['string', 'string'],
                     'supplemental_field': 'supplemental_checkpoint'
-                }), 'creation': creation,
+                })), 'creation': creation,
                 'target_runtime_id': target_runtime_id,
                 'selected_row_ids': selected_ids or [selected], 'boundary': boundary,
                 'mapped_input': mapped, 'delivery': delivery,
@@ -232,9 +246,27 @@ def build() -> dict[str, bytes]:
         request('step', created, boundary='direct_state_write'), 'failure', 'unsupported_projection_boundary')
     add('enum_only_prior_unrepresentable', snapshot(None), snapshot(None),
         request('step', accepted, capacity='none'), 'failure', 'projection_not_lossless')
-    add('proposed_supplement_truncation', snapshot(created), snapshot(created),
-        request('admit', created, delivery=envelope, capacity='truncate'), 'failure', 'projection_not_lossless', calls=1)
-    vectors[-1]['candidate_checkpoint'] = accepted
+    vectors[-1]['prior_artifact'] = accepted
+    add('enum_only_pending_intents_unrepresentable',
+        snapshot(None, owner=pending_outbox['root_instance_id']),
+        snapshot(None, owner=pending_outbox['root_instance_id']),
+        request('step', 'outbox-pending-checkpoint-v1.json',
+                root_id=pending_outbox['root_instance_id'], capacity='none'),
+        'failure', 'projection_not_lossless')
+    vectors[-1]['prior_artifact'] = 'outbox-pending-checkpoint-v1.json'
+    deferral_row = row(None, owner=deferral_before['root_instance_id'])
+    deferral_row['transaction_id'] = ['string', 'transaction-r']
+    deferral_snapshot = {'selected_rows': [deferral_row], 'checkpoint': None,
+                         'supplemental_checkpoint': None,
+                         'aggregate': 'deferral-before-aggregate-v1.json',
+                         'supplemental_aggregate': 'deferral-before-aggregate-v1.json'}
+    add('proposed_supplement_truncation', deferral_snapshot, copy.deepcopy(deferral_snapshot),
+        request('step', None, root_id=deferral_before['root_instance_id'],
+                capacity='truncate', mapping='transaction-deferral-v1',
+                target_override=deferral_before['root_runtime_id']),
+        'failure', 'projection_not_lossless', calls=1)
+    vectors[-1]['candidate_aggregate'] = 'deferral-candidate-aggregate-v1.json'
+    vectors[-1]['candidate_result'] = 'deferral-candidate-result-v1.json'
     add('wrong_root_row_selection', snapshot(created, owner='foreign-root'), snapshot(created, owner='foreign-root'),
         request('admit', created, delivery=envelope), 'failure', 'invalid_projection_selection')
     add('shared_transaction_unavailable', snapshot(created), snapshot(created),
@@ -267,15 +299,26 @@ def build() -> dict[str, bytes]:
                'application_projection_schema_version': 1, 'vectors': vectors}
     files = {'projection-v1.json': render(profile),
              'machine.yaml': (SOURCE / 'machine.yaml').read_bytes(),
-             'external-machine.yaml': ENV_MACHINE.encode()}
+             'external-machine.yaml': ENV_MACHINE.encode(),
+             'deferral-machine.yaml': (DEFERRAL_SOURCE / 'machine.yaml').read_bytes(),
+             'outbox-machine.yaml': (OUTBOX_SOURCE / 'machine.yaml').read_bytes(),
+             'deferral-before-aggregate-v1.json': render(deferral_before),
+             'deferral-candidate-aggregate-v1.json': render(deferral_candidate),
+             'deferral-candidate-result-v1.json': render(deferral_result)}
     files.update({name: render(value) for name, value in checkpoints.items()})
     test = ['title: lossless selected-row projection through embedded facade',
             'static:', '  documents:', '    - { file: machine.yaml, valid: true }',
             '    - { file: external-machine.yaml, valid: true }',
+            '    - { file: deferral-machine.yaml, valid: true }',
+            '    - { file: outbox-machine.yaml, valid: true }',
             'artifacts:', '  documents:']
     for name in checkpoints:
         test.append(f'    - {{ file: {name}, kind: execution_checkpoint_v1, valid: true }}')
-    test.extend(['    - { file: projection-v1.json, kind: application_projection_v1, valid: true }',
+    test.extend([
+        '    - { file: deferral-before-aggregate-v1.json, kind: aggregate_state_v1, valid: true }',
+        '    - { file: deferral-candidate-aggregate-v1.json, kind: aggregate_state_v1, valid: true }',
+        '    - { file: deferral-candidate-result-v1.json, kind: core_step_result_v1, valid: true }',
+        '    - { file: projection-v1.json, kind: application_projection_v1, valid: true }',
                  'application_projection_vectors:'])
     test.extend(f'  - {vector["name"]}' for vector in vectors)
     files['test.yaml'] = ('\n'.join(test) + '\n').encode()

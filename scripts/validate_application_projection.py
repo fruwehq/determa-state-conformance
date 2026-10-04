@@ -14,6 +14,7 @@ REQUIRED = frozenset({
     'direct_state_edit_unsupported', 'enum_only_prior_unrepresentable',
     'proposed_supplement_truncation', 'wrong_root_row_selection',
     'shared_transaction_unavailable', 'stale_revision_rolls_back_rows',
+    'enum_only_pending_intents_unrepresentable',
     'env_success_admission', 'env_success_step', 'env_fault_admission', 'env_fault_step',
 })
 CODES = frozenset({
@@ -32,6 +33,8 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
     expected_files = {
         'projection-v1.json', 'created-checkpoint-v1.json',
         'accepted-checkpoint-v1.json', 'handled-checkpoint-v1.json',
+        'deferral-before-aggregate-v1.json', 'deferral-candidate-aggregate-v1.json',
+        'deferral-candidate-result-v1.json', 'outbox-pending-checkpoint-v1.json',
         *{f'env-{mode}-{stage}-checkpoint-v1.json'
           for mode in ('success', 'fault') for stage in ('created', 'accepted', 'processed')}
     }
@@ -68,11 +71,20 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
         after = vector['after']
         outcome = vector['outcome']
         env_mapping = request['mapping']['mapping_id'] == 'external-token-region-v1'
-        if request['mapping']['mapping_id'] not in {'order-amount-v1', 'external-token-region-v1'}:
+        if request['mapping']['mapping_id'] not in {'order-amount-v1', 'external-token-region-v1', 'transaction-deferral-v1'}:
             fail(name, 'unknown mapping identity')
         if name.startswith('env_') != env_mapping:
             fail(name, 'projection mapping and selected definition differ')
         before_checkpoint = checkpoint(before['checkpoint'], name)
+        before_aggregate = artifacts.get(before.get('aggregate'))
+        if before_aggregate is not None and (
+            name != 'proposed_supplement_truncation' or
+            before.get('supplemental_aggregate') != before.get('aggregate') or
+            after.get('aggregate') != before.get('aggregate') or
+            after.get('supplemental_aggregate') != before.get('aggregate') or
+            before_aggregate['root_instance_id'] != request['root_instance_id']
+        ):
+            fail(name, 'aggregate supplemental storage does not reconstruct prior')
         after_checkpoint = checkpoint(after['checkpoint'], name)
         if len(request['selected_row_ids']) != len(set(request['selected_row_ids'])):
             fail(name, 'ambiguous selected row ids')
@@ -128,7 +140,10 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
         elif request['creation'] is not None:
             fail(name, 'non-create request contains creation input')
         if request['operation'] == 'step':
-            if before_checkpoint is not None and request['target_runtime_id'] != before_checkpoint['root_record']['aggregate_state']['root_runtime_id']:
+            selected_aggregate = before_aggregate or (
+                before_checkpoint['root_record']['aggregate_state'] if before_checkpoint is not None else None
+            )
+            if selected_aggregate is not None and request['target_runtime_id'] != selected_aggregate['root_runtime_id']:
                 fail(name, 'step target is not selected root runtime')
         elif request['target_runtime_id'] is not None:
             fail(name, 'non-step request contains target runtime')
@@ -167,18 +182,31 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
         elif name == 'direct_state_edit_unsupported':
             if request['boundary'] != 'direct_state_write':
                 fail(name, 'unsupported state edit boundary absent')
-        elif name == 'enum_only_prior_unrepresentable':
-            if before_checkpoint is not None or request['supplemental_capacity'] != 'none' or request['expected_checkpoint'] is None:
-                fail(name, 'enum-only mapping has no prior artifact to lose')
-        elif name == 'proposed_supplement_truncation':
-            candidate = checkpoint(vector.get('candidate_checkpoint'), name)
-            if before_checkpoint is None or request['supplemental_capacity'] != 'truncate' or candidate is None:
-                fail(name, 'truncation condition absent')
-            if candidate['root_instance_id'] != request['root_instance_id'] or not any(
-                runtime['ready_mailbox'] or runtime['deferred_mailbox']
-                for runtime in candidate['root_record']['aggregate_state']['runtimes']
+        elif name in {'enum_only_prior_unrepresentable', 'enum_only_pending_intents_unrepresentable'}:
+            prior = checkpoint(vector.get('prior_artifact'), name)
+            if (before_checkpoint is not None or request['supplemental_capacity'] != 'none'
+                    or prior is None or request['expected_checkpoint'] != identity(prior)):
+                fail(name, 'enum-only mapping has no exact prior artifact to lose')
+            if name == 'enum_only_pending_intents_unrepresentable' and (
+                not prior['pending_outbox_intents'] or not prior['operation_receipts']
             ):
-                fail(name, 'proposed artifact has no queued envelope to truncate')
+                fail(name, 'enum-only mapping did not omit pending intents and receipts')
+        elif name == 'proposed_supplement_truncation':
+            candidate = artifacts.get(vector.get('candidate_aggregate'))
+            candidate_result = artifacts.get(vector.get('candidate_result'))
+            if (before_aggregate is None or request['supplemental_capacity'] != 'truncate'
+                    or candidate is None or candidate_result is None):
+                fail(name, 'truncation condition absent')
+            if (candidate['root_instance_id'] != request['root_instance_id']
+                    or candidate_result['state'] != candidate
+                    or candidate_result['disposition'] != 'deferred'):
+                fail(name, 'candidate is not the exact deferred core result')
+            deferred = [entry for runtime in candidate['runtimes'] for entry in runtime['deferred_mailbox']]
+            if not deferred or all(entry['envelope']['payload'] == ['map', []] for entry in deferred):
+                fail(name, 'candidate lacks nonempty deferred envelope payload')
+            ready = [entry for runtime in before_aggregate['runtimes'] for entry in runtime['ready_mailbox']]
+            if not ready or ready[0]['envelope_digest'] not in {entry['envelope_digest'] for entry in deferred}:
+                fail(name, 'deferred candidate does not retain prior ready envelope')
         elif name == 'wrong_root_row_selection':
             if all(row['root_instance_id'] == request['root_instance_id'] for row in before['selected_rows']):
                 fail(name, 'selection is not mismatched')
@@ -224,6 +252,7 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
             'changed_identity_conflict_before_payload': 'event_id_conflict',
             'direct_state_edit_unsupported': 'unsupported_projection_boundary',
             'enum_only_prior_unrepresentable': 'projection_not_lossless',
+            'enum_only_pending_intents_unrepresentable': 'projection_not_lossless',
             'proposed_supplement_truncation': 'projection_not_lossless',
             'wrong_root_row_selection': 'invalid_projection_selection',
             'shared_transaction_unavailable': 'projection_transaction_unavailable',

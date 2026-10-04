@@ -3,6 +3,8 @@ static:
   documents:
     - { file: machine.yaml, valid: true }
     - { file: external-machine.yaml, valid: true }
+    - { file: deferral-machine.yaml, valid: true }
+    - { file: outbox-machine.yaml, valid: true }
 artifacts:
   documents:
     - { file: created-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
@@ -14,6 +16,10 @@ artifacts:
     - { file: env-fault-created-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-fault-accepted-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-fault-processed-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: outbox-pending-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: deferral-before-aggregate-v1.json, kind: aggregate_state_v1, valid: true }
+    - { file: deferral-candidate-aggregate-v1.json, kind: aggregate_state_v1, valid: true }
+    - { file: deferral-candidate-result-v1.json, kind: core_step_result_v1, valid: true }
     - { file: projection-v1.json, kind: application_projection_v1, valid: true }
 application_projection_vectors:
   - create_result_shape
@@ -25,6 +31,7 @@ application_projection_vectors:
   - changed_identity_conflict_before_payload
   - direct_state_edit_unsupported
   - enum_only_prior_unrepresentable
+  - enum_only_pending_intents_unrepresentable
   - proposed_supplement_truncation
   - wrong_root_row_selection
   - shared_transaction_unavailable

@@ -35,20 +35,26 @@ def check_mutation(label: str, mutate) -> None:
         raise AssertionError(f'{label}: relational validator accepted substitution')
 
 
+def vector(profile: dict, name: str) -> dict:
+    return next(item for item in profile['vectors'] if item['name'] == name)
+
+
 def main() -> int:
     probes = [
-        ('row owner swap', lambda p,t: p['vectors'][0]['before']['selected_rows'][0].update(root_instance_id='foreign')),
-        ('row amount swap', lambda p,t: p['vectors'][1]['before']['selected_rows'][0].update(amount=['integer','7'])),
-        ('result state swap', lambda p,t: p['vectors'][2]['outcome']['result_value'].update(state=copy.deepcopy(p['vectors'][1]['outcome']['result_value']['state']))),
-        ('failed row mutation', lambda p,t: p['vectors'][3]['after']['selected_rows'][0].update(status='done')),
-        ('wrong typed failure', lambda p,t: p['vectors'][10]['outcome'].update(code='projection_not_lossless')),
-        ('wrong checkpoint witness', lambda p,t: p['vectors'][2]['after'].update(checkpoint='created-checkpoint-v1.json')),
-        ('replay commits', lambda p,t: p['vectors'][5]['outcome'].update(committed=True)),
-        ('env source mismatch', lambda p,t: p['vectors'][13]['before']['selected_rows'][0].update(token=['string','stale'])),
-        ('env refresh result substitution', lambda p,t: p['vectors'][14]['outcome']['result_value']['state']['runtimes'][0]['variables'][0].update(value=['string','old'])),
-        ('env fault row mutation', lambda p,t: p['vectors'][16]['after']['selected_rows'][0].update(region=['string','east'])),
-        ('env fault misclassified', lambda p,t: p['vectors'][16]['outcome']['result_value'].update(disposition='handled')),
-        ('env fault locator change', lambda p,t: p['vectors'][16]['outcome']['result_value']['fault'].update(source_locator='/machines/0/root/on_events/env/action/0/refresh/only/0')),
+        ('row owner swap', lambda p,t: vector(p, 'create_result_shape')['before']['selected_rows'][0].update(root_instance_id='foreign')),
+        ('row amount swap', lambda p,t: vector(p, 'typed_row_input_atomic_admit')['before']['selected_rows'][0].update(amount=['integer','7'])),
+        ('result state swap', lambda p,t: vector(p, 'step_preserves_complete_result')['outcome']['result_value'].update(state=copy.deepcopy(vector(p, 'typed_row_input_atomic_admit')['outcome']['result_value']['state']))),
+        ('failed row mutation', lambda p,t: vector(p, 'row_float_to_integer_rejected')['after']['selected_rows'][0].update(status='done')),
+        ('wrong typed failure', lambda p,t: vector(p, 'wrong_root_row_selection')['outcome'].update(code='projection_not_lossless')),
+        ('wrong checkpoint witness', lambda p,t: vector(p, 'step_preserves_complete_result')['after'].update(checkpoint='created-checkpoint-v1.json')),
+        ('replay commits', lambda p,t: vector(p, 'equal_delivery_replay')['outcome'].update(committed=True)),
+        ('env source mismatch', lambda p,t: vector(p, 'env_success_admission')['before']['selected_rows'][0].update(token=['string','stale'])),
+        ('env refresh result substitution', lambda p,t: vector(p, 'env_success_step')['outcome']['result_value']['state']['runtimes'][0]['variables'][0].update(value=['string','old'])),
+        ('env fault row mutation', lambda p,t: vector(p, 'env_fault_step')['after']['selected_rows'][0].update(region=['string','east'])),
+        ('env fault misclassified', lambda p,t: vector(p, 'env_fault_step')['outcome']['result_value'].update(disposition='handled')),
+        ('env fault locator change', lambda p,t: vector(p, 'env_fault_step')['outcome']['result_value']['fault'].update(source_locator='/machines/0/root/on_events/env/action/0/refresh/only/0')),
+        ('deferred candidate substitution', lambda p,t: vector(p, 'proposed_supplement_truncation').update(candidate_aggregate='deferral-before-aggregate-v1.json')),
+        ('pending intents omitted', lambda p,t: vector(p, 'enum_only_pending_intents_unrepresentable').update(prior_artifact='accepted-checkpoint-v1.json')),
         ('coverage omission', lambda p,t: t['application_projection_vectors'].pop()),
     ]
     for label, mutation in probes:

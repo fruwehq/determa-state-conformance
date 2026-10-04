@@ -17,7 +17,7 @@
     },
     "vectors": {
       "type": "array",
-      "minItems": 17,
+      "minItems": 18,
       "items": {
         "$ref": "#/$defs/vector"
       }
@@ -66,6 +66,9 @@
         },
         "region": {
           "$ref": "#/$defs/typed"
+        },
+        "transaction_id": {
+          "$ref": "#/$defs/typed"
         }
       }
     },
@@ -90,6 +93,14 @@
         },
         "supplemental_checkpoint": {
           "$ref": "#/$defs/checkpointFile"
+        },
+        "aggregate": {
+          "type": "string",
+          "const": "deferral-before-aggregate-v1.json"
+        },
+        "supplemental_aggregate": {
+          "type": "string",
+          "const": "deferral-before-aggregate-v1.json"
         }
       }
     },
@@ -351,6 +362,15 @@
         },
         "candidate_checkpoint": {
           "$ref": "#/$defs/checkpointFile"
+        },
+        "candidate_aggregate": {
+          "const": "deferral-candidate-aggregate-v1.json"
+        },
+        "candidate_result": {
+          "const": "deferral-candidate-result-v1.json"
+        },
+        "prior_artifact": {
+          "$ref": "#/$defs/checkpointFile"
         }
       }
     },
@@ -577,6 +597,46 @@
             },
             "supplemental_field": {
               "const": "supplemental_checkpoint"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mapping_id",
+            "row_id_field",
+            "root_identity_field",
+            "source_field",
+            "input_event",
+            "input_payload_field",
+            "input_declaration",
+            "supplemental_field"
+          ],
+          "properties": {
+            "mapping_id": {
+              "const": "transaction-deferral-v1"
+            },
+            "row_id_field": {
+              "const": "row_id"
+            },
+            "root_identity_field": {
+              "const": "root_instance_id"
+            },
+            "source_field": {
+              "const": "transaction_id"
+            },
+            "input_event": {
+              "const": "new_request"
+            },
+            "input_payload_field": {
+              "const": "transaction_id"
+            },
+            "input_declaration": {
+              "const": "string"
+            },
+            "supplemental_field": {
+              "const": "supplemental_aggregate"
             }
           }
         }
