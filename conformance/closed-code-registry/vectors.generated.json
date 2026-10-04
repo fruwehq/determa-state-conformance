@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "d4c9bc095bfd573450fc3bcecd52541eec9487d63887c6c1713e5398edae25b3",
+  "registry_sha256": "e525320b36b3bc8a718d21930306ff3445b2177d421acfc86947195ba7a1090e",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -106,6 +106,33 @@
         "permanent_processing_failure",
         "response_lost_after_commit",
         "transient_processing_failure"
+      ]
+    },
+    {
+      "id": "inspection_disposition",
+      "codes": [
+        "deferred",
+        "handled_now",
+        "invalid",
+        "unhandled"
+      ]
+    },
+    {
+      "id": "inspection_failure",
+      "codes": [
+        "inspection_capability_unavailable",
+        "inspection_guard_failure",
+        "inspection_limit_exceeded",
+        "invalid_inspection_request"
+      ]
+    },
+    {
+      "id": "inspection_reason",
+      "codes": [
+        "invalid_envelope",
+        "runtime_inactive",
+        "target_incarnation_mismatch",
+        "target_not_found"
       ]
     },
     {

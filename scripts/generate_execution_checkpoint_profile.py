@@ -2787,7 +2787,8 @@ def main() -> int:
     generated = outputs()
     existing = {
         path
-        for path in PROFILE.rglob("*.json")
+        for profile_name in ("execution-checkpoint", "persistence")
+        for path in (PROFILE / profile_name).rglob("*.json")
         if "checkpoint-04-version1-mailboxes" not in path.parts
     }
     expected = set(generated)
