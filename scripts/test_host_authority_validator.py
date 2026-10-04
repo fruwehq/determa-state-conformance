@@ -12,7 +12,7 @@ from pathlib import Path
 
 from validate_host_authority import AuthorityValidationError, PROFILE, compact, hash_value, load, validate_document
 from run_host_authority_profile import (AdapterOutputError, adapter_call, common_rule_input,
-                                        configured_unclaimed_probe,
+                                        configured_unclaimed_probe, report_binding,
                                         select_production_scenario, verify_configured_profile)
 
 
@@ -153,14 +153,39 @@ def main() -> int:
     worker_report = next(row for row in baseline["profiles"] if row["id"] ==
                          "guarded_local_worker_fencing")["expected_report"]
     assert select_production_scenario(baseline, worker_report)["id"] == "worker_sqlite"
-    wrong_participant = copy.deepcopy(worker_report)
-    wrong_participant["required_participants"][0]["instance_id"] = "other-journal"
-    try:
-        select_production_scenario(baseline, wrong_participant)
-    except AdapterOutputError:
-        pass
-    else:
-        raise AssertionError("runner accepted a claim for an untested participant topology")
+    worker_binding = report_binding(worker_report)
+    for role in ("journal", "worker"):
+        changed_source = copy.deepcopy(worker_report)
+        participant = next(item for item in changed_source["required_participants"]
+                           if item["role"] == role)
+        participant["provider_reference"]["content_digest"] = "sha256:" + "a" * 64
+        assert select_production_scenario(baseline, changed_source)["id"] == "worker_sqlite"
+        changed_binding = report_binding(changed_source)
+        assert changed_binding != worker_binding
+        unclaimed = next(row for row in baseline["unclaimed_guarantee_checks"]
+                         if row["id"] == "unclaimed_fence_worker")
+        probe, expected = configured_unclaimed_probe(unclaimed, changed_binding, changed_source)
+        assert probe["setup"]["binding"] == expected["binding"] == changed_binding
+        assert probe["setup"]["ledger_before"]["required_participant_records"] == [
+            "journal:journal-1", "worker:worker-1"]
+    for name, mutate in [
+        ("wrong journal instance", lambda report: report["required_participants"][0].update(
+            instance_id="other-journal")),
+        ("missing worker", lambda report: report["required_participants"].pop()),
+        ("extra participant", lambda report: report["required_participants"].append(
+            copy.deepcopy(report["required_participants"][0]))),
+        ("reordered participants", lambda report: report["required_participants"].reverse()),
+        ("wrong topology", lambda report: report["topology"].update(
+            identifier="other-sqlite-topology")),
+    ]:
+        wrong = copy.deepcopy(worker_report)
+        mutate(wrong)
+        try:
+            select_production_scenario(baseline, wrong)
+        except AdapterOutputError:
+            pass
+        else:
+            raise AssertionError(f"runner accepted {name} for an untested topology")
     for name, profile_id, installation in [
         ("fabricated safe relocation", "proved_same_authority_local_relocation_support", None),
         ("healthy report without installed closure", "guarded_local_scope_without_relocation", None),
@@ -212,6 +237,9 @@ def main() -> int:
     worker_installation = {**installation, "participant_installations": participant_installations}
     verify_configured_profile({"report_bytes": compact(worker), "installation_evidence": worker_installation},
                               spec, set(), require_native_proof=False)
+    assert select_production_scenario(baseline, worker)["id"] == "worker_sqlite"
+    assert all(participant["provider_reference"]["content_digest"] != original["provider_reference"]["content_digest"]
+               for participant, original in zip(worker["required_participants"], worker_report["required_participants"]))
     corrupted = copy.deepcopy(worker_installation)
     corrupted["participant_installations"][0]["closure_bytes_base64"] = "Yg=="
     try:
@@ -221,6 +249,16 @@ def main() -> int:
         pass
     else:
         raise AssertionError("public profile gate accepted wrong installed participant")
+    changed_report = copy.deepcopy(worker)
+    changed_report["required_participants"][0]["provider_reference"]["content_digest"] = (
+        "sha256:" + hashlib.sha256(b"uninstalled journal").hexdigest())
+    try:
+        verify_configured_profile({"report_bytes": compact(changed_report),
+            "installation_evidence": worker_installation}, spec, set(), require_native_proof=False)
+    except AdapterOutputError:
+        pass
+    else:
+        raise AssertionError("public profile gate accepted a changed participant reference")
     print(f"rejected {len(attacks)} adversarial host authority substitutions")
     return 0
 
