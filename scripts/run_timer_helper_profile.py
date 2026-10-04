@@ -61,14 +61,16 @@ def loaded_closure_digest(files, module_paths):
         if type(item) is not dict or set(item) != {
                 "logical_path", "absolute_path", "bytes_base64"} or \
                 type(item["logical_path"]) is not str or not item["logical_path"] or \
-                item["logical_path"].startswith("/") or ".." in item["logical_path"].split("/"):
+                item["logical_path"].startswith("/") or "\\" in item["logical_path"] or \
+                any(segment in ("", ".", "..") for segment in item["logical_path"].split("/")):
             raise ValueError("loaded timer source file identity invalid")
         try:
             body = base64.b64decode(item["bytes_base64"], validate=True)
         except (TypeError, ValueError, binascii.Error) as error:
             raise ValueError("loaded timer source bytes are not canonical base64") from error
         path = Path(item["absolute_path"])
-        if not path.is_absolute() or not path.is_file() or not body or path.read_bytes() != body:
+        if not path.is_absolute() or not path.is_file() or not body or path.read_bytes() != body or \
+                base64.b64encode(body).decode() != item["bytes_base64"]:
             raise ValueError("loaded timer source bytes differ from installed file")
         actual_paths.append(str(path))
         inventory.append([item["logical_path"], "sha256:" + hashlib.sha256(body).hexdigest()])
@@ -105,7 +107,7 @@ def verify_configured(observed, spec_root, completed_request_digests):
         config = base64.b64decode(installation["configuration_bytes_base64"], validate=True)
     except (TypeError, ValueError, binascii.Error) as error:
         raise ValueError("configured timer closure or configuration is not canonical base64") from error
-    if not config:
+    if not config or base64.b64encode(config).decode() != installation["configuration_bytes_base64"]:
         raise ValueError("configured timer configuration is empty")
     hash_bytes = lambda value: "sha256:" + hashlib.sha256(value).hexdigest()
     if loaded_closure_digest(installation["loaded_closure_files"],
