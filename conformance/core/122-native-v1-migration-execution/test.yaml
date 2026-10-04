@@ -31,6 +31,7 @@ static:
       valid: true
 artifacts:
   documents:
+    - { file: operation-failures.json, kind: version1_operation_failures, valid: true }
     - file: chain-descriptor-v1-first.json
       kind: migration_descriptor_v1
       valid: true
@@ -200,6 +201,7 @@ version1_vectors:
     descriptor_files: []
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/empty_route_changed_definition_is_missing }
       code: migration_route_missing
       unchanged_file: chain-source-aggregate-v1.json
   - name: exact_two_hop_route
@@ -227,6 +229,7 @@ version1_vectors:
       - chain-descriptor-v1-first.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/wrong_descriptor_order }
       code: migration_route_mismatch
       unchanged_file: chain-source-aggregate-v1.json
   - name: repeated_descriptor_cycle
@@ -241,6 +244,7 @@ version1_vectors:
       - chain-descriptor-v1-first.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/repeated_descriptor_cycle }
       code: migration_route_mismatch
       unchanged_file: chain-source-aggregate-v1.json
   - name: identical_retry
@@ -264,6 +268,7 @@ version1_vectors:
     descriptor_file: retry-invalid-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/identical_failed_retry }
       code: migration_totality_failure
       unchanged_file: retry-source-aggregate-v1.json
   - name: migration_then_processing_handled
@@ -324,6 +329,7 @@ version1_vectors:
     descriptor_file: completed-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/maintenance_required }
       code: terminal_migration_requires_maintenance
       unchanged_file: completed-source-aggregate-v1.json
   - name: completed_preserved
@@ -358,5 +364,6 @@ version1_vectors:
     descriptor_file: faulted-reject-descriptor.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/terminal_policy_rejects }
       code: terminal_migration_rejected
       unchanged_file: faulted-source-aggregate-v1.json

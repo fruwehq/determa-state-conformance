@@ -33,6 +33,7 @@ static:
       valid: true
 artifacts:
   documents:
+    - { file: operation-failures.json, kind: version1_operation_failures, valid: true }
     - file: active-descriptor-v1.json
       kind: migration_descriptor_v1
       valid: true
@@ -166,6 +167,7 @@ version1_vectors:
     descriptor_file: deleted-missing-active-state-mapping.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/missing_active_state_mapping }
       code: migration_totality_failure
       unchanged_file: deleted-source-aggregate-v1.json
   - name: ambiguous_active_state_mapping
@@ -178,6 +180,7 @@ version1_vectors:
     descriptor_file: deleted-ambiguous-active-state-mapping.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/ambiguous_active_state_mapping }
       code: invalid_migration_descriptor
       unchanged_file: deleted-source-aggregate-v1.json
   - name: partial_variable_mapping
@@ -190,6 +193,7 @@ version1_vectors:
     descriptor_file: deleted-partial-variable-mapping.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/partial_variable_mapping }
       code: migration_totality_failure
       unchanged_file: deleted-source-aggregate-v1.json
   - name: guessed_reset
@@ -202,6 +206,7 @@ version1_vectors:
     descriptor_file: deleted-guessed-reset.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/guessed_reset }
       code: migration_totality_failure
       unchanged_file: deleted-source-aggregate-v1.json
   - name: total_variable_transform

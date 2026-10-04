@@ -103,8 +103,10 @@ ARTIFACT_KINDS = {
 DRIVER_ARTIFACT_KINDS = {
     "version1_operation_inputs": "version1-operation-inputs.schema.json",
     "version1_operation_result": "version1-operation-result.schema.json",
+    "version1_operation_failures": "version1-operation-failures.schema.json",
     "durable_host_inputs_v1": "durable-host-inputs-v1.schema.json",
     "durable_host_results_v1": "durable-host-results-v1.schema.json",
+    "durable_host_responses_v1": "durable-host-responses-v1.schema.json",
     "durable_host_store_v1": "durable-host-store-v1.schema.json",
     "durable_host_call_log_v1": "durable-host-call-log-v1.schema.json",
 }
@@ -195,6 +197,8 @@ REQUIRED_DURABLE_HOST_COVERAGE = frozenset(
         "checkpoint_root_no_reuse",
         "checkpoint_root_tombstone",
         "checkpoint_root_tombstone_replay",
+        "permanent_root_tombstone_first",
+        "permanent_root_tombstone_equal_retry",
         "checkpoint_running_root_tombstone_rejected",
         "checkpoint_scope_fail_closed",
         "checkpoint_scope_isolation",
@@ -3216,7 +3220,7 @@ def validate_version1_vectors(
             break
         if invalid_input_error is not None:
             if (
-                expectation
+                {key: value for key, value in expectation.items() if key != "exact_failure_response"}
                 != {
                     "result": "failure",
                     "code": invalid_input_error,
@@ -3230,6 +3234,15 @@ def validate_version1_vectors(
                     f"{location}: invalid input artifact requires exact "
                     f"{invalid_input_error} rejection"
                 )
+            response_ref = expectation["exact_failure_response"]
+            response_manifest = manifests.get(response_ref["file"])
+            if (response_manifest is None or response_manifest["kind"] != "version1_operation_failures" or not response_manifest["valid"]):
+                raise ValidationFailure(f"{location}: exact failure response artifact is not valid")
+            response = resolve_artifact_pointer(
+                artifact(response_ref["file"]).document, response_ref["pointer"], location
+            )
+            if response != {"result": "failure", "code": invalid_input_error}:
+                raise ValidationFailure(f"{location}: exact typed failure response differs from request rejection")
             continue
         if operation == "checkpoint_migrate_v1":
             checkpoint_before = artifact(vector["checkpoint_before"]).document
@@ -5433,6 +5446,21 @@ def validate_version1_vectors(
             raise ValidationFailure(
                 f"{location}: rejection label lacks an operation-specific supporting predicate"
             )
+        if expectation["result"] == "failure":
+            response_ref = expectation["exact_failure_response"]
+            response_manifest = manifests.get(response_ref["file"])
+            if (
+                response_manifest is None
+                or response_manifest["kind"] != "version1_operation_failures"
+                or not response_manifest["valid"]
+            ):
+                raise ValidationFailure(f"{location}: exact failure response artifact is not valid")
+            response_document = artifact(response_ref["file"]).document
+            response = resolve_artifact_pointer(
+                response_document, response_ref["pointer"], location
+            )
+            if response != {"result": "failure", "code": expectation["code"]}:
+                raise ValidationFailure(f"{location}: exact typed failure response differs from request rejection")
         unchanged_file = expectation.get("unchanged_file")
         if unchanged_file is not None:
             if unchanged_file not in artifact_names:
@@ -6802,6 +6830,164 @@ def validate_cross_scope_pair(
             )
 
 
+def expected_core_step_result(checkpoint_after: dict[str, Any]) -> dict[str, Any]:
+    """Build the expected full core value from independent committed evidence."""
+    receipt = next(
+        item for item in reversed(checkpoint_after["operation_receipts"])
+        if item["operation_kind"] == "event_terminal"
+    )
+    aggregate = checkpoint_after["root_record"]["aggregate_state"]
+    emissions: list[dict[str, Any]] = []
+    for reference in receipt["emission_references"]:
+        if reference["kind"] == "external_outbox":
+            intent = next(
+                record["intent"] for record in checkpoint_after["pending_outbox_intents"]
+                if record["intent"]["effect_id"] == reference["effect_id"]
+            )
+            emissions.append(intent)
+        elif reference["kind"] == "internal_mailbox":
+            entry = next(
+                entry for runtime in aggregate["runtimes"]
+                for entry in runtime["ready_mailbox"] + runtime["deferred_mailbox"]
+                if entry["envelope"]["event_id"] == reference["event_id"]
+            )
+            emissions.append({
+                "kind": "internal_mailbox",
+                "emission_index": reference["emission_index"],
+                "event_id": reference["event_id"],
+                "acceptance_sequence": entry["acceptance_sequence"],
+                "queue_sequence": entry["queue_sequence"],
+            })
+        else:
+            raise ValidationFailure("unsupported internal disposed emission in response derivation")
+    outcome = receipt["outcome"]
+    return {
+        "core_step_result_format": "determa.core_step_result",
+        "core_step_result_schema_version": 1,
+        "status": outcome["status"],
+        "disposition": outcome["disposition"],
+        "state": aggregate,
+        "emissions": emissions,
+        "lifecycle_dispositions": [],
+        "fault": outcome["fault"],
+        "rejection": outcome["rejection"],
+    }
+
+
+def validate_exact_durable_response(
+    operation_input: dict[str, Any],
+    operation_result: dict[str, Any],
+    checkpoint_after: dict[str, Any] | None,
+    store_after: dict[str, Any] | None,
+    response: Any,
+    location: str,
+) -> None:
+    """Bind each complete driver return to request identity and retained evidence."""
+    operation = operation_input["operation"]
+    outcome = operation_result["result"]
+    if outcome == "crashed":
+        expected = {"kind": "no_response"}
+    elif outcome in {"rejected", "quarantined"}:
+        code = operation_result["code"]
+        if outcome == "quarantined":
+            if store_after is None:
+                raise ValidationFailure(f"{location}: quarantine response lacks store evidence")
+            expected = {"kind": "quarantine", "body": {"code": code, "record": store_after["quarantine"]}}
+        else:
+            expected = {"kind": "typed_failure", "body": {"code": code}}
+    elif operation == "checkpoint_tombstone_v1":
+        if checkpoint_after is None:
+            raise ValidationFailure(f"{location}: tombstone response lacks checkpoint")
+        tombstone = checkpoint_after["root_record"]
+        if tombstone["status"] != "tombstone" or tombstone["tombstone_operation_id"] != operation_input["tombstone_operation_id"]:
+            raise ValidationFailure(f"{location}: tombstone response has no matching operation identity")
+        expected = {"kind": "tombstoned", "body": {"result": "tombstoned", "tombstone": tombstone}}
+    elif operation == "checkpoint_create_v1":
+        if checkpoint_after is None:
+            raise ValidationFailure(f"{location}: creation response lacks checkpoint")
+        receipts = [
+            item for item in checkpoint_after["operation_receipts"]
+            if item["operation_kind"] == "creation"
+            and item["creation_id"] == operation_input["creation_id"]
+        ]
+        if len(receipts) != 1:
+            raise ValidationFailure(f"{location}: creation response has no unique receipt")
+        expected = {"kind": "creation", "body": {"result": "committed", "receipt": receipts[0]}}
+    elif operation == "checkpoint_update_outbox_v1":
+        if checkpoint_after is None:
+            raise ValidationFailure(f"{location}: pending outbox response lacks checkpoint")
+        records = [
+            item for item in checkpoint_after["pending_outbox_intents"]
+            if item["intent"]["effect_id"] == operation_input["effect_id"]
+        ]
+        if len(records) != 1:
+            raise ValidationFailure(f"{location}: pending outbox response has no unique record")
+        expected = {"kind": "pending_outbox", "body": {"result": "committed", "record": records[0]}}
+    elif operation == "checkpoint_terminalize_outbox_v1":
+        if checkpoint_after is None:
+            raise ValidationFailure(f"{location}: terminal outbox response lacks checkpoint")
+        records = [
+            item for item in checkpoint_after["terminal_outbox_records"]
+            if item["intent"]["effect_id"] == operation_input["effect_id"]
+        ]
+        if len(records) != 1:
+            raise ValidationFailure(f"{location}: terminal outbox response has no unique record")
+        expected = {"kind": "terminal_outbox", "body": records[0]}
+    elif operation == "checkpoint_admit_v1":
+        if checkpoint_after is None:
+            raise ValidationFailure(f"{location}: admission response lacks retained checkpoint")
+        evidence = []
+        for member in operation_input["envelopes"]:
+            event_id = member["envelope"]["event_id"]
+            receipt = next((item for item in checkpoint_after["operation_receipts"]
+                if item["operation_kind"] == "acceptance" and item["event_id"] == event_id), None)
+            tombstone = next((item for item in checkpoint_after["event_identity_tombstones"]
+                if item["event_id"] == event_id), None)
+            if (receipt is None) == (tombstone is None):
+                raise ValidationFailure(f"{location}: admission response lacks unique identity evidence")
+            evidence.append(receipt if receipt is not None else tombstone)
+        expected = {"kind": "admission", "body": {"evidence": evidence}}
+    elif operation == "checkpoint_step_v1":
+        if checkpoint_after is None:
+            raise ValidationFailure(f"{location}: processing response lacks committed evidence")
+        receipt = next(item for item in reversed(checkpoint_after["operation_receipts"])
+            if item["operation_kind"] == "event_terminal")
+        expected = {"kind": "processing", "body": {"core_result": expected_core_step_result(checkpoint_after), "receipt": receipt}}
+    elif operation == "persistence_process_v1":
+        if store_after is None:
+            raise ValidationFailure(f"{location}: persistence response lacks store evidence")
+        checkpoint = store_after["checkpoint"]
+        receipt = next(item for item in reversed(checkpoint["operation_receipts"])
+            if item["operation_kind"] == "event_terminal")
+        if outcome == "replayed":
+            expected = {"kind": "retained_receipt", "body": receipt}
+        else:
+            expected = {"kind": "persistence_commit", "body": {"core_result": expected_core_step_result(checkpoint), "receipt": receipt, "migration_audit_records": checkpoint["migration_audit_records"]}}
+    elif operation == "persistence_release_quarantine_v1":
+        expected = {"kind": "host_acknowledgement", "body": {"result": "released"}}
+    elif operation == "checkpoint_register_adapter_v1":
+        expected = {"kind": "registration", "body": operation_input["registration"]}
+    elif operation == "checkpoint_resolve_adapter_v1":
+        registrations = [item for item in operation_input["registrations"] if item["adapter_identifier"] == operation_input["adapter_identifier"]]
+        if len(registrations) != 1:
+            raise ValidationFailure(f"{location}: adapter resolution has no unique registration")
+        expected = {"kind": "resolution", "body": {"registration": registrations[0], "configuration": operation_input["configuration"], "requested_capabilities": operation_input["requested_capabilities"]}}
+    elif operation == "checkpoint_validate_capabilities_v1":
+        body = {key: operation_input[key] for key in ("adapter_identifier", "host_profile", "store_capabilities", "host_guarantees", "retention_mode")}
+        body["validated"] = True
+        expected = {"kind": "capability_report", "body": body}
+    elif operation == "checkpoint_scope_operation_v1":
+        if len(operation_input["store_records"]) != 1:
+            raise ValidationFailure(f"{location}: successful scope response has no unique record")
+        expected = {"kind": "scope_record", "body": operation_input["store_records"][0]}
+    elif operation == "checkpoint_inject_store_v1":
+        expected = {"kind": "adapter_reference", "body": {"adapter_identifier": operation_input["store_adapter_identifier"], "uri": operation_input["store_uri"], "configuration": operation_input["configuration"], "capabilities": operation_input["capabilities"]}}
+    else:
+        expected = {"kind": "host_acknowledgement", "body": {"result": outcome}}
+    if response != expected:
+        raise ValidationFailure(f"{location}: exact raw response differs from request and retained evidence")
+
+
 def validate_durable_host_vectors(
     case: Path,
     test: dict[str, Any],
@@ -6814,6 +7000,7 @@ def validate_durable_host_vectors(
     coverage: set[str] = set()
     names: set[str] = set()
     cross_scope_operations: list[dict[str, Any]] = []
+    tombstone_responses: dict[tuple[str, str], dict[str, Any]] = {}
 
     def require_kind(filename: str, kind: str, location: str) -> Any:
         manifest = manifests.get(filename)
@@ -6875,6 +7062,16 @@ def validate_durable_host_vectors(
             raise ValidationFailure(
                 f"{location}: durable host failure code is absent from the closed registry"
             )
+
+        response_ref = vector.get("raw_response")
+        if response_ref is None:
+            raise ValidationFailure(f"{location}: exact raw response reference is missing")
+        response_document = require_kind(
+            response_ref["file"], "durable_host_responses_v1", location
+        )
+        response = resolve_artifact_pointer(
+            response_document, response_ref["pointer"], location
+        )
 
         before_name = vector.get("checkpoint_before")
         stored_before_name = vector.get("stored_checkpoint_before")
@@ -7128,6 +7325,28 @@ def validate_durable_host_vectors(
                 location,
                 artifacts,
             )
+
+        response_checkpoint = (
+            require_kind(after_name, "execution_checkpoint_v1", location)
+            if after_name is not None else None
+        )
+        response_store = (
+            require_kind(store_after_name, "durable_host_store_v1", location)
+            if store_after_name is not None else None
+        )
+        validate_exact_durable_response(
+            operation_input, operation_result, response_checkpoint,
+            response_store, response, location,
+        )
+        if (operation_input["operation"] == "checkpoint_tombstone_v1"
+                and operation_result["result"] in {"committed", "replayed"}):
+            identity = (
+                response_checkpoint["root_instance_id"],
+                operation_input["tombstone_operation_id"],
+            )
+            prior_response = tombstone_responses.setdefault(identity, response)
+            if response != prior_response:
+                raise ValidationFailure(f"{location}: first and replayed tombstone response differ")
 
         call_log_name = vector.get("call_log")
         if call_log_name is not None:

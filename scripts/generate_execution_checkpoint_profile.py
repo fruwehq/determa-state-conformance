@@ -11,6 +11,8 @@ from typing import Any
 
 import rfc8785
 
+from validate_conformance import expected_core_step_result
+
 from generate_version1_vectors import (
     aggregate_shape_fingerprint_document,
     bundle_binding,
@@ -2391,6 +2393,8 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
     postgresql = STANDARD_REGISTRATIONS[3]
     vendor_http = STANDARD_REGISTRATIONS[4]
     requests: dict[str, dict[str, Any]] = {
+        "tombstone_first": tombstone_request(terminal_after_handled, "permanent-tombstone") | {"terminal_status": "faulted"},
+        "tombstone_replay": tombstone_request(permanent_tombstone, "permanent-tombstone"),
         "creation_rejection": creation_rejection,
         "pending_admission_replay": admission_request(
             accepted,
@@ -2625,6 +2629,7 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
         case / "mixed-batch-checkpoint-v1.json": write_json(case / "x", mixed_batch),
         case / "inactive-component-checkpoint-v1.json": write_json(case / "x", inactive_checkpoint),
         case / "bounded-checkpoint-v1.json": write_json(case / "x", bounded),
+        case / "terminal-before-tombstone-checkpoint-v1.json": write_json(case / "x", terminal_after_handled),
         case / "permanent-tombstone-checkpoint-v1.json": write_json(case / "x", permanent_tombstone),
         case / "bounded-tombstone-checkpoint-v1.json": write_json(case / "x", bounded_tombstone),
         case / "inputs-v1.json": write_json(case / "x", request_document(requests)),
@@ -2679,6 +2684,101 @@ def outputs() -> dict[Path, bytes]:
         start=1,
     ):
         result_map.update(generate_persistence_case(index, slug))
+    for test_path in PROFILE.rglob("test.yaml"):
+        case = test_path.parent
+        responses: dict[str, dict[str, Any]] = {}
+        for vector in load_yaml(test_path).get("durable_host_vectors", []):
+            reference = vector.get("raw_response")
+            if reference is None:
+                raise ValueError(f"missing exact response reference: {case / 'test.yaml'}")
+            if "request" in vector:
+                request_key = vector["request"]["pointer"].split("/")[-1]
+                request_document = json.loads(result_map[case / vector["request"]["file"]])
+                request = request_document["requests"][request_key]
+            else:
+                request_key = vector["name"]
+                request = vector["raw_admission_request"]
+            result_document = json.loads(result_map[case / vector["result"]["file"]])
+            result_key = vector["result"]["pointer"].split("/")[-1]
+            outcome = result_document["results"][result_key]
+            checkpoint = (
+                json.loads(result_map[case / vector["checkpoint_after"]])
+                if vector.get("checkpoint_after") is not None else None
+            )
+            operation = request["operation"]
+            if outcome["result"] == "crashed":
+                response = {"kind": "no_response"}
+            elif outcome["result"] in {"rejected", "quarantined"}:
+                if outcome["result"] == "quarantined":
+                    body = {"code": outcome["code"], "record": json.loads(result_map[case / vector["store_after"]])["quarantine"]}
+                    response = {"kind": "quarantine", "body": body}
+                else:
+                    response = {"kind": "typed_failure", "body": {"code": outcome["code"]}}
+            elif operation == "checkpoint_tombstone_v1":
+                response = {"kind": "tombstoned", "body": {"result": "tombstoned", "tombstone": checkpoint["root_record"]}}
+            elif operation == "checkpoint_create_v1":
+                receipt = next(
+                    item for item in checkpoint["operation_receipts"]
+                    if item["operation_kind"] == "creation"
+                    and item["creation_id"] == request["creation_id"]
+                )
+                response = {"kind": "creation", "body": {"result": "committed", "receipt": receipt}}
+            elif operation == "checkpoint_update_outbox_v1":
+                record = next(
+                    item for item in checkpoint["pending_outbox_intents"]
+                    if item["intent"]["effect_id"] == request["effect_id"]
+                )
+                response = {"kind": "pending_outbox", "body": {"result": "committed", "record": record}}
+            elif operation == "checkpoint_terminalize_outbox_v1":
+                body = next(
+                    item for item in checkpoint["terminal_outbox_records"]
+                    if item["intent"]["effect_id"] == request["effect_id"]
+                )
+                response = {"kind": "terminal_outbox", "body": body}
+            elif operation == "checkpoint_admit_v1":
+                event_ids = [member["envelope"]["event_id"] for member in request["envelopes"]]
+                evidence = [next(
+                    (item for item in checkpoint["operation_receipts"] if item["operation_kind"] == "acceptance" and item["event_id"] == event_id),
+                    next((item for item in checkpoint["event_identity_tombstones"] if item["event_id"] == event_id), None),
+                ) for event_id in event_ids]
+                if any(item is None for item in evidence):
+                    raise ValueError("admission return lacks retained identity evidence")
+                response = {"kind": "admission", "body": {"evidence": evidence}}
+            elif operation == "checkpoint_step_v1":
+                receipt = next(item for item in reversed(checkpoint["operation_receipts"]) if item["operation_kind"] == "event_terminal")
+                response = {"kind": "processing", "body": {"core_result": expected_core_step_result(checkpoint), "receipt": receipt}}
+            elif operation == "persistence_process_v1":
+                persisted = json.loads(result_map[case / vector["store_after"]])["checkpoint"]
+                receipt = next(item for item in reversed(persisted["operation_receipts"]) if item["operation_kind"] == "event_terminal")
+                if outcome["result"] == "replayed":
+                    response = {"kind": "retained_receipt", "body": receipt}
+                else:
+                    response = {"kind": "persistence_commit", "body": {"core_result": expected_core_step_result(persisted), "receipt": receipt, "migration_audit_records": persisted["migration_audit_records"]}}
+            elif operation == "persistence_release_quarantine_v1":
+                response = {"kind": "host_acknowledgement", "body": {"result": "released"}}
+            elif operation == "checkpoint_register_adapter_v1":
+                response = {"kind": "registration", "body": request["registration"]}
+            elif operation == "checkpoint_resolve_adapter_v1":
+                registration = next(item for item in request["registrations"] if item["adapter_identifier"] == request["adapter_identifier"])
+                response = {"kind": "resolution", "body": {"registration": registration, "configuration": request["configuration"], "requested_capabilities": request["requested_capabilities"]}}
+            elif operation == "checkpoint_validate_capabilities_v1":
+                response = {"kind": "capability_report", "body": {key: request[key] for key in ("adapter_identifier", "host_profile", "store_capabilities", "host_guarantees", "retention_mode")} | {"validated": True}}
+            elif operation == "checkpoint_scope_operation_v1":
+                response = {"kind": "scope_record", "body": request["store_records"][0]}
+            elif operation == "checkpoint_inject_store_v1":
+                response = {"kind": "adapter_reference", "body": {"adapter_identifier": request["store_adapter_identifier"], "uri": request["store_uri"], "configuration": request["configuration"], "capabilities": request["capabilities"]}}
+            else:
+                response = {"kind": "host_acknowledgement", "body": {"result": outcome["result"]}}
+            responses[request_key] = response
+        if responses:
+            result_map[case / "responses-v1.json"] = write_json(
+                case / "x",
+                {
+                    "durable_host_responses_format": "determa.durable_host.responses",
+                    "durable_host_responses_schema_version": 1,
+                    "responses": responses,
+                },
+            )
     return result_map
 
 

@@ -209,14 +209,16 @@ behavior that format 1 assigns to queue plugins.
 Cases with `version1_vectors` exercise the pure, language-neutral operations from SPEC
 §§8, 16, and 17. Their operation names are driver adapters, not required public API
 names. A vector supplies the exact aggregate or checkpoint before value where required,
-an exact target or request artifact, and either canonical RFC 8785 result bytes or one
-closed failure code with the byte-identical unchanged input artifact.
+an exact target or request artifact, and either canonical RFC 8785 result bytes or a
+closed exact typed failure response with the byte-identical unchanged input artifact.
 
 An implementation harness reads the complete request at `request_file` and
 `request_pointer`, resolves every named prior artifact and trusted definition, and
 passes those literal arguments to its production implementation. It captures the
-first raw response and committed after-state bytes and compares them to
-`exact_result_file` and the named after artifact. A replay invokes the same request
+complete returned operation value or direct typed error and committed after-state bytes.
+A success compares its returned value to `exact_result_file`; a failure compares the
+closed `{result: failure, code}` driver-normalized error body at
+`exact_failure_response` and the unchanged input artifact independently. A replay invokes the same request
 again and compares the retained response and unchanged bytes. The harness must not
 dispatch by vector name or coverage label, construct a response from expected fixture
 data, or invent a missing definition. The generators only construct deterministic

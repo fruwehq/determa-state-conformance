@@ -10,6 +10,7 @@ artifacts:
     - { file: released-store-v1.json, kind: durable_host_store_v1, valid: true }
     - { file: inputs-v1.json, kind: durable_host_inputs_v1, valid: true }
     - { file: results-v1.json, kind: durable_host_results_v1, valid: true }
+    - { file: responses-v1.json, kind: durable_host_responses_v1, valid: true }
     - { file: commit-call-log-v1.json, kind: durable_host_call_log_v1, valid: true }
     - { file: replay-call-log-v1.json, kind: durable_host_call_log_v1, valid: true }
     - { file: rollback-call-log-v1.json, kind: durable_host_call_log_v1, valid: true }
@@ -24,6 +25,7 @@ durable_host_vectors:
     call_log: commit-call-log-v1.json
     request: { file: inputs-v1.json, pointer: /requests/process }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/process }
     expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }
   - name: persistence_inbox_equal_replay
     covers: [persistence_inbox_idempotency, persistence_inbox_replay_no_core_call]
@@ -33,4 +35,5 @@ durable_host_vectors:
     call_log: replay-call-log-v1.json
     request: { file: inputs-v1.json, pointer: /requests/replay }
     result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/replay }
     expect: { result: replayed, mutation: none, core_calls: 0, broker_acknowledged: true }

@@ -19,6 +19,15 @@
     "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
     "jsonFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.json$" },
     "yamlFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.yaml$" },
+    "artifactPointer": {
+      "type": "object",
+      "required": ["file", "pointer"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "$ref": "#/$defs/jsonFile" },
+        "pointer": { "type": "string", "pattern": "^(?:/(?:[^~/]|~[01])*)+$" }
+      }
+    },
     "success": {
       "type": "object",
       "required": ["result", "exact_result_file"],
@@ -30,12 +39,13 @@
     },
     "failure": {
       "type": "object",
-      "required": ["result", "code", "unchanged_file"],
+      "required": ["result", "code", "unchanged_file", "exact_failure_response"],
       "additionalProperties": false,
       "properties": {
         "result": { "const": "failure" },
         "code": { "type": "string", "minLength": 1 },
         "unchanged_file": { "$ref": "#/$defs/jsonFile" },
+        "exact_failure_response": { "$ref": "#/$defs/artifactPointer" },
         "caller_still_owns_input": { "const": true }
       }
     },

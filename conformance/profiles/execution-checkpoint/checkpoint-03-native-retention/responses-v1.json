@@ -1,0 +1,242 @@
+{
+  "durable_host_responses_format": "determa.durable_host.responses",
+  "durable_host_responses_schema_version": 1,
+  "responses": {
+    "complete_process": {
+      "kind": "processing",
+      "body": {
+        "core_result": {
+          "core_step_result_format": "determa.core_step_result",
+          "core_step_result_schema_version": 1,
+          "status": "completed",
+          "disposition": "handled",
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:dd1beacb40c82fe15cecec782145ef3ea85d0b1b8e3bf003803ab5f989769b58",
+            "namespace": "conformance.execution_checkpoint_native_retention",
+            "root_machine_id": "counter",
+            "root_machine_version": "1",
+            "root_instance_id": "checkpoint-retention-root",
+            "creation_id": "checkpoint-retention-create",
+            "root_runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "3",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "2",
+            "next_queue_sequence": "2",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:dd1beacb40c82fe15cecec782145ef3ea85d0b1b8e3bf003803ab5f989769b58",
+                    "machine": {
+                      "namespace": "conformance.execution_checkpoint_native_retention",
+                      "machine_id": "counter",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "checkpoint-retention-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "checkpoint-retention-root",
+                    "root_runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:dd1beacb40c82fe15cecec782145ef3ea85d0b1b8e3bf003803ab5f989769b58",
+                  "machine": {
+                    "namespace": "conformance.execution_checkpoint_native_retention",
+                    "machine_id": "counter",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "completed",
+                "active_leaf_state_definition_pointers": [],
+                "active_state_activations": [],
+                "variables": [],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/0/root",
+                    "next_sequence": "1"
+                  },
+                  {
+                    "definition_pointer": "/machines/0/root/states/active",
+                    "next_sequence": "1"
+                  },
+                  {
+                    "definition_pointer": "/machines/0/root/states/finished",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:c31d54b7a61681d09a6dd81a735487417624e1ca417d4257719af742221afa36"
+          },
+          "emissions": [],
+          "lifecycle_dispositions": [],
+          "fault": null,
+          "rejection": null
+        },
+        "receipt": {
+          "operation_kind": "event_terminal",
+          "receipt_sequence": "4",
+          "event_id": "retention-complete",
+          "request_digest": "sha256:5a80eaf529dc83adee795a67634b6f89b5b6dcae1b50adc8728609afd8140df4",
+          "acceptance_sequence": "1",
+          "final_queue_sequence": "1",
+          "committed_revision": "5",
+          "resulting_aggregate_state_digest": "sha256:c31d54b7a61681d09a6dd81a735487417624e1ca417d4257719af742221afa36",
+          "outcome": {
+            "disposition": "handled",
+            "status": "completed",
+            "fault": null,
+            "rejection": null
+          },
+          "emission_references": []
+        }
+      }
+    },
+    "prune": {
+      "kind": "host_acknowledgement",
+      "body": {
+        "result": "committed"
+      }
+    },
+    "prune_replay": {
+      "kind": "host_acknowledgement",
+      "body": {
+        "result": "replayed"
+      }
+    },
+    "prune_lower": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "invalid_execution_checkpoint"
+      }
+    },
+    "prune_stale": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "checkpoint_revision_conflict"
+      }
+    },
+    "tombstone": {
+      "kind": "tombstoned",
+      "body": {
+        "result": "tombstoned",
+        "tombstone": {
+          "status": "tombstone",
+          "root_runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df",
+          "creation_id": "checkpoint-retention-create",
+          "terminal_status": "completed",
+          "final_aggregate_state_digest": "sha256:c31d54b7a61681d09a6dd81a735487417624e1ca417d4257719af742221afa36",
+          "tombstone_operation_id": "root-tombstone"
+        }
+      }
+    },
+    "tombstone_running": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "invalid_execution_checkpoint"
+      }
+    },
+    "tombstone_replay": {
+      "kind": "tombstoned",
+      "body": {
+        "result": "tombstoned",
+        "tombstone": {
+          "status": "tombstone",
+          "root_runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df",
+          "creation_id": "checkpoint-retention-create",
+          "terminal_status": "completed",
+          "final_aggregate_state_digest": "sha256:c31d54b7a61681d09a6dd81a735487417624e1ca417d4257719af742221afa36",
+          "tombstone_operation_id": "root-tombstone"
+        }
+      }
+    },
+    "reuse": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "creation_id_conflict"
+      }
+    },
+    "delete": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "invalid_execution_checkpoint"
+      }
+    },
+    "resolve_adapter": {
+      "kind": "resolution",
+      "body": {
+        "registration": {
+          "adapter_identifier": "sqlite",
+          "uri_scheme": "sqlite",
+          "source": "bundled",
+          "configuration_schema": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ],
+            "additionalProperties": false
+          },
+          "capabilities": [
+            "restart_persistent",
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        "configuration": {
+          "path": "state.db"
+        },
+        "requested_capabilities": [
+          "durable_single_writer"
+        ]
+      }
+    },
+    "validate_capabilities": {
+      "kind": "capability_report",
+      "body": {
+        "adapter_identifier": "sqlite",
+        "host_profile": "durable_embedded_processing",
+        "store_capabilities": [
+          "restart_persistent",
+          "durable_single_writer",
+          "root_identity_retention"
+        ],
+        "host_guarantees": [
+          "atomic_accept_process"
+        ],
+        "retention_mode": "permanent",
+        "validated": true
+      }
+    },
+    "scope": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "invalid_store_scope"
+      }
+    }
+  }
+}

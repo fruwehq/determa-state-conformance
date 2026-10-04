@@ -11,6 +11,7 @@ static:
     - { file: target-stale-state.yaml, valid: true }
 artifacts:
   documents:
+    - { file: operation-failures.json, kind: version1_operation_failures, valid: true }
     - { file: base-aggregate-v1.json, kind: aggregate_state_v1, valid: true }
     - { file: descriptor-compatible-v1.json, kind: migration_descriptor_v1, valid: true }
     - { file: descriptor-compatible-second-v1.json, kind: migration_descriptor_v1, valid: true }
@@ -106,7 +107,7 @@ version1_vectors:
     descriptor_file: descriptor-removed-event-v1.json
     request_file: operation-inputs.json
     request_pointer: /event_removed
-    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v1.json }
+    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v1.json , exact_failure_response: { file: operation-failures.json, pointer: /responses/migration_rejects_removed_event }}
   - name: migration_rejects_incompatible_payload
     covers: [migration_payload_incompatible_failure]
     operation: migrate_aggregate_v1
@@ -114,7 +115,7 @@ version1_vectors:
     descriptor_file: descriptor-payload-v1.json
     request_file: operation-inputs.json
     request_pointer: /payload_incompatible
-    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v1.json }
+    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v1.json , exact_failure_response: { file: operation-failures.json, pointer: /responses/migration_rejects_incompatible_payload }}
   - name: migration_rejects_incompatible_correlation
     covers: [migration_correlation_incompatible_failure]
     operation: migrate_aggregate_v1
@@ -122,7 +123,7 @@ version1_vectors:
     descriptor_file: descriptor-correlation-v1.json
     request_file: operation-inputs.json
     request_pointer: /correlation_incompatible
-    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v1.json }
+    expect: { result: failure, code: migration_totality_failure, unchanged_file: base-aggregate-v1.json , exact_failure_response: { file: operation-failures.json, pointer: /responses/migration_rejects_incompatible_correlation }}
   - name: migration_rejects_capacity_loss
     covers: [migration_capacity_totality]
     operation: migrate_aggregate_v1
@@ -132,5 +133,6 @@ version1_vectors:
     request_pointer: /lowered_capacity
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/migration_rejects_capacity_loss }
       code: migration_totality_failure
       unchanged_file: base-aggregate-v1.json

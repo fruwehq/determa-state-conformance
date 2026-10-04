@@ -12,6 +12,7 @@ artifacts:
     - { file: released-store-v1.json, kind: durable_host_store_v1, valid: true }
     - { file: inputs-v1.json, kind: durable_host_inputs_v1, valid: true }
     - { file: results-v1.json, kind: durable_host_results_v1, valid: true }
+    - { file: responses-v1.json, kind: durable_host_responses_v1, valid: true }
     - { file: commit-call-log-v1.json, kind: durable_host_call_log_v1, valid: true }
     - { file: replay-call-log-v1.json, kind: durable_host_call_log_v1, valid: true }
     - { file: rollback-call-log-v1.json, kind: durable_host_call_log_v1, valid: true }
@@ -27,6 +28,7 @@ durable_host_vectors:
     failure_boundary: before_commit
     request: { file: inputs-v1.json, pointer: /requests/process_precommit_failure }
     result: { file: results-v1.json, pointer: /results/crashed }
+    raw_response: { file: responses-v1.json, pointer: /responses/process_precommit_failure }
     expect: { result: crashed, code: injected_pre_commit_failure, mutation: none, core_calls: 1 }
   - name: persistence_atomic_full_commit
     covers: [persistence_atomic_aggregate_inbox_outbox_audit, persistence_atomic_application_rows]
@@ -36,4 +38,5 @@ durable_host_vectors:
     call_log: commit-call-log-v1.json
     request: { file: inputs-v1.json, pointer: /requests/process }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/process }
     expect: { result: committed, mutation: atomic, core_calls: 1, broker_acknowledged: true }

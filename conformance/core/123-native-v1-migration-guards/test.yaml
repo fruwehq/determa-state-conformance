@@ -19,6 +19,7 @@ static:
       valid: true
 artifacts:
   documents:
+    - { file: operation-failures.json, kind: version1_operation_failures, valid: true }
     - file: failures-descriptor-v1.json
       kind: migration_descriptor_v1
       valid: true
@@ -83,6 +84,7 @@ version1_vectors:
     descriptor_file: limits-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/untrusted_descriptor }
       code: migration_descriptor_untrusted
       unchanged_file: limits-source-aggregate-v1.json
   - name: chain_limit_exceeded
@@ -95,6 +97,7 @@ version1_vectors:
     descriptor_file: limits-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/chain_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-source-aggregate-v1.json
   - name: aggregate_byte_limit_exceeded
@@ -107,6 +110,7 @@ version1_vectors:
     descriptor_file: limits-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/aggregate_byte_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-source-aggregate-v1.json
   - name: descriptor_byte_limit_exceeded
@@ -119,6 +123,7 @@ version1_vectors:
     descriptor_file: limits-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/descriptor_byte_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-source-aggregate-v1.json
   - name: descriptor_understates_actual_transformed_output
@@ -131,6 +136,7 @@ version1_vectors:
     descriptor_file: limits-understated-output-descriptor.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/descriptor_understates_actual_transformed_output }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: descriptor_understates_actual_cel_evaluation
@@ -143,6 +149,7 @@ version1_vectors:
     descriptor_file: limits-understated-evaluation-descriptor.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/descriptor_understates_actual_cel_evaluation }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: minimum_supported_floors_accept_all_listed_dimensions
@@ -166,6 +173,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_definition_bytes_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_json_nesting_depth_limit_exceeded
@@ -178,6 +186,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_json_nesting_depth_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_runtimes_limit_exceeded
@@ -190,6 +199,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_runtimes_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_active_states_limit_exceeded
@@ -202,6 +212,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_active_states_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_variables_limit_exceeded
@@ -214,6 +225,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_variables_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_map_members_limit_exceeded
@@ -226,6 +238,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_map_members_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_list_members_limit_exceeded
@@ -238,6 +251,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_list_members_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_string_utf8_bytes_limit_exceeded
@@ -250,6 +264,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_string_utf8_bytes_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_descriptor_rules_limit_exceeded
@@ -262,6 +277,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_descriptor_rules_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_cel_expression_length_limit_exceeded
@@ -274,6 +290,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_cel_expression_length_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: configured_cel_ast_nodes_limit_exceeded
@@ -286,6 +303,7 @@ version1_vectors:
     descriptor_file: limits-occurrence-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/configured_cel_ast_nodes_limit_exceeded }
       code: migration_resource_limit_exceeded
       unchanged_file: limits-occurrence-source-aggregate-v1.json
   - name: target_definition_is_unavailable
@@ -298,6 +316,7 @@ version1_vectors:
     descriptor_file: failures-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/target_definition_is_unavailable }
       code: target_definition_unavailable
       unchanged_file: failures-source-aggregate-v1.json
   - name: missing_maintenance_mode_is_invalid_request
@@ -310,6 +329,7 @@ version1_vectors:
     descriptor_file: failures-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/missing_maintenance_mode_is_invalid_request }
       code: invalid_migration_request
       unchanged_file: failures-source-aggregate-v1.json
   - name: non_boolean_maintenance_mode_is_invalid_request
@@ -322,6 +342,7 @@ version1_vectors:
     descriptor_file: failures-descriptor-v1.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/non_boolean_maintenance_mode_is_invalid_request }
       code: invalid_migration_request
       unchanged_file: failures-source-aggregate-v1.json
   - name: runtime_transform_fault
@@ -334,6 +355,7 @@ version1_vectors:
     descriptor_file: failures-transform-fault-descriptor.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/runtime_transform_fault }
       code: migration_transform_fault
       unchanged_file: failures-transform-source-aggregate-v1.json
   - name: unsupported_descriptor_discriminator
@@ -346,6 +368,7 @@ version1_vectors:
     descriptor_file: failures-unsupported-descriptor-format.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/unsupported_descriptor_discriminator }
       code: unsupported_migration_descriptor_format
       unchanged_file: failures-source-aggregate-v1.json
   - name: unsupported_descriptor_schema_version
@@ -358,5 +381,6 @@ version1_vectors:
     descriptor_file: failures-unsupported-descriptor-schema-version.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/unsupported_descriptor_schema_version }
       code: unsupported_migration_descriptor_schema_version
       unchanged_file: failures-source-aggregate-v1.json

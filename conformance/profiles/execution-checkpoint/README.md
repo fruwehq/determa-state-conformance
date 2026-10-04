@@ -24,6 +24,35 @@ requests retain a non-empty operation identity and the exact ordered descriptor 
 route. Replay and operation-identity conflict are resolved before the writer revision
 and checkpoint-digest comparison.
 
+Every durable vector also names one required `raw_response` artifact. The runner
+invokes the complete request on the production host and records the complete
+operation-local return or directly caught typed error in the closed
+`durable-host-responses-v1` driver serialization. It must capture the return from that
+call: it may not inspect persisted after-state, read a golden file, or switch on vector
+name to fabricate a response. The after checkpoint or store snapshot, outcome,
+mutation, core-call count, and broker acknowledgement are separate observations.
+Fixture generation derives expected response values from independent retained golden
+evidence; repository validation cross-binds the response to request identity and that
+evidence. This serialization is a test-driver contract, not a required language API.
+
+The response union retains every normative returned field used by these operations:
+
+| Operation | Complete normalized response value |
+|---|---|
+| creation, pending outbox update, terminal outbox transition, root tombstone | Exact SPEC §17 literal receipt, record, terminal record, or tombstone body; first and equal replay use the same body. |
+| admission | Ordered acceptance receipts or retained event-identity tombstone evidence for every requested member. |
+| processing | Full §16 core step result, including state, disposition, emissions, lifecycle dispositions, fault, and rejection, plus the committed terminal receipt. First-commit persistence processing also retains migration audit records; its equal retry returns the retained terminal receipt without a core call. |
+| adapter registration/resolution, capability validation, store injection, scope operation | The exact registration, resolved registration and configuration, configured capability report, injected adapter reference, or authorized scope record returned by the adapter. |
+| pruning, compaction, backup/restore, quarantine release | The operation's direct committed, replayed, validated, or released acknowledgement; persisted bytes are checked separately. |
+| rejection, quarantine, crash | Direct typed code, typed code plus quarantine record, or explicit no response. |
+
+For host calls without a literal SPEC return object, the table defines the local
+wrapper's complete normalized value for these probes. It does not require a production
+API to return full checkpoints or store snapshots. A wrapper may serialize its own
+production call's return value and typed error fields; it must not reconstruct one
+from the post-commit store. Missing or extra body fields and a schema-valid response
+from a different request fail validation.
+
 Profile requests, results, store snapshots, and call logs use dedicated closed schemas
 under `scripts/schemas/`. Checkpoint and aggregate members use only the specification's
 schema-version-1 formats. Machine documents continue to use integer `format: 1` because

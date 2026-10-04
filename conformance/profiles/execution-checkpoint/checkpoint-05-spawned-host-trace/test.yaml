@@ -14,6 +14,7 @@ artifacts:
     - { file: spawned-owner-done-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: inputs-v1.json, kind: durable_host_inputs_v1, valid: true }
     - { file: results-v1.json, kind: durable_host_results_v1, valid: true }
+    - { file: responses-v1.json, kind: durable_host_responses_v1, valid: true }
 durable_host_vectors:
   - name: spawned_host_creation
     covers: [spawned_host_creation]
@@ -22,6 +23,7 @@ durable_host_vectors:
     checkpoint_after: spawned-base-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/create }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/create }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: spawned_host_start_admission
     covers: [spawned_host_start_admission]
@@ -30,6 +32,7 @@ durable_host_vectors:
     checkpoint_after: spawned-start-pending-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/start_accept }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/start_accept }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: spawned_host_start
     covers: [spawned_host_start]
@@ -38,6 +41,7 @@ durable_host_vectors:
     checkpoint_after: spawned-started-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/start_process }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/start_process }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: spawned_child_admission
     covers: [spawned_child_admission, spawned_target_identity]
@@ -46,6 +50,7 @@ durable_host_vectors:
     checkpoint_after: spawned-child-pending-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/child_accept }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/child_accept }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: spawned_root_admission
     covers: [spawned_root_mailbox_isolation]
@@ -54,6 +59,7 @@ durable_host_vectors:
     checkpoint_after: spawned-root-pending-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/root_accept }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/root_accept }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: spawned_child_processing
     covers: [spawned_child_processing]
@@ -62,6 +68,7 @@ durable_host_vectors:
     checkpoint_after: spawned-child-terminal-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/child_process }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/child_process }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: spawned_owner_queue_order
     covers: [spawned_owner_queue_order, spawned_unhandled_allocates_no_logical_step]
@@ -70,6 +77,7 @@ durable_host_vectors:
     checkpoint_after: spawned-owner-event-terminal-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/root_process }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/root_process }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: spawned_owner_done_processing
     covers: [spawned_owner_done_processing, spawned_completion_reports_aggregate_status]
@@ -78,4 +86,5 @@ durable_host_vectors:
     checkpoint_after: spawned-owner-done-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/done_process }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/done_process }
     expect: { result: committed, mutation: atomic, core_calls: 1 }

@@ -48,6 +48,26 @@ def validate_case(
 
 
 class Version1ValidatorTests(unittest.TestCase):
+    def test_exact_typed_failure_response_binding(self) -> None:
+        responses = load(PACKAGE_CASE / "operation-failures.json")
+        key = next(iter(responses["responses"]))
+        responses["responses"][key]["code"] = "invalid_aggregate_state"
+        with self.assertRaisesRegex(ValidationFailure, "exact typed failure response differs"):
+            validate_case(
+                PACKAGE_CASE,
+                artifact_overrides={"operation-failures.json": responses},
+            )
+
+    def test_failure_response_schema_rejects_missing_and_extra_fields(self) -> None:
+        schema = load(ROOT / "scripts/schemas/version1-operation-failures.schema.json")
+        document = load(PACKAGE_CASE / "operation-failures.json")
+        key = next(iter(document["responses"]))
+        for mutation in (lambda body: body.pop("code"), lambda body: body.update(unexpected=True)):
+            mutated = copy.deepcopy(document)
+            mutation(mutated["responses"][key])
+            with self.subTest(mutated=mutated["responses"][key]):
+                self.assertTrue(list(Draft202012Validator(schema).iter_errors(mutated)))
+
     def test_schema_valid_result_from_another_request_is_rejected(self) -> None:
         with self.assertRaisesRegex(ValidationFailure, "replay mutated aggregate"):
             validate_case(

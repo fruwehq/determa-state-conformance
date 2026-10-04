@@ -54,6 +54,7 @@
                   "migration_descriptor_v1",
                   "durable_host_inputs_v1",
                   "durable_host_results_v1",
+                  "durable_host_responses_v1",
                   "durable_host_store_v1",
                   "durable_host_call_log_v1"
                 ]
@@ -201,7 +202,7 @@
     },
     "vector": {
       "type": "object",
-      "required": ["name", "covers", "operation", "result", "expect"],
+      "required": ["name", "covers", "operation", "result", "raw_response", "expect"],
       "additionalProperties": false,
       "properties": {
         "name": { "$ref": "#/$defs/name" },
@@ -215,6 +216,7 @@
         "request": { "$ref": "#/$defs/artifactPointer" },
         "raw_admission_request": { "$ref": "#/$defs/rawAdmissionRequest" },
         "result": { "$ref": "#/$defs/artifactPointer" },
+        "raw_response": { "$ref": "#/$defs/artifactPointer" },
         "checkpoint_before": {
           "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
         },

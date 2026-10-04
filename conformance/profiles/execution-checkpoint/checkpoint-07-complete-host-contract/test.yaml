@@ -15,10 +15,12 @@ artifacts:
     - { file: mixed-batch-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: inactive-component-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: bounded-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: terminal-before-tombstone-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: permanent-tombstone-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: bounded-tombstone-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: inputs-v1.json, kind: durable_host_inputs_v1, valid: true }
     - { file: results-v1.json, kind: durable_host_results_v1, valid: true }
+    - { file: responses-v1.json, kind: durable_host_responses_v1, valid: true }
     - { file: invalid-adapter-identifier-v1.json, kind: durable_host_inputs_v1, valid: false, error: invalid_durable_host_inputs_v1 }
     - { file: invalid-uri-scheme-v1.json, kind: durable_host_inputs_v1, valid: false, error: invalid_durable_host_inputs_v1 }
 durable_host_vectors:
@@ -29,6 +31,7 @@ durable_host_vectors:
     checkpoint_after: null
     request: { file: inputs-v1.json, pointer: /requests/creation_rejection }
     result: { file: results-v1.json, pointer: /results/creation_rejected }
+    raw_response: { file: responses-v1.json, pointer: /responses/creation_rejection }
     expect: { result: rejected, code: creation_rejected, mutation: none, core_calls: 1 }
   - name: pending_admission_replay
     covers: [pending_admission_replay, checkpoint_request_exact_before_identity]
@@ -37,6 +40,7 @@ durable_host_vectors:
     checkpoint_after: accepted-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/pending_admission_replay }
     result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/pending_admission_replay }
     expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: handled_delayed_delivery
     covers: [handled_delivery, delayed_processing, exact_admission_revision_equation, exact_processing_revision_equation]
@@ -45,6 +49,7 @@ durable_host_vectors:
     checkpoint_after: handled-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/handled_delayed }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/handled_delayed }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: handled_foreground_delivery
     covers: [foreground_processing, foreground_delayed_equivalence]
@@ -53,6 +58,7 @@ durable_host_vectors:
     checkpoint_after: handled-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/handled_foreground }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/handled_foreground }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: unhandled_delivery
     covers: [unhandled_delivery]
@@ -61,6 +67,7 @@ durable_host_vectors:
     checkpoint_after: unhandled-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/unhandled }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/unhandled }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: rejected_delivery
     covers: [rejected_delivery]
@@ -69,6 +76,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/rejected }
     result: { file: results-v1.json, pointer: /results/invalid_event }
+    raw_response: { file: responses-v1.json, pointer: /responses/rejected }
     expect: { result: rejected, code: invalid_event, mutation: none, core_calls: 0 }
   - name: faulted_delivery
     covers: [faulted_delivery]
@@ -77,6 +85,7 @@ durable_host_vectors:
     checkpoint_after: faulted-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/faulted }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/faulted }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: invalid_delivery_source
     covers: [invalid_delivery_source, delivery_source_precedes_target]
@@ -85,6 +94,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/invalid_source }
     result: { file: results-v1.json, pointer: /results/invalid_delivery_source }
+    raw_response: { file: responses-v1.json, pointer: /responses/invalid_source }
     expect: { result: rejected, code: invalid_delivery_source, mutation: none, core_calls: 0 }
   - name: invalid_delivery_mode
     covers: [invalid_delivery_mode, delivery_mode_precedes_source]
@@ -93,6 +103,7 @@ durable_host_vectors:
     checkpoint_after: handled-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/invalid_mode }
     result: { file: results-v1.json, pointer: /results/invalid_mode }
+    raw_response: { file: responses-v1.json, pointer: /responses/invalid_mode }
     expect: { result: rejected, code: invalid_delivery_mode, mutation: none, core_calls: 0 }
   - name: invalid_delivery_digest
     covers: [delivery_digest_mismatch]
@@ -101,6 +112,7 @@ durable_host_vectors:
     checkpoint_after: handled-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/invalid_digest }
     result: { file: results-v1.json, pointer: /results/invalid_digest }
+    raw_response: { file: responses-v1.json, pointer: /responses/invalid_digest }
     expect: { result: rejected, code: delivery_digest_mismatch, mutation: none, core_calls: 0 }
   - name: ordered_batch_admission
     covers: [ordered_batch_admission, ordered_batch_single_revision, ordered_batch_caller_order]
@@ -109,6 +121,7 @@ durable_host_vectors:
     checkpoint_after: ordered-batch-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/ordered_batch }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/ordered_batch }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: all_replay_batch
     covers: [all_replay_batch_read_only]
@@ -117,6 +130,7 @@ durable_host_vectors:
     checkpoint_after: ordered-batch-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/all_replay_batch }
     result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/all_replay_batch }
     expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: mixed_replay_new_batch
     covers: [mixed_replay_new_batch]
@@ -125,6 +139,7 @@ durable_host_vectors:
     checkpoint_after: mixed-batch-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/mixed_replay_new_batch }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/mixed_replay_new_batch }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: malformed_batch
     covers: [ordered_batch_malformed_failure, raw_malformed_member_precedes_normalized_failures]
@@ -152,6 +167,7 @@ durable_host_vectors:
               payload: [map, [[amount, [integer, "1"]]]]
             envelope_digest: "sha256:5ddbd771be6a8aed5b9bd3b4bd9dc15255970214031aa2d18ad72c1b6f42c3e7"
     result: { file: results-v1.json, pointer: /results/malformed_delivery }
+    raw_response: { file: responses-v1.json, pointer: /responses/malformed_batch }
     expect: { result: rejected, code: malformed_delivery, mutation: none, core_calls: 0 }
   - name: global_batch_precedence
     covers: [batch_global_validation_precedence]
@@ -160,6 +176,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/global_batch_precedence }
     result: { file: results-v1.json, pointer: /results/invalid_mode }
+    raw_response: { file: responses-v1.json, pointer: /responses/global_batch_precedence }
     expect: { result: rejected, code: invalid_delivery_mode, mutation: none, core_calls: 0 }
   - name: duplicate_event_id_batch
     covers: [duplicate_event_id_in_batch, duplicate_batch_precedes_replay_conflict]
@@ -168,6 +185,7 @@ durable_host_vectors:
     checkpoint_after: handled-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/duplicate_event_id_batch }
     result: { file: results-v1.json, pointer: /results/duplicate_event_id_in_batch }
+    raw_response: { file: responses-v1.json, pointer: /responses/duplicate_event_id_batch }
     expect: { result: rejected, code: duplicate_event_id_in_batch, mutation: none, core_calls: 0 }
   - name: terminal_root
     covers: [terminal_root, terminal_root_precedes_delivery_validation]
@@ -176,6 +194,7 @@ durable_host_vectors:
     checkpoint_after: faulted-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/terminal_root }
     result: { file: results-v1.json, pointer: /results/terminal_root }
+    raw_response: { file: responses-v1.json, pointer: /responses/terminal_root }
     expect: { result: rejected, code: terminal_root, mutation: none, core_calls: 0 }
   - name: terminal_root_replay
     covers: [replay_precedes_terminal_root]
@@ -184,6 +203,7 @@ durable_host_vectors:
     checkpoint_after: faulted-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/terminal_root_replay }
     result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/terminal_root_replay }
     expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: invalid_instance_target
     covers: [invalid_instance_target, instance_target_precedes_event]
@@ -192,6 +212,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/invalid_instance_target }
     result: { file: results-v1.json, pointer: /results/invalid_instance_target }
+    raw_response: { file: responses-v1.json, pointer: /responses/invalid_instance_target }
     expect: { result: rejected, code: invalid_instance_target, mutation: none, core_calls: 0 }
   - name: inactive_component_target
     covers: [inactive_component_target]
@@ -200,6 +221,7 @@ durable_host_vectors:
     checkpoint_after: inactive-component-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/inactive_component_target }
     result: { file: results-v1.json, pointer: /results/inactive_component_target }
+    raw_response: { file: responses-v1.json, pointer: /responses/inactive_component_target }
     expect: { result: rejected, code: inactive_component_target, mutation: none, core_calls: 0 }
   - name: invalid_payload
     covers: [invalid_payload, payload_precedes_correlation]
@@ -208,6 +230,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/invalid_payload }
     result: { file: results-v1.json, pointer: /results/invalid_payload }
+    raw_response: { file: responses-v1.json, pointer: /responses/invalid_payload }
     expect: { result: rejected, code: invalid_payload, mutation: none, core_calls: 0 }
   - name: invalid_correlation
     covers: [invalid_correlation, correlation_precedes_digest]
@@ -216,6 +239,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/invalid_correlation }
     result: { file: results-v1.json, pointer: /results/invalid_correlation }
+    raw_response: { file: responses-v1.json, pointer: /responses/invalid_correlation }
     expect: { result: rejected, code: invalid_correlation, mutation: none, core_calls: 0 }
   - name: replay_conflict_precedence
     covers: [all_replay_conflict_precedence, replay_event_conflict_precedes_invalid_mode, replay_conflict_precedes_terminal_root]
@@ -224,6 +248,7 @@ durable_host_vectors:
     checkpoint_after: faulted-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/replay_conflict }
     result: { file: results-v1.json, pointer: /results/event_conflict }
+    raw_response: { file: responses-v1.json, pointer: /responses/replay_conflict }
     expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
   - name: committed_replay_read_only
     covers: [committed_replay_precedes_stale_writer, exact_committed_replay_identity_precedes_cas, stale_replay_historical_checkpoint_binding]
@@ -233,6 +258,7 @@ durable_host_vectors:
     historical_checkpoint: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/replay_committed }
     result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/replay_committed }
     expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: stale_same_identity_conflict
     covers: [stale_same_identity_conflict_precedes_cas]
@@ -242,6 +268,7 @@ durable_host_vectors:
     historical_checkpoint: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/stale_replay_conflict }
     result: { file: results-v1.json, pointer: /results/event_conflict }
+    raw_response: { file: responses-v1.json, pointer: /responses/stale_replay_conflict }
     expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
   - name: concurrent_writer_winner
     covers: [concurrent_one_winner]
@@ -250,6 +277,7 @@ durable_host_vectors:
     checkpoint_after: accepted-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/concurrent_winner }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/concurrent_winner }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: concurrent_writer_loser
     covers: [concurrent_loser_revision_conflict]
@@ -259,6 +287,7 @@ durable_host_vectors:
     checkpoint_after: accepted-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/concurrent_loser }
     result: { file: results-v1.json, pointer: /results/stale }
+    raw_response: { file: responses-v1.json, pointer: /responses/concurrent_loser }
     expect: { result: rejected, code: checkpoint_revision_conflict, mutation: none, core_calls: 0 }
   - name: live_acceptance_dependency
     covers: [pruning_live_acceptance_dependency]
@@ -267,6 +296,7 @@ durable_host_vectors:
     checkpoint_after: accepted-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/dependency_live }
     result: { file: results-v1.json, pointer: /results/invalid_checkpoint }
+    raw_response: { file: responses-v1.json, pointer: /responses/dependency_live }
     expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
   - name: terminal_pair_dependency
     covers: [pruning_terminal_pair_dependency]
@@ -275,6 +305,7 @@ durable_host_vectors:
     checkpoint_after: handled-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/dependency_terminal_pair }
     result: { file: results-v1.json, pointer: /results/invalid_checkpoint }
+    raw_response: { file: responses-v1.json, pointer: /responses/dependency_terminal_pair }
     expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
   - name: dependency_closed_pruning
     covers: [pruning_dependency_closed_variants]
@@ -283,6 +314,7 @@ durable_host_vectors:
     checkpoint_after: bounded-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/dependency_closed }
     result: { file: results-v1.json, pointer: /results/committed_no_core }
+    raw_response: { file: responses-v1.json, pointer: /responses/dependency_closed }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: bounded_to_permanent_rejection
     covers: [bounded_to_permanent_rejected]
@@ -291,6 +323,7 @@ durable_host_vectors:
     checkpoint_after: bounded-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/bounded_to_permanent }
     result: { file: results-v1.json, pointer: /results/invalid_checkpoint }
+    raw_response: { file: responses-v1.json, pointer: /responses/bounded_to_permanent }
     expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
   - name: stale_tombstone_rejection
     covers: [stale_tombstoning_rejected]
@@ -300,7 +333,26 @@ durable_host_vectors:
     checkpoint_after: bounded-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/stale_tombstone }
     result: { file: results-v1.json, pointer: /results/stale }
+    raw_response: { file: responses-v1.json, pointer: /responses/stale_tombstone }
     expect: { result: rejected, code: checkpoint_revision_conflict, mutation: none, core_calls: 0 }
+  - name: permanent_root_tombstone_first
+    covers: [permanent_root_tombstone_first]
+    operation: checkpoint_tombstone_v1
+    checkpoint_before: terminal-before-tombstone-checkpoint-v1.json
+    checkpoint_after: permanent-tombstone-checkpoint-v1.json
+    request: { file: inputs-v1.json, pointer: /requests/tombstone_first }
+    result: { file: results-v1.json, pointer: /results/committed_no_core }
+    raw_response: { file: responses-v1.json, pointer: /responses/tombstone_first }
+    expect: { result: committed, mutation: atomic, core_calls: 0 }
+  - name: permanent_root_tombstone_equal_retry
+    covers: [permanent_root_tombstone_equal_retry]
+    operation: checkpoint_tombstone_v1
+    checkpoint_before: permanent-tombstone-checkpoint-v1.json
+    checkpoint_after: permanent-tombstone-checkpoint-v1.json
+    request: { file: inputs-v1.json, pointer: /requests/tombstone_replay }
+    result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/tombstone_replay }
+    expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: tombstoned_ingress_rejection
     covers: [tombstoned_ingress_rejected, tombstoned_root_precedes_delivery_validation]
     operation: checkpoint_admit_v1
@@ -308,6 +360,7 @@ durable_host_vectors:
     checkpoint_after: bounded-tombstone-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/tombstoned_ingress }
     result: { file: results-v1.json, pointer: /results/tombstoned_root }
+    raw_response: { file: responses-v1.json, pointer: /responses/tombstoned_ingress }
     expect: { result: rejected, code: tombstoned_root, mutation: none, core_calls: 0 }
   - name: tombstoned_replay
     covers: [tombstone_replay_precedes_tombstoned_root]
@@ -316,6 +369,7 @@ durable_host_vectors:
     checkpoint_after: bounded-tombstone-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/tombstoned_replay }
     result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/tombstoned_replay }
     expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: permanent_backup
     covers: [permanent_terminal_retention, permanent_tombstone_retention, backup_completeness_permanent]
@@ -324,6 +378,7 @@ durable_host_vectors:
     checkpoint_after: permanent-tombstone-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/backup_permanent }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/backup_permanent }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: permanent_restore
     covers: [restore_completeness_permanent]
@@ -332,6 +387,7 @@ durable_host_vectors:
     checkpoint_after: permanent-tombstone-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/restore_permanent }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/restore_permanent }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: bounded_backup
     covers: [bounded_terminal_retention, bounded_tombstone_retention, backup_completeness_bounded]
@@ -340,6 +396,7 @@ durable_host_vectors:
     checkpoint_after: bounded-tombstone-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/backup_bounded }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/backup_bounded }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: bounded_restore
     covers: [restore_completeness_bounded, restore_retains_bounded_horizon]
@@ -348,6 +405,7 @@ durable_host_vectors:
     checkpoint_after: bounded-tombstone-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/restore_bounded }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/restore_bounded }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: incomplete_restore_rejection
     covers: [restore_incomplete_rejected]
@@ -356,6 +414,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/restore_incomplete }
     result: { file: results-v1.json, pointer: /results/invalid_checkpoint }
+    raw_response: { file: responses-v1.json, pointer: /responses/restore_incomplete }
     expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
   - name: direct_store_injection
     covers: [direct_store_injection]
@@ -364,6 +423,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/inject_store }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/inject_store }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: bundled_adapter_registration
     covers: [bundled_public_registration]
@@ -372,6 +432,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/register_bundled }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/register_bundled }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: third_party_adapter_registration
     covers: [third_party_public_registration]
@@ -380,6 +441,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/register_third_party }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/register_third_party }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: vendor_adapter_scheme_registration
     covers: [adapter_vendor_scheme_positive, adapter_identifier_underscore_rejected, adapter_scheme_underscore_rejected]
@@ -388,6 +450,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/register_vendor_http }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/register_vendor_http }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: vendor_adapter_scheme_resolution
     covers: [adapter_vendor_scheme_resolution]
@@ -396,6 +459,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_vendor_http }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/resolve_vendor_http }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: duplicate_adapter_registration
     covers: [duplicate_adapter_registration]
@@ -404,6 +468,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/register_duplicate }
     result: { file: results-v1.json, pointer: /results/duplicate_registration }
+    raw_response: { file: responses-v1.json, pointer: /responses/register_duplicate }
     expect: { result: rejected, code: duplicate_adapter_registration, mutation: none, core_calls: 0 }
   - name: unknown_adapter
     covers: [unknown_adapter]
@@ -412,6 +477,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_unknown }
     result: { file: results-v1.json, pointer: /results/unknown_adapter }
+    raw_response: { file: responses-v1.json, pointer: /responses/resolve_unknown }
     expect: { result: rejected, code: unknown_adapter, mutation: none, core_calls: 0 }
   - name: invalid_adapter_configuration
     covers: [invalid_adapter_configuration]
@@ -420,6 +486,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_invalid_config }
     result: { file: results-v1.json, pointer: /results/invalid_configuration }
+    raw_response: { file: responses-v1.json, pointer: /responses/resolve_invalid_config }
     expect: { result: rejected, code: invalid_adapter_configuration, mutation: none, core_calls: 0 }
   - name: adapter_capability_failure
     covers: [adapter_capability_failure]
@@ -428,6 +495,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_capability_mismatch }
     result: { file: results-v1.json, pointer: /results/capability_mismatch }
+    raw_response: { file: responses-v1.json, pointer: /responses/resolve_capability_mismatch }
     expect: { result: rejected, code: adapter_capability_mismatch, mutation: none, core_calls: 0 }
   - name: memory_boundary
     covers: [memory_capability_boundary]
@@ -436,6 +504,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_memory }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/resolve_memory }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: file_boundary
     covers: [file_capability_boundary]
@@ -444,6 +513,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_file }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/resolve_file }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: sqlite_boundary
     covers: [sqlite_capability_boundary]
@@ -452,6 +522,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_sqlite }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/resolve_sqlite }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: postgresql_boundary
     covers: [postgresql_capability_boundary]
@@ -460,6 +531,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_postgresql }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/resolve_postgresql }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: equal_identity_scope_a
     covers: [equal_identity_separate_scope_a, equal_effect_separate_scope_a, selected_scope_records_only]
@@ -468,6 +540,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/scope_a }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/scope_a }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: equal_identity_scope_b
     covers: [equal_identity_separate_scope_b, equal_effect_separate_scope_b, cross_scope_store_record_isolation]
@@ -476,6 +549,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/scope_b }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/scope_b }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: missing_scope
     covers: [missing_scope_rejected]
@@ -484,6 +558,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/scope_missing }
     result: { file: results-v1.json, pointer: /results/invalid_scope }
+    raw_response: { file: responses-v1.json, pointer: /responses/scope_missing }
     expect: { result: rejected, code: invalid_store_scope, mutation: none, core_calls: 0 }
   - name: ambiguous_scope
     covers: [ambiguous_scope_rejected]
@@ -492,6 +567,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/scope_ambiguous }
     result: { file: results-v1.json, pointer: /results/invalid_scope }
+    raw_response: { file: responses-v1.json, pointer: /responses/scope_ambiguous }
     expect: { result: rejected, code: invalid_store_scope, mutation: none, core_calls: 0 }
   - name: mismatched_scope
     covers: [mismatched_scope_rejected]
@@ -500,6 +576,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/scope_mismatched }
     result: { file: results-v1.json, pointer: /results/invalid_scope }
+    raw_response: { file: responses-v1.json, pointer: /responses/scope_mismatched }
     expect: { result: rejected, code: invalid_store_scope, mutation: none, core_calls: 0 }
   - name: unauthorized_scope
     covers: [unauthorized_scope_rejected, unauthorized_scope_records_absent]
@@ -508,6 +585,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/scope_unauthorized }
     result: { file: results-v1.json, pointer: /results/invalid_scope }
+    raw_response: { file: responses-v1.json, pointer: /responses/scope_unauthorized }
     expect: { result: rejected, code: invalid_store_scope, mutation: none, core_calls: 0 }
   - name: durable_embedded_positive
     covers: [durable_embedded_profile_positive, capability_requirements_derived_from_profile]
@@ -516,6 +594,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_durable_embedded_positive }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_durable_embedded_positive }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: durable_embedded_negative
     covers: [durable_embedded_profile_negative]
@@ -524,6 +603,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_durable_embedded_negative }
     result: { file: results-v1.json, pointer: /results/capability_mismatch }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_durable_embedded_negative }
     expect: { result: rejected, code: adapter_capability_mismatch, mutation: none, core_calls: 0 }
   - name: exactly_once_positive
     covers: [exactly_once_profile_positive]
@@ -532,6 +612,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_exactly_once_positive }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_exactly_once_positive }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: exactly_once_negative
     covers: [exactly_once_profile_negative, bounded_exactly_once_rejected]
@@ -540,6 +621,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_exactly_once_negative }
     result: { file: results-v1.json, pointer: /results/capability_mismatch }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_exactly_once_negative }
     expect: { result: rejected, code: adapter_capability_mismatch, mutation: none, core_calls: 0 }
   - name: broker_positive
     covers: [broker_profile_positive]
@@ -548,6 +630,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_broker_positive }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_broker_positive }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: broker_negative
     covers: [broker_profile_negative]
@@ -556,6 +639,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_broker_negative }
     result: { file: results-v1.json, pointer: /results/capability_mismatch }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_broker_negative }
     expect: { result: rejected, code: adapter_capability_mismatch, mutation: none, core_calls: 0 }
   - name: strict_outbox_positive
     covers: [strict_outbox_profile_positive]
@@ -564,6 +648,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_strict_outbox_positive }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_strict_outbox_positive }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: strict_outbox_negative
     covers: [strict_outbox_profile_negative]
@@ -572,6 +657,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_strict_outbox_negative }
     result: { file: results-v1.json, pointer: /results/capability_mismatch }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_strict_outbox_negative }
     expect: { result: rejected, code: adapter_capability_mismatch, mutation: none, core_calls: 0 }
   - name: compact_outbox_positive
     covers: [compact_outbox_profile_positive]
@@ -580,6 +666,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_compact_outbox_positive }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_compact_outbox_positive }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: compact_outbox_negative
     covers: [compact_outbox_profile_negative]
@@ -588,6 +675,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_compact_outbox_negative }
     result: { file: results-v1.json, pointer: /results/capability_mismatch }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_compact_outbox_negative }
     expect: { result: rejected, code: adapter_capability_mismatch, mutation: none, core_calls: 0 }
   - name: shared_transaction_positive
     covers: [shared_transaction_profile_positive]
@@ -596,6 +684,7 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_shared_transaction_positive }
     result: { file: results-v1.json, pointer: /results/validated }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_shared_transaction_positive }
     expect: { result: validated, mutation: none, core_calls: 0 }
   - name: shared_transaction_negative
     covers: [shared_transaction_profile_negative]
@@ -604,4 +693,5 @@ durable_host_vectors:
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_shared_transaction_negative }
     result: { file: results-v1.json, pointer: /results/capability_mismatch }
+    raw_response: { file: responses-v1.json, pointer: /responses/profile_shared_transaction_negative }
     expect: { result: rejected, code: adapter_capability_mismatch, mutation: none, core_calls: 0 }

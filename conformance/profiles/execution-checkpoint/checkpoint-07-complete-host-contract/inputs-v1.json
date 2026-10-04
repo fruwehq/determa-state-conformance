@@ -2,6 +2,42 @@
   "durable_host_inputs_format": "determa.durable_host.inputs",
   "durable_host_inputs_schema_version": 1,
   "requests": {
+    "tombstone_first": {
+      "operation": "checkpoint_tombstone_v1",
+      "request_id": "permanent-tombstone",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "4",
+        "digest": "sha256:dcd86510800154e00c461d513e852250e433283dacd38b9332e69e8cf7dc890a"
+      },
+      "tombstone_operation_id": "permanent-tombstone",
+      "terminal_status": "faulted",
+      "retention_mode": "permanent"
+    },
+    "tombstone_replay": {
+      "operation": "checkpoint_tombstone_v1",
+      "request_id": "permanent-tombstone",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "complete-host-root",
+        "revision": "5",
+        "digest": "sha256:53a00e785c0a7940b039ed387499109da97d51e58ea11fb2ca6747bc215f34a3"
+      },
+      "tombstone_operation_id": "permanent-tombstone",
+      "terminal_status": "faulted",
+      "retention_mode": "permanent"
+    },
     "creation_rejection": {
       "operation": "checkpoint_create_v1",
       "request_id": "invalid-create",

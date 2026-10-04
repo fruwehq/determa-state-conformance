@@ -1481,6 +1481,9 @@ def outputs() -> dict[Path, bytes]:
             result[directory / name] = data
     for path in LIFECYCLE_RECEIPT_RESULTS:
         result[path] = produce_lifecycle_receipt_result(path)
+    for case in (PERSISTENCE, LIFECYCLE_RECEIPT_RESULTS[0].parent, CHECKPOINT):
+        path = case / "operation-failures.json"
+        result[path] = canonical(load(path))
     return result
 
 

@@ -1,0 +1,32 @@
+{
+  "durable_host_responses_format": "determa.durable_host.responses",
+  "durable_host_responses_schema_version": 1,
+  "responses": {
+    "process_precommit_failure": {
+      "kind": "no_response"
+    },
+    "process_postcommit_response_loss": {
+      "kind": "no_response"
+    },
+    "replay": {
+      "kind": "retained_receipt",
+      "body": {
+        "operation_kind": "event_terminal",
+        "receipt_sequence": "2",
+        "event_id": "persistence-3-event",
+        "request_digest": "sha256:1d5e3cbfbe529e2a4420b0afbe7b1daf878c874c5699e264dca1bceb52e7ac65",
+        "acceptance_sequence": "0",
+        "final_queue_sequence": "0",
+        "committed_revision": "1",
+        "resulting_aggregate_state_digest": "sha256:4cc8ffc79c0b6642dce7f62b27633b7e013cd167264ee17796f189ee091336f8",
+        "outcome": {
+          "disposition": "handled",
+          "status": "running",
+          "fault": null,
+          "rejection": null
+        },
+        "emission_references": []
+      }
+    }
+  }
+}

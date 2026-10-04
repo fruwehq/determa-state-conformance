@@ -16,6 +16,7 @@ artifacts:
     - { file: effect-tombstone-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: inputs-v1.json, kind: durable_host_inputs_v1, valid: true }
     - { file: results-v1.json, kind: durable_host_results_v1, valid: true }
+    - { file: responses-v1.json, kind: durable_host_responses_v1, valid: true }
 durable_host_vectors:
   - name: outbox_initial_pending
     covers: [outbox_not_attempted, outbox_receipt_linkage]
@@ -24,6 +25,7 @@ durable_host_vectors:
     checkpoint_after: pending-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/pending }
     result: { file: results-v1.json, pointer: /results/processing_committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/pending }
     expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: outbox_retryable_failure
     covers: [outbox_retryable_failure]
@@ -32,6 +34,7 @@ durable_host_vectors:
     checkpoint_after: retryable-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/retryable }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/retryable }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_equal_pending_replay
     covers: [outbox_equal_pending_replay]
@@ -40,6 +43,7 @@ durable_host_vectors:
     checkpoint_after: retryable-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/retryable_replay }
     result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/retryable_replay }
     expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: outbox_ambiguous
     covers: [outbox_ambiguous]
@@ -48,6 +52,7 @@ durable_host_vectors:
     checkpoint_after: ambiguous-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/ambiguous }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/ambiguous }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_terminal_confirmed
     covers: [outbox_confirmed, exact_outbox_revision_equation]
@@ -56,6 +61,7 @@ durable_host_vectors:
     checkpoint_after: terminal-confirmed-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/terminal_confirmed }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/terminal_confirmed }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_terminal_permanently_rejected
     covers: [outbox_permanently_rejected]
@@ -64,6 +70,7 @@ durable_host_vectors:
     checkpoint_after: terminal-permanently-rejected-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/terminal_permanently_rejected }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/terminal_permanently_rejected }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_terminal_operator_cancelled
     covers: [outbox_operator_cancelled]
@@ -72,6 +79,7 @@ durable_host_vectors:
     checkpoint_after: terminal-operator-cancelled-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/terminal_operator_cancelled }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/terminal_operator_cancelled }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_terminal_discarded
     covers: [outbox_discarded]
@@ -80,6 +88,7 @@ durable_host_vectors:
     checkpoint_after: terminal-discarded-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/terminal_discarded }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/terminal_discarded }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_terminal_dead_lettered
     covers: [outbox_dead_lettered]
@@ -88,6 +97,7 @@ durable_host_vectors:
     checkpoint_after: terminal-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/terminal_dead_lettered }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/terminal_dead_lettered }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_terminal_replay
     covers: [outbox_equal_terminal_replay]
@@ -96,6 +106,7 @@ durable_host_vectors:
     checkpoint_after: terminal-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/terminal_replay }
     result: { file: results-v1.json, pointer: /results/replayed }
+    raw_response: { file: responses-v1.json, pointer: /responses/terminal_replay }
     expect: { result: replayed, mutation: none, core_calls: 0 }
   - name: outbox_terminal_conflict
     covers: [outbox_terminal_conflict]
@@ -104,6 +115,7 @@ durable_host_vectors:
     checkpoint_after: terminal-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/conflict }
     result: { file: results-v1.json, pointer: /results/conflict }
+    raw_response: { file: responses-v1.json, pointer: /responses/conflict }
     expect: { result: rejected, code: effect_id_conflict, mutation: none, core_calls: 0 }
   - name: outbox_effect_tombstone
     covers: [outbox_effect_tombstone]
@@ -112,6 +124,7 @@ durable_host_vectors:
     checkpoint_after: effect-tombstone-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/compact }
     result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/compact }
     expect: { result: committed, mutation: atomic, core_calls: 0 }
   - name: outbox_forbidden_deletion
     covers: [outbox_forbidden_deletion]
@@ -120,6 +133,7 @@ durable_host_vectors:
     checkpoint_after: effect-tombstone-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/delete }
     result: { file: results-v1.json, pointer: /results/deletion_rejected }
+    raw_response: { file: responses-v1.json, pointer: /responses/delete }
     expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
   - name: outbox_effect_dependency_pruning
     covers: [pruning_effect_receipt_dependency]
@@ -128,6 +142,7 @@ durable_host_vectors:
     checkpoint_after: terminal-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/prune_effect_dependency }
     result: { file: results-v1.json, pointer: /results/deletion_rejected }
+    raw_response: { file: responses-v1.json, pointer: /responses/prune_effect_dependency }
     expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }
   - name: outbox_producer_dependency_pruning
     covers: [pruning_producer_receipt_dependency]
@@ -136,4 +151,5 @@ durable_host_vectors:
     checkpoint_after: terminal-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/prune_producer_dependency }
     result: { file: results-v1.json, pointer: /results/deletion_rejected }
+    raw_response: { file: responses-v1.json, pointer: /responses/prune_producer_dependency }
     expect: { result: rejected, code: invalid_execution_checkpoint, mutation: none, core_calls: 0 }

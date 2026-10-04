@@ -7,6 +7,7 @@ static:
     - { file: zero-capacity-machine.yaml, valid: true }
 artifacts:
   documents:
+    - { file: operation-failures.json, kind: version1_operation_failures, valid: true }
     - { file: base-aggregate.json, kind: aggregate_state_v1, valid: true }
     - { file: base-aggregate.canonical.json, kind: aggregate_state_v1, valid: true, canonical_of: base-aggregate.json }
     - { file: empty-aggregate-v1.json, kind: aggregate_state_v1, valid: true }
@@ -90,6 +91,7 @@ version1_vectors:
     request_pointer: /duplicate_batch
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/duplicate_batch_is_atomic }
       code: duplicate_event_id_in_batch
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
@@ -102,6 +104,7 @@ version1_vectors:
     request_pointer: /digest_mismatch_batch
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/digest_mismatch_batch_is_atomic }
       code: delivery_digest_mismatch
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
@@ -114,6 +117,7 @@ version1_vectors:
     request_pointer: /host_cause_mismatch
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/host_cause_must_equal_event_identity }
       code: invalid_delivery_source
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
@@ -126,6 +130,7 @@ version1_vectors:
     request_pointer: /undeclared_event_batch
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/undeclared_event_batch_is_atomic }
       code: invalid_event
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
@@ -138,6 +143,7 @@ version1_vectors:
     request_pointer: /wrong_payload_batch
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/wrong_payload_batch_is_atomic }
       code: invalid_payload
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
@@ -158,6 +164,7 @@ version1_vectors:
     request_pointer: /conflicting_replay
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/pending_identity_conflict }
       code: event_id_conflict
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
@@ -170,6 +177,7 @@ version1_vectors:
     request_pointer: /pending_changed_payload_stale_digest
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/pending_changed_payload_uses_canonical_candidate_digest }
       code: event_id_conflict
       unchanged_file: base-aggregate.json
       caller_still_owns_input: true
@@ -258,7 +266,7 @@ version1_vectors:
     state_before: completed-component-aggregate.json
     request_file: operation-inputs.json
     request_pointer: /completed_component_admit
-    expect: { result: failure, code: inactive_component_target, unchanged_file: completed-component-aggregate.json, caller_still_owns_input: true }
+    expect: { result: failure, code: inactive_component_target, unchanged_file: completed-component-aggregate.json, caller_still_owns_input: true , exact_failure_response: { file: operation-failures.json, pointer: /responses/completed_component_admission_rejection }}
   - name: faulted_component_admission_rejection
     covers: [faulted_component_admission_rejection]
     operation: admit_v1
@@ -266,7 +274,7 @@ version1_vectors:
     state_before: faulted-component-aggregate.json
     request_file: operation-inputs.json
     request_pointer: /faulted_component_admit
-    expect: { result: failure, code: inactive_component_target, unchanged_file: faulted-component-aggregate.json, caller_still_owns_input: true }
+    expect: { result: failure, code: inactive_component_target, unchanged_file: faulted-component-aggregate.json, caller_still_owns_input: true , exact_failure_response: { file: operation-failures.json, pointer: /responses/faulted_component_admission_rejection }}
   - name: disposed_component_admission_rejection
     covers: [disposed_component_admission_rejection]
     operation: admit_v1
@@ -274,7 +282,7 @@ version1_vectors:
     state_before: disposed-component-aggregate.json
     request_file: operation-inputs.json
     request_pointer: /disposed_component_admit
-    expect: { result: failure, code: invalid_instance_target, unchanged_file: disposed-component-aggregate.json, caller_still_owns_input: true }
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: disposed-component-aggregate.json, caller_still_owns_input: true , exact_failure_response: { file: operation-failures.json, pointer: /responses/disposed_component_admission_rejection }}
   - name: invalid_machine_runtime_rejection
     covers: [invalid_machine_runtime_target]
     operation: step_v1
@@ -298,7 +306,7 @@ version1_vectors:
     state_before: completed-root-aggregate.json
     request_file: operation-inputs.json
     request_pointer: /completed_root_admit
-    expect: { result: failure, code: invalid_instance_target, unchanged_file: completed-root-aggregate.json, caller_still_owns_input: true }
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: completed-root-aggregate.json, caller_still_owns_input: true , exact_failure_response: { file: operation-failures.json, pointer: /responses/completed_root_admission_rejection }}
   - name: deterministic_deferral_overflow
     covers:
       - capacity_zero_and_overflow_fault
@@ -372,7 +380,7 @@ version1_vectors:
     state_before: faulted-root-retained-component-aggregate.json
     request_file: operation-inputs.json
     request_pointer: /faulted_root_descendant_admit
-    expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true }
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true , exact_failure_response: { file: operation-failures.json, pointer: /responses/faulted_root_rejects_retained_component_admission }}
   - name: faulted_root_admission_rejection
     covers: [faulted_root_admission_rejection]
     operation: admit_v1
@@ -380,7 +388,7 @@ version1_vectors:
     state_before: faulted-root-retained-component-aggregate.json
     request_file: operation-inputs.json
     request_pointer: /faulted_root_admit
-    expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true }
+    expect: { result: failure, code: invalid_instance_target, unchanged_file: faulted-root-retained-component-aggregate.json, caller_still_owns_input: true , exact_failure_response: { file: operation-failures.json, pointer: /responses/faulted_root_admission_rejection }}
   - name: faulted_root_rejects_retained_component_step
     covers: [faulted_root_descendant_step_rejection]
     operation: step_v1

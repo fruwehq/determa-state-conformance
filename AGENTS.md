@@ -64,7 +64,7 @@ without standardizing a queue plugin or requiring equivalent public engine APIs.
 Assertions in `expect`, including `caller_still_owns_input`, are normative. There is no
 standalone core runtime runner in this repository.
 
-Version-2 vectors exercise the pure aggregate creation, admission, stepping, migration,
+Version-1 vectors exercise the pure aggregate creation, admission, stepping, migration,
 and checkpoint maintenance-migration boundaries from SPEC §§16–17. Their operation
 names are driver-only adapters. Named artifacts, canonical result bytes, audit records,
 dispositions, exact failures, checkpoint revisions, retained receipts, and request

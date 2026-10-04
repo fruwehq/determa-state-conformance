@@ -912,12 +912,106 @@ class DurableHostValidatorTests(unittest.TestCase):
             vector["checkpoint_after"] = "bounded-tombstone-checkpoint-v1.json"
             vector["result"]["pointer"] = f"/results/{result_name}"
             vector["expect"] = expected
+            response_path = mutated_case / "responses-v1.json"
+            response_document = load(response_path)
+            if expected["result"] == "replayed":
+                response_document["responses"]["test_stale_tombstone"] = {
+                    "kind": "tombstoned",
+                    "body": {"result": "tombstoned", "tombstone": stored["root_record"]},
+                }
+            else:
+                response_document["responses"]["test_stale_tombstone"] = {
+                    "kind": "typed_failure", "body": {"code": expected["code"]}
+                }
+            response_path.write_text(json.dumps(response_document, indent=2) + "\n", encoding="utf-8")
+            vector["raw_response"]["pointer"] = "/responses/test_stale_tombstone"
             validate_durable_host_vectors(
                 mutated_case,
                 test,
                 set(mutated_case.glob("*.json")),
                 self.input_validator,
             )
+
+    def test_exact_tombstone_first_and_retry_bodies(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        responses = load(case / "responses-v1.json")["responses"]
+        self.assertEqual(
+            responses["tombstone_first"], responses["tombstone_replay"]
+        )
+        self.assertEqual(
+            responses["tombstone_first"]["body"],
+            {"result": "tombstoned", "tombstone": load(case / "permanent-tombstone-checkpoint-v1.json")["root_record"]},
+        )
+        self._assert_case_artifact_mutation_fails(
+            case, "responses-v1.json",
+            lambda document: document["responses"]["tombstone_replay"]["body"]["tombstone"].update(
+                tombstone_operation_id="different-operation"
+            ),
+            "exact raw response differs",
+        )
+
+    def test_schema_valid_durable_response_substitution_is_rejected(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        self._assert_case_artifact_mutation_fails(
+            case, "responses-v1.json",
+            lambda document: document["responses"]["tombstone_first"]["body"]["tombstone"].update(
+                tombstone_operation_id="other-valid-operation"
+            ),
+            "exact raw response differs",
+        )
+
+    def test_response_body_requires_every_field_and_no_extras(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        self._assert_case_artifact_mutation_fails(
+            case, "responses-v1.json",
+            lambda document: document["responses"]["tombstone_first"]["body"].pop("result"),
+            "exact raw response differs",
+        )
+        self._assert_case_artifact_mutation_fails(
+            case, "responses-v1.json",
+            lambda document: document["responses"]["tombstone_first"]["body"].update(extra=True),
+            "exact raw response differs",
+        )
+
+    def test_processing_response_binds_full_core_disposition(self) -> None:
+        case = PROFILE / "checkpoint-07-complete-host-contract"
+        self._assert_case_artifact_mutation_fails(
+            case, "responses-v1.json",
+            lambda document: document["responses"]["handled_delayed"]["body"]["core_result"].update(
+                disposition="unhandled"
+            ),
+            "exact raw response differs",
+        )
+
+    def test_persistence_equal_replay_returns_first_receipt(self) -> None:
+        case = PERSISTENCE_PROFILE / "persistence-01-inbox-idempotency"
+        responses = load(case / "responses-v1.json")["responses"]
+        self.assertEqual(responses["process"]["kind"], "persistence_commit")
+        self.assertEqual(responses["replay"]["kind"], "retained_receipt")
+        self.assertEqual(
+            responses["process"]["body"]["receipt"],
+            responses["replay"]["body"],
+        )
+        self._assert_case_artifact_mutation_fails(
+            case, "responses-v1.json",
+            lambda document: document["responses"]["replay"]["body"].update(
+                event_id="different-event"
+            ),
+            "exact raw response differs",
+        )
+
+    def test_persistence_response_keeps_migration_audit(self) -> None:
+        case = PERSISTENCE_PROFILE / "persistence-02-atomic-aggregate-inbox-outbox-audit"
+        responses = load(case / "responses-v1.json")["responses"]
+        key = next(key for key, value in responses.items() if value["kind"] == "persistence_commit")
+        self.assertEqual(len(responses[key]["body"]["migration_audit_records"]), 1)
+        self._assert_case_artifact_mutation_fails(
+            case, "responses-v1.json",
+            lambda document: document["responses"][key]["body"].update(
+                migration_audit_records=[]
+            ),
+            "exact raw response differs",
+        )
 
     def _assert_case_artifact_mutation_fails(
         self, case: Path, filename: str, mutate, pattern: str

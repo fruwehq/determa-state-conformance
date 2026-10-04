@@ -11,6 +11,7 @@ static:
       valid: true
 artifacts:
   documents:
+    - { file: operation-failures.json, kind: version1_operation_failures, valid: true }
     - file: aggregate-component-target-aggregate-v1.json
       kind: aggregate_state_v1
       valid: true
@@ -186,6 +187,7 @@ version1_vectors:
     state_before: aggregate-root-target-missing_root_instance_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/root_target_missing_root_instance_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-root-target-missing_root_instance_id.json
   - name: root_target_missing_root_runtime_id
@@ -197,6 +199,7 @@ version1_vectors:
     state_before: aggregate-root-target-missing_root_runtime_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/root_target_missing_root_runtime_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-root-target-missing_root_runtime_id.json
   - name: root_target_extra_field
@@ -208,6 +211,7 @@ version1_vectors:
     state_before: aggregate-root-target-extra_field.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/root_target_extra_field }
       code: invalid_aggregate_state
       unchanged_file: aggregate-root-target-extra_field.json
   - name: exact_component_target_shape
@@ -229,6 +233,7 @@ version1_vectors:
     state_before: aggregate-component-target-missing_root_instance_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/component_target_missing_root_instance_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-component-target-missing_root_instance_id.json
   - name: component_target_missing_owner_runtime_id
@@ -240,6 +245,7 @@ version1_vectors:
     state_before: aggregate-component-target-missing_owner_runtime_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/component_target_missing_owner_runtime_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-component-target-missing_owner_runtime_id.json
   - name: component_target_missing_component_id
@@ -251,6 +257,7 @@ version1_vectors:
     state_before: aggregate-component-target-missing_component_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/component_target_missing_component_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-component-target-missing_component_id.json
   - name: component_target_missing_component_runtime_id
@@ -262,6 +269,7 @@ version1_vectors:
     state_before: aggregate-component-target-missing_component_runtime_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/component_target_missing_component_runtime_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-component-target-missing_component_runtime_id.json
   - name: component_target_missing_activation_sequence
@@ -273,6 +281,7 @@ version1_vectors:
     state_before: aggregate-component-target-missing_activation_sequence.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/component_target_missing_activation_sequence }
       code: invalid_aggregate_state
       unchanged_file: aggregate-component-target-missing_activation_sequence.json
   - name: component_target_extra_field
@@ -284,6 +293,7 @@ version1_vectors:
     state_before: aggregate-component-target-extra_field.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/component_target_extra_field }
       code: invalid_aggregate_state
       unchanged_file: aggregate-component-target-extra_field.json
   - name: exact_spawned_instance_target_shape
@@ -305,6 +315,7 @@ version1_vectors:
     state_before: aggregate-spawned_instance-target-missing_root_instance_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/spawned_instance_target_missing_root_instance_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-spawned_instance-target-missing_root_instance_id.json
   - name: spawned_instance_target_missing_instance_id
@@ -316,6 +327,7 @@ version1_vectors:
     state_before: aggregate-spawned_instance-target-missing_instance_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/spawned_instance_target_missing_instance_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-spawned_instance-target-missing_instance_id.json
   - name: spawned_instance_target_missing_machine_id
@@ -327,6 +339,7 @@ version1_vectors:
     state_before: aggregate-spawned_instance-target-missing_machine_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/spawned_instance_target_missing_machine_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-spawned_instance-target-missing_machine_id.json
   - name: spawned_instance_target_missing_machine_version
@@ -338,6 +351,7 @@ version1_vectors:
     state_before: aggregate-spawned_instance-target-missing_machine_version.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/spawned_instance_target_missing_machine_version }
       code: invalid_aggregate_state
       unchanged_file: aggregate-spawned_instance-target-missing_machine_version.json
   - name: spawned_instance_target_extra_field
@@ -349,6 +363,7 @@ version1_vectors:
     state_before: aggregate-spawned_instance-target-extra_field.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/spawned_instance_target_extra_field }
       code: invalid_aggregate_state
       unchanged_file: aggregate-spawned_instance-target-extra_field.json
   - name: spawned_instance_target_extra_owner_runtime_id
@@ -360,6 +375,7 @@ version1_vectors:
     state_before: aggregate-spawned_instance-target-extra_owner_runtime_id.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/spawned_instance_target_extra_owner_runtime_id }
       code: invalid_aggregate_state
       unchanged_file: aggregate-spawned_instance-target-extra_owner_runtime_id.json
   - name: spawned_instance_target_extra_namespace
@@ -371,6 +387,7 @@ version1_vectors:
     state_before: aggregate-spawned_instance-target-extra_namespace.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/spawned_instance_target_extra_namespace }
       code: invalid_aggregate_state
       unchanged_file: aggregate-spawned_instance-target-extra_namespace.json
   - name: spawned_instance_target_extra_spawn_sequence
@@ -382,6 +399,7 @@ version1_vectors:
     state_before: aggregate-spawned_instance-target-extra_spawn_sequence.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/spawned_instance_target_extra_spawn_sequence }
       code: invalid_aggregate_state
       unchanged_file: aggregate-spawned_instance-target-extra_spawn_sequence.json
   - name: component_target_extra_component_definition_pointer
@@ -393,6 +411,7 @@ version1_vectors:
     state_before: aggregate-component-target-extra_component_definition_pointer.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/component_target_extra_component_definition_pointer }
       code: invalid_aggregate_state
       unchanged_file: aggregate-component-target-extra_component_definition_pointer.json
   - name: semantic_relation_mismatch
@@ -404,6 +423,7 @@ version1_vectors:
     state_before: rejection-inconsistent-relation.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/semantic_relation_mismatch }
       code: invalid_aggregate_state
       unchanged_file: rejection-inconsistent-relation.json
   - name: unsupported_aggregate_discriminator
@@ -415,6 +435,7 @@ version1_vectors:
     state_before: rejection-unsupported-format.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/unsupported_aggregate_discriminator }
       code: unsupported_aggregate_state_format
       unchanged_file: rejection-unsupported-format.json
   - name: unsupported_aggregate_schema_version
@@ -426,5 +447,6 @@ version1_vectors:
     state_before: rejection-unsupported-schema-version.json
     expect:
       result: failure
+      exact_failure_response: { file: operation-failures.json, pointer: /responses/unsupported_aggregate_schema_version }
       code: unsupported_aggregate_state_schema_version
       unchanged_file: rejection-unsupported-schema-version.json
