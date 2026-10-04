@@ -4,6 +4,8 @@
 import argparse
 import copy
 import json
+import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -39,6 +41,89 @@ def main() -> int:
             pass
         else:
             raise AssertionError(f"loaded Python provider accepted malformed configuration {bad!r}")
+    checked_configuration_rows = 0
+    for vector in original["public_vectors"]:
+        configuration = vector["configuration"]
+        stage = next((item for item in vector["expected_stages"]
+                      if item["operation"] == "validate_configuration"), None)
+        if stage is None:
+            continue
+        checked_configuration_rows += 1
+        expected_valid = stage["output"]["status"] == "accepted"
+        try:
+            configured_instance = provider_namespace["validate_configuration"](configuration)
+        except ValueError:
+            actual_valid = False
+        else:
+            actual_valid = True
+            if configured_instance != configuration:
+                raise AssertionError(f"{vector['id']}: provider changed configuration")
+            capabilities = next(item["output"] for item in vector["expected_stages"]
+                                if item["operation"] == "capabilities")
+            health = next(item["output"] for item in vector["expected_stages"]
+                          if item["operation"] == "health")
+            if provider_namespace["capabilities"](configured_instance) != capabilities or \
+               provider_namespace["health"](configured_instance) != health:
+                raise AssertionError(f"{vector['id']}: provider result differs from public stage")
+        if actual_valid != expected_valid:
+            raise AssertionError(f"{vector['id']}: installed Python provider configuration result differs")
+    if checked_configuration_rows < 15:
+        raise AssertionError("public provider configuration coverage unexpectedly shrank")
+    rustc = os.environ.get("DETERMA_TEST_RUSTC") or shutil.which("rustc")
+    if not rustc:
+        raise AssertionError("Rust compiler is required for executing provider configuration rows")
+    rust_rows = 0
+    rust_json_rejections = set()
+    if rustc:
+        rust_lines = [
+            f"#[path = {json.dumps(str(PROFILE / 'provider/test_provider.rs'))}] mod provider;",
+            "fn main() {",
+        ]
+        for vector in original["public_vectors"]:
+            configuration = vector["configuration"]
+            stage = next((item for item in vector["expected_stages"]
+                          if item["operation"] == "validate_configuration"), None)
+            if stage is None:
+                continue
+            if set(configuration) != {"instance_id", "claims", "health"} or \
+               type(configuration["instance_id"]) is not str or \
+               type(configuration["health"]) is not str or \
+               not isinstance(configuration["claims"], list) or \
+               not all(type(claim) is str for claim in configuration["claims"]):
+                if stage["output"] != {"status": "rejected", "code": "invalid_extension_configuration"}:
+                    raise AssertionError(f"{vector['id']}: unrepresentable Rust configuration was not rejected")
+                rust_json_rejections.add(vector["id"])
+                continue  # The public host rejects JSON before the typed Rust provider is called.
+            rust_rows += 1
+            claims = ", ".join(f"{json.dumps(claim)}.to_string()" for claim in configuration["claims"])
+            expected_valid = "true" if stage["output"]["status"] == "accepted" else "false"
+            rust_lines.extend([
+                "{",
+                f"let c = provider::Configuration {{ instance_id: {json.dumps(configuration['instance_id'])}.to_string(), claims: vec![{claims}], health: {json.dumps(configuration['health'])}.to_string() }};",
+                f"assert_eq!(provider::validate_configuration(&c).is_ok(), {expected_valid}, {json.dumps(vector['id'])});",
+            ])
+            if expected_valid == "true":
+                rust_lines.extend([
+                    "assert_eq!(provider::capabilities(&c), c.claims);",
+                    "assert_eq!(provider::health(&c), c.health);",
+                ])
+            rust_lines.append("}")
+        rust_lines.append("}")
+        if rust_rows < 12:
+            raise AssertionError("Rust provider configuration coverage unexpectedly shrank")
+        if rust_json_rejections != {"invalid_configuration_refused", "non_string_claim_refused", "non_string_health_refused"}:
+            raise AssertionError(f"unexpected Rust JSON rejection rows: {sorted(rust_json_rejections)}")
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory) / "provider_rows.rs"
+            binary = Path(directory) / "provider_rows"
+            source.write_text("\n".join(rust_lines) + "\n")
+            compiled = subprocess.run([rustc, "--edition=2021", str(source), "-o", str(binary)],
+                                      text=True, capture_output=True)
+            if compiled.returncode:
+                raise AssertionError(f"Rust provider failed to compile: {compiled.stderr}")
+            ran = subprocess.run([str(binary)], text=True, capture_output=True)
+            if ran.returncode:
+                raise AssertionError(f"Rust provider row mismatch: {ran.stderr}")
     if exact_json_equal({"stages": [{"output": {"healthy": False}}]},
                         {"stages": [{"output": {"healthy": 0}}]}):
         raise AssertionError("nested stage Boolean accepted as integer")
@@ -136,7 +221,8 @@ else:
                 raise AssertionError(f"runtime adapter {mode} substitution accepted")
             if "adapter returned invalid JSON" not in completed.stderr and "observed decision or core mutation mismatch" not in completed.stderr:
                 raise AssertionError(f"runtime adapter {mode} failed for wrong reason: {completed.stderr}")
-    print(f"rejected {len(attacks) + 6} adversarial extension substitutions")
+    print(f"rejected {len(attacks) + 6} adversarial extension substitutions; "
+          f"executed {checked_configuration_rows} Python and {rust_rows} Rust provider configuration rows")
     return 0
 
 

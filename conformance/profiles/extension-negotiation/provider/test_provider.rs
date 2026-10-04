@@ -14,6 +14,7 @@ pub fn validate_configuration(configuration: &Configuration) -> Result<Configura
     let rest_valid = instance_bytes.all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'.' || byte == b'-');
     if !first_valid || !rest_valid
         || configuration.claims.iter().enumerate().any(|(index, claim)| configuration.claims[..index].contains(claim))
+        || configuration.claims.iter().any(|claim| claim != "durable_single_writer")
         || !matches!(configuration.health.as_str(), "healthy" | "degraded" | "unavailable" | "unknown")
     {
         return Err("invalid_extension_configuration");

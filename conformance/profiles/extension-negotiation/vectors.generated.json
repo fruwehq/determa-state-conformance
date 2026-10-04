@@ -3,7 +3,7 @@
   "schema_version": 1,
   "specification_commit": "6bd25e3fcdf068af861aa289903a8489bd8f0139",
   "provider_closure": {
-    "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676",
+    "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6",
     "closure_files": [
       "provider/test_provider.py",
       "provider/test_provider.rs"
@@ -26,7 +26,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -36,7 +36,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -44,7 +44,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -62,7 +62,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "durable_single_writer"
@@ -81,7 +81,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -108,7 +108,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "health": "healthy",
@@ -131,7 +131,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -141,7 +141,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -149,7 +149,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -166,7 +166,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "durable_single_writer"
@@ -185,7 +185,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:cea9d40855acd1911f7fb917174dbb37a70a8d659bf195841823948c9c90283a",
@@ -218,7 +218,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -228,7 +228,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -236,7 +236,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -254,7 +254,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "durable_single_writer"
@@ -273,7 +273,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:3d33a70b40681af4ef7fe02b0eeefe9a9e82db2ae8ed768cfbbd5d4bdd14a31b",
@@ -307,7 +307,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -317,7 +317,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -343,7 +343,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "durable_single_writer"
@@ -396,7 +396,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -419,7 +419,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}",
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}",
         "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [],
@@ -456,7 +456,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -465,7 +465,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"authoritative_scope_fencing\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"authoritative_scope_fencing\"]}"
       ],
       "configurations": [],
       "requirements": [],
@@ -501,7 +501,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -511,7 +511,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [],
       "requirements": [
@@ -520,7 +520,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "magic_transfer"
@@ -558,7 +558,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "^1.2",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -568,7 +568,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"^1.2\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"^1.2\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [],
       "requirements": [],
@@ -604,7 +604,7 @@
           "provider_reference": {
             "identifier": "sample.authority",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -613,7 +613,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"authority\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.authority\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"authoritative_scope_fencing\"]}"
+        "{\"category\":\"authority\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.authority\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"authoritative_scope_fencing\"]}"
       ],
       "configurations": [
         {
@@ -621,7 +621,7 @@
           "provider_reference": {
             "identifier": "sample.authority",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "local",
@@ -636,7 +636,7 @@
           "provider_reference": {
             "identifier": "sample.authority",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "local",
           "capability": "authoritative_scope_fencing"
@@ -655,7 +655,7 @@
             "provider_reference": {
               "identifier": "sample.authority",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "local",
             "configuration_digest": "sha256:f63330adfcd23532c04b5b662190718fc67de8ac06f05ffa4744698bea54e247",
@@ -689,7 +689,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "durable_single_writer"
@@ -727,7 +727,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -738,7 +738,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
+        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
       ],
       "configurations": [
         {
@@ -746,7 +746,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "guard",
@@ -762,7 +762,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "action",
@@ -793,7 +793,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "guard",
             "configuration_digest": "sha256:3de019ac4161c97c236d10a7b35d6720c5f49be3d4b08d1c5c3acb50c16c6b8f",
@@ -807,7 +807,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "action",
             "configuration_digest": "sha256:efcd54f9d4a353ee8ca2ddb66e46a43c09f4e789ee24f9e164374437be8269a9",
@@ -834,7 +834,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "guard",
             "health": "healthy",
@@ -848,7 +848,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "action",
             "health": "healthy",
@@ -876,7 +876,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -887,7 +887,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
+        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
       ],
       "configurations": [
         {
@@ -895,7 +895,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "action",
@@ -921,7 +921,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "action",
             "configuration_digest": "sha256:985c1c71abae2d2e4606f0da7479b513ae8dd195aa65939ea77c712978f3f282",
@@ -952,7 +952,7 @@
           "provider_reference": {
             "identifier": "sample.authority",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -962,7 +962,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"authority\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.authority\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"authoritative_scope_fencing\",\"safe_relocation\"]}"
+        "{\"category\":\"authority\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.authority\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"authoritative_scope_fencing\",\"safe_relocation\"]}"
       ],
       "configurations": [
         {
@@ -970,7 +970,7 @@
           "provider_reference": {
             "identifier": "sample.authority",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "local",
@@ -987,7 +987,7 @@
           "provider_reference": {
             "identifier": "sample.authority",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "local",
           "capability": "safe_relocation"
@@ -1006,7 +1006,7 @@
             "provider_reference": {
               "identifier": "sample.authority",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "local",
             "configuration_digest": "sha256:d181a1f2a38803867a2230deac56475c43c0f724d1d8e20b9fd57b7110a2b11b",
@@ -1039,7 +1039,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1049,7 +1049,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -1057,7 +1057,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -1075,7 +1075,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.4",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "durable_single_writer"
@@ -1094,7 +1094,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -1128,7 +1128,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1138,7 +1138,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -1146,7 +1146,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -1183,7 +1183,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -1217,7 +1217,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1227,7 +1227,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -1235,7 +1235,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -1253,7 +1253,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "other",
           "capability": "durable_single_writer"
@@ -1272,7 +1272,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -1306,7 +1306,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1316,7 +1316,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -1324,7 +1324,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -1342,7 +1342,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "lossless_projection"
@@ -1361,7 +1361,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -1395,7 +1395,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1405,7 +1405,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -1413,7 +1413,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -1431,7 +1431,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "durable_single_writer"
@@ -1450,7 +1450,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -1484,7 +1484,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1494,7 +1494,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -1502,7 +1502,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -1521,7 +1521,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "capability": "durable_single_writer"
@@ -1540,7 +1540,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -1574,7 +1574,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1588,7 +1588,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"deterministic\",\"pure\",\"portable\",\"semantically_introspectable\",\"process_contained\",\"external_io_capable\"]}"
+        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"deterministic\",\"pure\",\"portable\",\"semantically_introspectable\",\"process_contained\",\"external_io_capable\"]}"
       ],
       "configurations": [
         {
@@ -1596,7 +1596,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "guard",
@@ -1615,7 +1615,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "action",
@@ -1652,7 +1652,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "guard",
             "configuration_digest": "sha256:2a818ad4371dbdc850e261f701263567577a0e00a5e16deeaf2b39cbd9bfbdf0",
@@ -1669,7 +1669,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "action",
             "configuration_digest": "sha256:540755772b47eaa2d31dd573a3be2345e669939012aa43d8cc07db1fead1f955",
@@ -1699,7 +1699,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "guard",
             "health": "healthy",
@@ -1716,7 +1716,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "action",
             "health": "healthy",
@@ -1750,7 +1750,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1761,7 +1761,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
+        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
       ],
       "configurations": [
         {
@@ -1769,7 +1769,7 @@
           "provider_reference": {
             "identifier": "example.native",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "action",
@@ -1795,7 +1795,7 @@
             "provider_reference": {
               "identifier": "example.native",
               "version": "1.0.0",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "action",
             "configuration_digest": "sha256:d8fb8e3382702db2778fdaa1b3407e83df2ffd87a8a910576ad8a880e1ff5c74",
@@ -1828,7 +1828,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -1854,7 +1854,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -1888,7 +1888,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1898,7 +1898,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -1966,7 +1966,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -1976,7 +1976,7 @@
         }
       ],
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
       ],
       "configurations": [
         {
@@ -1984,7 +1984,7 @@
           "provider_reference": {
             "identifier": "sample.sqlite",
             "version": "1.2.3",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "configuration": {
             "instance_id": "primary",
@@ -2011,7 +2011,7 @@
             "provider_reference": {
               "identifier": "sample.sqlite",
               "version": "1.2.3",
-              "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
             },
             "instance_id": "primary",
             "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
@@ -2047,7 +2047,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2069,7 +2069,7 @@
           "provider_reference": {
             "identifier": "conformance.provider",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "health": "healthy",
@@ -2078,12 +2078,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2124,7 +2124,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "health": "healthy",
@@ -2142,7 +2142,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2164,7 +2164,7 @@
           "provider_reference": {
             "identifier": "conformance.provider",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "instance_id": "primary",
           "health": "healthy",
@@ -2173,12 +2173,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "direct_injection",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2219,7 +2219,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "health": "healthy",
@@ -2237,7 +2237,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2254,7 +2254,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.1",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "durable_single_writer"
@@ -2267,12 +2267,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "direct_injection",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2308,7 +2308,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.1",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "capability": "durable_single_writer"
@@ -2330,7 +2330,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2347,7 +2347,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "durable_single_writer"
@@ -2360,12 +2360,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2401,7 +2401,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "capability": "durable_single_writer"
@@ -2423,7 +2423,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2442,7 +2442,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "durable_single_writer"
@@ -2452,7 +2452,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "health": "healthy",
@@ -2467,12 +2467,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2512,7 +2512,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "capability": "durable_single_writer"
@@ -2536,7 +2536,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "durable_single_writer"
@@ -2558,7 +2558,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "capability": "durable_single_writer"
@@ -2580,7 +2580,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2597,7 +2597,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.1",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "durable_single_writer"
@@ -2610,12 +2610,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2651,7 +2651,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.1",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "capability": "durable_single_writer"
@@ -2673,7 +2673,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2703,12 +2703,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2766,7 +2766,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2783,7 +2783,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "other",
         "capability": "durable_single_writer"
@@ -2796,12 +2796,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2837,7 +2837,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "other",
               "capability": "durable_single_writer"
@@ -2859,7 +2859,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2876,7 +2876,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "durable_single_writer"
@@ -2889,12 +2889,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -2930,7 +2930,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "capability": "durable_single_writer"
@@ -2952,7 +2952,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -2969,7 +2969,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "durable_single_writer"
@@ -2982,12 +2982,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3023,7 +3023,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "capability": "durable_single_writer"
@@ -3045,7 +3045,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -3063,7 +3063,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "durable_single_writer"
@@ -3076,12 +3076,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3111,7 +3111,7 @@
           "provider_reference": {
             "identifier": "conformance.provider",
             "version": "1.0.0",
-            "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
           },
           "interface_version": 1,
           "supported_capabilities": [
@@ -3145,13 +3145,13 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
         "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3175,7 +3175,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 2,
         "supported_capabilities": [
@@ -3196,12 +3196,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":2,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":2,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":2,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":2,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "rejected",
             "code": "invalid_extension_descriptor"
@@ -3217,7 +3217,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -3234,7 +3234,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "instance_id": "primary",
         "capability": "lossless_projection"
@@ -3247,12 +3247,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3288,7 +3288,7 @@
               "provider_reference": {
                 "identifier": "conformance.provider",
                 "version": "1.0.0",
-                "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
               },
               "instance_id": "primary",
               "capability": "lossless_projection"
@@ -3310,7 +3310,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -3331,12 +3331,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3364,7 +3364,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -3387,12 +3387,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3422,7 +3422,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -3446,12 +3446,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3482,7 +3482,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -3505,12 +3505,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3540,7 +3540,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -3563,12 +3563,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null
@@ -3598,7 +3598,7 @@
         "provider_reference": {
           "identifier": "conformance.provider",
           "version": "1.0.0",
-          "content_digest": "sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676"
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
         },
         "interface_version": 1,
         "supported_capabilities": [
@@ -3619,12 +3619,12 @@
       },
       "expected_core_mutations": 0,
       "registration_bytes": [
-        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
       ],
       "expected_stages": [
         {
           "operation": "register",
-          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:228900998afe0b42ab6d60329e8f964fab1aa6c322f12b735a862c4b55268676\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
           "output": {
             "status": "accepted",
             "value": null

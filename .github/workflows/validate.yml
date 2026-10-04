@@ -66,7 +66,12 @@ jobs:
           python scripts/generate_extension_negotiation_profile.py
           --spec-root .determa-state-spec --check
 
+      - name: Install Rust provider test toolchain
+        run: rustup toolchain install 1.86.0 --profile minimal
+
       - name: Test extension negotiation relational validation
+        env:
+          RUSTUP_TOOLCHAIN: "1.86.0"
         run: >-
           python scripts/test_extension_negotiation_validator.py
           --spec-root .determa-state-spec

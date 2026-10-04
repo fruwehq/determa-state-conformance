@@ -22,6 +22,8 @@ def validate_configuration(configuration):
         raise ValueError("invalid_extension_configuration")
     if len(configuration["claims"]) != len(set(configuration["claims"])):
         raise ValueError("invalid_extension_configuration")
+    if any(claim != "durable_single_writer" for claim in configuration["claims"]):
+        raise ValueError("invalid_extension_configuration")
     if type(configuration["health"]) is not str or configuration["health"] not in ("healthy", "degraded", "unavailable", "unknown"):
         raise ValueError("invalid_extension_configuration")
     return dict(configuration)
