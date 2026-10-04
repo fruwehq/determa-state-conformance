@@ -78,7 +78,7 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
     source = load(spec_root / "examples/authority/host-authority-cases-v1.json")
     profile_source = load(spec_root / "examples/authority/host-authority-profile-cases-v1.json")
     clock_source = load(spec_root / "examples/authority/host-authority-clock-cases-v1.json")
-    require(set(document) == {"format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "production_scenarios", "transfer_suite_obligation"}, "manifest fields")
+    require(set(document) == {"format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "unclaimed_guarantee_checks", "production_scenarios", "transfer_suite_obligation"}, "manifest fields")
     require(document["format"] == "determa.host-authority-driver-v1" and document["schema_version"] == 1
             and document["specification_commit"] == SPEC_PIN, "format or spec pin")
     expected_names = {row["name"]: (disposition, row) for disposition in ("valid", "rejected") for row in source[disposition]}
@@ -440,6 +440,29 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
                 row["expected"] == {"status": "rejected", "code": "host_capability_mismatch",
                     "authority_result": None, "core_checkpoint_bytes": row["input"]["core_checkpoint_bytes"],
                     "host_mutation_count": 0}, "base core must refuse hosted authority without mutation")
+    unsupported_names = (("guarded_native_commit", "guarded_local_writes"),
+                         ("freeze_after_drain", "guarded_local_writes"),
+                         ("fence_worker_allocates_new_claim", "worker_fencing"),
+                         ("retirement_with_known_fate", "safe_relocation"))
+    unsupported = document["unclaimed_guarantee_checks"]
+    require(len(unsupported) == len(unsupported_names), "unclaimed guarantee refusal coverage")
+    for row, (name, guarantee) in zip(unsupported, unsupported_names):
+        original = operations[name]
+        before = json.loads(json.dumps(operations["guarded_native_commit"]["ledger_before"]))
+        before["scope_generation"] = original["request"]["expected_scope_generation"]
+        result = json.loads(json.dumps(original["expected_response"]))
+        result.update(status="rejected", scope_generation=before["scope_generation"],
+                      state=before["state"], evidence_digest=None,
+                      error_code="host_capability_mismatch", claim=None)
+        zero = {key: 0 for key in ("host_mutation_count", "external_dispatch_count",
+                                   "core_call_count", "claim_allocation_count")}
+        require(row == {"id": "unclaimed_" + original["request"]["operation"],
+            "required_guarantee": guarantee, "request_bytes": original["request_bytes"],
+            "invocation": original["invocation"],
+            "native_mutation_bytes": original["native_mutation_bytes"], "fault": original["fault"],
+            "ledger_before": before, "expected_response_bytes": compact(result),
+            "ledger_after": before, "effects_before": zero, "effects_after": zero},
+            f"{name}: configured unclaimed guarantee must refuse without any effect")
     scenarios = document["production_scenarios"]
     require([row["id"] for row in scenarios] == ["guarded_sqlite", "worker_sqlite"],
             "exact configured production scenario coverage")

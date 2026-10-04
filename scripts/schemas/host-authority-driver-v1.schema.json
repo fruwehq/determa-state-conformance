@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://determa.dev/state/conformance/host-authority-driver-v1.schema.json",
   "type": "object",
-  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "production_scenarios", "transfer_suite_obligation"],
+  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "unclaimed_guarantee_checks", "production_scenarios", "transfer_suite_obligation"],
   "properties": {
     "format": {"const": "determa.host-authority-driver-v1"},
     "schema_version": {"const": 1},
@@ -14,6 +14,8 @@
     "native_traces": {"type": "array", "minItems": 9, "maxItems": 9, "items": {"$ref": "#/$defs/nativeTrace"}},
     "allocation_checks": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"$ref": "#/$defs/allocationCheck"}},
     "base_core_checks": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/baseCoreCheck"}},
+    "unclaimed_guarantee_checks": {"type": "array", "minItems": 4, "maxItems": 4,
+      "items": {"$ref": "#/$defs/unclaimedGuaranteeCheck"}},
     "production_scenarios": {"type": "array", "minItems": 2, "maxItems": 2,
       "items": {"$ref": "#/$defs/productionScenario"}},
     "transfer_suite_obligation": {"type": "object", "required": ["profile", "certified_by_this_profile", "required_suite", "required_native_observations"],
@@ -147,6 +149,25 @@
       "properties": {"id": {"type": "string"}, "input": {"type": "object"},
         "expected": {"type": "object"}}, "additionalProperties": false
     },
+    "unclaimedGuaranteeCheck": {
+      "type": "object", "required": ["id", "required_guarantee", "request_bytes", "invocation",
+        "native_mutation_bytes", "fault", "ledger_before", "expected_response_bytes", "ledger_after",
+        "effects_before", "effects_after"],
+      "properties": {"id": {"type": "string"},
+        "required_guarantee": {"enum": ["guarded_local_writes", "worker_fencing", "safe_relocation"]},
+        "request_bytes": {"type": "string"}, "invocation": {"type": "object"},
+        "native_mutation_bytes": {"type": ["string", "null"]}, "fault": {"type": "object"},
+        "ledger_before": {"$ref": "#/$defs/ledger"}, "ledger_after": {"$ref": "#/$defs/ledger"},
+        "expected_response_bytes": {"type": "string"},
+        "effects_before": {"$ref": "#/$defs/effects"},
+        "effects_after": {"$ref": "#/$defs/effects"}}, "additionalProperties": false
+    },
+    "effects": {"type": "object", "required": ["host_mutation_count", "external_dispatch_count",
+      "core_call_count", "claim_allocation_count"],
+      "properties": {"host_mutation_count": {"type": "integer", "minimum": 0},
+        "external_dispatch_count": {"type": "integer", "minimum": 0},
+        "core_call_count": {"type": "integer", "minimum": 0},
+        "claim_allocation_count": {"type": "integer", "minimum": 0}}, "additionalProperties": false},
     "productionScenario": {
       "type": "object", "required": ["id", "applicability", "operations", "worker_checks", "native_traces", "allocation_check"],
       "properties": {"id": {"enum": ["guarded_sqlite", "worker_sqlite"]},

@@ -391,6 +391,26 @@ def render(spec_root: Path) -> bytes:
                                 ("freeze_scope", "freeze_after_drain"),
                                 ("fence_worker", "fence_worker_allocates_new_claim"),
                                 ("prove_retirement", "retirement_with_known_fate"))]
+    unclaimed_guarantee_checks = []
+    for name, guarantee in (("guarded_native_commit", "guarded_local_writes"),
+                            ("freeze_after_drain", "guarded_local_writes"),
+                            ("fence_worker_allocates_new_claim", "worker_fencing"),
+                            ("retirement_with_known_fate", "safe_relocation")):
+        original = first[name]
+        before = ledger(generation=original["request"]["expected_scope_generation"])
+        response = copy.deepcopy(original["expected_response"])
+        response.update(status="rejected", scope_generation=before["scope_generation"],
+                        state=before["state"], evidence_digest=None,
+                        error_code="host_capability_mismatch", claim=None)
+        unclaimed_guarantee_checks.append({"id": "unclaimed_" + original["request"]["operation"],
+            "required_guarantee": guarantee, "request_bytes": original["request_bytes"],
+            "invocation": original["invocation"], "native_mutation_bytes": original["native_mutation_bytes"],
+            "fault": original["fault"], "ledger_before": before,
+            "expected_response_bytes": raw(response), "ledger_after": copy.deepcopy(before),
+            "effects_before": {"host_mutation_count": 0, "external_dispatch_count": 0,
+                               "core_call_count": 0, "claim_allocation_count": 0},
+            "effects_after": {"host_mutation_count": 0, "external_dispatch_count": 0,
+                              "core_call_count": 0, "claim_allocation_count": 0}})
     production_scenarios = []
     for profile_index, scenario_name in ((0, "guarded_sqlite"), (2, "worker_sqlite")):
         configured = profiles["valid"][profile_index]["report"]
@@ -449,6 +469,7 @@ def render(spec_root: Path) -> bytes:
                        "profiles": profile_vectors, "clocks": clock_vectors, "worker_checks": worker_checks,
                        "native_traces": native_traces, "allocation_checks": allocation_checks,
                        "base_core_checks": base_core_checks,
+                       "unclaimed_guarantee_checks": unclaimed_guarantee_checks,
                        "production_scenarios": production_scenarios,
                        "transfer_suite_obligation": {"profile": "safe_relocation", "certified_by_this_profile": False,
                            "required_suite": "I2 same-authority transfer operational suite",

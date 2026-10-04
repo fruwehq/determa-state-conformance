@@ -11,6 +11,7 @@ from pathlib import Path
 
 from validate_host_authority import AuthorityValidationError, PROFILE, compact, hash_value, load, validate_document
 from run_host_authority_profile import (AdapterOutputError, adapter_call, common_rule_input,
+                                        configured_unclaimed_probe,
                                         select_production_scenario, verify_configured_profile)
 
 
@@ -73,6 +74,9 @@ def main() -> int:
     attack("missing native barrier", lambda d: d["native_traces"][2]["control_plan"].pop(1))
     attack("unknown fate accepted without resolution", lambda d: d["native_traces"][4]["control_plan"].pop(4))
     attack("rejected worker mutates journal", lambda d: d["worker_checks"][1]["expected"]["ledger_after"]["journal_entries"].append({"bad": True}))
+    attack("unclaimed worker allocates claim", lambda d: d["unclaimed_guarantee_checks"][2]["effects_after"].update(claim_allocation_count=1))
+    attack("unclaimed worker changes ledger", lambda d: d["unclaimed_guarantee_checks"][2]["ledger_after"]["active_claims"].append({"bad": True}))
+    attack("unclaimed worker accepted", lambda d: d["unclaimed_guarantee_checks"][2].update(expected_response_bytes="{}"))
     for name, document in attacks:
         try:
             validate_document(document, spec)
@@ -116,6 +120,23 @@ def main() -> int:
     guarded_report = next(row for row in baseline["profiles"] if row["id"] ==
                           "guarded_local_scope_without_relocation")["expected_report"]
     assert select_production_scenario(baseline, guarded_report)["id"] == "guarded_sqlite"
+    unclaimed_worker = next(row for row in baseline["unclaimed_guarantee_checks"] if row["id"] ==
+                            "unclaimed_fence_worker")
+    probe, expected = configured_unclaimed_probe(unclaimed_worker, "sha256:configured", guarded_report)
+    assert probe["kind"] == "operation"
+    assert probe["setup"]["ledger_before"]["journal_entries"] == []
+    assert probe["setup"]["ledger_before"]["active_claims"] == []
+    assert expected["ledger_after"] == probe["setup"]["ledger_before"]
+    assert set(expected["observed_effects_after"].values()) == {0}
+    sabotaged = copy.deepcopy(expected)
+    sabotaged["observed_effects_after"]["claim_allocation_count"] = 1
+    child = [sys.executable, "-c", f"import sys; sys.stdout.buffer.write({compact(sabotaged).encode()!r})"]
+    try:
+        adapter_call(child, probe, expected, "unclaimed worker allocates claim")
+    except AdapterOutputError:
+        pass
+    else:
+        raise AssertionError("production runner accepted an unclaimed worker allocation")
     worker_report = next(row for row in baseline["profiles"] if row["id"] ==
                          "guarded_local_worker_fencing")["expected_report"]
     assert select_production_scenario(baseline, worker_report)["id"] == "worker_sqlite"

@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import base64
 import binascii
+import copy
 import hashlib
 import json
 import subprocess
@@ -149,6 +150,20 @@ def common_rule_input(vector: dict) -> dict:
             "hypothetical_verification": vector["hypothetical_verification"]}
 
 
+def configured_unclaimed_probe(vector: dict, binding: str, report: dict) -> tuple[dict, dict]:
+    before = copy.deepcopy(vector["ledger_before"])
+    before["required_participant_records"] = [item["role"] + ":" + item["instance_id"]
+        for item in report["required_participants"]]
+    after = copy.deepcopy(before)
+    setup = {"ledger_before": before, "binding": binding,
+             "observed_effects_before": vector["effects_before"]}
+    call = {"request_bytes": vector["request_bytes"], "invocation": vector["invocation"],
+            "native_mutation_bytes": vector["native_mutation_bytes"], "fault": vector["fault"]}
+    expected = {"binding": binding, "response_bytes": vector["expected_response_bytes"],
+                "ledger_after": after, "observed_effects_after": vector["effects_after"]}
+    return {"kind": "operation", "setup": setup, "call": call}, expected
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, default=Path("../determa-state-spec"))
@@ -164,6 +179,13 @@ def main() -> int:
     binding = report_binding(actual_report)
     guarantees = actual_report["guarantees"]
     scenario = select_production_scenario(manifest, actual_report)
+    if actual_report["extension_report"] is not None:
+        for vector in manifest["unclaimed_guarantee_checks"]:
+            if guarantees[vector["required_guarantee"]]:
+                continue
+            probe, expected = configured_unclaimed_probe(vector, binding, actual_report)
+            adapter_call(args.adapter, probe, expected, vector["id"])
+            checked += 1
     for vector in (scenario["operations"] if scenario else []):
         # The adapter cannot see the ID, source classification, expected result, or after-state.
         setup = {"ledger_before": vector["ledger_before"], "binding": binding}

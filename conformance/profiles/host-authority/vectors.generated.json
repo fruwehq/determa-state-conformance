@@ -8823,6 +8823,416 @@
       }
     }
   ],
+  "unclaimed_guarantee_checks": [
+    {
+      "id": "unclaimed_guarded_commit",
+      "required_guarantee": "guarded_local_writes",
+      "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+      "invocation": {
+        "authenticated_principal": "owner-1",
+        "authorized_scopes": [
+          "scope-42"
+        ],
+        "operation_rights": [
+          "read_authority",
+          "guarded_commit",
+          "freeze_scope",
+          "fence_worker",
+          "prove_retirement"
+        ],
+        "assigned_worker_principal": null,
+        "trusted_clock_now": "1759999999999999999",
+        "clock_available": true
+      },
+      "native_mutation_bytes": "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}",
+      "fault": {
+        "native_transaction_fate": "committed",
+        "injection": "none",
+        "epoch_check_separate_from_commit": false
+      },
+      "ledger_before": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "4",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"host_capability_mismatch\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"4\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"rejected\"}",
+      "ledger_after": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "4",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "effects_before": {
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0,
+        "core_call_count": 0,
+        "claim_allocation_count": 0
+      },
+      "effects_after": {
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0,
+        "core_call_count": 0,
+        "claim_allocation_count": 0
+      }
+    },
+    {
+      "id": "unclaimed_freeze_scope",
+      "required_guarantee": "guarded_local_writes",
+      "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
+      "invocation": {
+        "authenticated_principal": "owner-1",
+        "authorized_scopes": [
+          "scope-42"
+        ],
+        "operation_rights": [
+          "read_authority",
+          "guarded_commit",
+          "freeze_scope",
+          "fence_worker",
+          "prove_retirement"
+        ],
+        "assigned_worker_principal": null,
+        "trusted_clock_now": "1759999999999999999",
+        "clock_available": true
+      },
+      "native_mutation_bytes": null,
+      "fault": {
+        "native_transaction_fate": "known",
+        "injection": "none",
+        "epoch_check_separate_from_commit": false
+      },
+      "ledger_before": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "5",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"host_capability_mismatch\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"rejected\"}",
+      "ledger_after": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "5",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "effects_before": {
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0,
+        "core_call_count": 0,
+        "claim_allocation_count": 0
+      },
+      "effects_after": {
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0,
+        "core_call_count": 0,
+        "claim_allocation_count": 0
+      }
+    },
+    {
+      "id": "unclaimed_fence_worker",
+      "required_guarantee": "worker_fencing",
+      "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+      "invocation": {
+        "authenticated_principal": "worker-1",
+        "authorized_scopes": [
+          "scope-42"
+        ],
+        "operation_rights": [
+          "read_authority",
+          "guarded_commit",
+          "freeze_scope",
+          "fence_worker",
+          "prove_retirement"
+        ],
+        "assigned_worker_principal": "worker-1",
+        "trusted_clock_now": "1759999999999999999",
+        "clock_available": true
+      },
+      "native_mutation_bytes": null,
+      "fault": {
+        "native_transaction_fate": "known",
+        "injection": "none",
+        "epoch_check_separate_from_commit": false
+      },
+      "ledger_before": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "4",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"host_capability_mismatch\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"4\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"rejected\"}",
+      "ledger_after": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "4",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "effects_before": {
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0,
+        "core_call_count": 0,
+        "claim_allocation_count": 0
+      },
+      "effects_after": {
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0,
+        "core_call_count": 0,
+        "claim_allocation_count": 0
+      }
+    },
+    {
+      "id": "unclaimed_prove_retirement",
+      "required_guarantee": "safe_relocation",
+      "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:80e87bcfb0a487a65ceea01e87dca963eebadc24fb0eade9b6c40b011e0d9598\",\"freeze_evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-1\",\"request_digest\":\"sha256:75777b0f9c728f12948c61eef8b3df87179d8b880efe21adc60b641b8a52a59c\",\"scope_identity\":\"scope-42\"}",
+      "invocation": {
+        "authenticated_principal": "owner-1",
+        "authorized_scopes": [
+          "scope-42"
+        ],
+        "operation_rights": [
+          "read_authority",
+          "guarded_commit",
+          "freeze_scope",
+          "fence_worker",
+          "prove_retirement"
+        ],
+        "assigned_worker_principal": null,
+        "trusted_clock_now": "1759999999999999999",
+        "clock_available": true
+      },
+      "native_mutation_bytes": null,
+      "fault": {
+        "native_transaction_fate": "known",
+        "injection": "none",
+        "epoch_check_separate_from_commit": false
+      },
+      "ledger_before": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "6",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"host_capability_mismatch\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"rejected\"}",
+      "ledger_after": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "6",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "effects_before": {
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0,
+        "core_call_count": 0,
+        "claim_allocation_count": 0
+      },
+      "effects_after": {
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0,
+        "core_call_count": 0,
+        "claim_allocation_count": 0
+      }
+    }
+  ],
   "production_scenarios": [
     {
       "id": "guarded_sqlite",
