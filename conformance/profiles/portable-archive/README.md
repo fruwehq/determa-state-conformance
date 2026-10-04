@@ -6,7 +6,13 @@ definitions, migration descriptor, owned ready/deferred queues, receipts, faults
 pending and terminal intents, compact tombstone, optional helper participant, and
 conditional required native host journal. The source is the explicitly pinned
 `examples/archives/` directory of the specification; the generator verifies exact
-source bytes. `test.yaml` names every case. No result is inferred from a case name.
+source bytes. `definition-01.json` through `definition-05.json` are complete format-1
+machine sources reconstructed from the five normalized attachments. The validator
+checks their public bundle fingerprints and resolves all four retained checkpoint
+aggregates against them, including the migrated `job-42` origin and current
+definitions. The four selected checkpoint roots are `effect-1`, `fault-1`, `job-42`,
+and `server-1`; their complete checkpoint bytes are in every positive archive.
+`test.yaml` names every case. No result is inferred from a case name.
 
 An implementation declaring `portable_archive` runs
 `scripts/run_portable_archive_profile.py --spec-root SPEC -- ADAPTER`. The adapter
@@ -41,7 +47,9 @@ standalone takeover, relocation, clone, and activation belong to later recovery 
 
 The repository validator verifies pinned schema bytes, archive/member/nested hashes,
 closure, fixture schemas, positive stage bytes, inert observations, and every declared
-case ID. That source check does not certify an implementation. The production driver
+case ID. The selected normative checkpoints have one runtime each; no owned component
+instance is present in this archive fixture. That source check does not certify an
+implementation. The production driver
 must be run by the implementation or host CI. The optional §19 journal gate is
 conditional on a source claiming `durable_native_results`; this fixture supplies
 typed evidence and trusted inventory, while an implementation must validate its

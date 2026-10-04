@@ -304,7 +304,10 @@ def validate_journal_inventory(archive: dict, configured: dict, validators: dict
 
 def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
     spec_root = Path(spec_root)
-    require({path.name for path in CASE.iterdir()} == set(FILES) | {'test.yaml'},
+    archive = read_json(CASE / 'archive-v1.json')
+    machine_names = {f'definition-{index:02d}.json'
+                     for index in range(1, len(archive['normalized_definitions']) + 1)}
+    require({path.name for path in CASE.iterdir()} == set(FILES) | {'test.yaml'} | machine_names,
             'archive fixture file inventory')
     if enforce_pin:
         for name in FILES:
@@ -312,7 +315,6 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
                     (spec_root / 'examples/archives' / name).read_bytes(),
                     f'{name}: differs from pinned normative example')
     validators = validator_registry(spec_root)
-    archive = read_json(CASE / 'archive-v1.json')
     stage = read_json(CASE / 'stage-cases-v1.json')
     export = read_json(CASE / 'export-cases-v1.json')
     hashes = read_json(CASE / 'hash-checks-v1.json')
@@ -337,6 +339,30 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
         require(hashes[aliases[name]] == digest(read_json(spec_root / 'schema' / (name + '.schema.json'))),
                 f'{name} schema pin')
     validate_archive_integrity(archive, validators)
+    from validate_conformance import (ValidationFailure, validated_bundle_fingerprint,
+                                      validate_aggregate_against_bundle)
+    from generate_version1_vectors import typed_value
+    attached = archive['normalized_definitions']
+    machine_paths = {}
+    for index, definition in enumerate(attached, 1):
+        path = CASE / f'definition-{index:02d}.json'
+        machine = read_json(path)
+        schema = read_json(spec_root / 'schema/machine.schema.json')
+        schema_valid(Draft202012Validator(schema), machine, path.name)
+        require(typed_value(machine) == definition['normalized_bundle'],
+                path.name + ': normalized bundle attachment')
+        require(validated_bundle_fingerprint(path) == definition['validated_bundle_fingerprint'],
+                path.name + ': production resolver fingerprint')
+        machine_paths[definition['validated_bundle_fingerprint']] = path
+    for checkpoint in archive['checkpoints']:
+        aggregate = checkpoint['root_record']['aggregate_state']
+        current = machine_paths[aggregate['validated_bundle_fingerprint']]
+        historical = [path for fingerprint, path in machine_paths.items()
+                      if fingerprint != aggregate['validated_bundle_fingerprint']]
+        try:
+            validate_aggregate_against_bundle(aggregate, current, *historical)
+        except ValidationFailure as error:
+            raise ArchiveValidationError(f'{checkpoint["root_instance_id"]}: {error}') from error
     require(hashes['archive_digest'] == archive['archive_digest'], 'archive golden digest')
     require(export['cases'][0]['expected_archive'] == archive and
             stage['cases'][0]['input_archive'] == archive,

@@ -6,7 +6,7 @@ import argparse
 import json
 from pathlib import Path
 
-from validate_portable_archive import CASE, FILES
+from validate_portable_archive import CASE, FILES, decode_typed
 
 
 def main() -> int:
@@ -23,6 +23,17 @@ def main() -> int:
                 raise SystemExit(f'{name}: generated archive fixture differs from pinned specification')
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_bytes(expected)
+    archive = json.loads((source / 'archive-v1.json').read_bytes())
+    for index, attachment in enumerate(archive['normalized_definitions'], 1):
+        name = f'definition-{index:02d}.json'
+        expected = (json.dumps(decode_typed(attachment['normalized_bundle']),
+                               indent=2, ensure_ascii=True) + '\n').encode()
+        target = CASE / name
+        if args.check:
+            if target.read_bytes() != expected:
+                raise SystemExit(f'{name}: machine source differs from archive attachment')
+        else:
             target.write_bytes(expected)
     export = json.loads((source / 'export-cases-v1.json').read_bytes())
     stage = json.loads((source / 'stage-cases-v1.json').read_bytes())
