@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "80a9425e1309c0649e20296dd14d745f96553c1ca6b6bc8d7f45f69b3bebb46c",
+  "registry_sha256": "55453330a2d127feefdea0caf4c3788da004911b143eb0d06def6498def90a4b",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -194,6 +194,16 @@
         "unsupported_aggregate_state_schema_version",
         "unsupported_migration_descriptor_format",
         "unsupported_migration_descriptor_schema_version"
+      ]
+    },
+    {
+      "id": "projection_failure",
+      "codes": [
+        "invalid_projection_input",
+        "invalid_projection_selection",
+        "projection_not_lossless",
+        "projection_transaction_unavailable",
+        "unsupported_projection_boundary"
       ]
     }
   ]
