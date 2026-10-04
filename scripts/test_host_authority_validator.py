@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import argparse
 import copy
 import base64
 import hashlib
@@ -16,7 +17,10 @@ from run_host_authority_profile import (AdapterOutputError, adapter_call, common
 
 
 def main() -> int:
-    spec = Path(__file__).resolve().parents[2] / "determa-state-spec"
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--spec-root", type=Path, required=True,
+                        help="Pinned determa-state-spec checkout used by this test")
+    spec = parser.parse_args().spec_root
     baseline = load(PROFILE / "vectors.generated.json")
     assert validate_document(baseline, spec) == (22, 6, 7, 7, 9, 4)
     by_name = {row["id"]: index for index, row in enumerate(baseline["operations"])}

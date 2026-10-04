@@ -75,7 +75,7 @@ jobs:
           --spec-root .determa-state-spec --check
 
       - name: Test host authority relational validation
-        run: python scripts/test_host_authority_validator.py
+        run: python scripts/test_host_authority_validator.py --spec-root .determa-state-spec
 
       - name: Install Rust provider test toolchain
         run: rustup toolchain install 1.86.0 --profile minimal
