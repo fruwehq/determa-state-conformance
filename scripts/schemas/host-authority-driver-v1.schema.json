@@ -80,10 +80,11 @@
       }, "additionalProperties": false
     },
     "profile": {
-      "type": "object", "required": ["id", "source_disposition", "fixture_layer", "hypothetical_verification", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"],
+      "type": "object", "required": ["id", "source_disposition", "fixture_layer", "submitted_report", "hypothetical_verification", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"],
       "properties": {"id": {"type": "string"}, "source_disposition": {"enum": ["valid", "invalid"]},
         "fixture_layer": {"const": "hypothetical_common_rule"},
         "hypothetical_verification": {"type": ["object", "null"]},
+        "submitted_report": {"type": "object"},
         "configured_facts": {"type": "object"}, "expected_report": {"type": "object"},
         "expected_report_bytes": {"type": "string"}, "expected_outcome": {"type": "object"},
         "expected_support": {"type": ["object", "null"]}},

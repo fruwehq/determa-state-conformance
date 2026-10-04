@@ -146,7 +146,8 @@ def select_production_scenario(manifest: dict, report: dict) -> dict | None:
 
 
 def common_rule_input(vector: dict) -> dict:
-    return {"kind": "common_rule_profile", "configured_facts": vector["configured_facts"],
+    return {"kind": "common_rule_profile", "submitted_report": vector["submitted_report"],
+            "configured_facts": vector["configured_facts"],
             "hypothetical_verification": vector["hypothetical_verification"]}
 
 
