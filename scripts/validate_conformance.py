@@ -38,6 +38,7 @@ from closed_code_registry import RegistryValidationError, validate_registry
 from validate_extension_negotiation import ExtensionValidationError, validate_profile
 from validate_host_authority import AuthorityValidationError, validate_profile as validate_authority_profile
 from runtime_provider_validator import RuntimeProviderValidationError, validate_profile as validate_runtime_provider_profile
+from timer_helper_validator import TimerHelperValidationError, validate_profile as validate_timer_helper_profile
 
 
 JSON_NUMBER = re.compile(
@@ -7809,6 +7810,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         runtime_provider_vectors = validate_runtime_provider_profile(spec_root, repository_root)
     except (RuntimeProviderValidationError, OSError, ValueError, KeyError, IndexError) as error:
         raise ValidationFailure(f"runtime provider profile: {error}") from error
+    try:
+        timer_helper_vectors = validate_timer_helper_profile(spec_root, repository_root)
+    except (TimerHelperValidationError, OSError, ValueError, KeyError, IndexError) as error:
+        raise ValidationFailure(f"timer helper profile: {error}") from error
     validate_direct_descriptor_expectation_probes()
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
@@ -8294,6 +8299,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{authority_counts[3]} worker checks, {authority_counts[4]} native traces, "
         f"{authority_counts[5]} base-core refusals, "
         f"{runtime_provider_vectors} runtime provider vectors, "
+        f"{timer_helper_vectors} timer helper vectors, "
         f"{application_projection_vectors} application projection vectors, and "
         f"{committed_effect_vectors} committed native effect vectors"
     )

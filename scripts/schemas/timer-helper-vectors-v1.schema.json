@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "External timer helper conformance driver version 1",
+  "type": "object",
+  "properties": {
+    "fixture_format": {"const": "determa.timer_helper.conformance"},
+    "fixture_schema_version": {"const": 1},
+    "specification_commit": {"const": "6207362e879ccca70f709e1eb4cc90448d910c0b"},
+    "machine_file": {"const": "machine.yaml"},
+    "setup_test_file": {"const": "test.yaml"},
+    "clock_cases": {"type": "object"},
+    "cases": {"type": "array", "minItems": 24, "items": {"$ref": "#/$defs/case"}}
+  },
+  "required": ["fixture_format", "fixture_schema_version", "specification_commit", "machine_file", "setup_test_file", "clock_cases", "cases"],
+  "additionalProperties": false,
+  "$defs": {
+    "snapshot": {"type": "object", "properties": {
+      "helper_artifact": {"$ref": "https://determa.dev/state/schema/timer-record-v1.schema.json"},
+      "checkpoint": {"oneOf": [{"type": "null"}, {"$ref": "https://determa.dev/state/schema/execution-checkpoint-v1.schema.json"}]}
+    }, "required": ["helper_artifact", "checkpoint"], "additionalProperties": false},
+    "case": {"type": "object", "properties": {
+      "id": {"type": "string", "minLength": 1},
+      "request": {"type": "object"},
+      "trusted_now": {"type": ["string", "null"]},
+      "claim_expires_at": {"type": ["string", "null"]},
+      "previous_attempt_fate": {"enum": [null, "committed", "proved_uncommitted", "unknown"]},
+      "admission_disposition": {"enum": [null, "accepted", "capacity_unavailable"]},
+      "before": {"$ref": "#/$defs/snapshot"},
+      "expected_result": {"$ref": "https://determa.dev/state/schema/timer-helper-operation-v1.schema.json"},
+      "after": {"$ref": "#/$defs/snapshot"},
+      "expected_calls": {"type": "object", "properties": {
+        "clock": {"type": "integer", "minimum": 0, "maximum": 1},
+        "admission": {"type": "integer", "minimum": 0, "maximum": 1}
+      }, "required": ["clock", "admission"], "additionalProperties": false}
+    }, "required": ["id", "request", "trusted_now", "claim_expires_at", "previous_attempt_fate", "admission_disposition", "before", "expected_result", "after", "expected_calls"], "additionalProperties": false}
+  }
+}

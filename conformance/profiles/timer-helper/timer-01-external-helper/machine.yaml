@@ -1,0 +1,50 @@
+format: 1
+namespace: conformance.external_timer_helper
+events:
+  begin:
+    direction: input
+  abort:
+    direction: input
+  schedule_requested:
+    direction: output
+    payload:
+      timer_id: { type: string, required: true }
+      event_name: { type: string, required: true }
+      delay_nanoseconds: { type: string, required: true }
+  cancel_requested:
+    direction: output
+    payload:
+      timer_id: { type: string, required: true }
+  received:
+    direction: input
+machines:
+  - machine_id: timer_client
+    version: 1
+    root:
+      type: composite
+      initial: { transition_to: idle }
+      states:
+        idle:
+          on_events:
+            begin:
+              transition_to: waiting
+              action:
+                - send:
+                    event: schedule_requested
+                    to: { external: true }
+                    payload:
+                      timer_id: "'timer-A'"
+                      event_name: "'received'"
+                      delay_nanoseconds: "'10'"
+        waiting:
+          on_events:
+            abort:
+              transition_to: idle
+              action:
+                - send:
+                    event: cancel_requested
+                    to: { external: true }
+                    payload:
+                      timer_id: "'timer-A'"
+            received: { transition_to: done }
+        done: {}

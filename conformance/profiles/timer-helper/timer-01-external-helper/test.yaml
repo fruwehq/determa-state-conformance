@@ -1,0 +1,31 @@
+title: declared schedule and cancel intent are ordinary machine output
+artifacts:
+  documents:
+    - file: vectors.generated.json
+      kind: json_value
+      valid: true
+steps:
+  - send: { event: begin }
+    expect:
+      config: [waiting]
+      emissions:
+        - event: schedule_requested
+          target: external
+          payload: { timer_id: timer-A, event_name: received, delay_nanoseconds: "10" }
+  - send: { event: abort }
+    expect:
+      config: [idle]
+      emissions:
+        - event: cancel_requested
+          target: external
+          payload: { timer_id: timer-A }
+  - send: { event: begin }
+    expect:
+      config: [waiting]
+      emissions:
+        - event: schedule_requested
+          target: external
+          payload: { timer_id: timer-A, event_name: received, delay_nanoseconds: "10" }
+  - send: { event: received }
+    expect:
+      config: [done]
