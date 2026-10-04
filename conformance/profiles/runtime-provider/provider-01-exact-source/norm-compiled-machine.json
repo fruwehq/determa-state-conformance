@@ -1,0 +1,39 @@
+{
+  "format": 1,
+  "namespace": "example.compiled",
+  "events": {
+    "submit": {
+      "direction": "input",
+      "payload": {
+        "approved": {
+          "type": "bool",
+          "required": true
+        }
+      }
+    }
+  },
+  "machines": [
+    {
+      "machine_id": "order",
+      "root": {
+        "type": "composite",
+        "initial": {
+          "transition_to": "pending"
+        },
+        "states": {
+          "pending": {
+            "on_events": {
+              "submit": {
+                "guard": "event.payload.approved",
+                "transition_to": "complete"
+              }
+            }
+          },
+          "complete": {
+            "type": "final"
+          }
+        }
+      }
+    }
+  ]
+}
