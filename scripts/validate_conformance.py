@@ -169,6 +169,7 @@ ARTIFACT_KINDS = {
     "execution_checkpoint_v1": "execution-checkpoint-v1.schema.json",
 }
 DRIVER_ARTIFACT_KINDS = {
+    "application_projection_v1": "application-projection-v1.schema.json",
     "version1_operation_inputs": "version1-operation-inputs.schema.json",
     "version1_operation_result": "version1-operation-result.schema.json",
     "version1_operation_failures": "version1-operation-failures.schema.json",
@@ -7828,6 +7829,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             / "schemas"
             / "durable-host-profile-v1.schema.json"
         ),
+        "application_projection_vectors": (
+            repository_root / "scripts" / "schemas" / "application-projection-profile-v1.schema.json"
+        ),
         "inspection_vectors": (
             repository_root / "scripts" / "schemas" / "inspection-vectors.schema.json"
         ),
@@ -7864,6 +7868,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     )
     durable_host_vector_validator = Draft202012Validator(
         schemas["durable_host_vectors"], registry=registry
+    )
+    application_projection_vector_validator = Draft202012Validator(
+        schemas["application_projection_vectors"], registry=registry
     )
     inspection_vector_validator = Draft202012Validator(
         schemas["inspection_vectors"], registry=registry
@@ -7911,6 +7918,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     version1_vectors = 0
     version1_coverage: set[str] = set()
     durable_host_vectors = 0
+    application_projection_vectors = 0
     durable_host_coverage: set[str] = set()
     inspection_vectors = 0
     inspection_coverage: set[str] = set()
@@ -7924,7 +7932,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         validate_driver_markers(test, case.name)
         profile_modes = {
             name
-            for name in ("version1_vectors", "durable_host_vectors", "inspection_vectors")
+            for name in ("version1_vectors", "durable_host_vectors", "application_projection_vectors", "inspection_vectors")
             if name in test
         }
         if len(profile_modes) > 1:
@@ -7935,6 +7943,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             validate_fixture_schema(test, version1_vector_validator, case)
         if "durable_host_vectors" in test:
             validate_fixture_schema(test, durable_host_vector_validator, case)
+        if "application_projection_vectors" in test:
+            validate_fixture_schema(test, application_projection_vector_validator, case)
         if "inspection_vectors" in test:
             validate_fixture_schema(test, inspection_vector_validator, case)
         if "load" in test and test["load"] != {"valid": True}:
@@ -8178,6 +8188,11 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 )
             durable_host_coverage.update(case_coverage)
             durable_host_vectors += len(test["durable_host_vectors"])
+        elif "application_projection_vectors" in test:
+            from validate_application_projection import validate_application_projection
+            application_projection_vectors += validate_application_projection(
+                case, test, referenced_artifacts
+            )
         elif "inspection_vectors" in test:
             from inspection_validator import validate_inspection_vectors
             case_coverage = validate_inspection_vectors(
@@ -8267,15 +8282,16 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{structural_rejections} expected structural rejections, "
         f"{static_schema_passes} schema-valid static documents, and "
         f"{scenarios} runtime scenarios, {version1_vectors} version-1 vectors, "
-        f"{durable_host_vectors} durable host vectors, and "
+        f"{durable_host_vectors} durable host vectors, "
         f"{inspection_vectors} inspection vectors "
         f"({inspection_core_vectors} core, {inspection_provider_vectors} optional provider), "
-        f"{extension_vectors} extension negotiation vectors; "
+        f"{extension_vectors} extension negotiation vectors, "
         f"{authority_counts[0]} host authority operations, "
         f"{authority_counts[1]} profile reports, {authority_counts[2]} clock values, "
         f"{authority_counts[3]} worker checks, {authority_counts[4]} native traces, "
         f"{authority_counts[5]} base-core refusals, "
-        f"{runtime_provider_vectors} runtime provider vectors"
+        f"{runtime_provider_vectors} runtime provider vectors, and "
+        f"{application_projection_vectors} application projection vectors"
     )
 
 

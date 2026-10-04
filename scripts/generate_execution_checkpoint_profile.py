@@ -2664,7 +2664,11 @@ def outputs() -> dict[Path, bytes]:
         start=1,
     ):
         result_map.update(generate_persistence_case(index, slug))
-    for test_path in PROFILE.rglob("test.yaml"):
+    for test_path in (
+        path
+        for profile_name in ("execution-checkpoint", "persistence")
+        for path in (PROFILE / profile_name).rglob("test.yaml")
+    ):
         case = test_path.parent
         vectors = load_yaml(test_path).get("durable_host_vectors", [])
         if vectors:

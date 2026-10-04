@@ -18,7 +18,8 @@
         "inspection_failure",
         "inspection_reason",
         "machine_load_failure",
-        "persistence_failure"
+        "persistence_failure",
+        "projection_failure"
       ]
     }
   },
