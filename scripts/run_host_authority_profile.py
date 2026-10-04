@@ -112,6 +112,26 @@ def report_binding(report: dict) -> str:
         report["destination_binding_digest"], report["extension_report"]])
 
 
+def select_production_scenario(manifest: dict, report: dict) -> dict | None:
+    applicability = {"topology_identifier": report["topology"]["identifier"],
+                     "required_participants": report["required_participants"]}
+    matching = [row for row in manifest["production_scenarios"] if
+                exact_json_equal(row["applicability"], applicability)]
+    guarantees = report["guarantees"]
+    if guarantees["guarded_local_writes"] and len(matching) != 1:
+        raise AdapterOutputError("claimed native topology has no exact configured production scenario")
+    if guarantees["worker_fencing"] and (len(matching) != 1 or matching[0]["id"] != "worker_sqlite"):
+        raise AdapterOutputError("worker fencing lacks exact configured journal/worker scenario")
+    if guarantees["complete_scope_inventory"] and len(matching) != 1:
+        raise AdapterOutputError("scope inventory lacks exact configured production scenario")
+    return matching[0] if guarantees["guarded_local_writes"] else None
+
+
+def common_rule_input(vector: dict) -> dict:
+    return {"kind": "common_rule_profile", "configured_facts": vector["configured_facts"],
+            "hypothetical_verification": vector["hypothetical_verification"]}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, default=Path("../determa-state-spec"))
@@ -126,13 +146,8 @@ def main() -> int:
     actual_report = verify_configured_profile(initial_profile, args.spec_root, set(), require_native_proof=False)
     binding = report_binding(actual_report)
     guarantees = actual_report["guarantees"]
-    for vector in manifest["operations"]:
-        if vector["execution_tier"] == "i2_conditional":
-            continue  # Conditional source rules; public relocation belongs to the I2 suite.
-        if actual_report["extension_report"] is None or \
-                vector["request"]["operation"] == "fence_worker" and not guarantees["worker_fencing"] or \
-                vector["request"]["operation"] in {"guarded_commit", "freeze_scope"} and not guarantees["guarded_local_writes"]:
-            continue
+    scenario = select_production_scenario(manifest, actual_report)
+    for vector in (scenario["operations"] if scenario else []):
         # The adapter cannot see the ID, source classification, expected result, or after-state.
         setup = {"ledger_before": vector["ledger_before"], "binding": binding}
         call = {"request_bytes": vector["request_bytes"], "invocation": vector["invocation"],
@@ -142,6 +157,12 @@ def main() -> int:
                       "ledger_after": vector["ledger_after"]}, vector["id"])
         checked += 1
         proved_ids.add(vector["id"])
+    # The six source examples exercise only the internal common-rule seam.
+    # Hypothetical premises never enter configured_profile or the proof ledger.
+    for vector in manifest["profiles"]:
+        adapter_call(args.adapter, common_rule_input(vector),
+            vector["expected_outcome"], vector["id"])
+        checked += 1
     no_authority = next(item for item in manifest["profiles"] if item["id"] == "application_owned_transaction")
     adapter_call(args.adapter, {"kind": "profile", "configured_facts": no_authority["configured_facts"]},
                  no_authority["expected_outcome"], no_authority["id"])
@@ -150,28 +171,19 @@ def main() -> int:
         adapter_call(args.adapter, {"kind": "clock_parse", "value": vector["value"]},
                      {"accepted": vector["source_disposition"] == "valid"}, vector["id"])
         checked += 1
-    for vector in manifest["worker_checks"]:
-        if not guarantees["worker_fencing"]:
-            continue
+    for vector in (scenario["worker_checks"] if scenario else []):
         adapter_call(args.adapter, {"kind": "worker_claim_check", "binding": binding, "input": vector["input"]},
                      {**vector["expected"], "binding": binding}, vector["id"])
         checked += 1
         proved_ids.add(vector["id"])
-    for vector in manifest["native_traces"]:
-        if vector["required_guarantee"] == "safe_relocation":
-            continue  # Its positive proof is bound to the future I2 transfer suite.
-        if actual_report["extension_report"] is None or \
-                vector["required_guarantee"] != "none" and not guarantees[vector["required_guarantee"]]:
-            continue
+    for vector in (scenario["native_traces"] if scenario else []):
         calls = [step["call"] for step in vector["steps"]]
         adapter_call(args.adapter, {"kind": "native_trace", "setup": vector["setup"], "binding": binding,
             "control_plan": vector["control_plan"], "calls": calls},
             {"binding": binding, "events": vector["expected_events"]}, vector["id"])
         checked += 1
         proved_ids.add(vector["id"])
-    for vector in manifest["allocation_checks"]:
-        if not guarantees["guarded_local_writes"]:
-            continue
+    for vector in ([scenario["allocation_check"]] if scenario else []):
         adapter_call(args.adapter, {"kind": "scope_allocation_check", "binding": binding, "input": vector["input"]},
                      {**vector["expected"], "binding": binding}, vector["id"])
         checked += 1

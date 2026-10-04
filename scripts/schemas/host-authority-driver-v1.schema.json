@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://determa.dev/state/conformance/host-authority-driver-v1.schema.json",
   "type": "object",
-  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "transfer_suite_obligation"],
+  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "production_scenarios", "transfer_suite_obligation"],
   "properties": {
     "format": {"const": "determa.host-authority-driver-v1"},
     "schema_version": {"const": 1},
@@ -14,6 +14,8 @@
     "native_traces": {"type": "array", "minItems": 9, "maxItems": 9, "items": {"$ref": "#/$defs/nativeTrace"}},
     "allocation_checks": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"$ref": "#/$defs/allocationCheck"}},
     "base_core_checks": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/baseCoreCheck"}},
+    "production_scenarios": {"type": "array", "minItems": 2, "maxItems": 2,
+      "items": {"$ref": "#/$defs/productionScenario"}},
     "transfer_suite_obligation": {"type": "object", "required": ["profile", "certified_by_this_profile", "required_suite", "required_native_observations"],
       "properties": {"profile": {"const": "safe_relocation"}, "certified_by_this_profile": {"const": false},
         "required_suite": {"type": "string"}, "required_native_observations": {"type": "array", "minItems": 7,
@@ -144,6 +146,18 @@
       "type": "object", "required": ["id", "input", "expected"],
       "properties": {"id": {"type": "string"}, "input": {"type": "object"},
         "expected": {"type": "object"}}, "additionalProperties": false
+    },
+    "productionScenario": {
+      "type": "object", "required": ["id", "applicability", "operations", "worker_checks", "native_traces", "allocation_check"],
+      "properties": {"id": {"enum": ["guarded_sqlite", "worker_sqlite"]},
+        "applicability": {"type": "object", "required": ["topology_identifier", "required_participants"],
+          "properties": {"topology_identifier": {"type": "string"},
+            "required_participants": {"type": "array", "items": {"type": "object"}}}, "additionalProperties": false},
+        "operations": {"type": "array", "minItems": 10, "items": {"$ref": "#/$defs/operation"}},
+        "worker_checks": {"type": "array", "items": {"$ref": "#/$defs/workerCheck"}},
+        "native_traces": {"type": "array", "minItems": 8, "maxItems": 8,
+          "items": {"$ref": "#/$defs/nativeTrace"}},
+        "allocation_check": {"$ref": "#/$defs/allocationCheck"}}, "additionalProperties": false
     }
   }
 }

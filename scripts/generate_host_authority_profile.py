@@ -194,9 +194,21 @@ def render(spec_root: Path) -> bytes:
                                             "required_claims": extension["claims"]}}}
             vectors.append(vector)
             first[name] = vector
+    hypothetical_atoms = {
+        "guarded_local_scope_without_relocation": ["scope_guard_through_native_commit", "frozen_authoritative_inventory"],
+        "application_owned_transaction": [],
+        "guarded_local_worker_fencing": ["scope_guard_through_native_commit", "frozen_authoritative_inventory",
+                                         "guarded_journal_claim", "authenticated_worker_checks"],
+        "proved_same_authority_local_relocation_support": ["scope_guard_through_native_commit",
+            "frozen_authoritative_inventory", "guarded_journal_claim", "authenticated_worker_checks",
+            "same_authority_transfer_proof"],
+        "unproved_safe_relocation_claim": ["scope_guard_through_native_commit", "frozen_authoritative_inventory"],
+        "missing_authority_cannot_claim_guarded_writes": [],
+    }
     profile_vectors = [{"id": row["name"], "source_disposition": disposition,
                         "fixture_layer": "hypothetical_common_rule",
-                        "hypothetical_verification": row.get("context"),
+                        "hypothetical_verification": {"source_context": row.get("context"),
+                            "proved_predicates": hypothetical_atoms[row["name"]]},
                         "configured_facts": {"topology": row["report"]["topology"],
                                              "extension_requirement": None if row["report"]["extension_report"] is None else
                                                 {"category": row["report"]["extension_report"]["category"],
@@ -206,8 +218,7 @@ def render(spec_root: Path) -> bytes:
                                              "storage_boundary": row["report"]["authority_storage_boundary"],
                                              "source_binding_digest": row["report"]["source_binding_digest"],
                                              "destination_binding_digest": row["report"]["destination_binding_digest"],
-                                             "required_participants": row["report"]["required_participants"],
-                                             "requested_guarantees": row["report"]["guarantees"]},
+                                             "required_participants": row["report"]["required_participants"]},
                         "expected_report": row["report"], "expected_report_bytes": raw(row["report"]),
                         "expected_outcome": {"status": "accepted", "report_bytes": raw(row["report"])} if disposition == "valid" else
                                             {"status": "rejected", "code": "host_capability_mismatch"},
@@ -380,11 +391,65 @@ def render(spec_root: Path) -> bytes:
                                 ("freeze_scope", "freeze_after_drain"),
                                 ("fence_worker", "fence_worker_allocates_new_claim"),
                                 ("prove_retirement", "retirement_with_known_fate"))]
+    production_scenarios = []
+    for profile_index, scenario_name in ((0, "guarded_sqlite"), (2, "worker_sqlite")):
+        configured = profiles["valid"][profile_index]["report"]
+        participants = [item["role"] + ":" + item["instance_id"]
+                        for item in configured["required_participants"]]
+        def adapt_ledger(value: dict) -> dict:
+            observed = copy.deepcopy(value)
+            observed["required_participant_records"] = participants.copy()
+            if observed["freeze"] is not None:
+                observed["inventory"] = inventory_of(observed)
+                observed["freeze"]["required_participants"] = participants.copy()
+                observed["freeze"]["inventory_digest"] = frozen_inventory_digest(
+                    observed["freeze"]["evidence_digest"], observed["inventory"])
+            return observed
+        scenario_operations = []
+        for original in vectors:
+            if original["execution_tier"] != "native_c":
+                continue
+            if scenario_name == "guarded_sqlite" and original["request"]["operation"] == "fence_worker":
+                continue
+            row = copy.deepcopy(original)
+            row["ledger_before"] = adapt_ledger(row["ledger_before"])
+            row["ledger_after"] = adapt_ledger(row["ledger_after"])
+            scenario_operations.append(row)
+        scenario_traces = []
+        for original in native_traces:
+            if original["required_guarantee"] == "safe_relocation":
+                continue
+            row = copy.deepcopy(original)
+            row["setup"] = adapt_ledger(row["setup"])
+            for native_step in row["steps"]:
+                native_step["expected_ledger_after"] = adapt_ledger(native_step["expected_ledger_after"])
+            for event_row in row["expected_events"]:
+                if event_row["ledger"] is not None:
+                    event_row["ledger"] = adapt_ledger(event_row["ledger"])
+            scenario_traces.append(row)
+        scenario_checks = []
+        if scenario_name == "worker_sqlite":
+            for original in worker_checks:
+                row = copy.deepcopy(original)
+                row["input"]["ledger_before"] = adapt_ledger(row["input"]["ledger_before"])
+                row["expected"]["ledger_after"] = adapt_ledger(row["expected"]["ledger_after"])
+                scenario_checks.append(row)
+        scenario_allocation = copy.deepcopy(allocation_checks[0])
+        scenario_allocation["input"]["ledger_before"] = adapt_ledger(
+            scenario_allocation["input"]["ledger_before"])
+        scenario_allocation["expected"]["ledger_after"] = adapt_ledger(
+            scenario_allocation["expected"]["ledger_after"])
+        production_scenarios.append({"id": scenario_name,
+            "applicability": {"topology_identifier": configured["topology"]["identifier"],
+                              "required_participants": configured["required_participants"]},
+            "operations": scenario_operations, "worker_checks": scenario_checks,
+            "native_traces": scenario_traces, "allocation_check": scenario_allocation})
     return (json.dumps({"format": "determa.host-authority-driver-v1", "schema_version": 1,
                        "specification_commit": SPEC_PIN, "operations": vectors,
                        "profiles": profile_vectors, "clocks": clock_vectors, "worker_checks": worker_checks,
                        "native_traces": native_traces, "allocation_checks": allocation_checks,
                        "base_core_checks": base_core_checks,
+                       "production_scenarios": production_scenarios,
                        "transfer_suite_obligation": {"profile": "safe_relocation", "certified_by_this_profile": False,
                            "required_suite": "I2 same-authority transfer operational suite",
                            "required_native_observations": ["committed_source_retirement", "known_native_fate",

@@ -10,7 +10,8 @@ import sys
 from pathlib import Path
 
 from validate_host_authority import AuthorityValidationError, PROFILE, compact, hash_value, load, validate_document
-from run_host_authority_profile import AdapterOutputError, adapter_call, verify_configured_profile
+from run_host_authority_profile import (AdapterOutputError, adapter_call, common_rule_input,
+                                        select_production_scenario, verify_configured_profile)
 
 
 def main() -> int:
@@ -97,6 +98,35 @@ def main() -> int:
     no_authority = next(row for row in baseline["profiles"] if row["id"] == "application_owned_transaction")
     verify_configured_profile({"report_bytes": no_authority["expected_report_bytes"],
                                "installation_evidence": None}, spec, set())
+    assert len(baseline["profiles"]) == 6
+    for row in baseline["profiles"]:
+        call = common_rule_input(row)
+        assert set(call) == {"kind", "configured_facts", "hypothetical_verification"}
+        assert "requested_guarantees" not in call["configured_facts"]
+        assert "expected" not in call and "report_bytes" not in call
+        wrong = b'{"status":"accepted","report_bytes":"{}"}' if row["source_disposition"] == "invalid" else \
+                b'{"status":"rejected","code":"host_capability_mismatch"}'
+        child = [sys.executable, "-c", f"import sys; sys.stdout.buffer.write({wrong!r})"]
+        try:
+            adapter_call(child, call, row["expected_outcome"], row["id"])
+        except AdapterOutputError:
+            pass
+        else:
+            raise AssertionError(f"common-rule seam accepted wrong outcome for {row['id']}")
+    guarded_report = next(row for row in baseline["profiles"] if row["id"] ==
+                          "guarded_local_scope_without_relocation")["expected_report"]
+    assert select_production_scenario(baseline, guarded_report)["id"] == "guarded_sqlite"
+    worker_report = next(row for row in baseline["profiles"] if row["id"] ==
+                         "guarded_local_worker_fencing")["expected_report"]
+    assert select_production_scenario(baseline, worker_report)["id"] == "worker_sqlite"
+    wrong_participant = copy.deepcopy(worker_report)
+    wrong_participant["required_participants"][0]["instance_id"] = "other-journal"
+    try:
+        select_production_scenario(baseline, wrong_participant)
+    except AdapterOutputError:
+        pass
+    else:
+        raise AssertionError("runner accepted a claim for an untested participant topology")
     for name, profile_id, installation in [
         ("fabricated safe relocation", "proved_same_authority_local_relocation_support", None),
         ("healthy report without installed closure", "guarded_local_scope_without_relocation", None),

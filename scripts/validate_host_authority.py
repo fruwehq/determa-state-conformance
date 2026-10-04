@@ -78,7 +78,7 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
     source = load(spec_root / "examples/authority/host-authority-cases-v1.json")
     profile_source = load(spec_root / "examples/authority/host-authority-profile-cases-v1.json")
     clock_source = load(spec_root / "examples/authority/host-authority-clock-cases-v1.json")
-    require(set(document) == {"format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "transfer_suite_obligation"}, "manifest fields")
+    require(set(document) == {"format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "production_scenarios", "transfer_suite_obligation"}, "manifest fields")
     require(document["format"] == "determa.host-authority-driver-v1" and document["schema_version"] == 1
             and document["specification_commit"] == SPEC_PIN, "format or spec pin")
     expected_names = {row["name"]: (disposition, row) for disposition in ("valid", "rejected") for row in source[disposition]}
@@ -226,8 +226,19 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
         seen.add(name)
         disposition, example = profile_names[name]
         require(vector["fixture_layer"] == "hypothetical_common_rule", f"{name}: profile source layer")
-        require(vector["hypothetical_verification"] == example.get("context"),
-                f"{name}: source-only hypothetical premises")
+        atoms = {
+            "guarded_local_scope_without_relocation": ["scope_guard_through_native_commit", "frozen_authoritative_inventory"],
+            "application_owned_transaction": [],
+            "guarded_local_worker_fencing": ["scope_guard_through_native_commit", "frozen_authoritative_inventory",
+                                             "guarded_journal_claim", "authenticated_worker_checks"],
+            "proved_same_authority_local_relocation_support": ["scope_guard_through_native_commit",
+                "frozen_authoritative_inventory", "guarded_journal_claim", "authenticated_worker_checks",
+                "same_authority_transfer_proof"],
+            "unproved_safe_relocation_claim": ["scope_guard_through_native_commit", "frozen_authoritative_inventory"],
+            "missing_authority_cannot_claim_guarded_writes": [],
+        }
+        require(vector["hypothetical_verification"] == {"source_context": example.get("context"),
+                "proved_predicates": atoms[name]}, f"{name}: source-only hypothetical premises")
         report = vector["expected_report"]
         require(vector["source_disposition"] == disposition and report == example["report"] and
                 vector["expected_report_bytes"] == compact(report), f"{name}: source profile report")
@@ -243,8 +254,7 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
         require(facts["topology"] == report["topology"] and facts["extension_requirement"] == expected_requirement and
                 facts["source_binding_digest"] == report["source_binding_digest"] and
                 facts["destination_binding_digest"] == report["destination_binding_digest"] and
-                facts["required_participants"] == report["required_participants"] and
-                facts["requested_guarantees"] == report["guarantees"], f"{name}: configured facts")
+                facts["required_participants"] == report["required_participants"], f"{name}: configured facts")
     clock_rows = [(kind, item["value"]) for kind in ("valid", "invalid") for item in clock_source[kind]]
     require(len(document["clocks"]) == len(clock_rows) == 7, "clock coverage")
     for vector, (disposition, value) in zip(document["clocks"], clock_rows):
@@ -430,6 +440,61 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
                 row["expected"] == {"status": "rejected", "code": "host_capability_mismatch",
                     "authority_result": None, "core_checkpoint_bytes": row["input"]["core_checkpoint_bytes"],
                     "host_mutation_count": 0}, "base core must refuse hosted authority without mutation")
+    scenarios = document["production_scenarios"]
+    require([row["id"] for row in scenarios] == ["guarded_sqlite", "worker_sqlite"],
+            "exact configured production scenario coverage")
+    for scenario, source_index in zip(scenarios, (0, 2)):
+        source_report = profile_source["valid"][source_index]["report"]
+        require(set(scenario) == {"id", "applicability", "operations", "worker_checks",
+                                  "native_traces", "allocation_check"} and
+                scenario["applicability"] == {"topology_identifier": source_report["topology"]["identifier"],
+                    "required_participants": source_report["required_participants"]},
+                "production scenario applicability")
+        participants = [item["role"] + ":" + item["instance_id"]
+                        for item in source_report["required_participants"]]
+        def adapted(snapshot: dict) -> dict:
+            value = json.loads(json.dumps(snapshot))
+            value["required_participant_records"] = participants.copy()
+            if value["freeze"] is not None:
+                value["inventory"] = inventory_of(value)
+                value["freeze"]["required_participants"] = participants.copy()
+                value["freeze"]["inventory_digest"] = frozen_inventory_digest(
+                    value["freeze"]["evidence_digest"], value["inventory"])
+            return value
+        source_operations = [row for row in document["operations"] if row["execution_tier"] == "native_c" and
+            (scenario["id"] == "worker_sqlite" or row["request"]["operation"] != "fence_worker")]
+        require(len(scenario["operations"]) == len(source_operations), "scenario operation coverage")
+        for row, original in zip(scenario["operations"], source_operations):
+            expected = json.loads(json.dumps(original))
+            expected["ledger_before"] = adapted(original["ledger_before"])
+            expected["ledger_after"] = adapted(original["ledger_after"])
+            require(row == expected, f"{scenario['id']}: operation topology/participants mismatch")
+        source_traces = [row for row in traces if row["required_guarantee"] != "safe_relocation"]
+        require(len(scenario["native_traces"]) == len(source_traces) == 8, "scenario trace coverage")
+        for row, original in zip(scenario["native_traces"], source_traces):
+            expected = json.loads(json.dumps(original))
+            expected["setup"] = adapted(original["setup"])
+            for item in expected["steps"]:
+                item["expected_ledger_after"] = adapted(item["expected_ledger_after"])
+            for item in expected["expected_events"]:
+                if item["ledger"] is not None:
+                    item["ledger"] = adapted(item["ledger"])
+            require(row == expected, f"{scenario['id']}: native trace topology/participants mismatch")
+        require(len(scenario["worker_checks"]) == (7 if scenario["id"] == "worker_sqlite" else 0),
+                "scenario worker checks")
+        if scenario["id"] == "worker_sqlite":
+            for row, original in zip(scenario["worker_checks"], checks):
+                expected = json.loads(json.dumps(original))
+                expected["input"]["ledger_before"] = adapted(expected["input"]["ledger_before"])
+                expected["expected"]["ledger_after"] = adapted(expected["expected"]["ledger_after"])
+                require(row == expected, "scenario worker storage observation")
+        expected_allocation = json.loads(json.dumps(allocation[0]))
+        expected_allocation["input"]["ledger_before"] = adapted(
+            expected_allocation["input"]["ledger_before"])
+        expected_allocation["expected"]["ledger_after"] = adapted(
+            expected_allocation["expected"]["ledger_after"])
+        require(scenario["allocation_check"] == expected_allocation,
+                "scenario permanent allocation observation")
     require(document["transfer_suite_obligation"] == {"profile": "safe_relocation",
         "certified_by_this_profile": False, "required_suite": "I2 same-authority transfer operational suite",
         "required_native_observations": ["committed_source_retirement", "known_native_fate",
