@@ -36,6 +36,7 @@ from ruamel.yaml.tokens import (
 
 from closed_code_registry import RegistryValidationError, validate_registry
 from validate_extension_negotiation import ExtensionValidationError, validate_profile
+from runtime_provider_validator import RuntimeProviderValidationError, validate_profile as validate_runtime_provider_profile
 
 
 JSON_NUMBER = re.compile(
@@ -7797,6 +7798,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         )
     except (ExtensionValidationError, OSError, ValueError) as error:
         raise ValidationFailure(f"extension negotiation profile: {error}") from error
+    try:
+        runtime_provider_vectors = validate_runtime_provider_profile(spec_root, repository_root)
+    except (RuntimeProviderValidationError, OSError, ValueError, KeyError, IndexError) as error:
+        raise ValidationFailure(f"runtime provider profile: {error}") from error
     validate_direct_descriptor_expectation_probes()
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
@@ -7920,7 +7925,6 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         validate_driver_markers(test, case.name)
         profile_modes = {
             name
-            for name in ("version1_vectors", "durable_host_vectors", "application_projection_vectors")
             for name in ("version1_vectors", "durable_host_vectors", "application_projection_vectors", "inspection_vectors")
             if name in test
         }
@@ -8274,7 +8278,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{durable_host_vectors} durable host vectors, "
         f"{inspection_vectors} inspection vectors "
         f"({inspection_core_vectors} core, {inspection_provider_vectors} optional provider), "
-        f"{extension_vectors} extension negotiation vectors, and "
+        f"{extension_vectors} extension negotiation vectors, "
+        f"{runtime_provider_vectors} runtime provider vectors, and "
         f"{application_projection_vectors} application projection vectors"
     )
 

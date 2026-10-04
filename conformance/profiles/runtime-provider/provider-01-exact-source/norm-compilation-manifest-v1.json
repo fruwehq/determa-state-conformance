@@ -1,0 +1,24 @@
+{
+  "artifact_format": "determa.compilation_manifest",
+  "artifact_schema_version": 1,
+  "content": {
+    "source_artifact_digest": "sha256:08822e7bdfa3975c17a4394938fc0cece56c27a90b897bc3475f0b69d6b945ad",
+    "compiler_providers": [
+      {
+        "identifier": "example.guard-compiler",
+        "version": "1.0.0",
+        "content_digest": "sha256:eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      }
+    ],
+    "generated_validated_bundle_fingerprint": "sha256:8c15f39f3b7004cf7c92a8da1390ee5fe028008a77b7c1603778517a3941fe6b",
+    "source_capabilities": {
+      "deterministic": true,
+      "pure": true,
+      "portable": true,
+      "semantically_introspectable": true,
+      "process_contained": false,
+      "external_io_capable": false
+    }
+  },
+  "artifact_digest": "sha256:3e4d5d2e7719ddaf2ce6bdfd1584e588864e97a3099224f983d0b477582f2f5e"
+}

@@ -92,3 +92,13 @@ jobs:
 
       - name: Check generated optional inspection provider fixtures
         run: python scripts/generate_inspection_provider_profile.py --check
+
+      - name: Test exact runtime provider source and relational validation
+        run: >-
+          python scripts/test_runtime_provider_validator.py
+          --spec-root .determa-state-spec
+
+      - name: Check generated runtime provider fixtures
+        run: >-
+          python scripts/generate_runtime_provider_profile.py
+          --spec-root .determa-state-spec --check
