@@ -126,7 +126,8 @@ def main():
                 + ("i=r['trusted_timer_invocation']\n"
                    "store_call(host,'timer_invocation_start',run_id=r['run_id'],"
                    "invocation_id=i['invocation_id'],request_digest=i['request_digest'],"
-                   "factory_identity=i['factory_identity'],public_request=i['public_request'])\n"
+                   "factory_identity=i['factory_identity'],bridge_identity=i['bridge_identity'],"
+                   "public_request=i['public_request'])\n"
                    if mode == "replaced_raw_return" else "") +
                 "store_call(host,'commit',run_id=r['run_id'],operation_id=r['operation_id'],"
                 "expected_before_digest=digest(canonical_json_bytes(r['before'])),"
@@ -137,7 +138,8 @@ def main():
                 f"'after':{after!r},'native_evidence':{{}}}}))\n")
             try:
                 run_delivery_case([sys.executable, str(fake_ingress)], delivery_case,
-                                  timer_bridge_anchor={"factory_identity": "reviewed:timer"})
+                                  timer_bridge_anchor={"factory_identity": "reviewed:timer",
+                                                       "bridge_identity": "reviewed:bridge"})
             except AssertionError as error:
                 if "reviewed complete_fire return is not in the same native transaction" not in str(error):
                     raise AssertionError(f"{mode}: wrong rejection: {error}") from error

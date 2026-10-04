@@ -51,6 +51,7 @@ def handle(request: dict) -> dict:
                 sequence INTEGER PRIMARY KEY AUTOINCREMENT,
                 run_id TEXT NOT NULL, invocation_id TEXT NOT NULL UNIQUE,
                 request_digest TEXT NOT NULL, factory_identity TEXT NOT NULL,
+                bridge_identity TEXT NOT NULL,
                 public_request_json BLOB NOT NULL, start_state_digest TEXT NOT NULL,
                 raw_return_json BLOB, return_digest TEXT,
                 return_state_digest TEXT, native_transaction_id TEXT);
@@ -75,11 +76,12 @@ def handle(request: dict) -> dict:
             if digest(public_request) != request['request_digest']:
                 raise ValueError('timer invocation public request digest differs')
             connection.execute('INSERT INTO timer_invocations('
-                               'run_id,invocation_id,request_digest,factory_identity,'
+                               'run_id,invocation_id,request_digest,factory_identity,bridge_identity,'
                                'public_request_json,start_state_digest) '
-                               'VALUES(?,?,?,?,?,?)',
+                               'VALUES(?,?,?,?,?,?,?)',
                                (row[0], request['invocation_id'], request['request_digest'],
-                                request['factory_identity'], public_request, digest(row[1])))
+                                request['factory_identity'], request['bridge_identity'],
+                                public_request, digest(row[1])))
             return {'start_state_digest': digest(row[1])}
         if kind == 'timer_invocation_return':
             raw_return = canonical_json_bytes(request['raw_return'])
@@ -93,15 +95,17 @@ def handle(request: dict) -> dict:
         if kind == 'timer_invocation_snapshot':
             return {'invocations': [
                 {'invocation_id': invocation_id, 'request_digest': request_digest,
-                 'factory_identity': factory_identity, 'public_request': document(public_request),
+                 'factory_identity': factory_identity, 'bridge_identity': bridge_identity,
+                 'public_request': document(public_request),
                  'start_state_digest': start_digest,
                  'raw_return': None if raw_return is None else document(raw_return),
                  'return_digest': return_digest, 'return_state_digest': return_state_digest,
                  'native_transaction_id': transaction_id}
-                for invocation_id, request_digest, factory_identity, public_request,
+                for invocation_id, request_digest, factory_identity, bridge_identity,
+                    public_request,
                     start_digest, raw_return, return_digest, return_state_digest,
                     transaction_id in connection.execute(
-                    'SELECT invocation_id,request_digest,factory_identity,public_request_json,'
+                    'SELECT invocation_id,request_digest,factory_identity,bridge_identity,public_request_json,'
                     'start_state_digest,raw_return_json,return_digest,return_state_digest,'
                     'native_transaction_id FROM timer_invocations ORDER BY sequence')]}
         if kind == 'commit':
