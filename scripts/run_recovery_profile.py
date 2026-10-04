@@ -40,6 +40,20 @@ def input_for(case: dict, fixture: dict) -> dict:
         'conformance/profiles/portable-archive/archive-01-complete-snapshot/stage-cases-v1.json')
     ordinary_stage = next(item for item in stage_fixture['cases']
                           if item['case_id'] == 'complete_embedded_snapshot')
+    missing_helper = case['case_id'] == 'required_helper_missing'
+    if missing_helper:
+        negative = next(item for item in stage_fixture['cases']
+                        if item['case_id'] == 'resealed_omitted_required_participant')
+        stage_request = dict(negative['input_request'])
+        stage_request['staging_identity'] = case['request']['arguments']['staging_identity']
+        stage_archive = negative['input_archive']
+        stage_configuration = negative['configured_import']
+    else:
+        stage_request = (fixture['owned_stage_request'] if owned else
+                         fixture['local_transfer_stage_request'] if local else ordinary_stage['input_request'])
+        stage_archive = archive
+        stage_configuration = (fixture['owned_stage_configuration'] if owned else
+                               fixture['local_transfer_stage_configuration'] if local else ordinary_stage['configured_import'])
     by_id = {item['case_id']: item for item in fixture['cases']}
     record_producers = {
         'strict_quarantine': ['strict_quarantine'],
@@ -76,12 +90,9 @@ def input_for(case: dict, fixture: dict) -> dict:
     result = {
         'request': case.get('request', case.get('input')),
         'source_archive': archive,
-        'stage_receipt': fixture['owned_stage_result'] if owned else (
-            fixture['local_transfer_stage_result'] if local else fixture['stage_receipt']),
-        'stage_request': fixture['owned_stage_request'] if owned else (
-            fixture['local_transfer_stage_request'] if local else ordinary_stage['input_request']),
-        'stage_configuration': fixture['owned_stage_configuration'] if owned else (
-            fixture['local_transfer_stage_configuration'] if local else ordinary_stage['configured_import']),
+        'stage_archive': stage_archive,
+        'stage_request': stage_request,
+        'stage_configuration': stage_configuration,
         'setup_requests': [by_id[name]['request'] for name in setup_names],
     }
     return result
@@ -99,7 +110,7 @@ def run_case(command: list[str], case: dict, fixture: dict,
     response = parse_json_bytes(completed.stdout, label + ': adapter response')
     fields = {'result', 'record', 'transfer_proof', 'before', 'after',
                          'calls', 'caller_response_kind', 'caller_response_body',
-                         'mutation_paths', 'setup_responses'}
+                         'mutation_paths', 'setup_responses', 'stage_setup_result'}
     if hosted_binding_digest is not None:
         fields.add('configured_binding_digest')
     if set(response) != fields:
@@ -117,6 +128,18 @@ def run_case(command: list[str], case: dict, fixture: dict,
         equal(setup[index], matching[0]['expected_result'], label + ': setup response')
     expected = case['expected_result']
     equal(response['result'], expected, label + ': result')
+    stage_fixture = read_json(ROOT /
+        'conformance/profiles/portable-archive/archive-01-complete-snapshot/stage-cases-v1.json')
+    if label == 'required_helper_missing':
+        stage_expected = next(item['expected_result'] for item in stage_fixture['cases']
+                              if item['case_id'] == 'resealed_omitted_required_participant')
+    elif case.get('archive_kind') == 'owned':
+        stage_expected = fixture['owned_stage_result']
+    elif case.get('configured_profile') == 'proved_local_same_authority':
+        stage_expected = fixture['local_transfer_stage_result']
+    else:
+        stage_expected = fixture['stage_receipt']
+    equal(response['stage_setup_result'], stage_expected, label + ': actual I1 stage result')
     equal(response['record'], case.get('expected_record'), label + ': record')
     equal(response['transfer_proof'], case.get('expected_transfer_proof'),
           label + ': transfer proof')
@@ -127,9 +150,12 @@ def run_case(command: list[str], case: dict, fixture: dict,
     if not isinstance(before, dict) or not isinstance(after, dict) or set(before) != set(STATE) or set(after) != set(STATE):
         raise ValueError(label + ': incomplete actual host observations')
     stage = {'staging_identity': request['stage_request']['staging_identity'],
-             'archive': request['source_archive']}
-    if stage not in before['staged_archives'] or stage not in after['staged_archives']:
-        raise ValueError(label + ': production archive stage absent from observed storage')
+             'archive': request['stage_archive']}
+    if stage_expected['status'] == 'staged':
+        if stage not in before['staged_archives'] or stage not in after['staged_archives']:
+            raise ValueError(label + ': production archive stage absent from observed storage')
+    elif stage in before['staged_archives'] or stage in after['staged_archives']:
+        raise ValueError(label + ': refused I1 stage was persisted')
     if request['setup_requests']:
         latest = next(item for item in reversed(fixture['cases'])
                       if canonical(item['request']) == canonical(request['setup_requests'][-1]))

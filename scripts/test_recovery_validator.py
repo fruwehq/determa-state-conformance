@@ -33,6 +33,14 @@ def main() -> int:
     assert not any(key.startswith('expected_') or key == 'case_id' for key in sent)
     assert sent['request'] == case['request'] and sent['setup_requests'] == []
     assert len(sent['source_archive']['checkpoints']) == 4
+    assert 'stage_receipt' not in sent and 'expected_result' not in sent
+    missing_helper = next(item for item in fixture['cases']
+                          if item['case_id'] == 'required_helper_missing')
+    missing_input = input_for(missing_helper, fixture)
+    assert missing_input['stage_request']['staging_identity'] == \
+        missing_helper['request']['arguments']['staging_identity']
+    assert missing_input['stage_archive']['participants'] == []
+    assert missing_input['source_archive']['participants'] != []
     owned = read_json(CASE / 'recovery-two-root-archive-v1.json')
     validators = validator_registry(args.spec_root)
     broken = copy.deepcopy(owned)
@@ -56,7 +64,7 @@ def main() -> int:
                 'transfer_proof': None, 'before': {}, 'after': {}, 'calls': {},
                 'caller_response_kind': 'recovery_result',
                 'caller_response_body': case['expected_result'], 'mutation_paths': [],
-                'setup_responses': []}
+                'setup_responses': [], 'stage_setup_result': fixture['stage_receipt']}
     class Completed:
         returncode = 0
         stderr = b''
@@ -99,6 +107,7 @@ def main() -> int:
         'caller_response_kind': 'recovery_result',
         'caller_response_body': local['expected_result'],
         'mutation_paths': ['/transfer_proofs/0'], 'setup_responses': [],
+        'stage_setup_result': fixture['local_transfer_stage_result'],
     }
     class ForgedProof:
         returncode = 0

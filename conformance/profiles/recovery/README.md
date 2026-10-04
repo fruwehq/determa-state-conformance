@@ -16,11 +16,12 @@ The resolver checks both complete machine definitions and checkpoint bytes.
 
 An implementation claims this optional profile only after running
 `scripts/run_recovery_profile.py --spec-root SPEC -- ADAPTER` against its real
-configured host. The child receives the complete request, archive, inert stage
-receipt, prior lifecycle requests when relevant, and trusted local proof inputs. It
+configured host. The child receives the complete request, archive, stage
+request and configured import policy, and prior lifecycle requests when relevant. It
 receives no case ID, expected result, or expected after state. It must invoke
-every setup request through the production recovery operation, return its full
-response, then invoke the tested operation and report its literal complete caller response
+the production I1 stage and return its full result, invoke every setup request
+through the production recovery operation, return each full response, then
+invoke the tested operation and report its literal complete caller response
 and record, and independently observe durable before/after storage, calls, and
 mutation paths. Each invocation uses isolated host storage. A successful
 takeover or clone requires its own fresh logical scope and external namespace;
