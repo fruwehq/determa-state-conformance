@@ -77,15 +77,23 @@ class Version1ValidatorTests(unittest.TestCase):
                     )
 
     def test_wrong_combined_delivery_digest_is_rejected_with_valid_results(self) -> None:
-        requests = load(MIGRATION_CASE / "operation-inputs.json")
-        requests["migration_then_processing_handled"]["delivery"]["envelope_digest"] = (
-            "sha256:4852e6c0a8c08aaac931556bf767f5d37cf982ca1befa897631c1212a8364a02"
-        )
-        with self.assertRaisesRegex(ValidationFailure, "combined operation envelope digest"):
-            validate_case(
-                MIGRATION_CASE,
-                artifact_overrides={"operation-inputs.json": requests},
-            )
+        stale_digests = {
+            "migration_then_processing_handled": "sha256:4852e6c0a8c08aaac931556bf767f5d37cf982ca1befa897631c1212a8364a02",
+            "migration_then_processing_unhandled": "sha256:f3ee7378c14aee3d99ce24c933f4d4d95e3dfd9e9fb7bd4ef70d2d45fab688a3",
+            "migration_then_processing_faulted": "sha256:33e8e85e8d9ff1cb4a8ab99284a4097eef6a4697f4a9c7a39a4f0684cb21d0fa",
+            "migration_then_processing_rejected": "sha256:869f263e775656a2bea013bc8473f0075a4835ada36a1d23ba50d94f3b4c5a94",
+        }
+        for name, stale_digest in stale_digests.items():
+            with self.subTest(name=name):
+                requests = load(MIGRATION_CASE / "operation-inputs.json")
+                requests[name]["delivery"]["envelope_digest"] = stale_digest
+                with self.assertRaisesRegex(
+                    ValidationFailure, "combined operation envelope digest"
+                ):
+                    validate_case(
+                        MIGRATION_CASE,
+                        artifact_overrides={"operation-inputs.json": requests},
+                    )
 
     def test_exact_typed_failure_response_binding(self) -> None:
         responses = load(PACKAGE_CASE / "operation-failures.json")
