@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 import hashlib
-import json
 import shlex
 import subprocess
 from pathlib import Path
@@ -72,6 +71,33 @@ def check_observation(vector, observation, artifacts):
             raise ValueError(f'{field} count differs from oracle')
         if any(type(call) is not dict or not call for call in calls):
             raise ValueError(f'{field} needs concrete call evidence')
+    before_record = artifacts[request['journal_before']]['effect_records']
+    before_record = before_record[0] if before_record else None
+    if observation['provider_calls']:
+        if before_record is None:
+            raise ValueError('provider ran without committed effect record')
+        expected_call = {key: before_record[key] for key in
+                         ('effect_id', 'handler_reference', 'destination_binding_digest',
+                          'route_configuration_generation', 'attempt_fence')}
+        expected_call['scope_identity'] = artifacts[request['journal_before']]['scope_identity']
+        expected_call['credential_generation'] = request['host_configuration']['credential_generation']
+        if any(not exact(call, expected_call) for call in observation['provider_calls']):
+            raise ValueError('provider call bypassed pinned route, scope, fence, or current credential')
+    if observation['core_calls']:
+        after = artifacts[expected['checkpoint_after']]
+        receipt = after['operation_receipts'][-1]
+        expected_core_call = {'event_id': receipt['event_id'],
+                              'operation_kind': 'step' if receipt['operation_kind'] == 'event_terminal' else 'admit',
+                              'target': after['root_record']['aggregate_state']['runtimes'][0]['target_identity']}
+        if any(not exact(call, expected_core_call) for call in observation['core_calls']):
+            raise ValueError('core call did not use pinned event and target')
+    if observation['new_claims']:
+        after_record = artifacts[expected['journal_after']]['effect_records'][0]
+        expected_claim = {'effect_id': after_record['effect_id'],
+                          'attempt_fence': after_record['attempt_fence'],
+                          'worker_principal': request['auth_context']['principal']}
+        if any(not exact(claim, expected_claim) for claim in observation['new_claims']):
+            raise ValueError('claim evidence differs from committed fence')
     if parsed_response.get('status') == 'rejected' and (observation['provider_calls'] or observation['core_calls']):
         raise ValueError('rejected request called provider or core')
 

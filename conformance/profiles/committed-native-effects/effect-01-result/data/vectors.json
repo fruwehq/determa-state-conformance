@@ -86,6 +86,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -150,6 +151,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -189,6 +191,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -228,6 +231,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "2"
         },
         "auth_context": {
@@ -264,7 +268,7 @@
             "queue_sequence": "0"
           }
         },
-        "fault": "before_commit"
+        "fault": "after_route_resolution_before_core"
       },
       "expected": {
         "response": null,
@@ -292,6 +296,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "2"
         },
         "auth_context": {
@@ -356,6 +361,7 @@
           "route_authorized": false,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "2"
         },
         "auth_context": {
@@ -381,6 +387,86 @@
       }
     },
     {
+      "name": "current_credential_revoked_dispatch",
+      "covers": [
+        "19.2:credential_revocation"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "8",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": false,
+          "credential_generation": "2"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null
+      },
+      "expected": {
+        "response": null,
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "changed_alias_keeps_pinned_destination",
+      "covers": [
+        "19.2:immutable_route_after_alias_change"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "8",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "2"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null
+      },
+      "expected": {
+        "response": null,
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 1,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
       "name": "accepted_outbox_pending_business",
       "covers": [
         "19.3:accepted_outbox_pending_business"
@@ -395,6 +481,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -435,6 +522,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -474,6 +562,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -528,6 +617,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -582,6 +672,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -636,6 +727,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -690,6 +782,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -744,6 +837,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -798,6 +892,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -852,6 +947,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -906,6 +1002,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -960,6 +1057,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1014,6 +1112,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1068,6 +1167,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1122,6 +1222,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1159,6 +1260,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1196,6 +1298,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1233,6 +1336,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1270,6 +1374,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1316,6 +1421,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1362,6 +1468,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1416,6 +1523,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1455,6 +1563,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1501,6 +1610,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1546,6 +1656,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1583,6 +1694,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1622,6 +1734,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1667,6 +1780,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1712,6 +1826,7 @@
           "route_authorized": true,
           "destination_deduplication_proven": false,
           "handler_authorized": true,
+          "credential_available": true,
           "credential_generation": "1"
         },
         "auth_context": {
@@ -1744,15 +1859,15 @@
       "request": {
         "operation": "cancel_effect",
         "checkpoint_before": "pending-checkpoint.json",
-        "journal_before": "data/unclaimed-journal.json",
+        "journal_before": "data/no-cancel-mapping-journal.json",
         "claim": null,
         "host_configuration": {
           "route_generation": "7",
           "route_authorized": true,
           "destination_deduplication_proven": true,
           "handler_authorized": true,
-          "credential_generation": "1",
-          "cancelled_mapping_present": false
+          "credential_available": true,
+          "credential_generation": "1"
         },
         "auth_context": {
           "scope_identity": "effect-scope-1",
@@ -1774,7 +1889,7 @@
       "expected": {
         "response": "data/cancel-rejected-response.json",
         "checkpoint_after": "pending-checkpoint.json",
-        "journal_after": "data/unclaimed-journal.json",
+        "journal_after": "data/no-cancel-mapping-journal.json",
         "counts": {
           "provider_calls": 0,
           "core_calls": 0,

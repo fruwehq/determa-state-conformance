@@ -6,6 +6,7 @@ import argparse
 import copy
 import hashlib
 import json
+import subprocess
 from pathlib import Path
 
 from generate_execution_checkpoint_profile import admit, process, terminalize, processing_request
@@ -51,6 +52,10 @@ def result_response(status, effect_id, fence, *, report=None, outcome=None,
 
 
 def generate(spec_root: Path):
+    source_head = subprocess.check_output(
+        ['git', '-C', str(spec_root), 'rev-parse', 'HEAD'], text=True).strip()
+    if source_head != SPEC_COMMIT:
+        raise ValueError(f'specification source changed: {source_head}')
     created = native_v1_checkpoint(CASE / 'machine.yaml', {
         'operation': 'create_v1', 'bundle': bundle_binding(CASE / 'machine.yaml'),
         'machine_id': 'workflow', 'machine_version': '1',
@@ -84,6 +89,10 @@ def generate(spec_root: Path):
                   attempt_records=[], invocation_state='unclaimed', outcome=None,
                   result_event_id=None, admission_receipt=None, cancellation=None)
     unclaimed = journal(pending, 1, record)
+    no_cancel_record = copy.deepcopy(record)
+    no_cancel_record['result_mapping'] = [item for item in record['result_mapping']
+                                          if item['outcome_kind'] != 'cancelled']
+    no_cancel_journal = journal(pending, 1, no_cancel_record)
     confirmed_checkpoint = terminalize(pending, 0, 'confirmed')
     confirmed_journal = journal(confirmed_checkpoint, 2, record)
     leased_record = copy.deepcopy(record)
@@ -205,7 +214,7 @@ def generate(spec_root: Path):
                                  journal_before='data/' + j_before, claim=None if claim_file is None else 'data/' + claim_file,
                                  host_configuration=config or {'route_generation': '7', 'route_authorized': True,
                                                         'destination_deduplication_proven': True,
-                                                        'handler_authorized': True, 'credential_generation': '1'},
+                                                        'handler_authorized': True, 'credential_available': True, 'credential_generation': '1'},
                                  auth_context=auth or {'scope_identity': SCOPE, 'principal': 'worker-a',
                                                        'scope_authority_epoch': '3', 'trusted_host_now': '1893455999999999999'},
                                  arguments={} if arguments is None else arguments, fault=fault),
@@ -218,9 +227,11 @@ def generate(spec_root: Path):
         vector('first_producing_commit', ['19.2:original_operation_evidence'], 'produce', 'accepted-checkpoint.json', 'empty-journal.json', cp, 'unclaimed-journal.json', arguments={'original_request': producer_request}, response_file='producer-response.json', core=1),
         vector('committed_selected_intent', ['19.1:committed_selected_intent'], 'claim', cp, 'unclaimed-journal.json', cp, 'leased-journal.json', arguments={'effect_id': effect_id}, claims=1),
         vector('uncommitted_intent', ['19.1:uncommitted_intent'], 'dispatch', 'accepted-checkpoint.json', 'empty-journal.json', 'accepted-checkpoint.json', 'empty-journal.json', arguments={'effect_id': effect_id}, fault='before_intent_commit'),
-        vector('route_generation_changed', ['19.2:route_generation_changed'], 'produce', 'accepted-checkpoint.json', 'empty-journal.json', 'accepted-checkpoint.json', 'empty-journal.json', arguments={'original_request': producer_request}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_generation': '2'}, fault='before_commit'),
-        vector('equal_request_after_route_change', ['19.2:equal_request_after_route_change'], 'produce_replay', cp, 'unclaimed-journal.json', cp, 'unclaimed-journal.json', arguments={'original_request': producer_request}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_generation': '2'}, response_file='producer-response.json'),
-        vector('revoked_dispatch', ['19.2:revoked_dispatch'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': False, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_generation': '2'}),
+        vector('route_generation_changed', ['19.2:route_generation_changed'], 'produce', 'accepted-checkpoint.json', 'empty-journal.json', 'accepted-checkpoint.json', 'empty-journal.json', arguments={'original_request': producer_request}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}, fault='after_route_resolution_before_core'),
+        vector('equal_request_after_route_change', ['19.2:equal_request_after_route_change'], 'produce_replay', cp, 'unclaimed-journal.json', cp, 'unclaimed-journal.json', arguments={'original_request': producer_request}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}, response_file='producer-response.json'),
+        vector('revoked_dispatch', ['19.2:revoked_dispatch'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': False, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}),
+        vector('current_credential_revoked_dispatch', ['19.2:credential_revocation'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': False, 'credential_generation': '2'}),
+        vector('changed_alias_keeps_pinned_destination', ['19.2:immutable_route_after_alias_change'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, config={'route_generation': '8', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '2'}, provider=1),
         vector('accepted_outbox_pending_business', ['19.3:accepted_outbox_pending_business'], 'terminalize_outbox', cp, 'unclaimed-journal.json', 'confirmed-checkpoint.json', 'confirmed-journal.json', arguments={'effect_id': effect_id, 'status': 'confirmed'}),
         vector('sdk_native_objects_inside_handler', ['19.3:sdk_native_objects'], 'dispatch', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={'effect_id': effect_id}, provider=1),
         vector('wrong_token', ['19.4:wrong_business_token'], 'submit_result', cp, 'leased-journal.json', cp, 'leased-journal.json', claim_file='active-claim.json', arguments={**request, 'operation_token': 'wrong-token'}, response_file='rejected-effect_not_outstanding.json'),
@@ -249,8 +260,8 @@ def generate(spec_root: Path):
         vector('claim_after_preclaim_cancel_refused', ['19.3:preclaim_cancel_blocks_dispatch'], 'claim', cp, 'preclaim-cancelled-journal.json', cp, 'preclaim-cancelled-journal.json', arguments={'effect_id': effect_id}),
         vector('cancel_before_claim_replay', ['19.3:cancel_equal_replay'], 'cancel_effect', cp, 'preclaim-cancelled-journal.json', cp, 'preclaim-cancelled-journal.json', arguments=cancel_request, response_file='cancel-response.json'),
         vector('cancel_after_possible_call', ['19.3:cancel_after_possible_call'], 'cancel_effect', cp, 'ambiguous-journal.json', cp, 'postcall-cancelled-journal.json', arguments={**cancel_request, 'operation_id': 'cancel-after-call'}, response_file='postcall-cancel-response.json'),
-        vector('ambiguous_retry_requires_proof', ['19.3:ambiguous_retry_proof'], 'claim', cp, 'ambiguous-journal.json', cp, 'ambiguous-journal.json', arguments={'effect_id': effect_id}, config={'route_generation': '7', 'route_authorized': True, 'destination_deduplication_proven': False, 'handler_authorized': True, 'credential_generation': '1'}),
-        vector('missing_cancel_mapping_refusal', ['19.3:missing_cancelled_mapping'], 'cancel_effect', cp, 'unclaimed-journal.json', cp, 'unclaimed-journal.json', arguments=cancel_request, config={'route_generation': '7', 'route_authorized': True, 'destination_deduplication_proven': True, 'handler_authorized': True, 'credential_generation': '1', 'cancelled_mapping_present': False}, response_file='cancel-rejected-response.json'),
+        vector('ambiguous_retry_requires_proof', ['19.3:ambiguous_retry_proof'], 'claim', cp, 'ambiguous-journal.json', cp, 'ambiguous-journal.json', arguments={'effect_id': effect_id}, config={'route_generation': '7', 'route_authorized': True, 'destination_deduplication_proven': False, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '1'}),
+        vector('missing_cancel_mapping_refusal', ['19.3:missing_cancelled_mapping'], 'cancel_effect', cp, 'no-cancel-mapping-journal.json', cp, 'no-cancel-mapping-journal.json', arguments=cancel_request, response_file='cancel-rejected-response.json'),
     ]
     pins = {str(path.relative_to(spec_root)): 'sha256:' + hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted((spec_root / 'examples/effects').glob('*.json'))}
@@ -298,6 +309,7 @@ def generate(spec_root: Path):
                 'spec_commit': SPEC_COMMIT, 'normative_examples': pins,
                 'normative_case_coverage': case_mapping, 'vectors': vectors}
     files = {
+        'no-cancel-mapping-journal.json': no_cancel_journal,
         'producer-request.json': producer_request, 'producer-response.json': producer_response,
         'retryable-journal.json': retry_journal, 'retry-claim-journal.json': retry_claim_journal,
         'retryable-response.json': retry_response, 'retry-request.json': retry_request,
