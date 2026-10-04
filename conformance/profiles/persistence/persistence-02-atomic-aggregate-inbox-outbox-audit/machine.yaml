@@ -1,5 +1,5 @@
 format: 1
-namespace: conformance.persistence_atomic_v2
+namespace: conformance.persistence_atomic_v1
 events:
   host_commit:
     direction: input

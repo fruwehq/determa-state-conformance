@@ -1,0 +1,165 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "checkpoint-outbox-root",
+  "revision": "1",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:27ff7b4351eda0ecdf5d622fa513c4b2a2fb6bb26a547bd7d4291c21918d55e9",
+      "namespace": "conformance.execution_checkpoint_native_outbox",
+      "root_machine_id": "counter",
+      "root_machine_version": "1",
+      "root_instance_id": "checkpoint-outbox-root",
+      "creation_id": "checkpoint-outbox-create",
+      "root_runtime_id": "sha256:9f8042416afd8243d3e85fe5010019ab1a227a845352220368073c5782dcab4e",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "1",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "1",
+      "next_queue_sequence": "1",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:9f8042416afd8243d3e85fe5010019ab1a227a845352220368073c5782dcab4e",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:27ff7b4351eda0ecdf5d622fa513c4b2a2fb6bb26a547bd7d4291c21918d55e9",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_native_outbox",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "checkpoint-outbox-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "checkpoint-outbox-root",
+              "root_runtime_id": "sha256:9f8042416afd8243d3e85fe5010019ab1a227a845352220368073c5782dcab4e"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:27ff7b4351eda0ecdf5d622fa513c4b2a2fb6bb26a547bd7d4291c21918d55e9",
+            "machine": {
+              "namespace": "conformance.execution_checkpoint_native_outbox",
+              "machine_id": "counter",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/count",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "0"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [
+            {
+              "envelope": {
+                "event": "emit_outputs",
+                "event_id": "delivery-outputs",
+                "cause_id": "delivery-outputs",
+                "source": {
+                  "host": true
+                },
+                "target": {
+                  "root": {
+                    "root_instance_id": "checkpoint-outbox-root",
+                    "root_runtime_id": "sha256:9f8042416afd8243d3e85fe5010019ab1a227a845352220368073c5782dcab4e"
+                  }
+                },
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "batch_id",
+                      [
+                        "string",
+                        "batch"
+                      ]
+                    ]
+                  ]
+                ]
+              },
+              "envelope_digest": "sha256:d575d180e48022ad40bfa7268e629d953f1d7348f72a8009dcc5ac0f5c604f89",
+              "delivery_mode": "input",
+              "acceptance_sequence": "0",
+              "queue_sequence": "0",
+              "deferral_count": "0"
+            }
+          ],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:22415de85be66afad258ce6bb172f8ca4885fc66f54bbb4378260d6de42d2066"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "checkpoint-outbox-create",
+      "request_digest": "sha256:401d5dd3165b8fee14d46bb62a43ef0db171ed8eb6157113cb623db7d14b8ec9",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:208e6ea3e41944aa7e2cffb8c23f7038e0d1b0c919667bcdb86329ea16296121",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "1",
+      "event_id": "delivery-outputs",
+      "request_digest": "sha256:d575d180e48022ad40bfa7268e629d953f1d7348f72a8009dcc5ac0f5c604f89",
+      "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    }
+  ],
+  "next_operation_receipt_sequence": "2",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:49fb9476efb037ec81532e5ee0e0fc81fea91df56215cb345e152805fdf2374e"
+}

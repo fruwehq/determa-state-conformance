@@ -1,0 +1,409 @@
+{
+  "durable_host_inputs_format": "determa.durable_host.inputs",
+  "durable_host_inputs_schema_version": 1,
+  "requests": {
+    "process": {
+      "operation": "persistence_process_v1",
+      "request_id": "persistence-2-process",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "persistence-2-root",
+        "revision": "0",
+        "digest": "sha256:01d48c0e439354a757f2c959b48fda69b0008ede6de0bf66b25cd712aaea4dc4"
+      },
+      "presented_envelope": {
+        "event": "host_commit",
+        "event_id": "persistence-2-event",
+        "cause_id": "persistence-2-event",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "persistence-2-root",
+            "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:80a23d6906302790c8c7ebde596a33da5c7b5c5428f6471e664db38fba7ca42d",
+      "transaction_inputs": {
+        "target_validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+        "migration_descriptor_digest_route": [
+          "sha256:19e485f578aa7063d34769e43073ecbab0ff8deed0862eca23eebdacb91800ec"
+        ],
+        "application_writes": {
+          "aggregate_version": 1
+        },
+        "failure_policy": "commit"
+      },
+      "store_adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "restart_persistent",
+        "durable_single_writer",
+        "root_identity_retention",
+        "shared_application_transaction"
+      ],
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
+    },
+    "process_precommit_failure": {
+      "operation": "persistence_process_v1",
+      "request_id": "persistence-2-process",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "persistence-2-root",
+        "revision": "0",
+        "digest": "sha256:01d48c0e439354a757f2c959b48fda69b0008ede6de0bf66b25cd712aaea4dc4"
+      },
+      "presented_envelope": {
+        "event": "host_commit",
+        "event_id": "persistence-2-event",
+        "cause_id": "persistence-2-event",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "persistence-2-root",
+            "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:80a23d6906302790c8c7ebde596a33da5c7b5c5428f6471e664db38fba7ca42d",
+      "transaction_inputs": {
+        "target_validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+        "migration_descriptor_digest_route": [
+          "sha256:19e485f578aa7063d34769e43073ecbab0ff8deed0862eca23eebdacb91800ec"
+        ],
+        "application_writes": {
+          "aggregate_version": 1
+        },
+        "failure_policy": "inject_pre_commit"
+      },
+      "store_adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "restart_persistent",
+        "durable_single_writer",
+        "root_identity_retention",
+        "shared_application_transaction"
+      ],
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
+    },
+    "process_postcommit_response_loss": {
+      "operation": "persistence_process_v1",
+      "request_id": "persistence-2-process",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "persistence-2-root",
+        "revision": "0",
+        "digest": "sha256:01d48c0e439354a757f2c959b48fda69b0008ede6de0bf66b25cd712aaea4dc4"
+      },
+      "presented_envelope": {
+        "event": "host_commit",
+        "event_id": "persistence-2-event",
+        "cause_id": "persistence-2-event",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "persistence-2-root",
+            "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:80a23d6906302790c8c7ebde596a33da5c7b5c5428f6471e664db38fba7ca42d",
+      "transaction_inputs": {
+        "target_validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+        "migration_descriptor_digest_route": [
+          "sha256:19e485f578aa7063d34769e43073ecbab0ff8deed0862eca23eebdacb91800ec"
+        ],
+        "application_writes": {
+          "aggregate_version": 1
+        },
+        "failure_policy": "inject_post_commit_response_loss"
+      },
+      "store_adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "restart_persistent",
+        "durable_single_writer",
+        "root_identity_retention",
+        "shared_application_transaction"
+      ],
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
+    },
+    "process_transient": {
+      "operation": "persistence_process_v1",
+      "request_id": "persistence-2-process",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "persistence-2-root",
+        "revision": "0",
+        "digest": "sha256:01d48c0e439354a757f2c959b48fda69b0008ede6de0bf66b25cd712aaea4dc4"
+      },
+      "presented_envelope": {
+        "event": "host_commit",
+        "event_id": "persistence-2-event",
+        "cause_id": "persistence-2-event",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "persistence-2-root",
+            "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:80a23d6906302790c8c7ebde596a33da5c7b5c5428f6471e664db38fba7ca42d",
+      "transaction_inputs": {
+        "target_validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+        "migration_descriptor_digest_route": [
+          "sha256:19e485f578aa7063d34769e43073ecbab0ff8deed0862eca23eebdacb91800ec"
+        ],
+        "application_writes": {
+          "aggregate_version": 1
+        },
+        "failure_policy": "transient_retry"
+      },
+      "store_adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "restart_persistent",
+        "durable_single_writer",
+        "root_identity_retention",
+        "shared_application_transaction"
+      ],
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
+    },
+    "process_permanent": {
+      "operation": "persistence_process_v1",
+      "request_id": "persistence-2-process",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "persistence-2-root",
+        "revision": "0",
+        "digest": "sha256:01d48c0e439354a757f2c959b48fda69b0008ede6de0bf66b25cd712aaea4dc4"
+      },
+      "presented_envelope": {
+        "event": "host_commit",
+        "event_id": "persistence-2-event",
+        "cause_id": "persistence-2-event",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "persistence-2-root",
+            "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:80a23d6906302790c8c7ebde596a33da5c7b5c5428f6471e664db38fba7ca42d",
+      "transaction_inputs": {
+        "target_validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+        "migration_descriptor_digest_route": [
+          "sha256:19e485f578aa7063d34769e43073ecbab0ff8deed0862eca23eebdacb91800ec"
+        ],
+        "application_writes": {
+          "aggregate_version": 1
+        },
+        "failure_policy": "permanent_quarantine"
+      },
+      "store_adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "restart_persistent",
+        "durable_single_writer",
+        "root_identity_retention",
+        "shared_application_transaction"
+      ],
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
+    },
+    "replay": {
+      "operation": "persistence_process_v1",
+      "request_id": "persistence-2-process",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "persistence-2-root",
+        "revision": "1",
+        "digest": "sha256:d5f5f61e2aaa1cf4f82e5271a5be941cc3d5adc3547c44723185d58210291634"
+      },
+      "presented_envelope": {
+        "event": "host_commit",
+        "event_id": "persistence-2-event",
+        "cause_id": "persistence-2-event",
+        "source": {
+          "host": true
+        },
+        "target": {
+          "root": {
+            "root_instance_id": "persistence-2-root",
+            "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069"
+          }
+        },
+        "payload": [
+          "map",
+          [
+            [
+              "correlation_id",
+              [
+                "string",
+                "persistence-2-event"
+              ]
+            ]
+          ]
+        ]
+      },
+      "envelope_digest": "sha256:80a23d6906302790c8c7ebde596a33da5c7b5c5428f6471e664db38fba7ca42d",
+      "transaction_inputs": {
+        "target_validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+        "migration_descriptor_digest_route": [
+          "sha256:19e485f578aa7063d34769e43073ecbab0ff8deed0862eca23eebdacb91800ec"
+        ],
+        "application_writes": {
+          "aggregate_version": 1
+        },
+        "failure_policy": "commit"
+      },
+      "store_adapter_identifier": "sqlite",
+      "store_capabilities": [
+        "restart_persistent",
+        "durable_single_writer",
+        "root_identity_retention",
+        "shared_application_transaction"
+      ],
+      "host_profile": "shared_application_transaction",
+      "host_guarantees": [
+        "native_shared_transaction_used"
+      ],
+      "retention_mode": "permanent"
+    },
+    "release": {
+      "operation": "persistence_release_quarantine_v1",
+      "request_id": "persistence-2-release",
+      "scope": {
+        "scope_id": "primary",
+        "ownership_binding": "owner:primary",
+        "principal": "conformance-host",
+        "authorization": "authorized"
+      },
+      "expected_checkpoint": {
+        "root_instance_id": "persistence-2-root",
+        "revision": "0",
+        "digest": "sha256:01d48c0e439354a757f2c959b48fda69b0008ede6de0bf66b25cd712aaea4dc4"
+      },
+      "event_id": "persistence-2-event",
+      "envelope_digest": "sha256:80a23d6906302790c8c7ebde596a33da5c7b5c5428f6471e664db38fba7ca42d",
+      "quarantine_reason_code": "permanent_processing_failure",
+      "release_authorization": "operator:conformance"
+    }
+  }
+}

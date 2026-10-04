@@ -1,0 +1,76 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "checkpoint-retention-root",
+  "revision": "6",
+  "root_record": {
+    "status": "tombstone",
+    "root_runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df",
+    "creation_id": "checkpoint-retention-create",
+    "terminal_status": "completed",
+    "final_aggregate_state_digest": "sha256:c31d54b7a61681d09a6dd81a735487417624e1ca417d4257719af742221afa36",
+    "tombstone_operation_id": "root-tombstone"
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "checkpoint-retention-create",
+      "request_digest": "sha256:1a3d5af0740b6da1cdd393a3de7cd6270459e45d2ccf39c2d1832e87eb3bda2d",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:55d913f6b1ca620334ab80c1947da8949d3e8798c01c66ccacf926cc526cf763",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "3",
+      "event_id": "retention-complete",
+      "request_digest": "sha256:5a80eaf529dc83adee795a67634b6f89b5b6dcae1b50adc8728609afd8140df4",
+      "acceptance_sequence": "1",
+      "accepted_revision": "4",
+      "delivery_mode": "input"
+    },
+    {
+      "operation_kind": "event_terminal",
+      "receipt_sequence": "4",
+      "event_id": "retention-complete",
+      "request_digest": "sha256:5a80eaf529dc83adee795a67634b6f89b5b6dcae1b50adc8728609afd8140df4",
+      "acceptance_sequence": "1",
+      "final_queue_sequence": "1",
+      "committed_revision": "5",
+      "resulting_aggregate_state_digest": "sha256:c31d54b7a61681d09a6dd81a735487417624e1ca417d4257719af742221afa36",
+      "outcome": {
+        "disposition": "handled",
+        "status": "completed",
+        "fault": null,
+        "rejection": null
+      },
+      "emission_references": []
+    }
+  ],
+  "next_operation_receipt_sequence": "5",
+  "replay_retention": {
+    "mode": "bounded",
+    "permanent_replay_eligible": false,
+    "pruned_through_receipt_sequence": "2",
+    "policy_identifier": "bounded-native-v1"
+  },
+  "event_identity_tombstones": [
+    {
+      "event_id": "retention-event",
+      "request_digest": "sha256:1f56aeca32d5eb22aa382b08effd234d64caf5fe0ea11a948f56290cde8dcd56",
+      "request_digest_domain": "determa-inbox-envelope-digest-1",
+      "acceptance_sequence": "0",
+      "terminal_receipt_sequence": "2",
+      "terminal_disposition": "handled"
+    }
+  ],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:ad752b912dc3a5efc958d63698c547a9f2f109b993cb660f3d475980ca5be5aa"
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate deterministic schema-v2 durable host profile artifacts."""
+"""Generate deterministic schema-v1 durable host profile artifacts."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Any
 
 import rfc8785
 
-from generate_version2_vectors import (
+from generate_version1_vectors import (
     aggregate_shape_fingerprint_document,
     bundle_binding,
     bundle_fingerprint_document,
@@ -19,12 +19,12 @@ from generate_version2_vectors import (
     digest,
     load_yaml,
     migrate_compatible_aggregate,
-    native_v2_checkpoint,
+    native_v1_checkpoint,
     normalize_bundle_document,
     seal_aggregate,
     seal_checkpoint,
     typed_value,
-    v2_migration_audit_record,
+    v1_migration_audit_record,
 )
 
 
@@ -39,7 +39,7 @@ def write_json(path: Path, value: Any) -> bytes:
 def request_document(requests: dict[str, dict[str, Any]]) -> dict[str, Any]:
     return {
         "durable_host_inputs_format": "determa.durable_host.inputs",
-        "durable_host_inputs_schema_version": 2,
+        "durable_host_inputs_schema_version": 1,
         "requests": requests,
     }
 
@@ -47,7 +47,7 @@ def request_document(requests: dict[str, dict[str, Any]]) -> dict[str, Any]:
 def result_document(results: dict[str, dict[str, Any]]) -> dict[str, Any]:
     return {
         "durable_host_results_format": "determa.durable_host.results",
-        "durable_host_results_schema_version": 2,
+        "durable_host_results_schema_version": 1,
         "results": results,
     }
 
@@ -120,8 +120,8 @@ def default_envelope(
         envelope["correlation_id"] = correlation_id
     envelope_digest = digest(
         [
-            "determa-inbox-envelope-digest-2",
-            "2",
+            "determa-inbox-envelope-digest-1",
+            "1",
             checkpoint["root_instance_id"],
             delivery_mode,
             envelope,
@@ -141,7 +141,7 @@ def creation_request(
     aggregate = aggregate_of(checkpoint)
     definition = root_runtime(checkpoint)["current_definition"]["machine"]
     value = {
-        "operation": "checkpoint_create_v2",
+        "operation": "checkpoint_create_v1",
         "request_id": request_id,
         "scope": scope(),
         "bundle": {
@@ -184,7 +184,7 @@ def admission_request(
         delivery_mode=delivery_mode,
     )
     return {
-        "operation": "checkpoint_admit_v2",
+        "operation": "checkpoint_admit_v1",
         "request_id": request_id,
         "scope": scope(),
         "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
@@ -223,7 +223,7 @@ def admission_batch_request(
             }
         )
     return {
-        "operation": "checkpoint_admit_v2",
+        "operation": "checkpoint_admit_v1",
         "request_id": request_id,
         "scope": scope(),
         "expected_checkpoint": expected_checkpoint(checkpoint),
@@ -282,7 +282,7 @@ def processing_request(
             "queue_sequence": "0",
         }
     return {
-        "operation": "checkpoint_step_v2",
+        "operation": "checkpoint_step_v1",
         "request_id": request_id,
         "scope": scope(),
         "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
@@ -306,9 +306,9 @@ def outbox_request(
 ) -> dict[str, Any]:
     return {
         "operation": (
-            "checkpoint_terminalize_outbox_v2"
+            "checkpoint_terminalize_outbox_v1"
             if terminal
-            else "checkpoint_update_outbox_v2"
+            else "checkpoint_update_outbox_v1"
         ),
         "request_id": request_id,
         "scope": scope(),
@@ -335,15 +335,15 @@ def compact_request(
         if item["intent"]["effect_id"] == effect_id
     )
     return {
-        "operation": "checkpoint_compact_outbox_v2",
+        "operation": "checkpoint_compact_outbox_v1",
         "request_id": request_id,
         "scope": scope(),
         "expected_checkpoint": expected_checkpoint(checkpoint),
         "effect_id": effect_id,
         "intent_digest": digest(
             [
-                "determa-outbox-intent-digest-2",
-                "2",
+                "determa-outbox-intent-digest-1",
+                "1",
                 checkpoint["root_instance_id"],
                 record["intent"],
             ]
@@ -362,13 +362,13 @@ def prune_request(
     dependencies: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
-        "operation": "checkpoint_prune_v2",
+        "operation": "checkpoint_prune_v1",
         "request_id": request_id,
         "scope": scope(),
         "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
         "cutoff_receipt_sequence": cutoff,
         "target_mode": target_mode,
-        "policy_identifier": "bounded-native-v2" if target_mode == "bounded" else None,
+        "policy_identifier": "bounded-native-v1" if target_mode == "bounded" else None,
         "dependency_receipt_sequences": dependencies or [],
         "dependency_effect_ids": [],
     }
@@ -387,7 +387,7 @@ def tombstone_request(
         else "completed"
     )
     return {
-        "operation": "checkpoint_tombstone_v2",
+        "operation": "checkpoint_tombstone_v1",
         "request_id": request_id,
         "scope": scope(),
         "expected_checkpoint": expected_checkpoint(expected_from or checkpoint),
@@ -403,7 +403,7 @@ def deletion_probe_request(
     target: dict[str, Any],
 ) -> dict[str, Any]:
     return {
-        "operation": "checkpoint_delete_retained_record_v2",
+        "operation": "checkpoint_delete_retained_record_v1",
         "request_id": request_id,
         "deletion_operation_id": request_id,
         "scope": scope(),
@@ -486,7 +486,7 @@ def resolve_adapter_request(
     capabilities: list[str] | None = None,
 ) -> dict[str, Any]:
     return {
-        "operation": "checkpoint_resolve_adapter_v2",
+        "operation": "checkpoint_resolve_adapter_v1",
         "request_id": request_id,
         "adapter_identifier": adapter,
         "uri": f"{next((item['uri_scheme'] for item in STANDARD_REGISTRATIONS if item['adapter_identifier'] == adapter), adapter)}://conformance",
@@ -506,7 +506,7 @@ def capability_request(
     retention_mode: str = "permanent",
 ) -> dict[str, Any]:
     return {
-        "operation": "checkpoint_validate_capabilities_v2",
+        "operation": "checkpoint_validate_capabilities_v1",
         "request_id": request_id,
         "adapter_identifier": adapter,
         "store_capabilities": store_capabilities,
@@ -522,7 +522,7 @@ def registration_request(
     existing: list[dict[str, Any]],
 ) -> dict[str, Any]:
     return {
-        "operation": "checkpoint_register_adapter_v2",
+        "operation": "checkpoint_register_adapter_v1",
         "request_id": request_id,
         "registration": copy.deepcopy(registration),
         "existing_registrations": copy.deepcopy(existing),
@@ -537,7 +537,7 @@ def backup_request(
     complete: bool,
 ) -> dict[str, Any]:
     return {
-        "operation": "checkpoint_backup_restore_v2",
+        "operation": "checkpoint_backup_restore_v1",
         "request_id": request_id,
         "scope": scope(),
         "action": action,
@@ -548,7 +548,7 @@ def backup_request(
             else []
         ),
         "adapter_metadata_digest": digest(
-            ["determa-backup-adapter-metadata-2", "primary"]
+            ["determa-backup-adapter-metadata-1", "primary"]
         ),
         "retention_mode": checkpoint["replay_retention"]["mode"],
     }
@@ -556,7 +556,7 @@ def backup_request(
 
 def inject_store_request(checkpoint: dict[str, Any]) -> dict[str, Any]:
     return {
-        "operation": "checkpoint_inject_store_v2",
+        "operation": "checkpoint_inject_store_v1",
         "request_id": "inject-store",
         "scope": scope(),
         "store_adapter_identifier": "injected-store",
@@ -577,9 +577,9 @@ def scope_request(
     scope_id: str = "primary",
 ) -> dict[str, Any]:
     portable_identity = checkpoint["root_instance_id"]
-    effect_id = digest(["determa-scope-effect-2", portable_identity])
+    effect_id = digest(["determa-scope-effect-1", portable_identity])
     return {
-        "operation": "checkpoint_scope_operation_v2",
+        "operation": "checkpoint_scope_operation_v1",
         "request_id": request_id,
         "scope": scope(scope_id, authorization),
         "portable_identity": portable_identity,
@@ -612,7 +612,7 @@ def persistence_request(
 ) -> dict[str, Any]:
     aggregate = aggregate_of(checkpoint)
     return {
-        "operation": "persistence_process_v2",
+        "operation": "persistence_process_v1",
         "request_id": request_id,
         "scope": scope(),
         "expected_checkpoint": expected_checkpoint(checkpoint),
@@ -649,7 +649,7 @@ def release_request(
     envelope_digest: str,
 ) -> dict[str, Any]:
     return {
-        "operation": "persistence_release_quarantine_v2",
+        "operation": "persistence_release_quarantine_v1",
         "request_id": request_id,
         "scope": scope(),
         "expected_checkpoint": expected_checkpoint(checkpoint),
@@ -681,10 +681,10 @@ def result(
 
 def create_checkpoint(case: Path, root_id: str, creation_id: str) -> dict[str, Any]:
     machine = case / "machine.yaml"
-    return native_v2_checkpoint(
+    return native_v1_checkpoint(
         machine,
         {
-            "operation": "create_v2",
+            "operation": "create_v1",
             "bundle": bundle_binding(machine),
             "machine_id": "counter",
             "machine_version": "1",
@@ -719,8 +719,8 @@ def envelope_for(
     }
     request_digest = digest(
         [
-            "determa-inbox-envelope-digest-2",
-            "2",
+            "determa-inbox-envelope-digest-1",
+            "1",
             aggregate["root_instance_id"],
             "input",
             envelope,
@@ -1092,8 +1092,8 @@ def compact(checkpoint: dict[str, Any], index: int) -> dict[str, Any]:
             "effect_id": record["intent"]["effect_id"],
             "intent_digest": digest(
                 [
-                    "determa-outbox-intent-digest-2",
-                    "2",
+                    "determa-outbox-intent-digest-1",
+                    "1",
                     value["root_instance_id"],
                     record["intent"],
                 ]
@@ -1120,7 +1120,7 @@ def prune(checkpoint: dict[str, Any]) -> dict[str, Any]:
         {
             "event_id": terminal["event_id"],
             "request_digest": terminal["request_digest"],
-            "request_digest_domain": "determa-inbox-envelope-digest-2",
+            "request_digest_domain": "determa-inbox-envelope-digest-1",
             "acceptance_sequence": acceptance["acceptance_sequence"],
             "terminal_receipt_sequence": terminal["receipt_sequence"],
             "terminal_disposition": terminal["outcome"]["disposition"],
@@ -1130,7 +1130,7 @@ def prune(checkpoint: dict[str, Any]) -> dict[str, Any]:
         "mode": "bounded",
         "permanent_replay_eligible": False,
         "pruned_through_receipt_sequence": terminal["receipt_sequence"],
-        "policy_identifier": "bounded-native-v2",
+        "policy_identifier": "bounded-native-v1",
     }
     value["revision"] = str(int(value["revision"]) + 1)
     return seal_checkpoint(value)
@@ -1242,14 +1242,14 @@ def generate_delivery() -> dict[Path, bytes]:
         }
     )
     return {
-        case / "created-checkpoint-v2.json": write_json(case / "x", created),
-        case / "accepted-checkpoint-v2.json": write_json(case / "x", accepted),
-        case / "stale-writer-store-checkpoint-v2.json": write_json(
+        case / "created-checkpoint-v1.json": write_json(case / "x", created),
+        case / "accepted-checkpoint-v1.json": write_json(case / "x", accepted),
+        case / "stale-writer-store-checkpoint-v1.json": write_json(
             case / "x", stale_writer_store
         ),
-        case / "processed-checkpoint-v2.json": write_json(case / "x", processed),
-        case / "inputs-v2.json": write_json(case / "x", inputs),
-        case / "results-v2.json": write_json(case / "x", results),
+        case / "processed-checkpoint-v1.json": write_json(case / "x", processed),
+        case / "inputs-v1.json": write_json(case / "x", inputs),
+        case / "results-v1.json": write_json(case / "x", results),
     }
 
 
@@ -1338,18 +1338,18 @@ def generate_outbox() -> dict[Path, bytes]:
         }
     )
     return {
-        case / "accepted-checkpoint-v2.json": write_json(case / "x", admitted),
-        case / "pending-checkpoint-v2.json": write_json(case / "x", pending),
-        case / "retryable-checkpoint-v2.json": write_json(case / "x", retryable),
-        case / "ambiguous-checkpoint-v2.json": write_json(case / "x", ambiguous),
-        case / "terminal-confirmed-checkpoint-v2.json": write_json(case / "x", terminal_states[0]),
-        case / "terminal-permanently-rejected-checkpoint-v2.json": write_json(case / "x", terminal_states[1]),
-        case / "terminal-operator-cancelled-checkpoint-v2.json": write_json(case / "x", terminal_states[2]),
-        case / "terminal-discarded-checkpoint-v2.json": write_json(case / "x", terminal_states[3]),
-        case / "terminal-checkpoint-v2.json": write_json(case / "x", terminal),
-        case / "effect-tombstone-checkpoint-v2.json": write_json(case / "x", compacted),
-        case / "inputs-v2.json": write_json(case / "x", inputs),
-        case / "results-v2.json": write_json(case / "x", results),
+        case / "accepted-checkpoint-v1.json": write_json(case / "x", admitted),
+        case / "pending-checkpoint-v1.json": write_json(case / "x", pending),
+        case / "retryable-checkpoint-v1.json": write_json(case / "x", retryable),
+        case / "ambiguous-checkpoint-v1.json": write_json(case / "x", ambiguous),
+        case / "terminal-confirmed-checkpoint-v1.json": write_json(case / "x", terminal_states[0]),
+        case / "terminal-permanently-rejected-checkpoint-v1.json": write_json(case / "x", terminal_states[1]),
+        case / "terminal-operator-cancelled-checkpoint-v1.json": write_json(case / "x", terminal_states[2]),
+        case / "terminal-discarded-checkpoint-v1.json": write_json(case / "x", terminal_states[3]),
+        case / "terminal-checkpoint-v1.json": write_json(case / "x", terminal),
+        case / "effect-tombstone-checkpoint-v1.json": write_json(case / "x", compacted),
+        case / "inputs-v1.json": write_json(case / "x", inputs),
+        case / "results-v1.json": write_json(case / "x", results),
     }
 
 
@@ -1425,16 +1425,16 @@ def generate_retention() -> dict[Path, bytes]:
         }
     )
     return {
-        case / "processed-checkpoint-v2.json": write_json(case / "x", processed),
-        case / "bounded-checkpoint-v2.json": write_json(case / "x", bounded),
-        case / "completion-accepted-checkpoint-v2.json": write_json(
+        case / "processed-checkpoint-v1.json": write_json(case / "x", processed),
+        case / "bounded-checkpoint-v1.json": write_json(case / "x", bounded),
+        case / "completion-accepted-checkpoint-v1.json": write_json(
             case / "x", completion_accepted
         ),
-        case / "completed-checkpoint-v2.json": write_json(case / "x", completed),
-        case / "root-tombstone-checkpoint-v2.json": write_json(case / "x", tombstoned),
-        case / "created-checkpoint-v2.json": write_json(case / "x", created),
-        case / "inputs-v2.json": write_json(case / "x", request_document(operations)),
-        case / "results-v2.json": write_json(case / "x", results),
+        case / "completed-checkpoint-v1.json": write_json(case / "x", completed),
+        case / "root-tombstone-checkpoint-v1.json": write_json(case / "x", tombstoned),
+        case / "created-checkpoint-v1.json": write_json(case / "x", created),
+        case / "inputs-v1.json": write_json(case / "x", request_document(operations)),
+        case / "results-v1.json": write_json(case / "x", results),
     }
 
 
@@ -1445,7 +1445,7 @@ def checkpoint_from_aggregate(
     return seal_checkpoint(
         {
             "execution_checkpoint_format": "determa.execution_checkpoint",
-            "execution_checkpoint_schema_version": 2,
+            "execution_checkpoint_schema_version": 1,
             "root_instance_id": aggregate["root_instance_id"],
             "revision": "0",
             "root_record": {"status": "retained", "aggregate_state": aggregate},
@@ -1511,8 +1511,8 @@ def host_mailbox_entry(
         "envelope": envelope,
         "envelope_digest": digest(
             [
-                "determa-inbox-envelope-digest-2",
-                "2",
+                "determa-inbox-envelope-digest-1",
+                "1",
                 aggregate["root_instance_id"],
                 "input",
                 envelope,
@@ -1742,8 +1742,8 @@ def complete_spawned_runtime(
     aggregate["next_queue_sequence"] = str(int(queue_sequence) + 1)
     completion_digest = digest(
         [
-            "determa-inbox-envelope-digest-2",
-            "2",
+            "determa-inbox-envelope-digest-1",
+            "1",
             aggregate["root_instance_id"],
             "internal",
             completion_envelope,
@@ -1873,10 +1873,10 @@ def generate_spawned(terminal: bool) -> dict[Path, bytes]:
     name = "checkpoint-06-terminal-spawned-host-trace" if terminal else "checkpoint-05-spawned-host-trace"
     case = PROFILE / "execution-checkpoint" / name
     machine = case / "machine.yaml"
-    base = native_v2_checkpoint(
+    base = native_v1_checkpoint(
         machine,
         {
-            "operation": "create_v2",
+            "operation": "create_v1",
             "bundle": bundle_binding(machine),
             "machine_id": "order",
             "machine_version": "1",
@@ -1953,23 +1953,23 @@ def generate_spawned(terminal: bool) -> dict[Path, bytes]:
     )
     results = result_document({"committed": result("committed", "atomic", 1)})
     output = {
-        case / "spawned-base-checkpoint-v2.json": write_json(case / "x", base),
-        case / "spawned-start-pending-checkpoint-v2.json": write_json(case / "x", start_pending),
-        case / "spawned-started-checkpoint-v2.json": write_json(case / "x", started),
-        case / "spawned-child-pending-checkpoint-v2.json": write_json(case / "x", child_pending),
-        case / "spawned-root-pending-checkpoint-v2.json": write_json(case / "x", root_pending),
-        case / "spawned-child-terminal-checkpoint-v2.json": write_json(case / "x", child_terminal),
-        case / "spawned-owner-event-terminal-checkpoint-v2.json": write_json(
+        case / "spawned-base-checkpoint-v1.json": write_json(case / "x", base),
+        case / "spawned-start-pending-checkpoint-v1.json": write_json(case / "x", start_pending),
+        case / "spawned-started-checkpoint-v1.json": write_json(case / "x", started),
+        case / "spawned-child-pending-checkpoint-v1.json": write_json(case / "x", child_pending),
+        case / "spawned-root-pending-checkpoint-v1.json": write_json(case / "x", root_pending),
+        case / "spawned-child-terminal-checkpoint-v1.json": write_json(case / "x", child_terminal),
+        case / "spawned-owner-event-terminal-checkpoint-v1.json": write_json(
             case / "x", owner_event_terminal
         ),
         case
         / (
-            "spawned-terminal-checkpoint-v2.json"
+            "spawned-terminal-checkpoint-v1.json"
             if terminal
-            else "spawned-owner-done-checkpoint-v2.json"
+            else "spawned-owner-done-checkpoint-v1.json"
         ): write_json(case / "x", final),
-        case / "inputs-v2.json": write_json(case / "x", inputs),
-        case / "results-v2.json": write_json(case / "x", results),
+        case / "inputs-v1.json": write_json(case / "x", inputs),
+        case / "results-v1.json": write_json(case / "x", results),
     }
     return output
 
@@ -1977,7 +1977,7 @@ def generate_spawned(terminal: bool) -> dict[Path, bytes]:
 def store(checkpoint: dict[str, Any], *, inbox: list[dict[str, Any]] | None = None, application_rows: dict[str, Any] | None = None, quarantine: dict[str, Any] | None = None) -> dict[str, Any]:
     return {
         "durable_host_store_format": "determa.durable_host.store",
-        "durable_host_store_schema_version": 2,
+        "durable_host_store_schema_version": 1,
         "checkpoint": checkpoint,
         "inbox": inbox or [],
         "application_rows": application_rows or {},
@@ -1986,7 +1986,7 @@ def store(checkpoint: dict[str, Any], *, inbox: list[dict[str, Any]] | None = No
 
 
 def call_log(calls: list[str]) -> dict[str, Any]:
-    return {"durable_host_call_log_format": "determa.durable_host.call_log", "durable_host_call_log_schema_version": 2, "calls": calls}
+    return {"durable_host_call_log_format": "determa.durable_host.call_log", "durable_host_call_log_schema_version": 1, "calls": calls}
 
 
 def compatible_descriptor(source_machine: Path, target_machine: Path) -> dict[str, Any]:
@@ -1994,7 +1994,7 @@ def compatible_descriptor(source_machine: Path, target_machine: Path) -> dict[st
     target = normalize_bundle_document(load_yaml(target_machine))
     descriptor = {
         "migration_descriptor_format": "determa.aggregate_migration",
-        "migration_descriptor_schema_version": 2,
+        "migration_descriptor_schema_version": 1,
         "source_machine_format": 1,
         "target_machine_format": 1,
         "source_validated_bundle_fingerprint": bundle_fingerprint_document(source),
@@ -2032,7 +2032,7 @@ def compatible_descriptor(source_machine: Path, target_machine: Path) -> dict[st
     ):
         raise RuntimeError("compatible persistence migration changed aggregate shape")
     descriptor["migration_descriptor_digest"] = digest(
-        ["determa-migration-descriptor-2", descriptor]
+        ["determa-migration-descriptor-1", descriptor]
     )
     return descriptor
 
@@ -2043,7 +2043,7 @@ def combined_migrate_and_process(
     value = copy.deepcopy(checkpoint)
     source_aggregate = aggregate_of(value)
     aggregate = migrate_compatible_aggregate(source_aggregate, descriptor)
-    audit = v2_migration_audit_record(source_aggregate, aggregate, descriptor)
+    audit = v1_migration_audit_record(source_aggregate, aggregate, descriptor)
     value["migration_audit_records"].append(audit)
     runtime = next(
         item for item in aggregate["runtimes"] if item["relation"]["kind"] == "root"
@@ -2058,8 +2058,8 @@ def combined_migrate_and_process(
     }
     envelope_digest = digest(
         [
-            "determa-inbox-envelope-digest-2",
-            "2",
+            "determa-inbox-envelope-digest-1",
+            "1",
             aggregate["root_instance_id"],
             "input",
             envelope,
@@ -2238,11 +2238,11 @@ def generate_persistence_case(index: int, slug: str) -> dict[Path, bytes]:
         else {}
     )
     output = {
-        case / "initial-store-v2.json": write_json(case / "x", initial),
-        case / "committed-store-v2.json": write_json(case / "x", committed),
-        case / "quarantined-store-v2.json": write_json(case / "x", quarantined),
-        case / "released-store-v2.json": write_json(case / "x", released),
-        case / "inputs-v2.json": write_json(case / "x", request_document({
+        case / "initial-store-v1.json": write_json(case / "x", initial),
+        case / "committed-store-v1.json": write_json(case / "x", committed),
+        case / "quarantined-store-v1.json": write_json(case / "x", quarantined),
+        case / "released-store-v1.json": write_json(case / "x", released),
+        case / "inputs-v1.json": write_json(case / "x", request_document({
             "process": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, **request_options),
             "process_precommit_failure": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="inject_pre_commit", **request_options),
             "process_postcommit_response_loss": persistence_request(created, f"persistence-{index}-process", presented_envelope, presented_digest, failure_policy="inject_post_commit_response_loss", **request_options),
@@ -2251,7 +2251,7 @@ def generate_persistence_case(index: int, slug: str) -> dict[Path, bytes]:
             "replay": persistence_request(committed_checkpoint, f"persistence-{index}-process", presented_envelope, presented_digest, **request_options),
             "release": release_request(created, f"persistence-{index}-release", presented_envelope, presented_digest),
         })),
-        case / "results-v2.json": write_json(case / "x", result_document({
+        case / "results-v1.json": write_json(case / "x", result_document({
             "committed": result("committed", "atomic", 1, acknowledged=True),
             "replayed": result("replayed", "none", 0, acknowledged=True),
             "crashed": result("crashed", "none", 1, code="injected_pre_commit_failure"),
@@ -2260,10 +2260,10 @@ def generate_persistence_case(index: int, slug: str) -> dict[Path, bytes]:
             "quarantined": result("quarantined", "atomic", 0, code="permanent_processing_failure"),
             "released": result("released", "atomic", 0),
         })),
-        **{case / f"{name}-call-log-v2.json": write_json(case / "x", value) for name, value in logs.items()},
+        **{case / f"{name}-call-log-v1.json": write_json(case / "x", value) for name, value in logs.items()},
     }
     if descriptor is not None:
-        output[case / "migration-descriptor-v2.json"] = write_json(
+        output[case / "migration-descriptor-v1.json"] = write_json(
             case / "x", descriptor
         )
     return output
@@ -2290,13 +2290,13 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
             ROOT
             / "conformance"
             / "core"
-            / "117-version2-mailboxes"
+            / "117-version1-mailboxes"
             / "reserved-admission-before.json"
         ).read_text(encoding="utf-8")
     )
     inactive_checkpoint = checkpoint_from_aggregate(
         inactive_aggregate,
-        creation_digest=digest(["determa-inactive-component-fixture-2"]),
+        creation_digest=digest(["determa-inactive-component-fixture-1"]),
     )
     inactive_target = next(
         runtime["target_identity"]
@@ -2614,22 +2614,22 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
         }
     )
     return {
-        case / "created-checkpoint-v2.json": write_json(case / "x", created),
-        case / "accepted-checkpoint-v2.json": write_json(case / "x", accepted),
-        case / "handled-checkpoint-v2.json": write_json(case / "x", handled),
-        case / "unhandled-accepted-checkpoint-v2.json": write_json(case / "x", unhandled_accepted),
-        case / "unhandled-checkpoint-v2.json": write_json(case / "x", unhandled),
-        case / "faulted-accepted-checkpoint-v2.json": write_json(case / "x", faulted_accepted),
-        case / "faulted-checkpoint-v2.json": write_json(case / "x", faulted),
-        case / "ordered-batch-checkpoint-v2.json": write_json(case / "x", ordered_batch),
-        case / "mixed-batch-checkpoint-v2.json": write_json(case / "x", mixed_batch),
-        case / "inactive-component-checkpoint-v2.json": write_json(case / "x", inactive_checkpoint),
-        case / "bounded-checkpoint-v2.json": write_json(case / "x", bounded),
-        case / "permanent-tombstone-checkpoint-v2.json": write_json(case / "x", permanent_tombstone),
-        case / "bounded-tombstone-checkpoint-v2.json": write_json(case / "x", bounded_tombstone),
-        case / "inputs-v2.json": write_json(case / "x", request_document(requests)),
-        case / "results-v2.json": write_json(case / "x", results),
-        case / "invalid-adapter-identifier-v2.json": write_json(
+        case / "created-checkpoint-v1.json": write_json(case / "x", created),
+        case / "accepted-checkpoint-v1.json": write_json(case / "x", accepted),
+        case / "handled-checkpoint-v1.json": write_json(case / "x", handled),
+        case / "unhandled-accepted-checkpoint-v1.json": write_json(case / "x", unhandled_accepted),
+        case / "unhandled-checkpoint-v1.json": write_json(case / "x", unhandled),
+        case / "faulted-accepted-checkpoint-v1.json": write_json(case / "x", faulted_accepted),
+        case / "faulted-checkpoint-v1.json": write_json(case / "x", faulted),
+        case / "ordered-batch-checkpoint-v1.json": write_json(case / "x", ordered_batch),
+        case / "mixed-batch-checkpoint-v1.json": write_json(case / "x", mixed_batch),
+        case / "inactive-component-checkpoint-v1.json": write_json(case / "x", inactive_checkpoint),
+        case / "bounded-checkpoint-v1.json": write_json(case / "x", bounded),
+        case / "permanent-tombstone-checkpoint-v1.json": write_json(case / "x", permanent_tombstone),
+        case / "bounded-tombstone-checkpoint-v1.json": write_json(case / "x", bounded_tombstone),
+        case / "inputs-v1.json": write_json(case / "x", request_document(requests)),
+        case / "results-v1.json": write_json(case / "x", results),
+        case / "invalid-adapter-identifier-v1.json": write_json(
             case / "x",
             request_document(
                 {
@@ -2641,7 +2641,7 @@ def generate_complete_host_contract() -> dict[Path, bytes]:
                 }
             ),
         ),
-        case / "invalid-uri-scheme-v2.json": write_json(
+        case / "invalid-uri-scheme-v1.json": write_json(
             case / "x",
             request_document(
                 {
@@ -2690,7 +2690,7 @@ def main() -> int:
     existing = {
         path
         for path in PROFILE.rglob("*.json")
-        if "checkpoint-04-version2-mailboxes" not in path.parts
+        if "checkpoint-04-version1-mailboxes" not in path.parts
     }
     expected = set(generated)
     if args.check:

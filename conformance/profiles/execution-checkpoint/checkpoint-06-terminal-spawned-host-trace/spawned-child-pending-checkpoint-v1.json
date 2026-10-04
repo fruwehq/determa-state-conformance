@@ -1,0 +1,336 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "owned-migration-root",
+  "revision": "3",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:aba911d2e963aa68c2443ee3b446b1375f066c0c5e4a890b0d349b0a0b7bb6a3",
+      "namespace": "conformance.case_29_owned_spawn",
+      "root_machine_id": "order",
+      "root_machine_version": "1",
+      "root_instance_id": "owned-migration-root",
+      "creation_id": "owned-migration-create",
+      "root_runtime_id": "sha256:60c7fe78ba04e498209b60b37a127a37f09293bb8a5a03c317ea5676c9dd0458",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "2",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "2",
+      "next_queue_sequence": "2",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:3e188f9ebb0b9f76f905bf8d47b8cb5882aca325bd904f45e9939486bc5cae5e",
+          "identity_origin": {
+            "kind": "owned_spawned_instance",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:aba911d2e963aa68c2443ee3b446b1375f066c0c5e4a890b0d349b0a0b7bb6a3",
+              "machine": {
+                "namespace": "conformance.case_29_owned_spawn",
+                "machine_id": "payment",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/1/root"
+              }
+            },
+            "owner_runtime_id": "sha256:60c7fe78ba04e498209b60b37a127a37f09293bb8a5a03c317ea5676c9dd0458",
+            "spawn_action_pointer": "/machines/0/root/states/idle/on_events/start/action/0/spawn",
+            "spawn_sequence": "0"
+          },
+          "target_identity": {
+            "spawned_instance": {
+              "root_instance_id": "owned-migration-root",
+              "instance_id": "sha256:3e188f9ebb0b9f76f905bf8d47b8cb5882aca325bd904f45e9939486bc5cae5e",
+              "machine_id": "payment",
+              "machine_version": "1"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:aba911d2e963aa68c2443ee3b446b1375f066c0c5e4a890b0d349b0a0b7bb6a3",
+            "machine": {
+              "namespace": "conformance.case_29_owned_spawn",
+              "machine_id": "payment",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/1/root"
+            }
+          },
+          "relation": {
+            "kind": "owned_spawned_instance",
+            "owner_runtime_id": "sha256:60c7fe78ba04e498209b60b37a127a37f09293bb8a5a03c317ea5676c9dd0458",
+            "current_spawn_action_pointer": "/machines/0/root/states/idle/on_events/start/action/0/spawn",
+            "spawn_sequence": "0",
+            "lifetime_holder": {
+              "holder_runtime_id": "sha256:60c7fe78ba04e498209b60b37a127a37f09293bb8a5a03c317ea5676c9dd0458",
+              "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+              "holder_state_activation_sequence": "0"
+            }
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/1/root/states/awaiting"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/1/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/1/root/states/awaiting",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/1/root/variables/due",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "100"
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/1/root/variables/paid",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "0"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/1/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/1/root/states/awaiting",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [
+            {
+              "envelope": {
+                "event": "pay",
+                "event_id": "spawned-pay",
+                "cause_id": "spawned-pay",
+                "source": {
+                  "host": true
+                },
+                "target": {
+                  "spawned_instance": {
+                    "root_instance_id": "owned-migration-root",
+                    "instance_id": "sha256:3e188f9ebb0b9f76f905bf8d47b8cb5882aca325bd904f45e9939486bc5cae5e",
+                    "machine_id": "payment",
+                    "machine_version": "1"
+                  }
+                },
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "amount",
+                      [
+                        "integer",
+                        "100"
+                      ]
+                    ]
+                  ]
+                ]
+              },
+              "envelope_digest": "sha256:96375af65d525b218be7ba1323f0bc48c2fce12cdcdf09edac11fb836b732c55",
+              "delivery_mode": "input",
+              "acceptance_sequence": "1",
+              "queue_sequence": "1",
+              "deferral_count": "0"
+            }
+          ],
+          "deferred_mailbox": []
+        },
+        {
+          "runtime_id": "sha256:60c7fe78ba04e498209b60b37a127a37f09293bb8a5a03c317ea5676c9dd0458",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:aba911d2e963aa68c2443ee3b446b1375f066c0c5e4a890b0d349b0a0b7bb6a3",
+              "machine": {
+                "namespace": "conformance.case_29_owned_spawn",
+                "machine_id": "order",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "owned-migration-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "owned-migration-root",
+              "root_runtime_id": "sha256:60c7fe78ba04e498209b60b37a127a37f09293bb8a5a03c317ea5676c9dd0458"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:aba911d2e963aa68c2443ee3b446b1375f066c0c5e4a890b0d349b0a0b7bb6a3",
+            "machine": {
+              "namespace": "conformance.case_29_owned_spawn",
+              "machine_id": "order",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root/states/checkout"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/0/root/states/checkout",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "map",
+                [
+                  [
+                    "instance_id",
+                    [
+                      "string",
+                      "sha256:3e188f9ebb0b9f76f905bf8d47b8cb5882aca325bd904f45e9939486bc5cae5e"
+                    ]
+                  ],
+                  [
+                    "machine_id",
+                    [
+                      "string",
+                      "payment"
+                    ]
+                  ],
+                  [
+                    "machine_version",
+                    [
+                      "integer",
+                      "1"
+                    ]
+                  ],
+                  [
+                    "root_instance_id",
+                    [
+                      "string",
+                      "owned-migration-root"
+                    ]
+                  ]
+                ]
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/total",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "100"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "1",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/checkout",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/idle",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:7c89fcd84f7b79dac788997315d716f36034f81d3b380c5c461f9ed417c6c71d"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "owned-migration-create",
+      "request_digest": "sha256:9a80a464151fd9dc14957359da10ec88ccd307d7ba5a44fe8f3357586d261a0d",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:7800aaa3c40c139cf3e700ddae006a61856299008bea3dc2481f067301e2a6ce",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "1",
+      "event_id": "spawn-start",
+      "request_digest": "sha256:0bdf80d412a05b240a3b56a3f623f752cb538d27796d2cafd184f6e26572efa6",
+      "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    },
+    {
+      "operation_kind": "event_terminal",
+      "receipt_sequence": "2",
+      "event_id": "spawn-start",
+      "request_digest": "sha256:0bdf80d412a05b240a3b56a3f623f752cb538d27796d2cafd184f6e26572efa6",
+      "acceptance_sequence": "0",
+      "final_queue_sequence": "0",
+      "committed_revision": "2",
+      "resulting_aggregate_state_digest": "sha256:8e51f25e5ae57d10e807766f4ccbab80eb486695e2265ff43b8e68ab9d8765e6",
+      "outcome": {
+        "disposition": "handled",
+        "status": "running",
+        "fault": null,
+        "rejection": null
+      },
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "3",
+      "event_id": "spawned-pay",
+      "request_digest": "sha256:96375af65d525b218be7ba1323f0bc48c2fce12cdcdf09edac11fb836b732c55",
+      "acceptance_sequence": "1",
+      "accepted_revision": "3",
+      "delivery_mode": "input"
+    }
+  ],
+  "next_operation_receipt_sequence": "4",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:7bbd280273ae4664f42319d802e2e89998ca8ccb17f2ba3d494b0c81c29d5ab3"
+}

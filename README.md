@@ -13,7 +13,7 @@ by this repository. Cases under `conformance/profiles/<profile>/` bind only
 implementations that declare support for that profile, and never override core prose.
 External broker delivery policy, timers, production stores, CLI shapes, and other host
 surfaces remain outside core conformance. Runtime-local ready/deferred mailboxes in
-aggregate-state schema version 2 are core state and do not define a broker or worker.
+aggregate-state schema version 1 are core state and do not define a broker or worker.
 SPEC §16 defines the sole portable aggregate wire and pure migration operations; cases
 117–118 cover that boundary. Machine document `format: 1` remains unchanged and is
 independent of portable artifact schema versioning.
@@ -28,7 +28,7 @@ migrated suite.
   normative core case.
 - `conformance/core/<number>-<name>/test.yaml` — its scenario or static-validation
   assertion.
-- `conformance/core/117-*` onward may use `version2_vectors` plus a strict
+- `conformance/core/117-*` onward may use `version1_vectors` plus a strict
   `artifacts.documents` manifest for portable JSON operations.
 - `conformance/profiles/<profile>/` — optional, explicitly non-core host surfaces.
 - `conformance/profiles/execution-checkpoint/` — the optional SPEC §17 durable-host
@@ -45,10 +45,10 @@ as release promises in prose.
 
 ## Release 0.3.0
 
-Core cases cover portable event deferral, resumable mailboxes, and version-2
+Core cases cover portable event deferral, resumable mailboxes, and version-1
 persistence and migration results. The durable-host profiles cover maintenance
 migration receipts and exact checkpoint and store traces. Portable artifact schema
-version 2 is the sole supported representation; machine documents remain `format: 1`.
+version 1 is the sole supported representation; machine documents remain `format: 1`.
 
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
 pre-schema rejections, checks declared structural results against an immutable
@@ -102,7 +102,7 @@ generated vector bytes. Update the generated projection only from the registry:
 python scripts/closed_code_registry.py
 python scripts/closed_code_registry.py --check
 python scripts/test_closed_code_registry.py
-python scripts/test_version2_validator.py
+python scripts/test_version1_validator.py
 ```
 
 The registry is conformance-first. Current Python and Rust releases do not yet expose
@@ -204,17 +204,27 @@ capture or delivery as public APIs. Explicit delivery is intentional: automatica
 draining returned emissions would silently standardize FIFO or run-to-quiescence
 behavior that format 1 assigns to queue plugins.
 
-### Portable version-2 vector mechanics
+### Portable version-1 vector mechanics
 
-Cases with `version2_vectors` exercise the pure, language-neutral operations from SPEC
+Cases with `version1_vectors` exercise the pure, language-neutral operations from SPEC
 §§8, 16, and 17. Their operation names are driver adapters, not required public API
 names. A vector supplies the exact aggregate or checkpoint before value where required,
 an exact target or request artifact, and either canonical RFC 8785 result bytes or one
 closed failure code with the byte-identical unchanged input artifact.
 
-One `step_v2` names one runtime and processes at most its ready head. No version-2
+An implementation harness reads the complete request at `request_file` and
+`request_pointer`, resolves every named prior artifact and trusted definition, and
+passes those literal arguments to its production implementation. It captures the
+first raw response and committed after-state bytes and compares them to
+`exact_result_file` and the named after artifact. A replay invokes the same request
+again and compares the retained response and unchanged bytes. The harness must not
+dispatch by vector name or coverage label, construct a response from expected fixture
+data, or invent a missing definition. The generators only construct deterministic
+goldens; they are not runtime adapters.
+
+One `step_v1` names one runtime and processes at most its ready head. No version-1
 operation chooses another runtime or drains an aggregate. Repository validation checks
-result artifacts against the pinned schema-version-2 schemas, recomputes aggregate,
+result artifacts against the pinned schema-version-1 schemas, recomputes aggregate,
 checkpoint, envelope, descriptor, and maintenance request digests, validates single
 mailbox ownership and retained receipt relations, rejects repeated coverage claims, and
 requires the closed coverage set. The checkpoint profile is intentionally limited to
@@ -224,18 +234,18 @@ The required native core coverage is grouped as follows:
 
 | Case | Required coverage labels |
 |---|---|
-| `119-native-v2-aggregate-integrity` | aggregate round trips; typed values; exact root, component, and spawned targets; relation and discriminator rejection |
-| `120-native-v2-definition-package` | definition resolution; package attachment digest, uniqueness, resolver seeding, trust, and put-if-absent behavior |
-| `121-native-v2-migration-totality` | active and historical state, variables, components, owned runtimes, counters, identities, and total mapping rejection |
-| `122-native-v2-migration-execution` | unchanged-definition resume; route adjacency, order, cycle, and absence; retry; all migration-then-processing outcomes; terminal migration |
-| `123-native-v2-migration-guards` | trust, resource and security limits, request validation, transform faults, and failure/discriminator precedence |
-| `124-native-v2-occurrence-identity` | occurrence-local bindings plus exact decimal target identity boundaries for spawn and component activation sequences |
+| `119-native-v1-aggregate-integrity` | aggregate round trips; typed values; exact root, component, and spawned targets; relation and discriminator rejection |
+| `120-native-v1-definition-package` | definition resolution; package attachment digest, uniqueness, resolver seeding, trust, and put-if-absent behavior |
+| `121-native-v1-migration-totality` | active and historical state, variables, components, owned runtimes, counters, identities, and total mapping rejection |
+| `122-native-v1-migration-execution` | unchanged-definition resume; route adjacency, order, cycle, and absence; retry; all migration-then-processing outcomes; terminal migration |
+| `123-native-v1-migration-guards` | trust, resource and security limits, request validation, transform faults, and failure/discriminator precedence |
+| `124-native-v1-occurrence-identity` | occurrence-local bindings plus exact decimal target identity boundaries for spawn and component activation sequences |
 
 Generate or independently verify the canonical fixtures with:
 
 ```sh
-python scripts/generate_version2_vectors.py
-python scripts/generate_version2_vectors.py --check
+python scripts/generate_version1_vectors.py
+python scripts/generate_version1_vectors.py --check
 ```
 
 ## Assertion vocabulary (normative)
@@ -365,7 +375,7 @@ implementations that declare a CLI profile, without queue introspection. Until t
 the absence of CLI cases is intentional and no CLI surface is portable conformance.
 
 The `execution-checkpoint` profile fixes the portable SPEC §17 durable-host lifecycle
-over the schema-version-2 checkpoint artifact. It covers native creation, ordered-batch
+over the schema-version-1 checkpoint artifact. It covers native creation, ordered-batch
 admission and its exact failure precedence, processing, replay, outbox transitions,
 pruning, root identity, spawned-runtime traces, exact adapter scheme grammar,
 profile-derived capabilities, relational store-scope isolation, and keyed maintenance migration. The persistence
@@ -464,20 +474,20 @@ declare them and do not standardize storage or a public API. See the profile REA
 | 93 | non-correlating input and internal envelopes may carry optional correlation ids (§6) |
 | 116 | legacy definition discriminator policy: 0.0.1–0.0.6 rejection, explicit-format structural rejection, and 0.0.7/current format-1 acceptance (§2) |
 | 117 | runtime-local ready/deferred mailboxes, explicit one-step processing, recall, capacity, isolation, and lifecycle outcomes (§6–§10, §16.15) |
-| 118 | schema-version-2 aggregate creation, admission, stepping, migration, canonical bytes, and migration totality (§16) |
+| 118 | schema-version-1 aggregate creation, admission, stepping, migration, canonical bytes, and migration totality (§16) |
 
 ## Deliberate format-1 boundaries
 
 - Parallel behavior uses isolated components; regions and implicit broadcast do not
   exist.
-- Portable aggregate-state schema version 2 owns accepted ready and deferred envelopes;
+- Portable aggregate-state schema version 1 owns accepted ready and deferred envelopes;
   external broker retry and acknowledgement remain host policy.
 - Time behavior uses declared external requests and later correlated inputs. The core has
   no clock or timer.
 - Separate named contracts are replaced by bundle public event declarations.
 - Submachines are replaced by explicit lifecycle-bound components or owned spawning.
 - Portable aggregate encoding and declarative definition migration use the sole
-  schema-version-2 JSON artifacts in SPEC §16; they do not change machine `format: 1`.
+  schema-version-1 JSON artifacts in SPEC §16; they do not change machine `format: 1`.
 - Package imports and dependency/version resolution remain unsupported.
 - Production store protocols, CLI JSON, queue inspection, enabled-event lists, and
   visualization output are implementation/host surfaces rather than portable core

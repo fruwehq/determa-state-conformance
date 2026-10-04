@@ -1,0 +1,105 @@
+title: execution checkpoint version 1 maintenance migration
+static:
+  documents:
+    - { file: maintenance-source.yaml, valid: true }
+    - { file: maintenance-target-one.yaml, valid: true }
+    - { file: maintenance-target-two.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: maintenance-descriptor-one.json, kind: migration_descriptor_v1, valid: true }
+    - { file: maintenance-descriptor-two.json, kind: migration_descriptor_v1, valid: true }
+    - { file: maintenance-base-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: maintenance-empty-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: maintenance-one-hop-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: maintenance-two-hop-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: maintenance-sequential-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: maintenance-tombstoned-empty-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: maintenance-empty-result.json, kind: version1_operation_result, valid: true }
+    - { file: maintenance-one-hop-result.json, kind: version1_operation_result, valid: true }
+    - { file: maintenance-two-hop-result.json, kind: version1_operation_result, valid: true }
+    - { file: maintenance-sequential-result.json, kind: version1_operation_result, valid: true }
+    - { file: maintenance-tombstoned-empty-result.json, kind: version1_operation_result, valid: true }
+    - { file: invalid-maintenance-missing-target-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-maintenance-target-digest-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-maintenance-historical-digest-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-maintenance-audit-order-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-maintenance-next-receipt-gap-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: false, error: invalid_execution_checkpoint }
+    - { file: invalid-maintenance-shifted-receipt-gap-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: false, error: invalid_execution_checkpoint }
+    - { file: operation-inputs.json, kind: version1_operation_inputs, valid: true }
+version1_vectors:
+  - name: native_v1_maintenance_empty_route
+    covers: [native_v1_maintenance_empty_route]
+    operation: checkpoint_migrate_v1
+    checkpoint_before: maintenance-base-checkpoint-v1.json
+    checkpoint_after: maintenance-empty-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_empty
+    descriptor_files: []
+    expect: { result: success, exact_result_file: maintenance-empty-result.json }
+  - name: native_v1_maintenance_tombstone_replay
+    covers: [native_v1_maintenance_tombstone_identity]
+    operation: checkpoint_migrate_v1
+    checkpoint_before: maintenance-tombstoned-empty-checkpoint-v1.json
+    checkpoint_after: maintenance-tombstoned-empty-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_tombstoned_empty_replay
+    descriptor_files: []
+    expect: { result: success, exact_result_file: maintenance-tombstoned-empty-result.json }
+  - name: native_v1_maintenance_replay_precedes_compare_and_swap
+    covers: [native_v1_maintenance_replay_before_cas]
+    operation: checkpoint_migrate_v1
+    checkpoint_before: maintenance-empty-checkpoint-v1.json
+    checkpoint_after: maintenance-empty-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_empty_replay
+    descriptor_files: []
+    expect: { result: success, exact_result_file: maintenance-empty-result.json }
+  - name: native_v1_maintenance_one_hop
+    covers: [native_v1_maintenance_one_hop]
+    operation: checkpoint_migrate_v1
+    checkpoint_before: maintenance-base-checkpoint-v1.json
+    checkpoint_after: maintenance-one-hop-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_one_hop
+    descriptor_file: maintenance-descriptor-one.json
+    expect: { result: success, exact_result_file: maintenance-one-hop-result.json }
+  - name: native_v1_maintenance_two_hop
+    covers: [native_v1_maintenance_two_hop]
+    operation: checkpoint_migrate_v1
+    checkpoint_before: maintenance-base-checkpoint-v1.json
+    checkpoint_after: maintenance-two-hop-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_two_hop
+    descriptor_files: [maintenance-descriptor-one.json, maintenance-descriptor-two.json]
+    expect: { result: success, exact_result_file: maintenance-two-hop-result.json }
+  - name: native_v1_maintenance_after_historical_noop
+    covers: [native_v1_maintenance_historical_noop_identity]
+    operation: checkpoint_migrate_v1
+    checkpoint_before: maintenance-empty-checkpoint-v1.json
+    checkpoint_after: maintenance-sequential-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_after_empty
+    descriptor_file: maintenance-descriptor-one.json
+    expect: { result: success, exact_result_file: maintenance-sequential-result.json }
+  - name: native_v1_maintenance_operation_conflict
+    covers: [native_v1_maintenance_operation_conflict]
+    operation: checkpoint_migrate_v1
+    checkpoint_before: maintenance-empty-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_conflict
+    descriptor_file: maintenance-descriptor-one.json
+    expect:
+      result: failure
+      code: operation_id_conflict
+      unchanged_file: maintenance-empty-checkpoint-v1.json
+  - name: native_v1_maintenance_stale_writer
+    covers: [native_v1_maintenance_stale_writer]
+    operation: checkpoint_migrate_v1
+    checkpoint_before: maintenance-empty-checkpoint-v1.json
+    request_file: operation-inputs.json
+    request_pointer: /maintenance_stale_writer
+    descriptor_file: maintenance-descriptor-one.json
+    expect:
+      result: failure
+      code: checkpoint_revision_conflict
+      unchanged_file: maintenance-empty-checkpoint-v1.json

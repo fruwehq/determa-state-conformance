@@ -1,7 +1,7 @@
 # Persistence durable host profile
 
 This profile fixes the transaction trace required by SPEC sections 16.12 and 17.9.
-Each case names exact schema-version-2 store snapshots, operation inputs, outcomes, and
+Each case names exact schema-version-1 store snapshots, operation inputs, outcomes, and
 ordered host calls. Broker acknowledgement is an operation/call-trace observation after
 commit, never a member of the durable store snapshot or portable checkpoint bytes.
 

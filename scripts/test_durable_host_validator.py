@@ -55,8 +55,8 @@ def production_input_validator() -> Draft202012Validator:
             ".determa-state-spec"
         )
     schema_paths = (
-        spec_root / "schema/aggregate-state-v2.schema.json",
-        ROOT / "scripts/schemas/durable-host-inputs-v2.schema.json",
+        spec_root / "schema/aggregate-state-v1.schema.json",
+        ROOT / "scripts/schemas/durable-host-inputs-v1.schema.json",
     )
     schemas = [load(path) for path in schema_paths]
     registry = Registry().with_resources(
@@ -75,9 +75,9 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_exact_committed_replay_precedes_stale_checkpoint_cas(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
-        request = load(case / "inputs-v2.json")["requests"]["replay_committed"]
-        handled = load(case / "handled-checkpoint-v2.json")
-        created = load(case / "created-checkpoint-v2.json")
+        request = load(case / "inputs-v1.json")["requests"]["replay_committed"]
+        handled = load(case / "handled-checkpoint-v1.json")
+        created = load(case / "created-checkpoint-v1.json")
 
         validate_request_checkpoint_binding(
             request, handled, {}, "exact replay", created
@@ -116,15 +116,15 @@ class DurableHostValidatorTests(unittest.TestCase):
                 vector
                 for vector in test["durable_host_vectors"]
                 if vector["name"] == "committed_replay_read_only"
-            ).update(historical_checkpoint="accepted-checkpoint-v2.json"),
+            ).update(historical_checkpoint="accepted-checkpoint-v1.json"),
             "differs from checkpoint_before",
         )
 
     def test_changed_stale_same_identity_reaches_conflict_precedence(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
-        requests = load(case / "inputs-v2.json")["requests"]
-        handled = load(case / "handled-checkpoint-v2.json")
-        created = load(case / "created-checkpoint-v2.json")
+        requests = load(case / "inputs-v1.json")["requests"]
+        handled = load(case / "handled-checkpoint-v1.json")
+        created = load(case / "created-checkpoint-v1.json")
         validate_request_checkpoint_binding(
             requests["stale_replay_conflict"],
             handled,
@@ -171,10 +171,10 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_stale_step_terminal_replay_precedes_cas(self) -> None:
         case = PROFILE / "checkpoint-01-native-lifecycle"
-        requests = load(case / "inputs-v2.json")["requests"]
-        results = load(case / "results-v2.json")["results"]
-        presented = load(case / "accepted-checkpoint-v2.json")
-        stored = load(case / "processed-checkpoint-v2.json")
+        requests = load(case / "inputs-v1.json")["requests"]
+        results = load(case / "results-v1.json")["results"]
+        presented = load(case / "accepted-checkpoint-v1.json")
+        stored = load(case / "processed-checkpoint-v1.json")
         request = copy.deepcopy(requests["stale_process"])
         request["writer_checkpoint_context"]["stored_checkpoint"] = {
             "root_instance_id": stored["root_instance_id"],
@@ -203,7 +203,7 @@ class DurableHostValidatorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             mutated_case = Path(temporary) / case.name
             shutil.copytree(case, mutated_case)
-            inputs_path = mutated_case / "inputs-v2.json"
+            inputs_path = mutated_case / "inputs-v1.json"
             inputs = load(inputs_path)
             inputs["requests"]["stale_process"] = request
             inputs_path.write_text(
@@ -216,8 +216,8 @@ class DurableHostValidatorTests(unittest.TestCase):
                 for item in test["durable_host_vectors"]
                 if item["name"] == "checkpoint_stale_writer"
             )
-            vector["stored_checkpoint_before"] = "processed-checkpoint-v2.json"
-            vector["checkpoint_after"] = "processed-checkpoint-v2.json"
+            vector["stored_checkpoint_before"] = "processed-checkpoint-v1.json"
+            vector["checkpoint_after"] = "processed-checkpoint-v1.json"
             with self.assertRaisesRegex(
                 ValidationFailure, "retained identity precedence"
             ):
@@ -230,10 +230,10 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_stale_step_identity_conflict_precedes_cas(self) -> None:
         case = PROFILE / "checkpoint-01-native-lifecycle"
-        requests = load(case / "inputs-v2.json")["requests"]
-        results = load(case / "results-v2.json")["results"]
-        presented = load(case / "accepted-checkpoint-v2.json")
-        stored = load(case / "processed-checkpoint-v2.json")
+        requests = load(case / "inputs-v1.json")["requests"]
+        results = load(case / "results-v1.json")["results"]
+        presented = load(case / "accepted-checkpoint-v1.json")
+        stored = load(case / "processed-checkpoint-v1.json")
         request = copy.deepcopy(requests["stale_process"])
         request["envelope_digest"] = "sha256:" + "0" * 64
         request["writer_checkpoint_context"]["stored_checkpoint"] = {
@@ -263,10 +263,10 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_digest_only_writer_conflict_is_valid(self) -> None:
         case = PROFILE / "checkpoint-01-native-lifecycle"
-        request = load(case / "inputs-v2.json")["requests"]["stale_process"]
-        result = load(case / "results-v2.json")["results"]["stale"]
-        presented = load(case / "accepted-checkpoint-v2.json")
-        stored = load(case / "stale-writer-store-checkpoint-v2.json")
+        request = load(case / "inputs-v1.json")["requests"]["stale_process"]
+        result = load(case / "results-v1.json")["results"]["stale"]
+        presented = load(case / "accepted-checkpoint-v1.json")
+        stored = load(case / "stale-writer-store-checkpoint-v1.json")
         self.assertEqual(presented["revision"], stored["revision"])
         self.assertNotEqual(
             presented["execution_checkpoint_digest"],
@@ -284,11 +284,11 @@ class DurableHostValidatorTests(unittest.TestCase):
     def test_stale_tombstone_equal_identity_replays_before_cas(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
         request = copy.deepcopy(
-            load(case / "inputs-v2.json")["requests"]["stale_tombstone"]
+            load(case / "inputs-v1.json")["requests"]["stale_tombstone"]
         )
-        result = load(case / "results-v2.json")["results"]["replayed"]
-        presented = load(case / "handled-checkpoint-v2.json")
-        stored = load(case / "bounded-tombstone-checkpoint-v2.json")
+        result = load(case / "results-v1.json")["results"]["replayed"]
+        presented = load(case / "handled-checkpoint-v1.json")
+        stored = load(case / "bounded-tombstone-checkpoint-v1.json")
         request["writer_checkpoint_context"]["stored_checkpoint"] = {
             "root_instance_id": stored["root_instance_id"],
             "revision": stored["revision"],
@@ -316,10 +316,10 @@ class DurableHostValidatorTests(unittest.TestCase):
     def test_stale_tombstone_different_identity_conflicts_before_cas(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
         request = copy.deepcopy(
-            load(case / "inputs-v2.json")["requests"]["stale_tombstone"]
+            load(case / "inputs-v1.json")["requests"]["stale_tombstone"]
         )
-        presented = load(case / "handled-checkpoint-v2.json")
-        stored = load(case / "bounded-tombstone-checkpoint-v2.json")
+        presented = load(case / "handled-checkpoint-v1.json")
+        stored = load(case / "bounded-tombstone-checkpoint-v1.json")
         request["writer_checkpoint_context"]["stored_checkpoint"] = {
             "root_instance_id": stored["root_instance_id"],
             "revision": stored["revision"],
@@ -372,7 +372,7 @@ class DurableHostValidatorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             mutated_case = Path(temporary) / case.name
             shutil.copytree(case, mutated_case)
-            results_path = mutated_case / "results-v2.json"
+            results_path = mutated_case / "results-v1.json"
             results = load(results_path)
             results["results"]["stale"]["broker_acknowledged"] = True
             results_path.write_text(
@@ -404,10 +404,10 @@ class DurableHostValidatorTests(unittest.TestCase):
             for item in test["durable_host_vectors"]
             if item["name"] == "stale_tombstone_rejection"
         )
-        request = load(case / "inputs-v2.json")["requests"]["stale_tombstone"]
-        self.assertEqual(vector["checkpoint_before"], "handled-checkpoint-v2.json")
+        request = load(case / "inputs-v1.json")["requests"]["stale_tombstone"]
+        self.assertEqual(vector["checkpoint_before"], "handled-checkpoint-v1.json")
         self.assertEqual(
-            vector["stored_checkpoint_before"], "bounded-checkpoint-v2.json"
+            vector["stored_checkpoint_before"], "bounded-checkpoint-v1.json"
         )
         self.assertNotEqual(
             request["writer_checkpoint_context"]["presented_checkpoint"],
@@ -432,10 +432,10 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_unhandled_delivery_allocates_no_logical_step(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
-        request = load(case / "inputs-v2.json")["requests"]["unhandled"]
-        result = load(case / "results-v2.json")["results"]["committed"]
-        before = load(case / "unhandled-accepted-checkpoint-v2.json")
-        after = load(case / "unhandled-checkpoint-v2.json")
+        request = load(case / "inputs-v1.json")["requests"]["unhandled"]
+        result = load(case / "results-v1.json")["results"]["committed"]
+        before = load(case / "unhandled-accepted-checkpoint-v1.json")
+        after = load(case / "unhandled-checkpoint-v1.json")
         after["root_record"]["aggregate_state"]["next_logical_step_sequence"] = "2"
         with self.assertRaisesRegex(ValidationFailure, "logical step count"):
             validate_checkpoint_derivation(
@@ -449,10 +449,10 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_stale_pruning_must_have_a_newer_cutoff(self) -> None:
         case = PROFILE / "checkpoint-03-native-retention"
-        request = load(case / "inputs-v2.json")["requests"]["prune_stale"]
+        request = load(case / "inputs-v1.json")["requests"]["prune_stale"]
         request["cutoff_receipt_sequence"] = "2"
-        result = load(case / "results-v2.json")["results"]["stale"]
-        current = load(case / "completed-checkpoint-v2.json")
+        result = load(case / "results-v1.json")["results"]["stale"]
+        current = load(case / "completed-checkpoint-v1.json")
         with self.assertRaisesRegex(ValidationFailure, "newer mutation"):
             validate_checkpoint_derivation(
                 request,
@@ -465,9 +465,9 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_running_root_is_required_for_tombstone_rejection(self) -> None:
         case = PROFILE / "checkpoint-03-native-retention"
-        request = load(case / "inputs-v2.json")["requests"]["tombstone_running"]
-        result = load(case / "results-v2.json")["results"]["running_root"]
-        completed = load(case / "completed-checkpoint-v2.json")
+        request = load(case / "inputs-v1.json")["requests"]["tombstone_running"]
+        result = load(case / "results-v1.json")["results"]["running_root"]
+        completed = load(case / "completed-checkpoint-v1.json")
         with self.assertRaisesRegex(ValidationFailure, "running root"):
             validate_checkpoint_derivation(
                 request,
@@ -483,12 +483,12 @@ class DurableHostValidatorTests(unittest.TestCase):
             PERSISTENCE_PROFILE
             / "persistence-02-atomic-aggregate-inbox-outbox-audit"
         )
-        request = load(case / "inputs-v2.json")["requests"]["process"]
-        result = load(case / "results-v2.json")["results"]["committed"]
-        before = load(case / "initial-store-v2.json")
-        after = load(case / "committed-store-v2.json")
+        request = load(case / "inputs-v1.json")["requests"]["process"]
+        result = load(case / "results-v1.json")["results"]["committed"]
+        before = load(case / "initial-store-v1.json")
+        after = load(case / "committed-store-v1.json")
         after["checkpoint"]["revision"] = "2"
-        descriptor = load(case / "migration-descriptor-v2.json")
+        descriptor = load(case / "migration-descriptor-v1.json")
         with self.assertRaisesRegex(ValidationFailure, "exactly once"):
             validate_persistence_derivation(
                 request,
@@ -496,14 +496,14 @@ class DurableHostValidatorTests(unittest.TestCase):
                 before,
                 after,
                 "combined persistence mutation",
-                {"migration-descriptor-v2.json": descriptor},
+                {"migration-descriptor-v1.json": descriptor},
             )
 
     def test_spawned_completion_disposes_the_child(self) -> None:
         case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
 
         def retain_completed_child(document: dict) -> None:
-            before = load(case / "spawned-root-pending-checkpoint-v2.json")
+            before = load(case / "spawned-root-pending-checkpoint-v1.json")
             child = next(
                 copy.deepcopy(runtime)
                 for runtime in before["root_record"]["aggregate_state"]["runtimes"]
@@ -515,17 +515,20 @@ class DurableHostValidatorTests(unittest.TestCase):
             child["variables"] = []
             child["ready_mailbox"] = []
             document["root_record"]["aggregate_state"]["runtimes"].append(child)
+            document["root_record"]["aggregate_state"]["runtimes"].sort(
+                key=lambda runtime: runtime["runtime_id"].encode("utf-8")
+            )
 
         self._assert_case_artifact_mutation_fails(
             case,
-            "spawned-child-terminal-checkpoint-v2.json",
+            "spawned-child-terminal-checkpoint-v1.json",
             retain_completed_child,
             "spawned completion disposal",
         )
 
     def test_instance_reference_machine_version_is_logically_integer(self) -> None:
         case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
-        checkpoint = load(case / "spawned-root-pending-checkpoint-v2.json")
+        checkpoint = load(case / "spawned-root-pending-checkpoint-v1.json")
         aggregate = checkpoint["root_record"]["aggregate_state"]
         owner = next(
             runtime
@@ -550,7 +553,7 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_every_stale_instance_reference_field_is_validated(self) -> None:
         case = PROFILE / "checkpoint-06-terminal-spawned-host-trace"
-        checkpoint = load(case / "spawned-child-terminal-checkpoint-v2.json")
+        checkpoint = load(case / "spawned-child-terminal-checkpoint-v1.json")
         baseline = checkpoint["root_record"]["aggregate_state"]
         mutations = {
             "root_instance_id": ["integer", "42"],
@@ -585,12 +588,12 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_outbox_effects_are_derived_from_machine_actions(self) -> None:
         case = PROFILE / "checkpoint-02-native-outbox"
-        request = load(case / "inputs-v2.json")["requests"]["pending"]
-        result = load(case / "results-v2.json")["results"][
+        request = load(case / "inputs-v1.json")["requests"]["pending"]
+        result = load(case / "results-v1.json")["results"][
             "processing_committed"
         ]
-        before = load(case / "accepted-checkpoint-v2.json")
-        after = load(case / "pending-checkpoint-v2.json")
+        before = load(case / "accepted-checkpoint-v1.json")
+        after = load(case / "pending-checkpoint-v1.json")
         after["pending_outbox_intents"][0]["intent"]["effect_id"] = (
             "sha256:" + "0" * 64
         )
@@ -613,15 +616,15 @@ class DurableHostValidatorTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            before = load(case / "accepted-checkpoint-v2.json")
+            before = load(case / "accepted-checkpoint-v1.json")
             with self.assertRaisesRegex(RuntimeError, "cannot select guarded"):
                 process(before, bundle_path=machine_path)
 
-            request = load(case / "inputs-v2.json")["requests"]["pending"]
-            result = load(case / "results-v2.json")["results"][
+            request = load(case / "inputs-v1.json")["requests"]["pending"]
+            result = load(case / "results-v1.json")["results"][
                 "processing_committed"
             ]
-            after = load(case / "pending-checkpoint-v2.json")
+            after = load(case / "pending-checkpoint-v1.json")
             with self.assertRaisesRegex(
                 ValidationFailure, "handler selection is unsupported"
             ):
@@ -636,9 +639,9 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_deletion_probe_requires_a_retained_referenced_effect(self) -> None:
         case = PROFILE / "checkpoint-02-native-outbox"
-        request = load(case / "inputs-v2.json")["requests"]["delete"]
-        result = load(case / "results-v2.json")["results"]["deletion_rejected"]
-        checkpoint = load(case / "effect-tombstone-checkpoint-v2.json")
+        request = load(case / "inputs-v1.json")["requests"]["delete"]
+        result = load(case / "results-v1.json")["results"]["deletion_rejected"]
+        checkpoint = load(case / "effect-tombstone-checkpoint-v1.json")
         request["target"]["effect_id"] = "sha256:" + "0" * 64
         with self.assertRaisesRegex(
             ValidationFailure, "deletion target is not retained and referenced"
@@ -654,11 +657,11 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_deletion_probe_requires_the_checkpoint_root_identity(self) -> None:
         case = PROFILE / "checkpoint-03-native-retention"
-        request = load(case / "inputs-v2.json")["requests"]["delete"]
-        result = load(case / "results-v2.json")["results"][
+        request = load(case / "inputs-v1.json")["requests"]["delete"]
+        result = load(case / "results-v1.json")["results"][
             "deletion_unsupported"
         ]
-        checkpoint = load(case / "root-tombstone-checkpoint-v2.json")
+        checkpoint = load(case / "root-tombstone-checkpoint-v1.json")
         request["target"]["root_instance_id"] = "different-root"
         with self.assertRaisesRegex(
             ValidationFailure, "does not identify this checkpoint"
@@ -674,11 +677,11 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_deletion_probe_operation_identity_cannot_conflict_with_history(self) -> None:
         case = PROFILE / "checkpoint-03-native-retention"
-        request = load(case / "inputs-v2.json")["requests"]["delete"]
-        result = load(case / "results-v2.json")["results"][
+        request = load(case / "inputs-v1.json")["requests"]["delete"]
+        result = load(case / "results-v1.json")["results"][
             "deletion_unsupported"
         ]
-        checkpoint = load(case / "root-tombstone-checkpoint-v2.json")
+        checkpoint = load(case / "root-tombstone-checkpoint-v1.json")
         request["request_id"] = "root-tombstone"
         request["deletion_operation_id"] = "root-tombstone"
         with self.assertRaisesRegex(
@@ -695,12 +698,12 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_completed_transition_allocates_final_state_activation(self) -> None:
         case = PROFILE / "checkpoint-03-native-retention"
-        request = load(case / "inputs-v2.json")["requests"]["complete_process"]
-        result = load(case / "results-v2.json")["results"][
+        request = load(case / "inputs-v1.json")["requests"]["complete_process"]
+        result = load(case / "results-v1.json")["results"][
             "processing_committed"
         ]
-        before = load(case / "completion-accepted-checkpoint-v2.json")
-        after = load(case / "completed-checkpoint-v2.json")
+        before = load(case / "completion-accepted-checkpoint-v1.json")
+        after = load(case / "completed-checkpoint-v1.json")
         runtime = after["root_record"]["aggregate_state"]["runtimes"][0]
         runtime["next_state_activation_sequences"] = [
             item
@@ -755,7 +758,7 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_empty_claimed_capabilities_fail_every_host_profile(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
-        requests = load(case / "inputs-v2.json")["requests"]
+        requests = load(case / "inputs-v1.json")["requests"]
         positives = [
             value
             for name, value in requests.items()
@@ -826,7 +829,7 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def test_unauthorized_scope_receives_no_store_records(self) -> None:
         case = PROFILE / "checkpoint-07-complete-host-contract"
-        requests = load(case / "inputs-v2.json")["requests"]
+        requests = load(case / "inputs-v1.json")["requests"]
         self.assertEqual(requests["scope_unauthorized"]["store_records"], [])
         self._assert_complete_case_mutation_fails(
             lambda values: values["scope_unauthorized"]["store_records"].append(
@@ -837,7 +840,7 @@ class DurableHostValidatorTests(unittest.TestCase):
 
     def _scope_pair(self) -> tuple[dict, dict]:
         case = PROFILE / "checkpoint-07-complete-host-contract"
-        requests = load(case / "inputs-v2.json")["requests"]
+        requests = load(case / "inputs-v1.json")["requests"]
         return copy.deepcopy(requests["scope_a"]), copy.deepcopy(requests["scope_b"])
 
     def _assert_complete_case_mutation_fails(self, mutate, pattern: str) -> None:
@@ -845,7 +848,7 @@ class DurableHostValidatorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             mutated_case = Path(temporary) / case.name
             shutil.copytree(case, mutated_case)
-            inputs_path = mutated_case / "inputs-v2.json"
+            inputs_path = mutated_case / "inputs-v1.json"
             inputs = load(inputs_path)
             mutate(inputs["requests"])
             inputs_path.write_text(
@@ -873,8 +876,8 @@ class DurableHostValidatorTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             mutated_case = Path(temporary) / case.name
             shutil.copytree(case, mutated_case)
-            stored = load(mutated_case / "bounded-tombstone-checkpoint-v2.json")
-            inputs_path = mutated_case / "inputs-v2.json"
+            stored = load(mutated_case / "bounded-tombstone-checkpoint-v1.json")
+            inputs_path = mutated_case / "inputs-v1.json"
             inputs = load(inputs_path)
             request = inputs["requests"]["stale_tombstone"]
             request["writer_checkpoint_context"]["stored_checkpoint"] = {
@@ -889,7 +892,7 @@ class DurableHostValidatorTests(unittest.TestCase):
                 json.dumps(inputs, indent=2, ensure_ascii=True) + "\n",
                 encoding="utf-8",
             )
-            results_path = mutated_case / "results-v2.json"
+            results_path = mutated_case / "results-v1.json"
             results = load(results_path)
             if result is not None:
                 results["results"][result_name] = result
@@ -904,9 +907,9 @@ class DurableHostValidatorTests(unittest.TestCase):
                 if item["name"] == "stale_tombstone_rejection"
             )
             vector["stored_checkpoint_before"] = (
-                "bounded-tombstone-checkpoint-v2.json"
+                "bounded-tombstone-checkpoint-v1.json"
             )
-            vector["checkpoint_after"] = "bounded-tombstone-checkpoint-v2.json"
+            vector["checkpoint_after"] = "bounded-tombstone-checkpoint-v1.json"
             vector["result"]["pointer"] = f"/results/{result_name}"
             vector["expect"] = expected
             validate_durable_host_vectors(
