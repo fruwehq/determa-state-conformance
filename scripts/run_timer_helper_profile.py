@@ -14,6 +14,7 @@ import json
 import subprocess
 from pathlib import Path
 
+import rfc8785
 from jsonschema import Draft202012Validator
 from validate_extension_negotiation import exact_json_equal
 from timer_helper_validator import validate_profile
@@ -50,6 +51,36 @@ def operation_input(row, target_machine):
             "admission_disposition": row["admission_disposition"]}
 
 
+def loaded_closure_digest(files, module_paths):
+    if type(files) is not list or not files or type(module_paths) is not list or \
+            not all(type(path) is str for path in module_paths):
+        raise ValueError("loaded timer source closure is incomplete")
+    inventory = []
+    actual_paths = []
+    for item in files:
+        if type(item) is not dict or set(item) != {
+                "logical_path", "absolute_path", "bytes_base64"} or \
+                type(item["logical_path"]) is not str or not item["logical_path"] or \
+                item["logical_path"].startswith("/") or ".." in item["logical_path"].split("/"):
+            raise ValueError("loaded timer source file identity invalid")
+        try:
+            body = base64.b64decode(item["bytes_base64"], validate=True)
+        except (TypeError, ValueError, binascii.Error) as error:
+            raise ValueError("loaded timer source bytes are not canonical base64") from error
+        path = Path(item["absolute_path"])
+        if not path.is_absolute() or not path.is_file() or not body or path.read_bytes() != body:
+            raise ValueError("loaded timer source bytes differ from installed file")
+        actual_paths.append(str(path))
+        inventory.append([item["logical_path"], "sha256:" + hashlib.sha256(body).hexdigest()])
+    if inventory != sorted(inventory, key=lambda item: item[0].encode("utf-8")) or \
+            len({item[0] for item in inventory}) != len(inventory) or \
+            len(set(actual_paths)) != len(actual_paths) or \
+            set(module_paths) != set(actual_paths) or len(module_paths) != len(actual_paths):
+        raise ValueError("loaded timer module inventory differs from closure")
+    return "sha256:" + hashlib.sha256(rfc8785.dumps([
+        "determa-test-timer-provider-closure-1", inventory])).hexdigest()
+
+
 def verify_configured(observed, spec_root, completed_request_digests):
     if type(observed) is not dict or set(observed) != {"report", "installation", "operational_proof"}:
         raise ValueError("configured helper omitted public report, installed closure or operational proof")
@@ -67,19 +98,18 @@ def verify_configured(observed, spec_root, completed_request_digests):
         raise ValueError("full timer lifecycle and archive runner requires durable coordinated helper claims")
     installation = observed["installation"]
     if type(installation) is not dict or set(installation) != {
-            "loaded_source_path", "loaded_source_bytes_base64", "configuration_bytes_base64",
+            "loaded_closure_files", "loaded_module_paths", "configuration_bytes_base64",
             "configuration_digest", "scope_identity", "topology_identity", "storage_binding"}:
         raise ValueError("configured timer installation evidence incomplete")
     try:
-        source = base64.b64decode(installation["loaded_source_bytes_base64"], validate=True)
         config = base64.b64decode(installation["configuration_bytes_base64"], validate=True)
     except (TypeError, ValueError, binascii.Error) as error:
         raise ValueError("configured timer closure or configuration is not canonical base64") from error
-    path = Path(installation["loaded_source_path"])
-    if not path.is_absolute() or not path.is_file() or not source or path.read_bytes() != source or not config:
-        raise ValueError("configured timer loaded source does not match on-disk closure")
+    if not config:
+        raise ValueError("configured timer configuration is empty")
     hash_bytes = lambda value: "sha256:" + hashlib.sha256(value).hexdigest()
-    if hash_bytes(source) != report["provider_reference"]["content_digest"] or \
+    if loaded_closure_digest(installation["loaded_closure_files"],
+                             installation["loaded_module_paths"]) != report["provider_reference"]["content_digest"] or \
             hash_bytes(config) != installation["configuration_digest"] or \
             not all(type(installation[key]) is str and installation[key] for key in (
                 "scope_identity", "topology_identity", "storage_binding")):

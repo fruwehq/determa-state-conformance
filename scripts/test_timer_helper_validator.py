@@ -12,7 +12,8 @@ import tempfile
 from pathlib import Path
 
 from timer_helper_validator import TimerHelperValidationError, validate_profile
-from run_timer_helper_profile import operation_input, strict_json, verify_configured
+from run_timer_helper_profile import (loaded_closure_digest, operation_input,
+                                      strict_json, verify_configured)
 
 
 def main():
@@ -78,14 +79,16 @@ def main():
     with tempfile.TemporaryDirectory() as temporary:
         source = Path(temporary) / "installed_helper.py"
         source.write_bytes(b"def timer_command(request): pass\n")
+        closure_files = [{"logical_path": "installed_helper.py", "absolute_path": str(source),
+                          "bytes_base64": base64.b64encode(source.read_bytes()).decode()}]
         reference = {"identifier": "example.timer", "version": "1.0.0",
-                     "content_digest": "sha256:" + hashlib.sha256(source.read_bytes()).hexdigest()}
+                     "content_digest": loaded_closure_digest(closure_files, [str(source)])}
         report = {"category": "timer", "provider_reference": reference,
                   "instance_id": "installed-timer", "health": "healthy",
                   "claims": ["durable_timer_helper", "coordinated_timer_admission"]}
         config = b"storage=fixture;scope=scope-archive-example"
-        installation = {"loaded_source_path": str(source),
-                        "loaded_source_bytes_base64": base64.b64encode(source.read_bytes()).decode(),
+        installation = {"loaded_closure_files": closure_files,
+                        "loaded_module_paths": [str(source)],
                         "configuration_bytes_base64": base64.b64encode(config).decode(),
                         "configuration_digest": "sha256:" + hashlib.sha256(config).hexdigest(),
                         "scope_identity": "scope-archive-example", "topology_identity": "local-fixture",
@@ -104,7 +107,8 @@ def main():
         observed = {"report": report, "installation": installation, "operational_proof": proof}
         verify_configured(observed, args.spec_root, {first["request"]["request_digest"]})
         for name, mutate in (
-            ("wrong source", lambda d: d["installation"].update(loaded_source_bytes_base64=base64.b64encode(b"other").decode())),
+            ("wrong source", lambda d: d["installation"]["loaded_closure_files"][0].update(bytes_base64=base64.b64encode(b"other").decode())),
+            ("omitted dependency", lambda d: d["installation"].update(loaded_module_paths=[str(source), "/abs/other.py"])),
             ("false claim", lambda d: d["report"].update(claims=["coordinated_timer_admission"])),
             ("independent claim for coordinated runner", lambda d: d["report"].update(claims=["durable_timer_helper", "independent_timer_delivery"])),
             ("missing execution", lambda d: d["operational_proof"].update(observed_request_digests=[])),
