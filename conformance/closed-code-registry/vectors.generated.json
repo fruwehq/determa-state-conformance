@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "8f7df88a3abf79394bccbee56be4353634cf838d126787df02b3910b14b20d9d",
+  "registry_sha256": "6af5ef4cd08a970d62d70856f8fff8522735a5d6cde3f8616b4e153e258e3214",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
