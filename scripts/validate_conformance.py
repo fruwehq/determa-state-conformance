@@ -36,6 +36,7 @@ from ruamel.yaml.tokens import (
 
 from closed_code_registry import RegistryValidationError, validate_registry
 from validate_extension_negotiation import ExtensionValidationError, validate_profile
+from validate_host_authority import AuthorityValidationError, validate_profile as validate_authority_profile
 from runtime_provider_validator import RuntimeProviderValidationError, validate_profile as validate_runtime_provider_profile
 
 
@@ -7799,6 +7800,12 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     except (ExtensionValidationError, OSError, ValueError) as error:
         raise ValidationFailure(f"extension negotiation profile: {error}") from error
     try:
+        authority_counts = validate_authority_profile(
+            spec_root, repository_root / "conformance/profiles/host-authority"
+        )
+    except (AuthorityValidationError, OSError, ValueError) as error:
+        raise ValidationFailure(f"host authority profile: {error}") from error
+    try:
         runtime_provider_vectors = validate_runtime_provider_profile(spec_root, repository_root)
     except (RuntimeProviderValidationError, OSError, ValueError, KeyError, IndexError) as error:
         raise ValidationFailure(f"runtime provider profile: {error}") from error
@@ -8282,6 +8289,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{inspection_vectors} inspection vectors "
         f"({inspection_core_vectors} core, {inspection_provider_vectors} optional provider), "
         f"{extension_vectors} extension negotiation vectors, "
+        f"{authority_counts[0]} host authority operations, "
+        f"{authority_counts[1]} profile reports, {authority_counts[2]} clock values, "
+        f"{authority_counts[3]} worker checks, {authority_counts[4]} native traces, "
+        f"{authority_counts[5]} base-core refusals, "
         f"{runtime_provider_vectors} runtime provider vectors, "
         f"{application_projection_vectors} application projection vectors, and "
         f"{committed_effect_vectors} committed native effect vectors"
