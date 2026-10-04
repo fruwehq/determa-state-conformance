@@ -10,7 +10,7 @@
     "source_files": {"const": ["provider/test_provider.py", "provider/test_provider.rs"]},
     "source_closure_file": {"const": "provider-closure.json"},
     "normative_examples": {"type": "array", "minItems": 9, "maxItems": 9, "uniqueItems": true, "items": {"type": "string"}},
-    "vectors": {"type": "array", "minItems": 22, "maxItems": 22, "items": {"$ref": "#/$defs/vector"}}
+    "vectors": {"type": "array", "minItems": 30, "maxItems": 30, "items": {"$ref": "#/$defs/vector"}}
   },
   "$defs": {
     "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
@@ -35,13 +35,33 @@
       }
     },
     "request": {
-      "type": "object", "required": ["operation", "bundle", "installed", "arguments"],
+      "type": "object", "required": ["operation", "bundle", "installed", "setup", "arguments"],
       "additionalProperties": false,
       "properties": {
         "operation": {"enum": ["load", "step", "host_commit", "inspect", "restore", "compile"]},
-        "bundle": {"enum": ["machine.yaml", "machine-safe.yaml"]},
+        "bundle": {"enum": ["machine.yaml", "machine-safe.yaml", "norm-compiled-machine.json"]},
         "installed": {"$ref": "#/$defs/installed"},
-        "arguments": {"type": "object", "minProperties": 1}
+        "setup": {"type": ["object", "null"], "required": ["create_request", "target_runtime_id", "envelope", "provider_snapshot"], "additionalProperties": false,
+          "properties": {"create_request": {"type": "object"}, "target_runtime_id": {"$ref": "#/$defs/digest"}, "envelope": {"type": "object"}, "provider_snapshot": {"type": "object"}}},
+        "arguments": {"type": "object", "minProperties": 1, "additionalProperties": false,
+          "properties": {
+            "opt_in_weak": {"type": "boolean"}, "approved": {"type": "boolean"},
+            "native_selected": {"type": "boolean"}, "guard_override": {"type": "boolean"},
+            "invalid_output": {"type": "boolean"}, "action_fail": {"type": "boolean"},
+            "action_external_io": {"type": "boolean"}, "cas_conflict": {"type": "boolean"},
+            "maximum_attempts": {"type": "integer", "minimum": 1},
+            "mode": {"enum": ["structural", "semantic"]},
+            "maximum_guard_evaluations": {"type": "integer", "minimum": 0},
+            "maximum_evaluation_steps": {"type": "integer", "minimum": 0},
+            "compiler_installed": {"type": "boolean"}, "runtime_installed": {"type": "boolean"},
+            "source_file": {"const": "source-package.json"},
+            "manifest_file": {"const": "source-manifest.json"},
+            "generated_bundle_file": {"const": "norm-compiled-machine.json"},
+            "source_override": {"type": "string"},
+            "source_digest_override": {"$ref": "#/$defs/digest"},
+            "manifest_fingerprint_override": {"$ref": "#/$defs/digest"},
+            "maximum_compilation_steps": {"type": "integer", "minimum": 0}
+          }}
       }
     },
     "calls": {
@@ -66,16 +86,20 @@
     },
     "observation": {
       "type": "object",
-      "required": ["stages", "result", "code", "value", "calls", "irreversible_side_effects", "determa_state_committed", "effective_capabilities"],
+      "required": ["stages", "result", "code", "value", "calls", "irreversible_side_effects", "external_effects", "determa_state_committed", "effective_capabilities", "state_before", "state_after"],
       "additionalProperties": false,
       "properties": {
-        "stages": {"type": "array", "minItems": 1, "items": {"enum": ["resolve_closure", "verify_capabilities", "load", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output", "commit", "compare_and_swap", "preflight_inspection", "structural_inspection", "invoke_inspect_guard", "resolve_runtime_closure", "restore", "validate_source", "resolve_compiler_closure", "compile_region", "strict_load", "verify_manifest"]}},
+        "stages": {"type": "array", "minItems": 1, "items": {"enum": ["resolve_closure", "create", "admit", "verify_capabilities", "load", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output", "commit", "compare_and_swap", "preflight_inspection", "structural_inspection", "invoke_inspect_guard", "resolve_runtime_closure", "restore", "validate_source", "resolve_compiler_closure", "compile_region", "strict_load", "verify_manifest"]}},
         "result": {"enum": ["accepted", "rejected", "handled_now", "unhandled", "faulted", "uncommitted"]},
         "code": {"type": ["string", "null"]},
         "value": {"type": ["object", "null"]},
         "calls": {"$ref": "#/$defs/calls"},
         "irreversible_side_effects": {"type": "integer", "minimum": 0},
+        "external_effects": {"type": "array", "items": {"type": "object", "required": ["effect_id", "kind", "phase"], "additionalProperties": false,
+          "properties": {"effect_id": {"type": "string"}, "kind": {"const": "external_write"}, "phase": {"const": "before_commit"}}}},
         "determa_state_committed": {"type": "boolean"},
+        "state_before": {"type": ["object", "null"]},
+        "state_after": {"type": ["object", "null"]},
         "effective_capabilities": {"$ref": "#/$defs/capabilities"}
       }
     },

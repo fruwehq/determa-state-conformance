@@ -58,8 +58,17 @@ def main() -> None:
             raise SystemExit(f"{vector['name']}: adapter response must have exactly three fields")
         if response["loaded_closure_digest"] != closure_digest:
             raise SystemExit(f"{vector['name']}: executing closure digest mismatch")
-        if response["loaded_source"] != by_source:
+        loaded_source = response["loaded_source"]
+        if not isinstance(loaded_source, dict) or any(
+            name not in by_source or by_source[name] != hash_
+            for name, hash_ in loaded_source.items()
+        ):
             raise SystemExit(f"{vector['name']}: executing source evidence mismatch")
+        if (any(stage in vector["expected"]["stages"] for stage in (
+            "evaluate_guard", "evaluate_actions", "invoke_inspect_guard", "compile_region",
+        )) or (vector["expected"]["result"] == "accepted" and
+                vector["request"]["installed"]["providers"])) and not loaded_source:
+            raise SystemExit(f"{vector['name']}: executing source evidence missing")
         if response["observation"] != vector["expected"]:
             raise SystemExit(f"{vector['name']}: production observation differs from oracle: "
                              f"{json.dumps(response['observation'], sort_keys=True)}")

@@ -26,8 +26,11 @@ REQUIRED = frozenset((
     "invalid_action_output_rolls_back", "native_io_then_action_failure",
     "native_io_then_cas_conflict", "inspect_unsafe_refused", "inspect_structural_no_call",
     "inspect_safe_bounded", "inspect_safe_fuel_exhausted", "inspect_mixed_refused_before_cel",
-    "restore_without_compiler", "restore_missing_runtime", "compile_exact_source",
+    "restore_without_compiler", "restore_runtime_without_compiler", "restore_missing_runtime", "compile_exact_source",
     "compile_missing_compiler", "compile_bad_region_source",
+    "restore_changed_runtime", "restore_untrusted_runtime", "compile_changed_compiler",
+    "compile_untrusted_compiler", "compile_manifest_fingerprint_mismatch",
+    "compile_source_digest_mismatch", "compile_limit_exceeded",
 ))
 
 
@@ -79,6 +82,35 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
     for original, copied in zip(EXAMPLES, examples):
         _require((case / copied).read_bytes() == (spec_root / "examples/providers" / original).read_bytes(),
                  f"normative source changed: {original}")
+    original_machine = YAML(typ="safe").load((case / "norm-mixed-cel-native.source").read_text())
+    _validate(schemas["machine.schema.json"], original_machine, registry, "normative mixed machine")
+    original_guard = json.loads((case / "norm-guard-descriptor-v1.json").read_text())
+    _validate(schemas["runtime-provider-descriptor-v1.schema.json"], original_guard,
+              registry, "normative guard descriptor")
+    for name in ("norm-invalid-guard-output-type.json", "norm-invalid-provider-digest.json"):
+        invalid = json.loads((case / name).read_text())
+        _require(bool(list(Draft202012Validator(schemas["machine.schema.json"],
+                                             registry=registry).iter_errors(invalid))),
+                 f"{name}: normative structural negative became valid")
+    original_source = json.loads((case / "norm-language-source-v1.json").read_text())
+    original_manifest = json.loads((case / "norm-compilation-manifest-v1.json").read_text())
+    original_compiled = json.loads((case / "norm-compiled-machine.json").read_text())
+    _validate(schemas["language-source-v1.schema.json"], original_source,
+              registry, "normative source")
+    _validate(schemas["compilation-manifest-v1.schema.json"], original_manifest,
+              registry, "normative manifest")
+    _validate(schemas["machine.schema.json"], original_compiled, registry, "normative compiled machine")
+    _require(original_source["artifact_digest"] == digest([
+        "determa.language_source", "1", typed_value(original_source["content"])]),
+        "normative source digest changed")
+    _require(original_manifest["artifact_digest"] == digest([
+        "determa.compilation_manifest", "1", typed_value(original_manifest["content"])]),
+        "normative manifest digest changed")
+    _require(original_manifest["content"]["source_artifact_digest"] ==
+             original_source["artifact_digest"] and
+             original_manifest["content"]["generated_validated_bundle_fingerprint"] ==
+             bundle_fingerprint_document(original_compiled),
+             "normative compiler provenance changed")
 
     hasher = hashlib.sha256(b"determa-test-runtime-provider-closure-1\0")
     files = []
@@ -164,12 +196,43 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
         request = vector["request"]
         expected = vector["expected"]
         installed = request["installed"]
+        setup = request["setup"]
+        if request["operation"] in {"step", "host_commit", "inspect"}:
+            _require(isinstance(setup, dict), "execution request omitted setup")
+            selected = machine if request["bundle"] == "machine.yaml" else safe_machine
+            creation = setup["create_request"]
+            target = digest(["determa-root-runtime-identity-1", "1",
+                             bundle_fingerprint_document(selected), selected["namespace"],
+                             creation["machine_id"], creation["machine_version"],
+                             creation["root_instance_id"]])
+            envelope = setup["envelope"]
+            _require(setup["target_runtime_id"] == target and
+                     envelope["target"] == {"root": {"root_instance_id": creation["root_instance_id"],
+                                                     "root_runtime_id": target}} and
+                     setup["provider_snapshot"]["event"] == envelope and
+                     setup["provider_snapshot"]["variables"] ==
+                     ["map", [["accepted", ["boolean", False]]]],
+                     f"{vector['name']}: execution snapshot or target changed")
+            _require(envelope["payload"] == ["map", [["approved", ["boolean",
+                     request["arguments"].get("approved", False)]]]],
+                     f"{vector['name']}: typed provider payload changed")
+        else:
+            _require(setup is None, "non-execution operation has setup")
         _require(installed["source_digest"] == source_digest, "installed source digest changed")
         identities = [(ref["identifier"], ref["version"], ref["content_digest"])
                       for ref in installed["providers"]]
         _require(len(identities) == len(set(identities)), "duplicate installed identity")
         _require(expected["calls"]["external"] == expected["irreversible_side_effects"],
                  f"{vector['name']}: external side-effect accounting changed")
+        _require(len(expected["external_effects"]) == expected["irreversible_side_effects"],
+                 f"{vector['name']}: external evidence changed")
+        if setup is not None:
+            _require(expected["state_before"] is not None and
+                     expected["state_after"] is not None,
+                     f"{vector['name']}: state observation missing")
+            if not expected["determa_state_committed"]:
+                _require(expected["state_after"] == expected["state_before"],
+                         f"{vector['name']}: uncommitted state changed")
         if expected["result"] in {"rejected", "faulted", "uncommitted"}:
             _require(not expected["determa_state_committed"],
                      f"{vector['name']}: failed operation committed")

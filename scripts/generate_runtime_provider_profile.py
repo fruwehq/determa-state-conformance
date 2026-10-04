@@ -74,11 +74,10 @@ def machine(guard: dict, actions: dict) -> dict:
             "initial": {"transition_to": "pending"},
             "states": {"pending": {"on_events": {"submit": [
                 {"guard": "event.payload.approved == true", "action": [
-                    {"assign": {"accepted": "true"}}], "transition_to": "complete"},
+                    {"assign": {"accepted": "true"}}]},
                 {"guard": {"provider": copy.deepcopy(guard)}, "action": [
                     {"provider_actions": copy.deepcopy(actions)},
-                    {"send": {"event": "accepted", "to": {"external": True}}}],
-                 "transition_to": "complete"},
+                    {"send": {"event": "accepted", "to": {"external": True}}}]},
             ]}}, "complete": {"type": "final"}},
         }}],
     }
@@ -92,8 +91,11 @@ def observation(result: str, *, code=None, stages=(), guard=0, actions=0,
         "calls": {"guard": guard, "actions": actions, "inspect_guard": inspection,
                   "external": external},
         "irreversible_side_effects": effects,
+        "external_effects": ([{"effect_id": "fixture-io-1", "kind": "external_write",
+                              "phase": "before_commit"}] if effects else []),
         "determa_state_committed": committed,
         "effective_capabilities": guarantees,
+        "state_before": None, "state_after": None,
     }
 
 
@@ -166,10 +168,49 @@ def render(spec_root: Path) -> dict[str, bytes]:
     vectors = []
 
     def add(name, operation, installed_override=None, expected=None, bundle_file="machine.yaml", **arguments):
+        setup = None
+        if operation in {"step", "host_commit", "inspect"}:
+            bundle = data if bundle_file == "machine.yaml" else safe_data
+            fingerprint = bundle_fingerprint_document(bundle)
+            runtime_id = value_digest([
+                "determa-root-runtime-identity-1", "1", fingerprint,
+                bundle["namespace"], "order", "1", "runtime-provider-root-1",
+            ])
+            approved = arguments["approved"] if "approved" in arguments else False
+            payload = ["map", [["approved", ["boolean", approved]]]]
+            envelope = {
+                "event": "submit", "event_id": "runtime-provider-event-1",
+                "cause_id": "runtime-provider-event-1", "source": {"host": True},
+                "target": {"root": {"root_instance_id": "runtime-provider-root-1",
+                                     "root_runtime_id": runtime_id}}, "payload": payload,
+            }
+            setup = {
+                "create_request": {"machine_id": "order", "machine_version": "1",
+                                   "root_instance_id": "runtime-provider-root-1",
+                                   "creation_id": "runtime-provider-create-1",
+                                   "bindings": {"input": {}, "external": {}}},
+                "target_runtime_id": runtime_id, "envelope": envelope,
+                "provider_snapshot": {"event": envelope,
+                                      "variables": ["map", [["accepted", ["boolean", False]]]]},
+            }
+            expected["stages"] = [expected["stages"][0], "create"] + (
+                ["admit"] if operation in {"step", "host_commit"} else []) + expected["stages"][1:]
+            before = {"status": "running", "active_leaf": "/machines/0/root/states/pending",
+                      "variables": {"accepted": ["boolean", False]},
+                      "ready_mailbox_length": 0 if operation == "inspect" else 1,
+                      "deferred_mailbox_length": 0, "output_count": 0}
+            after = copy.deepcopy(before)
+            if expected["determa_state_committed"]:
+                after["ready_mailbox_length"] = 0
+                if expected["value"] is not None:
+                    after["variables"]["accepted"] = expected["value"]["accepted"]
+                    after["output_count"] = expected["value"]["emissions"]
+            expected["state_before"] = before
+            expected["state_after"] = after
         vectors.append({"name": name, "request": {
             "operation": operation, "bundle": bundle_file,
             "installed": copy.deepcopy(exact if installed_override is None else installed_override),
-            "arguments": arguments,
+            "setup": setup, "arguments": arguments,
         }, "expected": expected})
 
     reject = lambda code: observation("rejected", code=code, stages=["resolve_closure"])
@@ -187,7 +228,7 @@ def render(spec_root: Path) -> dict[str, bytes]:
     add("load_changed_source_bytes", "load", dict(exact, closure_digest="sha256:" + "1" * 64),
         reject("runtime_provider_unavailable"), opt_in_weak=True)
     add("load_strong_host_refuses_weak", "load", expected=observation(
-        "rejected", code="extension_capability_unavailable",
+        "rejected", code="extension_capability_mismatch",
         stages=["resolve_closure", "verify_capabilities"]), opt_in_weak=False)
     add("cel_first_skips_native", "step", expected=observation(
         "handled_now", stages=["resolve_closure", "evaluate_cel", "commit"],
@@ -250,13 +291,28 @@ def render(spec_root: Path) -> dict[str, bytes]:
         stages=["resolve_closure", "preflight_inspection"], guarantees=weak_profile),
         mode="semantic", approved=True, maximum_guard_evaluations=1,
         maximum_evaluation_steps=2)
-    add("restore_without_compiler", "restore", expected=observation(
+    add("restore_without_compiler", "restore", dict(exact, providers=[]),
+        observation("accepted", stages=["resolve_runtime_closure", "restore"],
+                    guarantees={"deterministic": True, "pure": True, "portable": True,
+                                "semantically_introspectable": True,
+                                "process_contained": True, "external_io_capable": False}),
+        bundle_file="norm-compiled-machine.json", compiler_installed=False,
+        runtime_installed=False)
+    add("restore_runtime_without_compiler", "restore", expected=observation(
         "accepted", stages=["resolve_runtime_closure", "restore"],
         guarantees=weak_profile), compiler_installed=False, runtime_installed=True)
     add("restore_missing_runtime", "restore", dict(exact, providers=[]),
         observation("rejected", code="runtime_provider_unavailable",
                     stages=["resolve_runtime_closure"]),
         compiler_installed=True, runtime_installed=False)
+    add("restore_changed_runtime", "restore", changed,
+        observation("rejected", code="runtime_provider_unavailable",
+                    stages=["resolve_runtime_closure"]),
+        compiler_installed=False, runtime_installed=True)
+    add("restore_untrusted_runtime", "restore", dict(exact, trusted=False),
+        observation("rejected", code="runtime_provider_unavailable",
+                    stages=["resolve_runtime_closure"]),
+        compiler_installed=False, runtime_installed=True)
     add("compile_exact_source", "compile", expected=observation(
         "accepted", stages=["validate_source", "resolve_compiler_closure", "compile_region",
                             "strict_load", "verify_manifest"], guarantees=safe_profile,
@@ -267,6 +323,32 @@ def render(spec_root: Path) -> dict[str, bytes]:
         observation("rejected", code="runtime_provider_unavailable",
                     stages=["validate_source", "resolve_compiler_closure"]),
         source_file="source-package.json", compiler_installed=False)
+    compiler_changed = copy.deepcopy(exact)
+    compiler_changed["providers"][-1]["content_digest"] = "sha256:" + "2" * 64
+    add("compile_changed_compiler", "compile", compiler_changed,
+        observation("rejected", code="runtime_provider_unavailable",
+                    stages=["validate_source", "resolve_compiler_closure"]),
+        source_file="source-package.json", compiler_installed=True)
+    add("compile_untrusted_compiler", "compile", dict(exact, trusted=False),
+        observation("rejected", code="runtime_provider_unavailable",
+                    stages=["validate_source", "resolve_compiler_closure"]),
+        source_file="source-package.json", compiler_installed=True)
+    add("compile_manifest_fingerprint_mismatch", "compile", expected=observation(
+        "rejected", code="language_compilation_failed",
+        stages=["validate_source", "resolve_compiler_closure", "compile_region",
+                "strict_load", "verify_manifest"]),
+        source_file="source-package.json", manifest_file="source-manifest.json",
+        generated_bundle_file="norm-compiled-machine.json",
+        manifest_fingerprint_override="sha256:" + "3" * 64, compiler_installed=True)
+    add("compile_source_digest_mismatch", "compile", expected=observation(
+        "rejected", code="language_compilation_failed", stages=["validate_source"]),
+        source_file="source-package.json", source_digest_override="sha256:" + "4" * 64,
+        compiler_installed=True)
+    add("compile_limit_exceeded", "compile", expected=observation(
+        "rejected", code="language_compilation_limit_exceeded",
+        stages=["validate_source", "resolve_compiler_closure", "compile_region"]),
+        source_file="source-package.json", compiler_installed=True,
+        maximum_compilation_steps=0)
     add("compile_bad_region_source", "compile", expected=observation(
         "rejected", code="language_compilation_failed",
         stages=["validate_source", "resolve_compiler_closure", "compile_region"]),

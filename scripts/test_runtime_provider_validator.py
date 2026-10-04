@@ -7,6 +7,7 @@ import importlib.util
 import json
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -19,7 +20,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root, ROOT) == 22
+    assert validate_profile(args.spec_root, ROOT) == 30
     case = ROOT / CASE_REL
     with tempfile.TemporaryDirectory() as temporary:
         clone = Path(temporary)
@@ -58,7 +59,9 @@ def main() -> None:
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     provider = module.Provider()
-    snapshot = {"event": {"payload": {"approved": False}}, "variables": {"accepted": False}}
+    snapshot = {"event": {"payload": ["map", [["approved", ["boolean", False]]]]},
+                "variables": ["map", [["accepted", ["boolean", False]]]]}
+    snapshot_before = json.dumps(snapshot, sort_keys=True)
     assert provider.evaluate_guard(snapshot, guard_override=True) is True
     result = provider.evaluate_actions(snapshot)
     assert result == json.loads((case / "norm-action-output.json").read_text())
@@ -78,6 +81,9 @@ def main() -> None:
     else:
         raise AssertionError("action failure missing")
     assert provider.external_calls == provider.irreversible_effects == 1
+    assert provider.external_effect_log == [{"effect_id": "fixture-io-1",
+                                             "kind": "external_write", "phase": "before_commit"}]
+    assert json.dumps(snapshot, sort_keys=True) == snapshot_before
     assert module.compile_region("event.payload.approved") == "event.payload.approved"
     try:
         module.compile_region("invalid expression")
@@ -92,6 +98,29 @@ def main() -> None:
                        "-o", str(Path(temporary) / f"provider-{toolchain}.rmeta"),
                        str(case / "provider/test_provider.rs")]
             subprocess.run(command, check=True, capture_output=True)
+    with tempfile.TemporaryDirectory() as temporary:
+        location = Path(temporary)
+        adapter = location / "reject_adapter.py"
+        capture = location / "request.json"
+        adapter.write_text(
+            "import json, pathlib, sys\n"
+            "request = json.load(sys.stdin)\n"
+            "files = sorted(str(p.relative_to(request['profile_root'])) for p in "
+            "pathlib.Path(request['profile_root']).rglob('*') if p.is_file())\n"
+            "pathlib.Path(sys.argv[1]).write_text(json.dumps({'request': request, 'files': files}))\n"
+            "print('{}')\n"
+        )
+        run = subprocess.run([
+            sys.executable, str(ROOT / "scripts/run_runtime_provider_profile.py"),
+            "--spec-root", str(args.spec_root),
+            "--adapter", f"{sys.executable} {adapter} {capture}",
+        ], capture_output=True, text=True)
+        assert run.returncode != 0 and "exactly three fields" in run.stderr
+        recorded = json.loads(capture.read_text())
+        assert set(recorded["request"]) == {"request", "profile_root", "source_files",
+                                             "source_closure_file"}
+        assert "vectors.generated.json" not in recorded["files"]
+        assert "expected" not in recorded["request"] and "name" not in recorded["request"]
     print("runtime provider relational tamper probes and Python/Rust source checks passed")
 
 

@@ -408,7 +408,7 @@ the absence of CLI cases is intentional and no CLI surface is portable conforman
 
 The `extension-negotiation` profile fixes SPEC §11.5 public registration, exact provider identity, configuration, health, and closed capability decisions. Its 13 normative common-rule examples use hypothetical internal verification premises; 21 public API vectors bind the actually loaded test provider and publish no unproved claims. See [the profile README](conformance/profiles/extension-negotiation/README.md). Category-specific positive guarantees require their own operational profiles.
 
-The optional [runtime-provider profile](conformance/profiles/runtime-provider/README.md) fixes SPEC §5.4 exact executable source closure, provider output, weak native I/O, safe inspection, source compilation, and restoration in 22 vectors. It preserves all nine normative provider source examples and requires a separate production adapter run for an operational claim.
+The optional [runtime-provider profile](conformance/profiles/runtime-provider/README.md) fixes SPEC §5.4 exact executable source closure, provider output, weak native I/O, safe inspection, source compilation, and restoration in 30 vectors. It preserves all nine normative provider source examples and requires a separate production adapter run for an operational claim.
 
 The `execution-checkpoint` profile fixes the portable SPEC §17 durable-host lifecycle
 over the schema-version-1 checkpoint artifact. It covers native creation, ordered-batch
