@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/lossless-delivery-profile-v1.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["title", "static", "artifacts", "lossless_delivery_vectors"],
+  "properties": {
+    "title": {"type": "string", "minLength": 1},
+    "static": {"type": "object", "additionalProperties": false, "required": ["documents"],
+      "properties": {"documents": {"const": [{"file": "machine.yaml", "valid": true}, {"file": "outbox-machine.yaml", "valid": true}]}}},
+    "artifacts": {"type": "object", "additionalProperties": false, "required": ["documents"],
+      "properties": {"documents": {"type": "array", "minItems": 4,
+        "items": {"type": "object", "additionalProperties": false,
+          "required": ["file", "kind", "valid"], "properties": {
+            "file": {"type": "string"}, "kind": {"enum": ["execution_checkpoint_v1", "core_step_result_v1", "lossless_delivery_v1"]},
+            "valid": {"const": true}}}}}},
+    "lossless_delivery_vectors": {"type": "array", "minItems": 20,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"}}
+  }
+}

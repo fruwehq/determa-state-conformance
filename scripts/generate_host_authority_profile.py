@@ -207,6 +207,7 @@ def render(spec_root: Path) -> bytes:
     }
     profile_vectors = [{"id": row["name"], "source_disposition": disposition,
                         "fixture_layer": "hypothetical_common_rule",
+                        "submitted_report": copy.deepcopy(row["report"]),
                         "hypothetical_verification": {"source_context": row.get("context"),
                             "proved_predicates": hypothetical_atoms[row["name"]]},
                         "configured_facts": {"topology": row["report"]["topology"],
