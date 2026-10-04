@@ -12,6 +12,7 @@ from validate_portable_archive import (ArchiveValidationError, canonical, digest
                                        validate_archive_integrity, validator_registry, without, ROOT)
 from validate_recovery_profile import CASE, validate_profile, validate_owned_definition_closure
 from run_recovery_profile import CALLS, STATE, input_for, run_case
+from run_hosted_recovery_profile import observed_binding
 
 
 def rejected(label, fn):
@@ -118,7 +119,12 @@ def main() -> int:
     with patch('run_recovery_profile.subprocess.run', return_value=ForgedProof()):
         rejected('copied transfer proof without native frozen inventory',
                  lambda: run_case(['adapter'], local, fixture))
-    print('42 normative and 6 real two-root recovery cases; 8 adversarial substitutions passed')
+    with patch('run_hosted_recovery_profile.verify_delivery_proof_summary',
+               side_effect=lambda summary, command: summary):
+        rejected('base-only delivery proof used for safe relocation',
+                 lambda: observed_binding(['adapter'], ['authority'],
+                     {'proved_claims': ['lossless_delivery_controlled_store']}, fixture))
+    print('42 normative and 6 real two-root recovery cases; 9 adversarial substitutions passed')
     return 0
 
 

@@ -99,7 +99,8 @@ def input_for(case: dict, fixture: dict) -> dict:
 
 
 def run_case(command: list[str], case: dict, fixture: dict,
-             *, hosted_binding_digest: str | None = None) -> None:
+             *, hosted_binding_digest: str | None = None,
+             hosted_authority_token_identity: str | None = None) -> None:
     label = case['case_id']
     request = input_for(case, fixture)
     completed = subprocess.run(command, input=canonical(request), capture_output=True,
@@ -117,6 +118,8 @@ def run_case(command: list[str], case: dict, fixture: dict,
         raise ValueError(label + ': incomplete production response')
     if hosted_binding_digest is not None and response['configured_binding_digest'] != hosted_binding_digest:
         raise ValueError(label + ': production response uses a different configured installation')
+    if hosted_binding_digest is not None and not hosted_authority_token_identity:
+        raise ValueError(label + ': configured native authority token identity missing')
     setup = response['setup_responses']
     if not isinstance(setup, list) or len(setup) != len(request['setup_requests']):
         raise ValueError(label + ': incomplete production setup responses')
@@ -216,6 +219,7 @@ def run_case(command: list[str], case: dict, fixture: dict,
                     entry.get('scope_generation') == proof['source_scope_generation'] and
                     entry.get('state') == proof['source_state'] and
                     entry.get('source_binding_digest') == proof['source_binding_digest'] and
+                    entry.get('authority_token_identity') == hosted_authority_token_identity and
                     entry.get('transaction_fate') == 'known_committed' and
                     entry.get('retained_checkpoint_digests') == sorted(
                         item['execution_checkpoint_digest'] for item in request['source_archive']['checkpoints']) and

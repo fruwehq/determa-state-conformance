@@ -44,15 +44,19 @@ declared. Issue #80's delivery implementation is still a dependency for the
 hosted claim. Cross-authority safe relocation is unavailable without separately
 proved continuity. Static fixture success is never a production certificate.
 
-Once §21 is merged, a host advertising the local single-authority topology runs
+For an advertised local single-authority topology, the host runs
 `scripts/run_hosted_recovery_profile.py --spec-root SPEC --adapter HOST
 --authority-adapter AUTHORITY`. This gate requires the same actual configured
-installation to pass the §18/§19/§21 native runner, binds its full reports and
-loaded recovery closure/configuration to the §24 report, then executes all 42
+installation to pass the §18/§19/§21 native runner. It verifies the merged
+runner's same-run proof summary, including its unique parent run, C/D native
+proof IDs, H durable store proofs, report digests and actual installed store and
+transport sources. It binds those identities and the loaded recovery
+closure/configuration and observed authority token to the §24 report, then executes all 42
 normative and 6 two-root requests. The ten local cases require durable transfer
 proofs, a frozen full inventory, known native transaction fate, retired source,
 single-use grant, imported checkpoint/participant bytes, and unchanged state on
-refusal. The hosted runner fails closed while the merged §21 runner is absent.
+refusal. A successful run requires a real production I2 adapter and is not
+claimed by this repository's source checks.
 No host may report `safe_relocation` from the static fixture or by copying a
 requested profile claim. The standalone runner never certifies local transfer.
 

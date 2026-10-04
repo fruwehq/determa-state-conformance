@@ -9,11 +9,12 @@ from pathlib import Path
 import shlex
 import subprocess
 import sys
-import uuid
+import tempfile
 
 from validate_portable_archive import canonical, digest, parse_json_bytes, read_json
 from validate_recovery_profile import CASE, validate_profile
 from run_recovery_profile import run_case
+from run_lossless_delivery_profile import verify_delivery_proof_summary
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -41,23 +42,46 @@ def report_bytes(response: dict, label: str) -> tuple[dict, bytes]:
 
 
 def observed_binding(command: list[str], authority_command: list[str],
-                     run_id: str, transport: Path, fixture: dict) -> tuple[dict, str]:
+                     summary: dict, fixture: dict) -> tuple[dict, str]:
+    verified = verify_delivery_proof_summary(summary, command)
+    if verified is not summary or summary['proved_claims'] != [
+            'lossless_delivery_controlled_store',
+            'host_authority_worker_sqlite_independent',
+            'five_native_effect_integrations_controlled_store']:
+        raise ValueError('§21 proof did not establish the full configured C/D/H installation')
+    effect_proof = summary['authority_effect_summary']
+    if type(effect_proof) is not dict or type(effect_proof.get('authority_summary')) is not dict:
+        raise ValueError('§18/§19 same-run proof summary absent')
+    authority_proof = effect_proof['authority_summary']
+    if effect_proof['parent_run_id'] != summary['parent_run_id'] or \
+            summary['configured_delivery_profile']['run_id'] != summary['parent_run_id'] or \
+            effect_proof['adapter_command_digest'] != digest(command) or \
+            authority_proof['adapter_command_digest'] != digest(authority_command) or \
+            not authority_proof['native_proof_ids'] or \
+            len(set(authority_proof['native_proof_ids'])) != len(authority_proof['native_proof_ids']) or \
+            len(effect_proof['native_proof_ids']) != 43 or \
+            len(set(effect_proof['native_proof_ids'])) != 43:
+        raise ValueError('§18/§19 native proof IDs do not share the §21 parent run')
     authority_response = call(authority_command, {'kind': 'configured_profile'},
                               '§18 configured authority')
     authority, authority_raw = report_bytes(authority_response, '§18 configured authority')
-    effect_response = call(command, {'kind': 'configured_profile', 'phase': 'before',
-                                     'run_id': run_id}, '§19 configured effect')
+    effect_response = call(command, {'kind': 'configured_profile', 'phase': 'after',
+                                     'run_id': effect_proof['run_id']}, '§19 configured effect')
     effect, effect_raw = report_bytes(effect_response, '§19 configured effect')
-    transport_digest = 'sha256:' + sha256(transport.read_bytes()).hexdigest()
-    delivery = call(command, {'kind': 'configured_delivery_profile', 'run_id': run_id,
-                              'transport_command': [sys.executable, str(transport)],
-                              'transport_source_sha256': transport_digest},
-                    '§21 configured delivery')
+    if 'sha256:' + sha256(authority_raw).hexdigest() != authority_proof['report_digest'] or \
+            'sha256:' + sha256(effect_raw).hexdigest() != effect_proof['report_digest'] or \
+            effect_proof['authority_report_digest'] != \
+            summary['configured_delivery_profile']['authority_report_digest']:
+        raise ValueError('C/D actual configured report differs from same-run native proof')
+    delivery = summary['configured_delivery_profile']
     recovery_response = call(command, {'kind': 'configured_recovery_profile'},
                              '§24 configured recovery')
     report, raw = report_bytes(recovery_response, '§24 configured recovery')
     fields = {'format', 'schema_version', 'safe_relocation', 'topology_identifier',
               'authority_report_digest', 'effect_report_digest', 'delivery_report_digest',
+              'effect_authority_report_digest', 'parent_run_id',
+              'authority_native_proof_ids_digest', 'effect_native_proof_ids_digest',
+              'delivery_operation_proofs_digest', 'authority_report_binding',
               'authority_provider_reference', 'effect_handler_reference',
               'provider_reference', 'configuration_digest', 'authority_token_identity',
               'source_binding_digest', 'destination_binding_digest', 'archive_digest',
@@ -87,6 +111,7 @@ def observed_binding(command: list[str], authority_command: list[str],
     archive = read_json(CASE / 'archive-local-transfer-v1.json')
     proof = fixture['trusted_transfer_proofs'][0]
     if authority['topology']['identifier'] != report['topology_identifier'] or \
+            authority_proof['topology'] != authority['topology'] or \
             authority['extension_report']['provider_reference'] != report['authority_provider_reference'] or \
             not authority['guarantees']['guarded_local_writes'] or \
             not authority['guarantees']['worker_fencing'] or \
@@ -94,14 +119,21 @@ def observed_binding(command: list[str], authority_command: list[str],
             effect['handler_reference'] != report['effect_handler_reference'] or \
             effect['authority_report_bytes'] != canonical(parse_json_bytes(
                 effect['authority_report_bytes'].encode(), '§19 embedded authority')).decode() or \
-            delivery['transport_source_sha256'] != transport_digest or \
+            delivery['transport_source_sha256'] != summary['transport_provider_source_sha256'] or \
+            delivery['host_store_source_sha256'] != summary['host_store_provider_source_sha256'] or \
             delivery['source_acknowledgement'] != 'after_durable_commit' or \
             delivery['ingress_dead_letter'] != 'durable_before_acknowledgement':
         raise ValueError('§24 host differs from the proved C/D/H installation')
     expected = {
-        'authority_report_digest': 'sha256:' + sha256(authority_raw).hexdigest(),
-        'effect_report_digest': 'sha256:' + sha256(effect_raw).hexdigest(),
-        'delivery_report_digest': digest(delivery),
+        'authority_report_digest': authority_proof['report_digest'],
+        'effect_report_digest': effect_proof['report_digest'],
+        'delivery_report_digest': summary['configured_delivery_report_digest'],
+        'effect_authority_report_digest': effect_proof['authority_report_digest'],
+        'parent_run_id': summary['parent_run_id'],
+        'authority_native_proof_ids_digest': digest(authority_proof['native_proof_ids']),
+        'effect_native_proof_ids_digest': digest(effect_proof['native_proof_ids']),
+        'delivery_operation_proofs_digest': digest(summary['delivery_operations']),
+        'authority_report_binding': authority_proof['report_binding'],
         'source_binding_digest': archive['source']['ownership_binding_digest'],
         'destination_binding_digest': proof['destination_binding_digest'],
         'archive_digest': archive['archive_digest'],
@@ -124,29 +156,28 @@ def main() -> int:
         parser.error('configured host and authority adapter commands required')
     validate_profile(args.spec_root)
     hosted_runner = ROOT / 'scripts/run_lossless_delivery_profile.py'
-    transport = ROOT / 'scripts/lossless_delivery_test_transport.py'
-    if not hosted_runner.is_file() or not transport.is_file():
-        raise ValueError('§21 hosted delivery production dependency is not merged')
     fixture = read_json(CASE / 'recovery-cases-v1.json')
-    run_id = str(uuid.uuid4())
-    initial, binding = observed_binding(command, authority_command, run_id, transport, fixture)
-    completed = subprocess.run([sys.executable, str(hosted_runner), '--spec-root',
-                                str(args.spec_root), '--adapter', args.adapter,
-                                '--authority-adapter', args.authority_adapter],
-                               capture_output=True, check=False, timeout=1800)
-    if completed.returncode:
-        raise ValueError('§18/§19/§21 configured production proof failed: ' +
-                         completed.stderr.decode('utf-8', 'replace')[:1000])
-    if observed_binding(command, authority_command, run_id, transport, fixture) != (initial, binding):
-        raise ValueError('configured C/D/H/recovery installation changed during native proof')
+    with tempfile.TemporaryDirectory(prefix='determa-recovery-host-proof-') as directory:
+        path = Path(directory) / 'delivery-summary.json'
+        completed = subprocess.run([sys.executable, str(hosted_runner), '--spec-root',
+                                    str(args.spec_root), '--adapter', args.adapter,
+                                    '--authority-adapter', args.authority_adapter,
+                                    '--proof-summary-output', str(path)],
+                                   capture_output=True, check=False, timeout=1800)
+        if completed.returncode or not path.is_file():
+            raise ValueError('§18/§19/§21 same-run native proof failed: ' +
+                             completed.stderr.decode('utf-8', 'replace')[:1000])
+        summary = parse_json_bytes(path.read_bytes(), 'same-run C/D/H proof summary')
+    initial, binding = observed_binding(command, authority_command, summary, fixture)
     owned = read_json(CASE / 'recovery-two-root-vectors-v1.json')
     fixture['cases'] += owned['cases']
     fixture['owned_stage_request'] = owned['stage_request']
     fixture['owned_stage_configuration'] = owned['stage_configuration']
     fixture['owned_stage_result'] = owned['stage_result']
     for case in [*fixture['early_cases'], *fixture['cases']]:
-        run_case(command, case, fixture, hosted_binding_digest=binding)
-    if observed_binding(command, authority_command, run_id, transport, fixture) != (initial, binding):
+        run_case(command, case, fixture, hosted_binding_digest=binding,
+                 hosted_authority_token_identity=initial['authority_token_identity'])
+    if observed_binding(command, authority_command, summary, fixture) != (initial, binding):
         raise ValueError('configured C/D/H/recovery installation changed during recovery proof')
     print('48 recovery responses and observations passed under one configured local host')
     return 0
