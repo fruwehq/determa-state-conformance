@@ -1456,6 +1456,25 @@ def produce_native_core(directory: Path) -> dict[str, bytes]:
                     "migration_descriptors": [],
                 },
             }
+        if (
+            directory.name == "122-native-v1-migration-execution"
+            and path.name == "operation-inputs.json"
+        ):
+            root_instance_id = load(
+                directory / "dispatch-source-aggregate-v1.json"
+            )["root_instance_id"]
+            for operation in document.values():
+                if operation["operation"] == "migrate_then_process_v1":
+                    delivery = operation["delivery"]
+                    delivery["envelope_digest"] = digest(
+                        [
+                            "determa-inbox-envelope-digest-1",
+                            "1",
+                            root_instance_id,
+                            delivery["delivery_mode"],
+                            delivery["envelope"],
+                        ]
+                    )
         produced[path.name] = canonical(document)
     if directory.name == "119-native-v1-aggregate-integrity":
         aggregate = canonical(load(directory / "aggregate-source-aggregate-v1.json"))

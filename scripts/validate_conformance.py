@@ -4237,6 +4237,18 @@ def validate_version1_vectors(
                     )
             if operation == "migrate_then_process_v1":
                 assert prior_aggregate is not None
+                delivery = selected["delivery"]
+                expected_envelope_digest = hash_value([
+                    "determa-inbox-envelope-digest-1",
+                    "1",
+                    prior_aggregate["root_instance_id"],
+                    delivery["delivery_mode"],
+                    delivery["envelope"],
+                ])
+                if delivery["envelope_digest"] != expected_envelope_digest:
+                    raise ValidationFailure(
+                        f"{location}: combined operation envelope digest differs from the request"
+                    )
                 migration_state_name = vector.get("migration_state_after")
                 migration_manifest = manifests.get(migration_state_name)
                 if (
@@ -7648,6 +7660,66 @@ def validate_case_62(case: Path, test: dict[str, Any]) -> None:
 
 
 
+def validate_initial_identity_oracles(
+    case: Path, test: dict[str, Any], bundle_path: Path,
+    root_instance_id: str, creation_id: str,
+) -> None:
+    """Check the two initialization identity fixtures from their literal operands."""
+    if case.name not in {
+        "75-root-initialization-fault",
+        "86-initial-component-completion-order",
+    }:
+        return
+    bundle = normalized_bundle_value(bundle_path)
+    machine = bundle["machines"][0]
+    namespace = bundle["namespace"]
+    machine_id = machine["machine_id"]
+    version = str(machine["version"])
+    root_runtime_id = hash_value([
+        "determa-root-runtime-identity-1", "1",
+        validated_bundle_fingerprint(bundle_path), namespace, machine_id,
+        version, root_instance_id,
+    ])
+    if case.name.startswith("75-"):
+        expected = hash_value([
+            "determa-cause-identity-1", "1", "root_initialization",
+            root_instance_id, root_runtime_id, root_runtime_id, creation_id,
+            "0", "/machines/0/root", "0",
+        ])
+        if test["create"]["expect"]["fault"]["cause_id"] != expected:
+            raise ValidationFailure(f"{case.name}: root initialization cause identity mismatch")
+        return
+
+    input_event_id = f"conformance:{case.name}:step:0:input"
+    component_events = []
+    final_cause = None
+    for index, _ in enumerate(machine["root"]["states"]["processing"]["components"]):
+        pointer = f"/machines/0/root/states/processing/components/{index}"
+        component_runtime_id = hash_value([
+            "determa-component-runtime-identity-1", "1", root_instance_id,
+            root_runtime_id, pointer, "0", namespace, machine_id, version,
+        ])
+        final_cause = hash_value([
+            "determa-cause-identity-1", "1", "component_initialization",
+            root_instance_id, root_runtime_id, component_runtime_id,
+            input_event_id, "1", pointer, str(index),
+        ])
+        component_events.append(hash_value([
+            "determa-event-identity-1", "1", root_instance_id,
+            component_runtime_id, root_runtime_id, final_cause, "1",
+            "system:component_completion", "0",
+        ]))
+    assert final_cause is not None
+    done_event = hash_value([
+        "determa-event-identity-1", "1", root_instance_id,
+        root_runtime_id, root_runtime_id, final_cause, "1",
+        "system:component_completion", "1",
+    ])
+    actual = [item["event_id"] for item in test["steps"][0]["expect"]["emissions"]]
+    if actual != [*component_events, done_event]:
+        raise ValidationFailure(f"{case.name}: initial component completion identities mismatch")
+
+
 def validate_repository(repository_root: Path, spec_root: Path) -> str:
     try:
         registry_categories, registry_entries = validate_registry(repository_root)
@@ -7835,6 +7907,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             if creation_id in creation_ids:
                 raise ValidationFailure(f"{case.name}: duplicate creation_id")
             creation_ids.add(creation_id)
+            validate_initial_identity_oracles(
+                case, test, primary, root_instance_id, creation_id
+            )
 
             captures: set[str] = set()
             for index, step in enumerate(test.get("steps", [])):
