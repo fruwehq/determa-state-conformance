@@ -101,6 +101,42 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
         elif after != before or result["error_code"] not in (
                 "invalid_timer_time", "timer_deadline_overflow", "timer_clock_unavailable"):
             raise TimerHelperValidationError(f"{row['id']}: failed clock outcome changed state")
+    for index, sample in enumerate(clocks["valid_absolute"]):
+        row = document["clock_vectors"][index]
+        if row["request"]["arguments"].get("deadline_at") != sample or \
+                row["after"]["helper_artifact"]["records"][0]["deadline_at"] != sample or \
+                row["expected_calls"]["clock"] != 0:
+            raise TimerHelperValidationError("absolute signed-64 clock boundary changed")
+    start = len(clocks["valid_absolute"])
+    for index, sample in enumerate(clocks["valid_duration"]):
+        row = document["clock_vectors"][start + index]
+        if row["request"]["arguments"].get("delay_nanoseconds") != sample or \
+                row["after"]["helper_artifact"]["records"][0]["deadline_at"] != sample or \
+                row["expected_calls"]["clock"] != 1:
+            raise TimerHelperValidationError("duration signed-64 clock boundary changed")
+    start += len(clocks["valid_duration"])
+    for field, samples in (("deadline_at", clocks["invalid_absolute"]),
+                           ("delay_nanoseconds", clocks["invalid_duration"])):
+        for index, sample in enumerate(samples):
+            row = document["clock_vectors"][start + index]
+            if row["request"]["arguments"].get(field) != sample or \
+                    row["expected_result"]["error_code"] != "invalid_timer_time" or \
+                    row["expected_calls"]["clock"] != 0:
+                raise TimerHelperValidationError("noncanonical timer time did not fail before clock access")
+        start += len(samples)
+    for index, sample in enumerate(clocks["cases"]):
+        row = document["clock_vectors"][start + index]
+        if row["request"]["arguments"]["delay_nanoseconds"] != sample["duration"] or \
+                row["trusted_now"] != sample["now"] or \
+                row["expected_calls"]["clock"] != 1:
+            raise TimerHelperValidationError("trusted duration clock premise changed")
+        if "expected_deadline" in sample:
+            if row["after"]["helper_artifact"]["records"][0]["deadline_at"] != sample["expected_deadline"] or \
+                    int(sample["now"]) + int(sample["duration"]) != int(sample["expected_deadline"]):
+                raise TimerHelperValidationError("checked signed-64 duration addition changed")
+        elif row["expected_result"]["error_code"] != sample["expected_error"] or \
+                row["before"] != row["after"]:
+            raise TimerHelperValidationError("overflow or unavailable clock mutated timer state")
     export = json.loads(expected_files["archive-export.generated.json"])
     stage = json.loads(expected_files["archive-stage.generated.json"])
     archive_schemas = validator_registry(spec_root)
