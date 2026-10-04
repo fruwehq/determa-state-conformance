@@ -1,0 +1,41 @@
+title: source ownership, atomic admission, and retained replay
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+    - { file: outbox-machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: before-admission-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: after-admission-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: after-unhandled-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: after-second-admission-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: after-deferral-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: after-received-admission-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: after-recall-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: native-pending-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: native-ambiguous-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: native-confirmed-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: native-dead-lettered-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: native-emission-core-step-result-v1.json, kind: core_step_result_v1, valid: true }
+    - { file: delivery-vectors-v1.json, kind: lossless_delivery_v1, valid: true }
+lossless_delivery_vectors:
+  - first_committed_admission
+  - equal_redelivery_after_lost_ack
+  - unequal_source_identity_conflict
+  - precommit_write_failure_keeps_source
+  - crash_before_atomic_commit
+  - crash_after_atomic_commit_before_ack
+  - redelivery_after_commit_crash
+  - stale_owner_equal_replay_refused
+  - batch_second_invalid_keeps_all_source_owned
+  - source_ordered_pressure_blocks_later_item
+  - source_owned_backpressure
+  - removed_target_keeps_source
+  - machine_unhandled_after_admission
+  - first_durable_poison_transfer
+  - equal_poison_redelivery
+  - deferred_keeps_original_acceptance
+  - structural_recall_reuses_acceptance
+  - outbound_ambiguous_remains_pending
+  - outbound_confirmed_is_destination_acceptance
+  - outbound_dead_letter_transfer

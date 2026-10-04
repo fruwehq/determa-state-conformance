@@ -35,6 +35,8 @@ migrated suite.
   checkpoint profile.
 - `conformance/profiles/application-projection/` — the optional SPEC §20 selected-row
   lossless projection and embedded facade profile.
+- `conformance/profiles/lossless-delivery/` — the optional SPEC §21 source,
+  mailbox, dead-letter, and outbound responsibility profile.
 - `conformance/closed-code-registry/registry.json` — the single machine-readable
   authority for closed portable failure, rejection, fault, and disposition sets.
 - `conformance/closed-code-registry/vectors.generated.json` — the generated
@@ -54,6 +56,12 @@ capability, deferred-payload capacity, pending intents, declaration-change repla
 `VERSION` and machine `format: 1` are unchanged. The `env` refresh and committed `action_fault` variants use separate
 checkpoint-backed projection witnesses with unchanged selected row values on the
 fault path.
+
+The optional lossless-delivery profile adds forty-seven version-1 vectors for source
+ownership, atomic admission and crash recovery, mailbox placement, terminal
+disposition, ingress dead letters, complete outbound intents, destination receipts,
+malformed inputs, and invalid evidence links. Its [runner contract](conformance/profiles/lossless-delivery/README.md)
+uses the exact caller request and complete before/after host evidence.
 
 ## Release 0.3.0
 

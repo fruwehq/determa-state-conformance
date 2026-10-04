@@ -55,6 +55,11 @@ jobs:
       - name: Test application-projection relational validation
         run: python scripts/test_application_projection_validator.py
 
+      - name: Test lossless-delivery relational and raw response validation
+        run: >-
+          python scripts/test_lossless_delivery_validator.py
+          --spec-root .determa-state-spec
+
       - name: Test version-1 substitution-free validation
         run: python scripts/test_version1_validator.py
 
@@ -84,6 +89,11 @@ jobs:
 
       - name: Check generated application-projection fixtures
         run: python scripts/generate_application_projection_profile.py --check
+
+      - name: Check generated lossless-delivery fixtures
+        run: >-
+          python scripts/generate_lossless_delivery_profile.py
+          --spec-root .determa-state-spec --check
       - name: Test inspection relational validation
         run: python scripts/test_inspection_validator.py
 
