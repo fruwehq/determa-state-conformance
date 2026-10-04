@@ -1,0 +1,1 @@
+{"files":[{"path":"provider/test_provider.py","sha256":"sha256:8b66747ce806072f8985022010f7b7cbcc91d7921d25039d7b571deabfeda0c3"},{"path":"provider/test_provider.rs","sha256":"sha256:f511a3f65bdf4dd138b63f837b11199dbb898514a802fa692f70414b9fe24e32"}],"format":"determa.test_inspection_provider_closure","version":1}
