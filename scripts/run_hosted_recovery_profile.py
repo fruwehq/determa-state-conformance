@@ -14,7 +14,8 @@ import tempfile
 from validate_portable_archive import canonical, digest, parse_json_bytes, read_json
 from validate_recovery_profile import CASE, validate_profile
 from run_recovery_profile import run_case
-from run_lossless_delivery_profile import verify_delivery_proof_summary
+from run_lossless_delivery_profile import (verify_delivery_proof_summary,
+    verify_configured_delivery_profile)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -74,6 +75,11 @@ def observed_binding(command: list[str], authority_command: list[str],
             summary['configured_delivery_profile']['authority_report_digest']:
         raise ValueError('C/D actual configured report differs from same-run native proof')
     delivery = summary['configured_delivery_profile']
+    links = {key: delivery[key] for key in (
+        'authority_report_digest', 'effect_report_digest',
+        'host_scope_identity', 'host_topology_identifier')}
+    if verify_configured_delivery_profile(command, summary['parent_run_id'], links) != delivery:
+        raise ValueError('§21 actual configured delivery report changed after native proof')
     recovery_response = call(command, {'kind': 'configured_recovery_profile'},
                              '§24 configured recovery')
     report, raw = report_bytes(recovery_response, '§24 configured recovery')
