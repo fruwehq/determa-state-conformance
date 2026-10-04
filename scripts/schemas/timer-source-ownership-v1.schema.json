@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Timer source ownership and admission binding version 1",
+  "type": "object",
+  "properties": {
+    "fixture_format": {"const": "determa.timer_helper.source_ownership"},
+    "fixture_schema_version": {"const": 1},
+    "request": {"$ref": "https://determa.dev/state/schema/delivery-v1.schema.json#/$defs/request"},
+    "before_checkpoint": {"$ref": "https://determa.dev/state/schema/execution-checkpoint-v1.schema.json"},
+    "after_checkpoint": {"$ref": "https://determa.dev/state/schema/execution-checkpoint-v1.schema.json"},
+    "admission_binding": {"$ref": "https://determa.dev/state/schema/delivery-v1.schema.json#/$defs/admission_binding"},
+    "acceptance_receipt": {"type": "object"},
+    "acknowledge_after_commit": {"type": "object", "properties": {
+      "source_scope": {"type": "string", "minLength": 1},
+      "source_delivery_id": {"type": "string", "minLength": 1}
+    }, "required": ["source_scope", "source_delivery_id"], "additionalProperties": false}
+  },
+  "required": ["fixture_format", "fixture_schema_version", "request", "before_checkpoint",
+    "after_checkpoint", "admission_binding", "acceptance_receipt", "acknowledge_after_commit"],
+  "additionalProperties": false
+}

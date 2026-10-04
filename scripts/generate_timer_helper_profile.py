@@ -9,7 +9,8 @@ import json
 from pathlib import Path
 
 from ruamel.yaml import YAML
-from generate_version1_vectors import canonical, digest, bundle_fingerprint_document, seal_checkpoint
+from generate_version1_vectors import (canonical, digest, typed_value,
+                                       bundle_fingerprint_document, seal_checkpoint)
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / "conformance/profiles/timer-helper/timer-01-external-helper"
@@ -256,8 +257,41 @@ def render(spec_root: Path):
                  "expected_after_step_checkpoint": after_step,
                  "expected_results": [first_row["expected_result"], claim_row["expected_result"], fire_row["expected_result"]],
                  "expected_fire_envelope": admission["committed_checkpoint"]["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"][0]["envelope"]}
+    envelope = lifecycle["expected_fire_envelope"]
+    source_scope = first_row["request"]["scope_identity"]
+    source_delivery_id = digest(["determa-timer-source-delivery-1",
+        first_row["request"]["root_instance_id"], first_row["request"]["root_runtime_id"],
+        first_row["request"]["timer_id"]])
+    content = {"content_kind": "canonical_transport_value", "content_value": typed_value(envelope)}
+    source_content_digest = digest(["determa-delivery-source-content-digest-1", "1",
+        source_scope, source_delivery_id, content["content_kind"], content["content_value"]])
+    ingress_request = {"delivery_message_kind": "ingress_request", "source": {
+        "source_scope": source_scope, "source_delivery_id": source_delivery_id,
+        "source_content_digest": source_content_digest, "content": content},
+        "envelope": envelope, "delivery_mode": "input"}
+    checkpoint = lifecycle["expected_admitted_checkpoint"]
+    acceptance = checkpoint["operation_receipts"][-1]
+    evidence = {"operation_kind": "acceptance", "checkpoint": {
+        "root_instance_id": checkpoint["root_instance_id"], "checkpoint_revision": checkpoint["revision"],
+        "execution_checkpoint_digest": checkpoint["execution_checkpoint_digest"]},
+        "receipt_sequence": acceptance["receipt_sequence"],
+        "acceptance_sequence": acceptance["acceptance_sequence"],
+        "envelope_digest": acceptance["request_digest"]}
+    binding = {"delivery_message_kind": "admission_binding", "source_scope": source_scope,
+        "source_delivery_id": source_delivery_id, "source_content_digest": source_content_digest,
+        "event_id": envelope["event_id"], "envelope_digest": acceptance["request_digest"],
+        "evidence": evidence}
+    binding["admission_binding_digest"] = digest(["determa-admission-binding-digest-1", "1", binding])
+    ownership = {"fixture_format": "determa.timer_helper.source_ownership",
+        "fixture_schema_version": 1, "request": ingress_request,
+        "before_checkpoint": lifecycle["expected_create_checkpoint"],
+        "after_checkpoint": checkpoint, "admission_binding": binding,
+        "acceptance_receipt": acceptance,
+        "acknowledge_after_commit": {"source_scope": source_scope,
+                                     "source_delivery_id": source_delivery_id}}
     outputs = {"vectors.generated.json": canonical(value) + b"\n",
                "lifecycle.generated.json": canonical(lifecycle) + b"\n",
+               "source-ownership.generated.json": canonical(ownership) + b"\n",
                "archive-export.generated.json": canonical(json.loads((spec_root / NORM / "timer-archive-export-v1.json").read_text())) + b"\n",
                "archive-stage.generated.json": canonical(json.loads((spec_root / NORM / "timer-archive-stage-v1.json").read_text())) + b"\n",
                "target-machine.yaml": target_source,

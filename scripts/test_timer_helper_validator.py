@@ -33,6 +33,7 @@ def main():
         case.mkdir(parents=True)
         original = root / "conformance/profiles/timer-helper/timer-01-external-helper"
         for name in ("vectors.generated.json", "lifecycle.generated.json",
+                     "source-ownership.generated.json",
                      "archive-export.generated.json", "archive-stage.generated.json",
                      "target-machine.yaml", "machine.yaml", "test.yaml"):
             shutil.copyfile(original / name, case / name)
@@ -58,6 +59,7 @@ def main():
             ("lifecycle.generated.json", lambda d: d["expected_fire_envelope"].update(event_id="wrong")),
             ("archive-export.generated.json", lambda d: d["input_request"].update(required_participant_ids=[])),
             ("archive-stage.generated.json", lambda d: d["cases"][0].update(expected_staged_archive=None)),
+            ("source-ownership.generated.json", lambda d: d["request"]["source"].update(source_delivery_id="other")),
         ):
             changed = json.loads((original / file_name).read_text())
             edit(changed)

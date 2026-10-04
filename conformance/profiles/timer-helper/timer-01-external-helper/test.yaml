@@ -13,6 +13,9 @@ artifacts:
     - file: lifecycle.generated.json
       kind: json_value
       valid: true
+    - file: source-ownership.generated.json
+      kind: json_value
+      valid: true
 static:
   documents:
     - file: target-machine.yaml

@@ -257,4 +257,39 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
             terminal["resulting_aggregate_state_digest"] != lifecycle["expected_after_step_checkpoint"]["root_record"]["aggregate_state"]["aggregate_state_digest"] or \
             terminal["outcome"]["disposition"] != "unhandled":
         raise TimerHelperValidationError("step did not dispose of the fired event")
+    ownership = json.loads(expected_files["source-ownership.generated.json"])
+    source_schema = json.loads((repository_root / "scripts/schemas/timer-source-ownership-v1.schema.json").read_text())
+    Draft202012Validator.check_schema(source_schema)
+    source_errors = list(Draft202012Validator(source_schema, registry=registry).iter_errors(ownership))
+    if source_errors:
+        raise TimerHelperValidationError(f"timer delivery source schema: {source_errors[0].message}")
+    request = ownership["request"]
+    source = request["source"]
+    expected_source_id = digest(["determa-timer-source-delivery-1",
+        lifecycle["schedule_request"]["root_instance_id"],
+        lifecycle["schedule_request"]["root_runtime_id"],
+        lifecycle["schedule_request"]["timer_id"]])
+    if source["source_scope"] != lifecycle["schedule_request"]["scope_identity"] or \
+            source["source_delivery_id"] != expected_source_id or \
+            source["content"]["content_value"] != typed_value(envelope) or \
+            source["source_content_digest"] != digest(["determa-delivery-source-content-digest-1",
+                "1", source["source_scope"], source["source_delivery_id"],
+                source["content"]["content_kind"], source["content"]["content_value"]]):
+        raise TimerHelperValidationError("timer source identity or immutable content changed")
+    binding = ownership["admission_binding"]
+    if binding["admission_binding_digest"] != digest(["determa-admission-binding-digest-1", "1",
+            {key: value for key, value in binding.items() if key != "admission_binding_digest"}]) or \
+            binding["source_scope"] != source["source_scope"] or \
+            binding["source_delivery_id"] != source["source_delivery_id"] or \
+            binding["source_content_digest"] != source["source_content_digest"] or \
+            binding["event_id"] != envelope["event_id"] or \
+            binding["envelope_digest"] != receipt["request_digest"] or \
+            binding["evidence"]["checkpoint"]["execution_checkpoint_digest"] != \
+                lifecycle["expected_admitted_checkpoint"]["execution_checkpoint_digest"] or \
+            ownership["before_checkpoint"] != lifecycle["expected_create_checkpoint"] or \
+            ownership["after_checkpoint"] != lifecycle["expected_admitted_checkpoint"] or \
+            ownership["acceptance_receipt"] != receipt or \
+            ownership["acknowledge_after_commit"] != {
+                "source_scope": source["source_scope"], "source_delivery_id": source["source_delivery_id"]}:
+        raise TimerHelperValidationError("timer ingress binding or checkpoint ownership changed")
     return len(document["cases"]), len(document["clock_vectors"]), len(document["fence_vectors"]), 3
