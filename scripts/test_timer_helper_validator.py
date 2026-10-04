@@ -103,6 +103,7 @@ def main():
     with tempfile.TemporaryDirectory() as temporary:
         delivery_case = Path(temporary)
         timer_delivery = json.loads((timer_case / "timer-delivery.generated.json").read_text())
+        all_timer_vectors = timer_delivery["vectors"]
         first_ingress = timer_delivery["vectors"][0]
         timer_delivery["vectors"] = [first_ingress]
         (delivery_case / "delivery-vectors-v1.json").write_text(json.dumps(timer_delivery))
@@ -145,6 +146,55 @@ def main():
                     raise AssertionError(f"{mode}: wrong rejection: {error}") from error
             else:
                 raise AssertionError(f"accepted {mode} with native C/D/H bytes but no real complete_fire")
+        crash, replay = all_timer_vectors[1:3]
+        timer_delivery["vectors"] = [crash, replay]
+        (delivery_case / "delivery-vectors-v1.json").write_text(json.dumps(timer_delivery))
+        crashed_after = json.loads(json.dumps(crash["after"]))
+        crashed_after["checkpoint"] = json.loads((delivery_case / crashed_after["checkpoint"]).read_text())
+        replayed_after = json.loads(json.dumps(replay["after"]))
+        replayed_after["checkpoint"] = json.loads((delivery_case / replayed_after["checkpoint"]).read_text())
+        raw_complete = next(item["result"] for item in crashed_after["timer_artifact"]["operation_receipts"]
+                            if item["operation_id"] == crash["timer_fire_context"]["complete_request"]["operation_id"])
+        fake_ingress.write_text(
+            "import json,sys,uuid\nfrom pathlib import Path\n"
+            f"sys.path.insert(0,{str(root / 'scripts')!r})\n"
+            "from run_lossless_delivery_profile import store_call,transport_call,digest\n"
+            "from validate_conformance import canonical_json_bytes\n"
+            "r=json.load(sys.stdin)\n"
+            "host=Path(r['host_store_database_path'])\n"
+            "if r['fault_injection']=='crash_after_commit_before_ack':\n"
+            " i=r['trusted_timer_invocation']\n"
+            " transport_call(Path(r['transport_database_path']),'fetch',**r['source_references'][0])\n"
+            " store_call(host,'timer_invocation_start',run_id=r['run_id'],"
+            "invocation_id=i['invocation_id'],request_digest=i['request_digest'],"
+            "factory_identity=i['factory_identity'],bridge_identity=i['bridge_identity'],"
+            "public_request=i['public_request'])\n"
+            " store_call(host,'commit',run_id=r['run_id'],operation_id=r['operation_id'],"
+            "expected_before_digest=digest(canonical_json_bytes(r['before'])),"
+            f"after={crashed_after!r},"
+            f"timer_invocation_receipt={{'invocation_id':i['invocation_id'],'raw_return':{raw_complete!r}}},"
+            "crash_after_commit=True)\n"
+            "else:\n"
+            " prior=store_call(host,'snapshot',run_id=r['run_id'])['after']\n"
+            " context=r['timer_fire_context']\n"
+            " store_call(host,'timer_invocation_start',run_id=r['run_id'],"
+            "invocation_id=str(uuid.uuid4()),request_digest=digest(canonical_json_bytes(context)),"
+            "factory_identity='reviewed:timer',bridge_identity='reviewed:bridge',"
+            "public_request=context)\n"
+            " store_call(host,'commit',run_id=r['run_id'],operation_id=r['operation_id'],"
+            "expected_before_digest=digest(canonical_json_bytes(prior)),"
+            f"after={replayed_after!r})\n"
+            f" sys.stdout.buffer.write(canonical_json_bytes({{'response':{replay['expected_response']!r},"
+            f"'after':{replayed_after!r},'native_evidence':{{}}}}))\n")
+        try:
+            run_delivery_case([sys.executable, str(fake_ingress)], delivery_case,
+                              timer_bridge_anchor={"factory_identity": "reviewed:timer",
+                                                   "bridge_identity": "reviewed:bridge"})
+        except AssertionError as error:
+            if "replay invoked complete_fire twice" not in str(error):
+                raise AssertionError(f"timer replay: wrong rejection: {error}") from error
+        else:
+            raise AssertionError("accepted a second complete_fire invocation after committed crash")
     export = json.loads((timer_case / "archive-operational.generated.json").read_text())
     lifecycle = json.loads((timer_case / "lifecycle.generated.json").read_text())
     captured = {"checkpoint": lifecycle["expected_create_checkpoint"],
