@@ -208,6 +208,8 @@ def main():
     completed_request_digests = {row["request"]["request_digest"]
         for row in [*document["cases"], *document["clock_vectors"], *document["fence_vectors"]]
         if "request_digest" in row["request"]}
+    completed_request_digests.update(lifecycle[name]["request_digest"] for name in (
+        "schedule_request", "cancel_request", "claim_request", "complete_request"))
     verify_configured(call(args.adapter, {"kind": "configured_timer_helper"}, "configured_timer_helper"),
                       args.spec_root, completed_request_digests)
     print(f"{len(document['cases'])} normative timer operations, {len(document['clock_vectors'])} clock boundaries, {len(document['fence_vectors'])} claim fences, one lifecycle and 3 archive participant cases passed with configured proof")
