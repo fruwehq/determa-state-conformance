@@ -7,10 +7,11 @@ import copy
 import json
 from pathlib import Path
 
-from validate_portable_archive import CASE, FILES, canonical, decode_typed, digest, without
+from validate_portable_archive import ROOT, CASE, FILES, canonical, decode_typed, digest, without
 
 from generate_version1_vectors import native_v1_checkpoint, normalized_bundle, seal_aggregate, seal_checkpoint, typed_value
-from generate_execution_checkpoint_profile import admit, start_spawned_runtime, host_mailbox_entry, add_existing_acceptance
+from generate_execution_checkpoint_profile import (admit, start_spawned_runtime,
+    host_mailbox_entry, add_existing_acceptance, checkpoint_from_aggregate)
 
 
 def build_owned_component() -> dict[str, bytes]:
@@ -40,23 +41,34 @@ def build_owned_component() -> dict[str, bytes]:
     checkpoint['revision'] = str(int(checkpoint['revision']) + 1)
     checkpoint['root_record']['aggregate_state'] = seal_aggregate(aggregate)
     checkpoint = seal_checkpoint(checkpoint)
-    bundle = normalized_bundle(machine)
-    definition = {'validated_bundle_fingerprint': aggregate['validated_bundle_fingerprint'],
-                  'normalized_bundle': typed_value(bundle)}
+    nested_machine = CASE / 'nested-component-machine.yaml'
+    nested_aggregate = json.loads((ROOT / 'conformance/core/117-version1-mailboxes/reserved-admission-before.json').read_bytes())
+    nested_checkpoint = checkpoint_from_aggregate(
+        nested_aggregate, creation_digest=digest(['determa-inactive-component-fixture-1']))
+    definitions = sorted([
+        {'validated_bundle_fingerprint': aggregate['validated_bundle_fingerprint'],
+         'normalized_bundle': typed_value(normalized_bundle(machine))},
+        {'validated_bundle_fingerprint': nested_aggregate['validated_bundle_fingerprint'],
+         'normalized_bundle': typed_value(normalized_bundle(nested_machine))},
+    ], key=lambda item: item['validated_bundle_fingerprint'])
+    checkpoints = sorted([checkpoint, nested_checkpoint],
+                         key=lambda item: item['root_instance_id'])
     normative = json.loads((CASE / 'stage-cases-v1.json').read_bytes())
     core = next(case for case in normative['cases']
                 if case['case_id'] == 'standalone_core_without_participants')
     archive = copy.deepcopy(core['input_archive'])
-    archive['selection'] = {'root_instance_ids': [checkpoint['root_instance_id']],
+    archive['selection'] = {'root_instance_ids': [item['root_instance_id'] for item in checkpoints],
                             'consistency_token': 'archive-owned-capture-1'}
-    archive['checkpoints'] = [checkpoint]
-    archive['normalized_definitions'] = [definition]
+    archive['checkpoints'] = checkpoints
+    archive['normalized_definitions'] = definitions
     archive['migration_descriptors'] = []
     archive['members'] = [
-        {'identity': 'checkpoint:' + checkpoint['root_instance_id'],
-         'digest': digest(checkpoint), 'byte_length': str(len(canonical(checkpoint)))},
-        {'identity': 'definition:' + definition['validated_bundle_fingerprint'],
-         'digest': digest(definition), 'byte_length': str(len(canonical(definition)))},
+        *[{'identity': 'checkpoint:' + item['root_instance_id'],
+           'digest': digest(item), 'byte_length': str(len(canonical(item)))}
+          for item in checkpoints],
+        *[{'identity': 'definition:' + item['validated_bundle_fingerprint'],
+           'digest': digest(item), 'byte_length': str(len(canonical(item)))}
+          for item in definitions],
     ]
     archive['required_determa_capabilities'] = [
         'normalized_definition', 'portable_archive', 'portable_checkpoint']
@@ -69,12 +81,13 @@ def build_owned_component() -> dict[str, bytes]:
     export['case_id'] = 'owned_component_deferred_export'
     export['input_request']['root_instance_ids'] = archive['selection']['root_instance_ids']
     export['input_request']['consistency_token'] = archive['selection']['consistency_token']
-    export['source_capture']['checkpoints'] = [checkpoint]
-    export['source_capture']['normalized_definitions'] = [definition]
+    export['source_capture']['checkpoints'] = checkpoints
+    export['source_capture']['normalized_definitions'] = definitions
     export['source_capture']['migration_descriptors'] = []
     evidence = export['source_capture']['inventory_evidence']
     evidence['committed_consistency_token'] = archive['selection']['consistency_token']
-    evidence['selected_checkpoint_digests'] = [checkpoint['execution_checkpoint_digest']]
+    evidence['selected_checkpoint_digests'] = [item['execution_checkpoint_digest']
+                                               for item in checkpoints]
     export['expected_archive'] = archive
     export['expected_result']['archive_digest'] = archive['archive_digest']
     stage = copy.deepcopy(core)
@@ -88,12 +101,16 @@ def build_owned_component() -> dict[str, bytes]:
     stage.pop('changed_paths_from_positive')
     value = {'fixture_format': 'determa.archive_owned_component_vectors',
              'fixture_schema_version': 1,
-             'source_checkpoint': 'owned-component-checkpoint-v1.json',
-             'source_machine': 'owned-component-machine.yaml',
+             'source_checkpoints': ['owned-component-checkpoint-v1.json',
+                                    'nested-component-checkpoint-v1.json'],
+             'source_machines': ['owned-component-machine.yaml',
+                                 'nested-component-machine.yaml'],
              'export_case': export, 'stage_case': stage}
     return {
         'owned-component-checkpoint-v1.json':
             (json.dumps(checkpoint, indent=2, ensure_ascii=True) + '\n').encode(),
+        'nested-component-checkpoint-v1.json':
+            (json.dumps(nested_checkpoint, indent=2, ensure_ascii=True) + '\n').encode(),
         'owned-component-archive-v1.json':
             (json.dumps(archive, indent=2, ensure_ascii=True) + '\n').encode(),
         'owned-component-vectors-v1.json':
@@ -116,6 +133,13 @@ def main() -> int:
         else:
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(expected)
+    nested_source = ROOT / 'conformance/core/117-version1-mailboxes/component-machine.yaml'
+    nested_target = CASE / 'nested-component-machine.yaml'
+    if args.check:
+        if nested_target.read_bytes() != nested_source.read_bytes():
+            raise SystemExit('nested-component-machine.yaml: source machine drift')
+    else:
+        nested_target.write_bytes(nested_source.read_bytes())
     archive = json.loads((source / 'archive-v1.json').read_bytes())
     for index, attachment in enumerate(archive['normalized_definitions'], 1):
         name = f'definition-{index:02d}.json'

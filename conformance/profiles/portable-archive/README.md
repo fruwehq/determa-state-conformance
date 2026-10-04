@@ -2,7 +2,8 @@
 
 `archive-01-complete-snapshot` carries the pinned, complete normative raw vectors:
 9 export and 43 import-stage cases. It also carries one independently generated
-export and stage pair with an owned spawned instance and a deferred child envelope.
+export and stage pair with two selected roots: an owned spawned instance with a
+deferred child envelope, and a parallel root with two nested component runtimes.
 The normative cases include the four-root snapshot, normalized
 definitions, migration descriptor, owned ready/deferred queues, receipts, faults,
 pending and terminal intents, compact tombstone, optional helper participant, and
@@ -22,8 +23,15 @@ uses the existing native checkpoint creation, admission, and spawn lifecycle
 helpers, then applies one core deferral step to the accepted child envelope. Its
 closed `owned-component-checkpoint-v1.json` retains the root and owned instance,
 the child deferred envelope, acceptance receipt, queue and step counters, and the
-actual bundle fingerprint. `owned-component-archive-v1.json` attaches that exact
-checkpoint and normalized definition. `owned-component-vectors-v1.json` supplies
+actual bundle fingerprint. `nested-component-machine.yaml` is byte-identical to
+the executable core `117-version1-mailboxes/component-machine.yaml` source.
+`nested-component-checkpoint-v1.json` wraps its complete
+`reserved-admission-before.json` aggregate through the existing §17
+`checkpoint_from_aggregate` helper. It retains one completed and one running
+component runtime. The validator resolves both components, their pointers and
+identities against that machine through `validate_aggregate_against_bundle`.
+`owned-component-archive-v1.json` attaches both exact checkpoints and normalized
+definitions. `owned-component-vectors-v1.json` supplies
 complete export source capture, independent standalone import policy, exact archive
 and result bytes, and an inert stage outcome. The production adapter receives the
 same raw inputs as the normative cases; the runner does not send its case ID or
@@ -63,7 +71,9 @@ standalone takeover, relocation, clone, and activation belong to later recovery 
 The repository validator verifies pinned schema bytes, archive/member/nested hashes,
 closure, fixture schemas, positive stage bytes, inert observations, and every declared
 case ID. The selected normative checkpoints have one runtime each; the supplemental
-archive covers an owned spawned instance and deferred child work. That source check does not certify an
+archive covers the owned spawned instance, deferred child work, and nested components.
+The adversarial driver test removes the nested components from a staged result and
+requires rejection. That source check does not certify an
 implementation. The production driver
 must be run by the implementation or host CI. The optional §19 journal gate is
 conditional on a source claiming `durable_native_results`; this fixture supplies

@@ -308,6 +308,7 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
     machine_names = {f'definition-{index:02d}.json'
                      for index in range(1, len(archive['normalized_definitions']) + 1)}
     owned_names = {'owned-component-machine.yaml', 'owned-component-checkpoint-v1.json',
+                   'nested-component-machine.yaml', 'nested-component-checkpoint-v1.json',
                    'owned-component-archive-v1.json', 'owned-component-vectors-v1.json'}
     require({path.name for path in CASE.iterdir()} == set(FILES) | {'test.yaml'} | machine_names | owned_names,
             'archive fixture file inventory')
@@ -341,12 +342,23 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
                 name + ': independent lifecycle derivation')
     owned_archive = read_json(CASE / 'owned-component-archive-v1.json')
     owned_checkpoint = read_json(CASE / 'owned-component-checkpoint-v1.json')
-    require(owned_archive['checkpoints'] == [owned_checkpoint] and
+    nested_checkpoint = read_json(CASE / 'nested-component-checkpoint-v1.json')
+    require(nested_checkpoint == read_json(ROOT /
+        'conformance/profiles/execution-checkpoint/checkpoint-07-complete-host-contract/inactive-component-checkpoint-v1.json'),
+        'nested component checkpoint provenance')
+    require(owned['source_checkpoints'] == ['owned-component-checkpoint-v1.json',
+                                            'nested-component-checkpoint-v1.json'] and
+            owned['source_machines'] == ['owned-component-machine.yaml',
+                                         'nested-component-machine.yaml'] and
+            owned_archive['checkpoints'] == [owned_checkpoint, nested_checkpoint] and
             len(owned_checkpoint['root_record']['aggregate_state']['runtimes']) == 2 and
             any(runtime['relation']['kind'] == 'owned_spawned_instance' and
                 len(runtime['deferred_mailbox']) == 1
-                for runtime in owned_checkpoint['root_record']['aggregate_state']['runtimes']),
-            'owned instance and deferred envelope witness')
+                for runtime in owned_checkpoint['root_record']['aggregate_state']['runtimes']) and
+            len(nested_checkpoint['root_record']['aggregate_state']['runtimes']) == 3 and
+            sum(runtime['relation']['kind'] == 'component' for runtime in
+                nested_checkpoint['root_record']['aggregate_state']['runtimes']) == 2,
+            'owned instance, nested components, and deferred envelope witness')
     validate_archive_integrity(owned_archive, validators)
     for name in SCHEMAS:
         aliases = {'archive-v1': 'archive_schema_digest',
@@ -392,6 +404,15 @@ def validate_profile(spec_root: Path, *, enforce_pin: bool = True) -> int:
             owned_checkpoint['root_record']['aggregate_state'], owned_machine)
     except ValidationFailure as error:
         raise ArchiveValidationError(f'owned component resolver: {error}') from error
+    nested_machine = CASE / 'nested-component-machine.yaml'
+    require(validated_bundle_fingerprint(nested_machine) ==
+            nested_checkpoint['root_record']['aggregate_state']['validated_bundle_fingerprint'],
+            'nested component machine fingerprint')
+    try:
+        validate_aggregate_against_bundle(
+            nested_checkpoint['root_record']['aggregate_state'], nested_machine)
+    except ValidationFailure as error:
+        raise ArchiveValidationError(f'nested component resolver: {error}') from error
     require(hashes['archive_digest'] == archive['archive_digest'], 'archive golden digest')
     require(export['cases'][0]['expected_archive'] == archive and
             stage['cases'][0]['input_archive'] == archive,

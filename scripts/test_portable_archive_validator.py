@@ -85,11 +85,36 @@ def main() -> int:
         rejected('incomplete actual response', lambda: run_case(['adapter'], 'stage', stage_case))
     assert set(captured[0]) == {'operation', 'request', 'input_archive', 'configured_import'}
     assert 'case_id' not in captured[0] and 'expected_result' not in captured[0]
+    owned = read_json(CASE / 'owned-component-vectors-v1.json')['stage_case']
+    dropped = copy.deepcopy(owned['expected_staged_archive'])
+    nested = next(item for item in dropped['checkpoints']
+                  if item['root_instance_id'] == 'component-migration-root')
+    nested['root_record']['aggregate_state']['runtimes'] = [
+        runtime for runtime in nested['root_record']['aggregate_state']['runtimes']
+        if runtime['relation']['kind'] != 'component']
+    observation = {key: [] for key in ('active_scopes', 'authority_grants',
+                                       'credentials', 'checkpoints', 'host_journals',
+                                       'participant_storage', 'staged_archives')}
+    response = {'result': owned['expected_result'], 'archive': None,
+                'staged_archive': dropped, 'before': observation,
+                'after': {**observation, 'staged_archives': [{
+                    'staging_identity': owned['input_request']['staging_identity'],
+                    'archive': dropped}]},
+                'calls': {key: 0 for key in ('core_create', 'core_admit', 'core_step',
+                    'core_migration', 'worker_claim', 'effect_dispatch', 'timer_poll',
+                    'clock_read', 'authority_grant', 'credentials_create')}}
+    class DroppedResult:
+        returncode = 0
+        stderr = b''
+        stdout = json.dumps(response).encode()
+    with patch('run_portable_archive_profile.subprocess.run', return_value=DroppedResult()):
+        rejected('adapter dropped nested component',
+                 lambda: run_case(['adapter'], 'stage', owned))
     raw_probes = (b'{"x":1,"x":2}', b'{"x":NaN}', b'{"x":1e999}',
                   b'{"x":"\\ud800"}', b'{"x":9223372036854775808}')
     for index, raw in enumerate(raw_probes):
         rejected(f'raw JSON {index}', lambda raw=raw: parse_json_bytes(raw, 'probe'))
-    print(f'rejected {len(probes) + 3 + len(raw_probes)} archive and driver substitutions')
+    print(f'rejected {len(probes) + 4 + len(raw_probes)} archive and driver substitutions')
     return 0
 
 

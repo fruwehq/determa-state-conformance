@@ -59,7 +59,7 @@ fault path.
 
 The optional [portable-archive profile](conformance/profiles/portable-archive/README.md)
 adds 52 complete export and inert staging vectors from the pinned §22 examples,
-plus an owned-instance/deferred-queue export and stage pair.
+plus an owned-instance, nested-component, and deferred-queue export and stage pair.
 The repository checks the raw artifacts and their relationships; implementations
 claiming the profile run the production adapter driver for an operational result.
 
