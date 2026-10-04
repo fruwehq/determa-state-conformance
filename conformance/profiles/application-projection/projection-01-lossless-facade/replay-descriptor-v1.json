@@ -1,0 +1,34 @@
+{
+  "mappings": {
+    "active_states": [],
+    "components": [],
+    "counters": [],
+    "history": [],
+    "lifetime_holders": [],
+    "machines": [],
+    "owned_runtimes": [],
+    "variables": []
+  },
+  "migration_descriptor_format": "determa.aggregate_migration",
+  "migration_descriptor_schema_version": 1,
+  "mode": "compatible",
+  "queued_event_default": "preserve_if_compatible",
+  "queued_event_rules": [],
+  "resource_requirements": {
+    "maximum_cel_ast_nodes": "0",
+    "maximum_cel_evaluation_steps": "0",
+    "maximum_cel_expression_length": "0",
+    "maximum_transformed_output_bytes": "0"
+  },
+  "source_aggregate_shape_fingerprint": "sha256:a122545e4a5acc2e7cf7f06a0955db09236e2cadb2506fade5f10f868157251a",
+  "source_machine_format": 1,
+  "source_validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+  "target_aggregate_shape_fingerprint": "sha256:a122545e4a5acc2e7cf7f06a0955db09236e2cadb2506fade5f10f868157251a",
+  "target_machine_format": 1,
+  "target_validated_bundle_fingerprint": "sha256:4493d3aa8ad0deb2b3a2d295c9de0b390c0bc98cc773b86bf3cd4582e2b628a4",
+  "terminal_policy": {
+    "completed": "preserve",
+    "faulted": "preserve"
+  },
+  "migration_descriptor_digest": "sha256:b0a0c73a4976d527c64a9acabbd47341d36d32350953e3e16310b67b2f26fe6d"
+}

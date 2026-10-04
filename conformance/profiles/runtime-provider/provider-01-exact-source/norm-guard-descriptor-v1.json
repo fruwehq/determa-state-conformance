@@ -1,0 +1,26 @@
+{
+  "kind": "guard",
+  "binding": {
+    "provider_reference": {
+      "identifier": "example.native-review",
+      "version": "1.0.0",
+      "content_digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "source_media_type": "application/octet-stream",
+    "source_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "dependencies": [],
+    "capabilities": {
+      "deterministic": false,
+      "pure": false,
+      "portable": false,
+      "semantically_introspectable": false,
+      "process_contained": false,
+      "external_io_capable": true
+    },
+    "input_types": {
+      "event": "event_envelope",
+      "variables": "typed_variables"
+    },
+    "output_type": "bool"
+  }
+}

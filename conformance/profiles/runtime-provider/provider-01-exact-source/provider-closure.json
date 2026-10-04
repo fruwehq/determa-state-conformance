@@ -1,0 +1,1 @@
+{"files":[{"path":"provider/test_provider.py","sha256":"sha256:6efc30d91555be3a40f2c100bbae178180551bc1acaa4e33beee0de3372f27ac"},{"path":"provider/test_provider.rs","sha256":"sha256:52b44dfc7c7f0be90cc7f7678c9dd0fcb235de36f39615809ba84d5b2bb1cec4"}],"format":"determa.test_runtime_provider_closure","version":1}

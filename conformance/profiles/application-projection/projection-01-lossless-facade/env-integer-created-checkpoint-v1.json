@@ -1,0 +1,122 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "projection-env-integer-root",
+  "revision": "0",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+      "namespace": "conformance.application_projection_env",
+      "root_machine_id": "refresh_integer",
+      "root_machine_version": "1",
+      "root_instance_id": "projection-env-integer-root",
+      "creation_id": "projection-env-integer-create",
+      "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "1",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "0",
+      "next_queue_sequence": "0",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+              "machine": {
+                "namespace": "conformance.application_projection_env",
+                "machine_id": "refresh_integer",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/2/root"
+              }
+            },
+            "root_instance_id": "projection-env-integer-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "projection-env-integer-root",
+              "root_runtime_id": "sha256:e8ed7fcf1a21ff6459793c82324f704a0ee95f7cd9bd151544bf0a26e366d432"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:1c73d4a0bb51815fad8186fdb85f2b08ac6eda1525ca07d9b36f505bcbf7b5f9",
+            "machine": {
+              "namespace": "conformance.application_projection_env",
+              "machine_id": "refresh_integer",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/2/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/2/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/2/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/2/root/variables/amount",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "0"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/2/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:42a53c1b98efbfce4282be42cb0d3885506a791bfeca10d56c0dd35fa6e089d3"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "projection-env-integer-create",
+      "request_digest": "sha256:5152849bf87585567ee1de5d843eeb071370b8aedec2fa2cf21fb2530218cd0b",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:42a53c1b98efbfce4282be42cb0d3885506a791bfeca10d56c0dd35fa6e089d3",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    }
+  ],
+  "next_operation_receipt_sequence": "1",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:e65fb3470ac698f4f93a48657517d9f5f7c11906c7dc2de66cc85eebc23c03f1"
+}

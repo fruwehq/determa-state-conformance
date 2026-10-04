@@ -33,6 +33,8 @@ migrated suite.
 - `conformance/profiles/<profile>/` — optional, explicitly non-core host surfaces.
 - `conformance/profiles/execution-checkpoint/` — the optional SPEC §17 durable-host
   checkpoint profile.
+- `conformance/profiles/application-projection/` — the optional SPEC §20 selected-row
+  lossless projection and embedded facade profile.
 - `conformance/closed-code-registry/registry.json` — the single machine-readable
   authority for closed portable failure, rejection, fault, and disposition sets.
 - `conformance/closed-code-registry/vectors.generated.json` — the generated
@@ -42,6 +44,16 @@ migrated suite.
 
 Current fixture totals are reported by the repository validator rather than maintained
 as release promises in prose.
+
+## Unreleased 0.3.0 conformance additions
+
+The optional application-projection profile adds twenty-three closed, schema-version-1
+facade vectors for selected-row mapping, full checkpoint reconstruction, exact §8
+return fields, replay and conflict precedence, capacity rejection, transaction
+capability, deferred-payload capacity, pending intents, declaration-change replay, and compare-and-swap rollback. It is a pre-release 0.3.0 addition;
+`VERSION` and machine `format: 1` are unchanged. The `env` refresh and committed `action_fault` variants use separate
+checkpoint-backed projection witnesses with unchanged selected row values on the
+fault path.
 
 ## Release 0.3.0
 
@@ -67,6 +79,14 @@ python scripts/validate_conformance.py --spec-root ../determa-state-spec
 
 The supplied specification checkout must be the dependency revision under review; the
 workflow pins that revision by commit rather than following a mutable branch.
+
+Application-projection fixtures use a closed schema-version-1 manifest, exact selected-row
+and checkpoint evidence, and operation-specific facade results. The profile validates
+source-row type mapping, complete supplemental checkpoint reconstruction, replay and
+conflict precedence, failed-row rollback, and native shared-transaction capability.
+Lossless projection does not itself establish durability or scope authority. Run
+`python scripts/generate_application_projection_profile.py --check` and
+`python scripts/test_application_projection_validator.py` after editing its fixtures.
 
 Durable-host profile changes must also pass the deterministic profile generator:
 
@@ -407,6 +427,8 @@ implementations that declare a CLI profile, without queue introspection. Until t
 the absence of CLI cases is intentional and no CLI surface is portable conformance.
 
 The `extension-negotiation` profile fixes SPEC §11.5 public registration, exact provider identity, configuration, health, and closed capability decisions. Its 13 normative common-rule examples use hypothetical internal verification premises; 21 public API vectors bind the actually loaded test provider and publish no unproved claims. See [the profile README](conformance/profiles/extension-negotiation/README.md). Category-specific positive guarantees require their own operational profiles.
+
+The optional [runtime-provider profile](conformance/profiles/runtime-provider/README.md) fixes SPEC §5.4 exact executable source closure, provider output, weak native I/O, safe inspection, source compilation, and restoration in 30 vectors. It preserves all nine normative provider source examples and requires a separate production adapter run for an operational claim.
 
 The `execution-checkpoint` profile fixes the portable SPEC §17 durable-host lifecycle
 over the schema-version-1 checkpoint artifact. It covers native creation, ordered-batch
