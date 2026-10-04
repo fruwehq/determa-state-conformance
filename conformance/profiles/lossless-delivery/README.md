@@ -1,14 +1,17 @@
 # Lossless delivery profile
 
 This optional profile exercises SPEC §21 and binds only implementations that claim
-lossless delivery. The first-version driver supplies each positive vector's
-`operation`, `request`, `before`, and `fault_injection` to the implementation's
-production delivery adapter. The adapter returns its own response; the harness
-then captures the complete checkpoint, source bindings, ingress dead letters,
-source acknowledgements, retained destination receipts, and provider dispatch
-count. `name`, `replay_of`, `after`, and `expected_response` are withheld from the
-adapter. A crash cut returns no response. Replay repeats the original caller
-request and does not replace it with current checkpoint state.
+lossless delivery. The driver seeds a separate durable SQLite test transport
+with each original source item. It supplies source references and a provider
+command; the production adapter fetches the original content from that provider.
+For outbound delivery the adapter receives an effect identity and test route,
+then passes the complete committed intent to the installed destination provider.
+The expected provider result is withheld. The runner independently inspects the
+provider's persisted fetch, acknowledgement, and destination call journal as
+well as the complete host checkpoint, bindings, dead letters, and receipts.
+`name`, `replay_of`, `after`, and `expected_response` are withheld from the adapter.
+A crash cut returns no response. A new adapter process reads its persisted store
+after the crash; replay resumes that store with the original caller request.
 
 For an invalid vector, the harness supplies `operation`, `candidate`, and
 `before`, and compares the typed failure, acknowledgement decision, and complete
@@ -96,14 +99,24 @@ For a full operational claim, run
 The runner first executes all 43 §19 vectors through the same production
 adapter command. That runner invokes the §18 configured worker topology native
 proof and checks the loaded handler, destination, authority, and participant
-closure. The §21 runner then compares strict raw child JSON and the complete
-observed store after every invocation, withholding expected responses and case
-names. It also replays the five bound §19 operations through that same adapter
-with a delivery-observation flag, requiring direct response bytes, complete
-checkpoint and journal bytes, concrete core/provider call evidence, and zero
-broker source acknowledgements. It refuses a `source_ordered` configured report without a dedicated
-operational transport proof and runs 57 public delivery vectors in the full
-profile (52 with `--base-only`); the additional
-ordered-pressure common premise stays internal. `--base-only` runs the weaker standalone delivery claim without claiming
-§18 or §19. A passed source/schema check alone is fixture validation; configured
-destinations and hosts must actually prove durability and native transactions.
+closure. The §21 configured report and each native operation bind the exact
+authority and effect report digests, test transport source closure, source and
+destination configuration digests, and host storage configuration digest.
+The §21 runner compares strict raw child JSON, native transaction
+evidence, and a fresh-process read of the complete persisted host store after
+every invocation. The crash-after-commit replay uses the crashed operation's
+persisted session; the precommit crash retains source ownership. The runner
+reads the test transport independently and requires source fetches,
+acknowledgements bound to the committed checkpoint and transfer digest, and
+destination calls carrying complete intents with retained acceptance or dead
+letter receipts. At acknowledgement time the transport launches its own adapter
+process and refuses the ack unless the committed binding or dead letter is
+already visible in that process. The five bound §19 operations require the full
+§19 native observation and transaction proof from that adapter, plus host-owned
+result admission with no broker acknowledgement. It refuses a `source_ordered`
+configured report without a dedicated operational transport proof and runs 57
+public delivery vectors in the full profile (52 with `--base-only`); the
+additional ordered-pressure common premise stays internal. `--base-only` runs
+the weaker standalone delivery claim without claiming §18 or §19. A passed
+source/schema check alone is fixture validation; configured destinations and
+hosts must actually prove durability and native transactions.

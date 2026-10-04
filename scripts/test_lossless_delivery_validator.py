@@ -5,16 +5,19 @@ from __future__ import annotations
 import base64
 import argparse
 import copy
+import hashlib
 import json
 import sys
 import tempfile
 from pathlib import Path
 
-from validate_conformance import ValidationFailure, hash_value, load_fixture_document
+from validate_conformance import (ValidationFailure, canonical_json_bytes, hash_value,
+                                  load_fixture_document)
 from validate_lossless_delivery import validate_profile
 from run_lossless_delivery_profile import (run, run_integrations,
                                            run_core_observability, strict_document,
-                                           verify_configured_delivery_profile)
+                                           strict_child_document,
+                                           transport_call, verify_configured_delivery_profile)
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / 'conformance/profiles/lossless-delivery/delivery-01-source-transfer'
@@ -142,6 +145,12 @@ def main() -> int:
             pass
         else:
             raise AssertionError(f'{label}: response gate accepted malformed child bytes')
+    try:
+        strict_child_document(b'{"response": {}, "after": {}}', 'noncanonical child')
+    except ValueError:
+        pass
+    else:
+        raise AssertionError('runner accepted noncanonical child response bytes')
     with tempfile.TemporaryDirectory() as temporary:
         child = Path(temporary) / 'child.py'
         child.write_text('import sys\nsys.stdout.buffer.write(b\'{"response":{},"response":{},"after":{}}\')\n')
@@ -151,7 +160,7 @@ def main() -> int:
             pass
         else:
             raise AssertionError('runner accepted malformed production child output')
-        child.write_text('import sys\nsys.stdout.buffer.write(b\'{"response":{},"after":{}}\')\n')
+        child.write_text('import sys\nsys.stdout.buffer.write(b\'{"after":{},"native_evidence":{},"response":{}}\')\n')
         try:
             run([sys.executable, str(child)])
         except AssertionError:
@@ -175,7 +184,7 @@ def main() -> int:
         child.write_text('import sys\nsys.stdin.buffer.read()\nsys.stdout.buffer.write(b\'{"response_utf8":null,"checkpoint_after_utf8":"{}","journal_after_utf8":"{}","source_acknowledgements":[],"provider_calls":[],"core_calls":[]}\')\n')
         try:
             run_integrations([sys.executable, str(child)])
-        except AssertionError:
+        except (AssertionError, ValueError):
             pass
         else:
             raise AssertionError('runner accepted forged composed effect evidence')
@@ -186,7 +195,107 @@ def main() -> int:
             pass
         else:
             raise AssertionError('runner accepted a truncated core result')
-    print(f'{len(probes)} lossless delivery adversarial probes rejected')
+        fixture = Path(temporary) / 'fixture'
+        fixture.mkdir()
+        for path in CASE.iterdir():
+            if path.is_file():
+                (fixture / path.name).write_bytes(path.read_bytes())
+        manifest_path = fixture / 'delivery-vectors-v1.json'
+        manifest = json.loads(manifest_path.read_text())
+        admission = vector(manifest, 'first_committed_admission')
+        source = admission['request']['source']
+        database = Path(temporary) / 'installed-transport.sqlite'
+        transport_call(database, 'seed', sources=[{
+            'source_scope': source['source_scope'],
+            'source_delivery_id': source['source_delivery_id'],
+            'source': source, 'acknowledged': False}])
+        if transport_call(database, 'fetch', source_scope=source['source_scope'],
+                          source_delivery_id=source['source_delivery_id']) != {'source': source}:
+            raise AssertionError('installed source returned different original content')
+        binding = admission['after']['bindings'][0]
+        checkpoint = json.loads((fixture / admission['after']['checkpoint']).read_text())
+        before_checkpoint = json.loads((fixture / admission['before']['checkpoint']).read_text())
+        observer = Path(temporary) / 'transport-observer.py'
+        transport_call(database, 'configure_acknowledgement_barrier',
+                       observer_command=[sys.executable, str(observer)],
+                       run_id='smoke', operation_id='admit-1',
+                       checkpoint_digest=checkpoint['execution_checkpoint_digest'],
+                       transfer_digest=binding['admission_binding_digest'])
+        observer.write_text('import sys\nsys.stdin.buffer.read()\n'
+                            f'sys.stdout.buffer.write({canonical_json_bytes({"after": {**admission["before"], "checkpoint": before_checkpoint}})!r})\n')
+        try:
+            transport_call(database, 'ack', source_scope=source['source_scope'],
+                           source_delivery_id=source['source_delivery_id'],
+                           checkpoint_digest=checkpoint['execution_checkpoint_digest'],
+                           transfer_digest=binding['admission_binding_digest'])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('source acknowledged before durable binding was observable')
+        observer.write_text('import sys\nsys.stdin.buffer.read()\n'
+                            f'sys.stdout.buffer.write({canonical_json_bytes({"after": {**admission["after"], "checkpoint": checkpoint}})!r})\n')
+        transport_call(database, 'ack', source_scope=source['source_scope'],
+                       source_delivery_id=source['source_delivery_id'],
+                       checkpoint_digest=checkpoint['execution_checkpoint_digest'],
+                       transfer_digest=binding['admission_binding_digest'])
+        outbound = vector(manifest, 'outbound_confirmed_is_destination_acceptance')
+        pending = json.loads((fixture / outbound['before']['checkpoint']).read_text())
+        intent = next(item['intent'] for item in pending['pending_outbox_intents']
+                      if item['intent']['effect_id'] == outbound['request']['effect_id'])
+        provider_result = transport_call(database, 'deliver', effect_id=intent['effect_id'],
+                                         intent=intent, route='accept')
+        if provider_result != outbound['request']['provider_result']:
+            raise AssertionError('installed destination did not return its retained acceptance')
+        snapshot = transport_call(database, 'snapshot')
+        if [call['kind'] for call in snapshot['calls']] != ['fetch', 'ack', 'deliver'] or \
+                not snapshot['sources'][0]['acknowledged'] or \
+                snapshot['calls'][-1]['intent'] != intent:
+            raise AssertionError('installed transport lost durable call evidence')
+        for selected in ('crash_after_atomic_commit_before_ack', 'first_committed_admission'):
+            item = vector(manifest, selected)
+            reduced = {**manifest, 'vectors': [item], 'invalid_vectors': []}
+            manifest_path.write_text(json.dumps(reduced))
+            after = {**item['after'], 'checkpoint': json.loads(
+                (fixture / item['after']['checkpoint']).read_text())}
+            before = {**item['before'], 'checkpoint': json.loads(
+                (fixture / item['before']['checkpoint']).read_text())}
+            if selected == 'crash_after_atomic_commit_before_ack':
+                child.write_text('import json,sys\n'
+                                 f'sys.path.insert(0,{str(ROOT / "scripts")!r})\n'
+                                 'from validate_conformance import canonical_json_bytes\n'
+                                 'r=json.load(sys.stdin)\n'
+                                 'if r.get("kind")=="observe_delivery_state":\n'
+                                 f' sys.stdout.buffer.write(canonical_json_bytes({{"after":{before!r},"native_evidence":{{}}}}))\n'
+                                 'else: sys.exit(9)\n')
+            else:
+                child.write_text('import json,sys\n'
+                                 f'sys.path.insert(0,{str(ROOT / "scripts")!r})\n'
+                                 'from run_lossless_delivery_profile import configuration_digests\n'
+                                 'from validate_conformance import canonical_json_bytes\n'
+                                 'r=json.load(sys.stdin)\n'
+                                 'e={"operation_id":r["operation_id"],"run_id":r["run_id"],'
+                                 '"transport_source_sha256":' + repr(
+                                     'sha256:' + hashlib.sha256(
+                                         (ROOT / 'scripts/lossless_delivery_test_transport.py').read_bytes()).hexdigest()) + ','
+                                 '"transport_database_path":r["transport_database_path"],'
+                                 '"commit_fate":"committed","native_transaction_id":"forged"}\n'
+                                 'e.update(configuration_digests(r["run_id"]))\n'
+                                 'e.update(r.get("profile_links", {"authority_report_digest":None,"effect_report_digest":None}))\n'
+                                 'if r.get("kind")=="observe_delivery_state":\n'
+                                 f' sys.stdout.buffer.write(canonical_json_bytes({{"after":{after!r},"native_evidence":e}}))\n'
+                                 'else:\n'
+                                 f' sys.stdout.buffer.write(canonical_json_bytes({{"response":{item["expected_response"]!r},'
+                                 f'"after":{after!r},"native_evidence":e}}))\n')
+            try:
+                run([sys.executable, str(child)], fixture)
+            except AssertionError as error:
+                expected_error = ('durable post-operation store differs' if selected.startswith('crash')
+                                  else 'actual source ownership differs')
+                if expected_error not in str(error):
+                    raise AssertionError(f'{selected}: wrong rejection: {error}') from error
+            else:
+                raise AssertionError(f'runner accepted forged {selected} without durable transport proof')
+    print(f'{len(probes) + 3} lossless delivery adversarial probes rejected')
     return 0
 
 
