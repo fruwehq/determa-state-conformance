@@ -38,11 +38,17 @@ migrated suite.
 - `conformance/closed-code-registry/vectors.generated.json` — the generated
   category/code projection consumed by implementation harnesses.
 - Additional bundle files in a core case are named explicitly by its `test.yaml`.
-- `VERSION` — the synchronized specification version, currently `0.2.0`.
+- `VERSION` — the synchronized specification version, currently `0.3.0`.
 
-The v2-only artifact cleanup retains `VERSION` 0.2.0 while review is in progress.
 Current fixture totals are reported by the repository validator rather than maintained
 as release promises in prose.
+
+## Release 0.3.0
+
+Core cases cover portable event deferral, resumable mailboxes, and version-2
+persistence and migration results. The durable-host profiles cover maintenance
+migration receipts and exact checkpoint and store traces. Portable artifact schema
+version 2 is the sole supported representation; machine documents remain `format: 1`.
 
 Repository CI parses every fixture with YAML 1.2 or strict JSON, classifies deliberate
 pre-schema rejections, checks declared structural results against an immutable
