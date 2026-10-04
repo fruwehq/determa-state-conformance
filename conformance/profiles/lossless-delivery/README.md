@@ -56,17 +56,34 @@ epoch returns the exact §18 guard failure without source acknowledgement, that
 a failed two-item batch remains entirely source-owned, and that source-ordered
 pressure does not overtake an earlier unresolved item.
 
+Five integration vectors bind the merged 43-vector §19 effect profile to the
+merged §18 `worker_sqlite` native authority scenario. They pin a real confirmed
+outbox record whose business invocation is still `unclaimed`, a host-owned
+result admission with one live mailbox entry and acceptance receipt, interrupted
+admission recovery with no second provider call, stale-epoch replay rejected
+before acknowledgement, and an ambiguous invocation whose retry is refused
+without destination deduplication proof. Each integration vector resolves the
+exact merged checkpoint and journal, complete caller request, and direct effect
+runner expectation. `source_item: null` and an empty source acknowledgement list
+are assertions: §19 result admission is host-owned recovery work, not a broker
+item. A confirmed outbound transfer grants no provider retry or business success.
+
 Rebuild with `python scripts/generate_lossless_delivery_profile.py` and check
 with `--check` using the repository validation environment. Run
 `scripts/test_lossless_delivery_validator.py` for adversarial reseeding and
-tampering probes. The repository validator counts 47 positive and invalid
-delivery vectors together. Machine `format: 1`, delivery schema version `1`,
+tampering probes. The repository validator counts 52 delivery vectors: 47
+delivery operations and invalid inputs plus five merged §18/§19 integration
+vectors. The standalone §21 profile does not itself assert the native capability.
+Machine `format: 1`, delivery schema version `1`,
 and package version `0.3.0` are distinct version domains.
 
-For an operational claim, run
-`python scripts/run_lossless_delivery_profile.py --adapter '<production-adapter-command>'`
-against the configured adapter. The runner compares strict raw child JSON and
-the complete observed store after every invocation. It withholds expected
-responses and case names. A passed source/schema check alone is fixture
-validation; the configured destination and host must supply real durability,
-authorization, and native transaction proof for any claimed capability.
+For a full operational claim, run
+`python scripts/run_lossless_delivery_profile.py --spec-root <pinned-spec> --adapter '<production-adapter-command>' --authority-adapter '<same-installation-authority-command>'`.
+The runner first executes all 43 §19 vectors through the same production
+adapter command. That runner invokes the §18 configured worker topology native
+proof and checks the loaded handler, destination, authority, and participant
+closure. The §21 runner then compares strict raw child JSON and the complete
+observed store after every invocation, withholding expected responses and case
+names. `--base-only` runs the weaker standalone delivery claim without claiming
+§18 or §19. A passed source/schema check alone is fixture validation; configured
+destinations and hosts must actually prove durability and native transactions.

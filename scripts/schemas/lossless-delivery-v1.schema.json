@@ -3,12 +3,23 @@
   "$id": "https://determa.dev/schemas/conformance/lossless-delivery-v1.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["lossless_delivery_format", "lossless_delivery_schema_version", "vectors", "invalid_vectors", "normative_examples"],
+  "required": ["lossless_delivery_format", "lossless_delivery_schema_version", "vectors", "invalid_vectors", "integration", "normative_examples"],
   "properties": {
     "lossless_delivery_format": {"const": "determa.conformance.lossless_delivery"},
     "lossless_delivery_schema_version": {"const": 1},
     "vectors": {"type": "array", "minItems": 20, "items": {"$ref": "#/$defs/vector"}},
     "invalid_vectors": {"type": "array", "minItems": 27, "items": {"$ref": "#/$defs/invalid_vector"}},
+    "integration": {
+      "type": "object", "additionalProperties": false,
+      "required": ["authority_scenario", "required_authority_guarantees", "effect_profile_format", "integration_vectors"],
+      "properties": {
+        "authority_scenario": {"const": "worker_sqlite"},
+        "required_authority_guarantees": {"const": ["guarded_local_writes", "worker_fencing"]},
+        "effect_profile_format": {"const": "determa.committed_native_effects.vectors"},
+        "integration_vectors": {"type": "array", "minItems": 5, "maxItems": 5,
+          "items": {"$ref": "#/$defs/integration_vector"}}
+      }
+    },
     "normative_examples": {"type": "object", "minProperties": 5}
   },
   "$defs": {
@@ -77,6 +88,22 @@
         "after": {"$ref": "#/$defs/store"},
         "expected_failure": {"enum": ["malformed_delivery", "invalid_delivery", "invalid_delivery_evidence"]},
         "acknowledge_source": {"const": false}
+      }
+    },
+    "integration_vector": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "effect_vector", "request", "expected", "source_item", "source_acknowledgements", "checkpoint_before", "checkpoint_after", "journal_before", "journal_after"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "effect_vector": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "request": {"type": "object"},
+        "expected": {"type": "object"},
+        "source_item": {"type": "null"},
+        "source_acknowledgements": {"const": []},
+        "checkpoint_before": {"$ref": "https://determa.dev/state/schema/execution-checkpoint-v1.schema.json"},
+        "checkpoint_after": {"$ref": "https://determa.dev/state/schema/execution-checkpoint-v1.schema.json"},
+        "journal_before": {"$ref": "https://determa.dev/state/schema/host-effect-journal-v1.schema.json"},
+        "journal_after": {"$ref": "https://determa.dev/state/schema/host-effect-journal-v1.schema.json"}
       }
     }
   }

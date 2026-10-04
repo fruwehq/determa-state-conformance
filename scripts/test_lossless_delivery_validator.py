@@ -27,6 +27,11 @@ def invalid(profile: dict, name: str) -> dict:
     return next(item for item in profile['invalid_vectors'] if item['name'] == name)
 
 
+def integrated(profile: dict, name: str) -> dict:
+    return next(item for item in profile['integration']['integration_vectors']
+                if item['name'] == name)
+
+
 def check_mutation(name: str, mutate, spec_root: Path) -> None:
     with tempfile.TemporaryDirectory() as temporary:
         case = Path(temporary)
@@ -97,6 +102,20 @@ def main() -> int:
             p, 'outbound_wrong_effect_identity').update(acknowledge_source=True)),
         ('duplicate keys treated as valid', lambda p: invalid(
             p, 'duplicate_json_key').update(candidate=base64.b64encode(b'{}').decode())),
+        ('confirmed invents business success', lambda p: integrated(
+            p, 'confirmed_outbox_business_outstanding')['journal_after']['effect_records'][0].update(
+                invocation_state='result_admitted')),
+        ('host result invents broker acknowledgement', lambda p: integrated(
+            p, 'host_owned_result_admission')['source_acknowledgements'].append(
+                {'source_scope': 'effect-scope-1', 'source_delivery_id': 'invented'})),
+        ('host result loses live mailbox', lambda p: integrated(
+            p, 'host_owned_result_admission')['checkpoint_after']['root_record']['aggregate_state']['runtimes'][0]['ready_mailbox'].clear()),
+        ('ambiguous retry calls provider without proof', lambda p: integrated(
+            p, 'ambiguous_provider_retry_without_proof_refused')['expected']['counts'].update(
+                provider_calls=1)),
+        ('stale effect replay bypasses current epoch', lambda p: integrated(
+            p, 'stale_result_replay_current_guard')['request']['auth_context'].update(
+                scope_authority_epoch='3')),
     )
     for name, mutate in probes:
         check_mutation(name, mutate, args.spec_root)
@@ -119,6 +138,20 @@ def main() -> int:
             pass
         else:
             raise AssertionError('runner accepted malformed production child output')
+        child.write_text('import sys\nsys.stdout.buffer.write(b\'{"response":{},"after":{}}\')\n')
+        try:
+            run([sys.executable, str(child)])
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('runner accepted valid JSON with a forged response')
+        child.write_text('import sys\nsys.stdin.buffer.read()\n')
+        try:
+            run([sys.executable, str(child)])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('runner accepted suppressed response on a noncrash vector')
     print(f'{len(probes)} lossless delivery adversarial probes rejected')
     return 0
 

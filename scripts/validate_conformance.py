@@ -7841,6 +7841,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         ),
         "inspection_v1": spec_root / "schema" / "inspection-v1.schema.json",
         "delivery_v1": spec_root / "schema" / "delivery-v1.schema.json",
+        "host_effect_journal_v1": spec_root / "schema" / "host-effect-journal-v1.schema.json",
+        "provider_reference_v1": spec_root / "schema" / "provider-reference-v1.schema.json",
     }
     schemas: dict[str, dict[str, Any]] = {}
     resources: list[tuple[str, Resource[Any]]] = []

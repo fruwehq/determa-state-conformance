@@ -3219,6 +3219,3028 @@
       "acknowledge_source": false
     }
   ],
+  "integration": {
+    "authority_scenario": "worker_sqlite",
+    "required_authority_guarantees": [
+      "guarded_local_writes",
+      "worker_fencing"
+    ],
+    "effect_profile_format": "determa.committed_native_effects.vectors",
+    "integration_vectors": [
+      {
+        "name": "confirmed_outbox_business_outstanding",
+        "effect_vector": "accepted_outbox_pending_business",
+        "request": {
+          "operation": "terminalize_outbox",
+          "checkpoint_before": "pending-checkpoint.json",
+          "journal_before": "data/unclaimed-journal.json",
+          "claim": null,
+          "host_configuration": {
+            "route_generation": "7",
+            "route_authorized": true,
+            "destination_deduplication_proven": true,
+            "handler_authorized": true,
+            "credential_available": true,
+            "credential_generation": "1"
+          },
+          "auth_context": {
+            "scope_identity": "effect-scope-1",
+            "principal": "worker-a",
+            "scope_authority_epoch": "3",
+            "trusted_host_now": "1893455999999999999"
+          },
+          "arguments": {
+            "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+            "status": "confirmed"
+          },
+          "fault": null,
+          "control_plan": []
+        },
+        "expected": {
+          "response": null,
+          "caller_kind": "completed",
+          "control_events": [],
+          "checkpoint_after": "confirmed-checkpoint.json",
+          "journal_after": "data/confirmed-journal.json",
+          "counts": {
+            "provider_calls": 0,
+            "core_calls": 0,
+            "new_claims": 0
+          }
+        },
+        "source_item": null,
+        "source_acknowledgements": [],
+        "checkpoint_before": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "2",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "1",
+              "next_queue_sequence": "1",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            }
+          ],
+          "next_operation_receipt_sequence": "3",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287"
+        },
+        "checkpoint_after": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "3",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "1",
+              "next_queue_sequence": "1",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            }
+          ],
+          "next_operation_receipt_sequence": "3",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [],
+          "next_outbox_terminal_sequence": "1",
+          "terminal_outbox_records": [
+            {
+              "terminal_sequence": "0",
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "committed_revision": "3",
+              "outcome": {
+                "status": "confirmed"
+              }
+            }
+          ],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:7a988365a675a332dc477133fe7f6cc67732bcccb1cd75bdb53cbc2317e2162e"
+        },
+        "journal_before": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "2",
+          "checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
+          "journal_revision": "1",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "0",
+              "attempt_records": [],
+              "invocation_state": "unclaimed",
+              "outcome": null,
+              "result_event_id": null,
+              "admission_receipt": null,
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:539909be26674ea846282d73c549aec3fbf93f15f2265b95a46da3bc9fccd823"
+        },
+        "journal_after": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "3",
+          "checkpoint_digest": "sha256:7a988365a675a332dc477133fe7f6cc67732bcccb1cd75bdb53cbc2317e2162e",
+          "journal_revision": "2",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "0",
+              "attempt_records": [],
+              "invocation_state": "unclaimed",
+              "outcome": null,
+              "result_event_id": null,
+              "admission_receipt": null,
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:80e60fb28c93185c908a56efdc827f5f45c0672abf629c65e91875eef4d4dbe7"
+        }
+      },
+      {
+        "name": "host_owned_result_admission",
+        "effect_vector": "first_terminal_result",
+        "request": {
+          "operation": "submit_result",
+          "checkpoint_before": "pending-checkpoint.json",
+          "journal_before": "data/leased-journal.json",
+          "claim": "data/active-claim.json",
+          "host_configuration": {
+            "route_generation": "7",
+            "route_authorized": true,
+            "destination_deduplication_proven": true,
+            "handler_authorized": true,
+            "credential_available": true,
+            "credential_generation": "1"
+          },
+          "auth_context": {
+            "scope_identity": "effect-scope-1",
+            "principal": "worker-a",
+            "scope_authority_epoch": "3",
+            "trusted_host_now": "1893455999999999999"
+          },
+          "arguments": {
+            "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+            "operation_token": "business-order-42",
+            "attempt_fence": "1",
+            "outcome_kind": "succeeded",
+            "payload": [
+              "map",
+              [
+                [
+                  "provider_reference",
+                  [
+                    "string",
+                    "accepted-42"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "fault": null,
+          "control_plan": []
+        },
+        "expected": {
+          "response": "data/committed-response.json",
+          "caller_kind": "response",
+          "control_events": [],
+          "checkpoint_after": "admitted-checkpoint.json",
+          "journal_after": "data/result-admitted-journal.json",
+          "counts": {
+            "provider_calls": 0,
+            "core_calls": 1,
+            "new_claims": 0
+          }
+        },
+        "source_item": null,
+        "source_acknowledgements": [],
+        "checkpoint_before": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "2",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "1",
+              "next_queue_sequence": "1",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            }
+          ],
+          "next_operation_receipt_sequence": "3",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287"
+        },
+        "checkpoint_after": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "3",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "2",
+              "next_queue_sequence": "2",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [
+                    {
+                      "envelope": {
+                        "event": "native_succeeded",
+                        "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                        "cause_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                        "source": {
+                          "host": true
+                        },
+                        "target": {
+                          "root": {
+                            "root_instance_id": "effect-root-1",
+                            "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                          }
+                        },
+                        "payload": [
+                          "map",
+                          [
+                            [
+                              "provider_reference",
+                              [
+                                "string",
+                                "accepted-42"
+                              ]
+                            ]
+                          ]
+                        ],
+                        "correlation_id": "business-order-42"
+                      },
+                      "envelope_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+                      "delivery_mode": "input",
+                      "acceptance_sequence": "1",
+                      "queue_sequence": "1",
+                      "deferral_count": "0"
+                    }
+                  ],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:3e3102aa094aad6744ec5b3eefff6d519197b82c8bbf2ab1ddf20983d00a7696"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "3",
+              "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+              "acceptance_sequence": "1",
+              "accepted_revision": "3",
+              "delivery_mode": "input"
+            }
+          ],
+          "next_operation_receipt_sequence": "4",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea"
+        },
+        "journal_before": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "2",
+          "checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
+          "journal_revision": "2",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "1",
+              "attempt_records": [],
+              "invocation_state": "leased",
+              "outcome": null,
+              "result_event_id": null,
+              "admission_receipt": null,
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:b4ebb98cc94f43d3aa98b7631dcf9c0fc5a693fd029c84a53e2a399e0423680d"
+        },
+        "journal_after": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "3",
+          "checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea",
+          "journal_revision": "4",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "1",
+              "attempt_records": [
+                {
+                  "attempt_fence": "1",
+                  "report_kind": "succeeded",
+                  "report_digest": "sha256:3046a3958f94a37558c9632998bcd5b0b11ded4ee0ce4ba055b5df804a5e1a65",
+                  "reason": null
+                }
+              ],
+              "invocation_state": "result_admitted",
+              "outcome": {
+                "kind": "succeeded",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "provider_reference",
+                      [
+                        "string",
+                        "accepted-42"
+                      ]
+                    ]
+                  ]
+                ],
+                "digest": "sha256:f23394ef9e1ec815ad47de540cfbb84bc0c481d8d55b3058aa2db977ba645923",
+                "attempt_fence": "1"
+              },
+              "result_event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "admission_receipt": {
+                "operation_kind": "acceptance",
+                "receipt_sequence": "3",
+                "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+                "acceptance_sequence": "1",
+                "accepted_revision": "3",
+                "delivery_mode": "input"
+              },
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:79e915a2ca70d62ac24d4e49dcfd9f22f9b3d9c6392749b999ba7a294960eca5"
+        }
+      },
+      {
+        "name": "interrupted_result_admission_recovery",
+        "effect_vector": "crash_after_outcome_commit",
+        "request": {
+          "operation": "recover",
+          "checkpoint_before": "pending-checkpoint.json",
+          "journal_before": "data/outcome-recorded-journal.json",
+          "claim": null,
+          "host_configuration": {
+            "route_generation": "7",
+            "route_authorized": true,
+            "destination_deduplication_proven": true,
+            "handler_authorized": true,
+            "credential_available": true,
+            "credential_generation": "1"
+          },
+          "auth_context": {
+            "scope_identity": "effect-scope-1",
+            "principal": "worker-a",
+            "scope_authority_epoch": "3",
+            "trusted_host_now": "1893455999999999999"
+          },
+          "arguments": {},
+          "fault": "after_outcome_before_admission",
+          "control_plan": []
+        },
+        "expected": {
+          "response": null,
+          "caller_kind": "completed",
+          "control_events": [],
+          "checkpoint_after": "admitted-checkpoint.json",
+          "journal_after": "data/result-admitted-journal.json",
+          "counts": {
+            "provider_calls": 0,
+            "core_calls": 1,
+            "new_claims": 0
+          }
+        },
+        "source_item": null,
+        "source_acknowledgements": [],
+        "checkpoint_before": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "2",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "1",
+              "next_queue_sequence": "1",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            }
+          ],
+          "next_operation_receipt_sequence": "3",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287"
+        },
+        "checkpoint_after": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "3",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "2",
+              "next_queue_sequence": "2",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [
+                    {
+                      "envelope": {
+                        "event": "native_succeeded",
+                        "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                        "cause_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                        "source": {
+                          "host": true
+                        },
+                        "target": {
+                          "root": {
+                            "root_instance_id": "effect-root-1",
+                            "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                          }
+                        },
+                        "payload": [
+                          "map",
+                          [
+                            [
+                              "provider_reference",
+                              [
+                                "string",
+                                "accepted-42"
+                              ]
+                            ]
+                          ]
+                        ],
+                        "correlation_id": "business-order-42"
+                      },
+                      "envelope_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+                      "delivery_mode": "input",
+                      "acceptance_sequence": "1",
+                      "queue_sequence": "1",
+                      "deferral_count": "0"
+                    }
+                  ],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:3e3102aa094aad6744ec5b3eefff6d519197b82c8bbf2ab1ddf20983d00a7696"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "3",
+              "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+              "acceptance_sequence": "1",
+              "accepted_revision": "3",
+              "delivery_mode": "input"
+            }
+          ],
+          "next_operation_receipt_sequence": "4",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea"
+        },
+        "journal_before": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "2",
+          "checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
+          "journal_revision": "3",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "1",
+              "attempt_records": [
+                {
+                  "attempt_fence": "1",
+                  "report_kind": "succeeded",
+                  "report_digest": "sha256:3046a3958f94a37558c9632998bcd5b0b11ded4ee0ce4ba055b5df804a5e1a65",
+                  "reason": null
+                }
+              ],
+              "invocation_state": "outcome_recorded",
+              "outcome": {
+                "kind": "succeeded",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "provider_reference",
+                      [
+                        "string",
+                        "accepted-42"
+                      ]
+                    ]
+                  ]
+                ],
+                "digest": "sha256:f23394ef9e1ec815ad47de540cfbb84bc0c481d8d55b3058aa2db977ba645923",
+                "attempt_fence": "1"
+              },
+              "result_event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "admission_receipt": null,
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:f748a5ffb8bb13d4ee0f3f0a660f5b66f9a64d6f2f2330d7e0872bd8dc5fca0c"
+        },
+        "journal_after": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "3",
+          "checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea",
+          "journal_revision": "4",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "1",
+              "attempt_records": [
+                {
+                  "attempt_fence": "1",
+                  "report_kind": "succeeded",
+                  "report_digest": "sha256:3046a3958f94a37558c9632998bcd5b0b11ded4ee0ce4ba055b5df804a5e1a65",
+                  "reason": null
+                }
+              ],
+              "invocation_state": "result_admitted",
+              "outcome": {
+                "kind": "succeeded",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "provider_reference",
+                      [
+                        "string",
+                        "accepted-42"
+                      ]
+                    ]
+                  ]
+                ],
+                "digest": "sha256:f23394ef9e1ec815ad47de540cfbb84bc0c481d8d55b3058aa2db977ba645923",
+                "attempt_fence": "1"
+              },
+              "result_event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "admission_receipt": {
+                "operation_kind": "acceptance",
+                "receipt_sequence": "3",
+                "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+                "acceptance_sequence": "1",
+                "accepted_revision": "3",
+                "delivery_mode": "input"
+              },
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:79e915a2ca70d62ac24d4e49dcfd9f22f9b3d9c6392749b999ba7a294960eca5"
+        }
+      },
+      {
+        "name": "stale_result_replay_current_guard",
+        "effect_vector": "old_epoch_equal_replay_after_recovery",
+        "request": {
+          "operation": "submit_result",
+          "checkpoint_before": "admitted-checkpoint.json",
+          "journal_before": "data/result-admitted-journal.json",
+          "claim": "data/active-claim.json",
+          "host_configuration": {
+            "route_generation": "7",
+            "route_authorized": true,
+            "destination_deduplication_proven": true,
+            "handler_authorized": true,
+            "credential_available": true,
+            "credential_generation": "1"
+          },
+          "auth_context": {
+            "scope_identity": "effect-scope-1",
+            "principal": "worker-a",
+            "scope_authority_epoch": "2",
+            "trusted_host_now": "1893456000000000000"
+          },
+          "arguments": {
+            "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+            "operation_token": "business-order-42",
+            "attempt_fence": "1",
+            "outcome_kind": "succeeded",
+            "payload": [
+              "map",
+              [
+                [
+                  "provider_reference",
+                  [
+                    "string",
+                    "accepted-42"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "fault": null,
+          "control_plan": []
+        },
+        "expected": {
+          "response": "data/rejected-stale_scope_authority.json",
+          "caller_kind": "response",
+          "control_events": [],
+          "checkpoint_after": "admitted-checkpoint.json",
+          "journal_after": "data/result-admitted-journal.json",
+          "counts": {
+            "provider_calls": 0,
+            "core_calls": 0,
+            "new_claims": 0
+          }
+        },
+        "source_item": null,
+        "source_acknowledgements": [],
+        "checkpoint_before": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "3",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "2",
+              "next_queue_sequence": "2",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [
+                    {
+                      "envelope": {
+                        "event": "native_succeeded",
+                        "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                        "cause_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                        "source": {
+                          "host": true
+                        },
+                        "target": {
+                          "root": {
+                            "root_instance_id": "effect-root-1",
+                            "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                          }
+                        },
+                        "payload": [
+                          "map",
+                          [
+                            [
+                              "provider_reference",
+                              [
+                                "string",
+                                "accepted-42"
+                              ]
+                            ]
+                          ]
+                        ],
+                        "correlation_id": "business-order-42"
+                      },
+                      "envelope_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+                      "delivery_mode": "input",
+                      "acceptance_sequence": "1",
+                      "queue_sequence": "1",
+                      "deferral_count": "0"
+                    }
+                  ],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:3e3102aa094aad6744ec5b3eefff6d519197b82c8bbf2ab1ddf20983d00a7696"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "3",
+              "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+              "acceptance_sequence": "1",
+              "accepted_revision": "3",
+              "delivery_mode": "input"
+            }
+          ],
+          "next_operation_receipt_sequence": "4",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea"
+        },
+        "checkpoint_after": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "3",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "2",
+              "next_queue_sequence": "2",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [
+                    {
+                      "envelope": {
+                        "event": "native_succeeded",
+                        "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                        "cause_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                        "source": {
+                          "host": true
+                        },
+                        "target": {
+                          "root": {
+                            "root_instance_id": "effect-root-1",
+                            "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                          }
+                        },
+                        "payload": [
+                          "map",
+                          [
+                            [
+                              "provider_reference",
+                              [
+                                "string",
+                                "accepted-42"
+                              ]
+                            ]
+                          ]
+                        ],
+                        "correlation_id": "business-order-42"
+                      },
+                      "envelope_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+                      "delivery_mode": "input",
+                      "acceptance_sequence": "1",
+                      "queue_sequence": "1",
+                      "deferral_count": "0"
+                    }
+                  ],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:3e3102aa094aad6744ec5b3eefff6d519197b82c8bbf2ab1ddf20983d00a7696"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "3",
+              "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+              "acceptance_sequence": "1",
+              "accepted_revision": "3",
+              "delivery_mode": "input"
+            }
+          ],
+          "next_operation_receipt_sequence": "4",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea"
+        },
+        "journal_before": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "3",
+          "checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea",
+          "journal_revision": "4",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "1",
+              "attempt_records": [
+                {
+                  "attempt_fence": "1",
+                  "report_kind": "succeeded",
+                  "report_digest": "sha256:3046a3958f94a37558c9632998bcd5b0b11ded4ee0ce4ba055b5df804a5e1a65",
+                  "reason": null
+                }
+              ],
+              "invocation_state": "result_admitted",
+              "outcome": {
+                "kind": "succeeded",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "provider_reference",
+                      [
+                        "string",
+                        "accepted-42"
+                      ]
+                    ]
+                  ]
+                ],
+                "digest": "sha256:f23394ef9e1ec815ad47de540cfbb84bc0c481d8d55b3058aa2db977ba645923",
+                "attempt_fence": "1"
+              },
+              "result_event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "admission_receipt": {
+                "operation_kind": "acceptance",
+                "receipt_sequence": "3",
+                "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+                "acceptance_sequence": "1",
+                "accepted_revision": "3",
+                "delivery_mode": "input"
+              },
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:79e915a2ca70d62ac24d4e49dcfd9f22f9b3d9c6392749b999ba7a294960eca5"
+        },
+        "journal_after": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "3",
+          "checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea",
+          "journal_revision": "4",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "1",
+              "attempt_records": [
+                {
+                  "attempt_fence": "1",
+                  "report_kind": "succeeded",
+                  "report_digest": "sha256:3046a3958f94a37558c9632998bcd5b0b11ded4ee0ce4ba055b5df804a5e1a65",
+                  "reason": null
+                }
+              ],
+              "invocation_state": "result_admitted",
+              "outcome": {
+                "kind": "succeeded",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "provider_reference",
+                      [
+                        "string",
+                        "accepted-42"
+                      ]
+                    ]
+                  ]
+                ],
+                "digest": "sha256:f23394ef9e1ec815ad47de540cfbb84bc0c481d8d55b3058aa2db977ba645923",
+                "attempt_fence": "1"
+              },
+              "result_event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+              "admission_receipt": {
+                "operation_kind": "acceptance",
+                "receipt_sequence": "3",
+                "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+                "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+                "acceptance_sequence": "1",
+                "accepted_revision": "3",
+                "delivery_mode": "input"
+              },
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:79e915a2ca70d62ac24d4e49dcfd9f22f9b3d9c6392749b999ba7a294960eca5"
+        }
+      },
+      {
+        "name": "ambiguous_provider_retry_without_proof_refused",
+        "effect_vector": "ambiguous_retry_requires_proof",
+        "request": {
+          "operation": "claim",
+          "checkpoint_before": "pending-checkpoint.json",
+          "journal_before": "data/ambiguous-journal.json",
+          "claim": null,
+          "host_configuration": {
+            "route_generation": "7",
+            "route_authorized": true,
+            "destination_deduplication_proven": false,
+            "handler_authorized": true,
+            "credential_available": true,
+            "credential_generation": "1"
+          },
+          "auth_context": {
+            "scope_identity": "effect-scope-1",
+            "principal": "worker-a",
+            "scope_authority_epoch": "3",
+            "trusted_host_now": "1893455999999999999"
+          },
+          "arguments": {
+            "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+          },
+          "fault": null,
+          "control_plan": []
+        },
+        "expected": {
+          "response": null,
+          "caller_kind": "aborted",
+          "control_events": [],
+          "checkpoint_after": "pending-checkpoint.json",
+          "journal_after": "data/ambiguous-journal.json",
+          "counts": {
+            "provider_calls": 0,
+            "core_calls": 0,
+            "new_claims": 0
+          }
+        },
+        "source_item": null,
+        "source_acknowledgements": [],
+        "checkpoint_before": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "2",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "1",
+              "next_queue_sequence": "1",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            }
+          ],
+          "next_operation_receipt_sequence": "3",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287"
+        },
+        "checkpoint_after": {
+          "execution_checkpoint_format": "determa.execution_checkpoint",
+          "execution_checkpoint_schema_version": 1,
+          "root_instance_id": "effect-root-1",
+          "revision": "2",
+          "root_record": {
+            "status": "retained",
+            "aggregate_state": {
+              "aggregate_state_format": "determa.aggregate_state",
+              "aggregate_state_schema_version": 1,
+              "machine_format": 1,
+              "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+              "namespace": "conformance.committed_native_effects",
+              "root_machine_id": "workflow",
+              "root_machine_version": "1",
+              "root_instance_id": "effect-root-1",
+              "creation_id": "effect-create-1",
+              "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+              "migration_sequence": "0",
+              "next_logical_step_sequence": "2",
+              "next_output_sequence": "1",
+              "next_acceptance_sequence": "1",
+              "next_queue_sequence": "1",
+              "runtimes": [
+                {
+                  "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                  "identity_origin": {
+                    "kind": "root",
+                    "definition": {
+                      "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                      "machine": {
+                        "namespace": "conformance.committed_native_effects",
+                        "machine_id": "workflow",
+                        "machine_version": "1",
+                        "root_definition_pointer": "/machines/0/root"
+                      }
+                    },
+                    "root_instance_id": "effect-root-1"
+                  },
+                  "target_identity": {
+                    "root": {
+                      "root_instance_id": "effect-root-1",
+                      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+                    }
+                  },
+                  "current_definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "relation": {
+                    "kind": "root"
+                  },
+                  "status": "running",
+                  "active_leaf_state_definition_pointers": [
+                    "/machines/0/root"
+                  ],
+                  "active_state_activations": [
+                    {
+                      "state_definition_pointer": "/machines/0/root",
+                      "activation_sequence": "0"
+                    }
+                  ],
+                  "variables": [],
+                  "history": [],
+                  "next_spawn_sequence": "0",
+                  "next_state_activation_sequences": [
+                    {
+                      "definition_pointer": "/machines/0/root",
+                      "next_sequence": "1"
+                    }
+                  ],
+                  "next_component_activation_sequences": [],
+                  "fault": null,
+                  "ready_mailbox": [],
+                  "deferred_mailbox": []
+                }
+              ],
+              "aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb"
+            }
+          },
+          "operation_receipts": [
+            {
+              "operation_kind": "creation",
+              "receipt_sequence": "0",
+              "creation_id": "effect-create-1",
+              "request_digest": "sha256:1dec95913f95d8e4b630af8421be524c2bd3ca46cacf759b2dfc46b3336588ee",
+              "committed_revision": "0",
+              "resulting_aggregate_state_digest": "sha256:8ba864a7db13f292a2c3b76edf0a6f9c6086daaf1dfa71fad8377406bfaa5dac",
+              "status": "running",
+              "fault": null,
+              "emission_references": []
+            },
+            {
+              "operation_kind": "acceptance",
+              "receipt_sequence": "1",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "accepted_revision": "1",
+              "delivery_mode": "input"
+            },
+            {
+              "operation_kind": "event_terminal",
+              "receipt_sequence": "2",
+              "event_id": "invoke-1",
+              "request_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+              "acceptance_sequence": "0",
+              "final_queue_sequence": "0",
+              "committed_revision": "2",
+              "resulting_aggregate_state_digest": "sha256:e20f7ef4fb585d97095cfb681cfd39d5f9883307e6ff690a4f79675555058bbb",
+              "outcome": {
+                "disposition": "handled",
+                "status": "running",
+                "fault": null,
+                "rejection": null
+              },
+              "emission_references": [
+                {
+                  "kind": "external_outbox",
+                  "emission_index": "0",
+                  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+                }
+              ]
+            }
+          ],
+          "next_operation_receipt_sequence": "3",
+          "replay_retention": {
+            "mode": "permanent",
+            "permanent_replay_eligible": true,
+            "pruned_through_receipt_sequence": null,
+            "policy_identifier": null
+          },
+          "event_identity_tombstones": [],
+          "pending_outbox_intents": [
+            {
+              "intent": {
+                "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+                "sequence": "0",
+                "event": "native_request",
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "index",
+                      [
+                        "integer",
+                        "0"
+                      ]
+                    ]
+                  ]
+                ],
+                "correlation_id": "business-order-42"
+              },
+              "state_revision": "2",
+              "delivery_state": {
+                "status": "not_attempted"
+              }
+            }
+          ],
+          "next_outbox_terminal_sequence": "0",
+          "terminal_outbox_records": [],
+          "outbox_effect_tombstones": [],
+          "migration_audit_records": [],
+          "execution_checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287"
+        },
+        "journal_before": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "2",
+          "checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
+          "journal_revision": "3",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "1",
+              "attempt_records": [
+                {
+                  "attempt_fence": "1",
+                  "report_kind": "ambiguous",
+                  "report_digest": "sha256:fd925a31e97df7bbdc5ac65d17757c347bc2094702b631934b1fdc13a3b5c758",
+                  "reason": "provider_acceptance_unknown"
+                }
+              ],
+              "invocation_state": "ambiguous",
+              "outcome": null,
+              "result_event_id": null,
+              "admission_receipt": null,
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:3c9b2216fe9c0bc4f285876af2c8f563b840f7ad2a20b1f3e31ff27cf7ffdc22"
+        },
+        "journal_after": {
+          "host_effect_journal_format": "determa.host_effect_journal",
+          "host_effect_journal_schema_version": 1,
+          "scope_identity": "effect-scope-1",
+          "root_instance_id": "effect-root-1",
+          "checkpoint_revision": "2",
+          "checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
+          "journal_revision": "3",
+          "effect_records": [
+            {
+              "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+              "operation_token": "business-order-42",
+              "intent_digest": "sha256:0cb1a0edaccbfc90f79022c816427d926f2e11ad3028c736eed13d45ba105e7a",
+              "handler_reference": {
+                "identifier": "conformance.native-effect-handler",
+                "version": "1.0.0",
+                "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+              },
+              "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4",
+              "route_configuration_generation": "7",
+              "result_mapping": [
+                {
+                  "outcome_kind": "succeeded",
+                  "event": "native_succeeded",
+                  "result_slot": "success",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                },
+                {
+                  "outcome_kind": "cancelled",
+                  "event": "native_cancelled",
+                  "result_slot": "cancelled",
+                  "operation_token_location": {
+                    "kind": "correlation_id"
+                  }
+                }
+              ],
+              "target": {
+                "root_instance_id": "effect-root-1",
+                "runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457",
+                "runtime_incarnation": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:c1b854796f3839edb52d14039f658db1bb6e00f22154b5d726f58be31512774a",
+                    "machine": {
+                      "namespace": "conformance.committed_native_effects",
+                      "machine_id": "workflow",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "effect-root-1"
+                }
+              },
+              "idempotency_policy": "destination_deduplicates",
+              "attempt_fence": "1",
+              "attempt_records": [
+                {
+                  "attempt_fence": "1",
+                  "report_kind": "ambiguous",
+                  "report_digest": "sha256:fd925a31e97df7bbdc5ac65d17757c347bc2094702b631934b1fdc13a3b5c758",
+                  "reason": "provider_acceptance_unknown"
+                }
+              ],
+              "invocation_state": "ambiguous",
+              "outcome": null,
+              "result_event_id": null,
+              "admission_receipt": null,
+              "cancellation": null
+            }
+          ],
+          "operation_response_references": [
+            {
+              "operation_id": "produce-1",
+              "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
+            }
+          ],
+          "host_effect_journal_digest": "sha256:3c9b2216fe9c0bc4f285876af2c8f563b840f7ad2a20b1f3e31ff27cf7ffdc22"
+        }
+      }
+    ]
+  },
   "normative_examples": {
     "delivery-v1-cases": {
       "description": "Closed delivery boundary responses. Admission and terminal responses resolve exact operation receipts; deferred/recall responses resolve live mailbox entries without new receipts; outbound responses resolve pending/terminal outbox records without new receipts. All linked checkpoint snapshots and digests are normative.",

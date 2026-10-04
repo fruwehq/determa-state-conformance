@@ -6,6 +6,7 @@ import argparse
 import json
 import shlex
 import subprocess
+import sys
 from pathlib import Path
 
 from validate_conformance import analyze_json_artifact_source, canonical_json_bytes
@@ -72,9 +73,34 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--adapter', required=True,
                         help='command that reads one strict JSON request on stdin')
+    parser.add_argument('--spec-root', type=Path, required=True)
+    parser.add_argument('--authority-adapter',
+                        help='same configured host authority installation used by the effect adapter')
+    parser.add_argument('--base-only', action='store_true',
+                        help='run the weaker delivery-only claim without §18/§19 native proof')
     args = parser.parse_args()
+    if args.base_only and args.authority_adapter:
+        parser.error('--base-only cannot claim an authority adapter')
+    if not args.base_only:
+        if not args.authority_adapter:
+            parser.error('full lossless delivery claim requires --authority-adapter')
+        # The effect runner checks the installed handler/destination closure,
+        # complete §19 operations, and the §18 native worker scenario against
+        # this exact same production adapter command. A profile report alone
+        # does not certify a broker or a durable destination.
+        completed = subprocess.run([
+            sys.executable, str(ROOT / 'scripts/run_committed_native_effects_profile.py'),
+            '--spec-root', str(args.spec_root), '--adapter', args.adapter,
+            '--authority-adapter', args.authority_adapter],
+            stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+        if completed.returncode:
+            raise SystemExit('§18/§19 configured native proof failed: ' +
+                             completed.stderr.decode('utf-8', errors='replace').strip())
     count = run(shlex.split(args.adapter))
-    print(f'passed {count} production lossless delivery vectors')
+    if args.base_only:
+        print(f'passed {count} base lossless delivery vectors; no §18/§19 claim')
+    else:
+        print(f'passed {count + 5} production lossless delivery vectors under one configured host')
     return 0
 
 

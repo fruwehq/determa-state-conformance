@@ -307,9 +307,36 @@ def build(spec: Path) -> dict[str, bytes]:
                                 'candidate': candidate, 'before': empty, 'after': empty,
                                 'expected_failure': 'invalid_delivery',
                                 'acknowledge_source': False})
+    effects = ROOT / 'conformance/profiles/committed-native-effects/effect-01-result'
+    effect_manifest = json.loads((effects / 'data/vectors.json').read_text())
+    effect_vectors = {item['name']: item for item in effect_manifest['vectors']}
+    integration_names = (
+        ('confirmed_outbox_business_outstanding', 'accepted_outbox_pending_business'),
+        ('host_owned_result_admission', 'first_terminal_result'),
+        ('interrupted_result_admission_recovery', 'crash_after_outcome_commit'),
+        ('stale_result_replay_current_guard', 'old_epoch_equal_replay_after_recovery'),
+        ('ambiguous_provider_retry_without_proof_refused', 'ambiguous_retry_requires_proof'),
+    )
+    integration_vectors = []
+    for name, source_name in integration_names:
+        item = effect_vectors[source_name]
+        integration_vectors.append({
+            'name': name, 'effect_vector': source_name,
+            'request': item['request'], 'expected': item['expected'],
+            'source_item': None, 'source_acknowledgements': [],
+            'checkpoint_before': json.loads((effects / item['request']['checkpoint_before']).read_text()),
+            'checkpoint_after': json.loads((effects / item['expected']['checkpoint_after']).read_text()),
+            'journal_before': json.loads((effects / item['request']['journal_before']).read_text()),
+            'journal_after': json.loads((effects / item['expected']['journal_after']).read_text()),
+        })
     document = {'lossless_delivery_format': 'determa.conformance.lossless_delivery',
                 'lossless_delivery_schema_version': 1, 'vectors': vectors,
                 'invalid_vectors': invalid_vectors,
+                'integration': {
+                    'authority_scenario': 'worker_sqlite',
+                    'required_authority_guarantees': ['guarded_local_writes', 'worker_fencing'],
+                    'effect_profile_format': effect_manifest['format'],
+                    'integration_vectors': integration_vectors},
                 'normative_examples': examples}
     output = {'delivery-vectors-v1.json': render(document),
               'machine.yaml': (spec / 'examples/portable-event-deferral.yaml').read_bytes(),

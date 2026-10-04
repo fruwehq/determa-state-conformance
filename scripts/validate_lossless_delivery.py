@@ -11,7 +11,7 @@ from pathlib import Path
 
 from validate_conformance import (ValidationFailure, analyze_artifact, canonical_json_bytes,
                                   hash_value, validate_typed_value_canonical,
-                                  analyze_json_artifact_source)
+                                  analyze_json_artifact_source, verify_artifact_digest)
 
 NORM = ('delivery-v1-cases', 'execution-checkpoint-transfer-v1',
         'queue-placement-checkpoints-v1', 'outbound-checkpoint-lifecycle-v1',
@@ -546,4 +546,106 @@ def validate_profile(case: Path, test: dict, artifacts: set[Path], spec_root: Pa
     if any(vector['acknowledge_source'] or vector['before'] != vector['after']
            for vector in negative):
         fail('negative delivery acknowledged or mutated authoritative store')
-    return len(profile['vectors']) + len(negative)
+
+    integration = profile['integration']
+    profiles_root = Path(__file__).resolve().parents[1] / 'conformance/profiles'
+    effects = profiles_root / 'committed-native-effects/effect-01-result'
+    effect_manifest = json.loads((effects / 'data/vectors.json').read_text(encoding='utf-8'))
+    effect_rows = {item['name']: item for item in effect_manifest['vectors']}
+    authority = json.loads((profiles_root / 'host-authority/vectors.generated.json').read_text(encoding='utf-8'))
+    if (len(effect_rows) != 43 or integration['effect_profile_format'] != effect_manifest['format'] or
+        integration['authority_scenario'] != 'worker_sqlite' or
+        integration['required_authority_guarantees'] != ['guarded_local_writes', 'worker_fencing'] or
+        not any(item['id'] == 'worker_sqlite' and item['native_traces']
+                and item['worker_checks'] for item in authority['production_scenarios'])):
+        fail('merged native effect and configured worker authority closure unavailable')
+    links = (
+        ('confirmed_outbox_business_outstanding', 'accepted_outbox_pending_business'),
+        ('host_owned_result_admission', 'first_terminal_result'),
+        ('interrupted_result_admission_recovery', 'crash_after_outcome_commit'),
+        ('stale_result_replay_current_guard', 'old_epoch_equal_replay_after_recovery'),
+        ('ambiguous_provider_retry_without_proof_refused', 'ambiguous_retry_requires_proof'),
+    )
+    if [(item['name'], item['effect_vector']) for item in integration['integration_vectors']] != list(links):
+        fail('effect integration inventory differs')
+    coupled = {item['name']: item for item in integration['integration_vectors']}
+    for name, source_name in links:
+        item = coupled[name]
+        original = effect_rows[source_name]
+        same(item['request'], original['request'], f'{name}: exact effect caller input differs')
+        same(item['expected'], original['expected'], f'{name}: effect return oracle differs')
+        if item['source_item'] is not None or item['source_acknowledgements']:
+            fail(f'{name}: host-owned result invented a broker source or acknowledgement')
+        for side in ('before', 'after'):
+            source = original['request'] if side == 'before' else original['expected']
+            for kind, field in (('checkpoint', 'checkpoint'), ('journal', 'journal')):
+                filename = source[f'{kind}_{side}']
+                path = effects / filename
+                expected_artifact = json.loads(path.read_text(encoding='utf-8'))
+                same(item[f'{kind}_{side}'], expected_artifact,
+                     f'{name}: {kind} {side} differs from merged effect fixture')
+                if kind == 'checkpoint':
+                    verify_artifact_digest('execution_checkpoint_v1',
+                                           item[f'{kind}_{side}'], path)
+        if item['checkpoint_after']['root_instance_id'] != item['journal_after']['root_instance_id']:
+            fail(f'{name}: effect journal and checkpoint have different owners')
+    confirmed = coupled['confirmed_outbox_business_outstanding']
+    confirmed_checkpoint = confirmed['checkpoint_after']
+    confirmed_record = confirmed_checkpoint['terminal_outbox_records'][0]
+    confirmed_effect = confirmed['journal_after']['effect_records'][0]
+    if (confirmed_record['outcome']['status'] != 'confirmed' or
+        confirmed_record['intent']['effect_id'] != confirmed_effect['effect_id'] or
+        confirmed_effect['invocation_state'] != 'unclaimed' or
+        confirmed_effect['outcome'] is not None or
+        confirmed_effect['result_event_id'] is not None or
+        confirmed['expected']['counts'] != {'provider_calls': 0, 'core_calls': 0,
+                                            'new_claims': 0}):
+        fail('confirmed destination responsibility was treated as business success or retry grant')
+    if not any(ref.get('effect_id') == confirmed_effect['effect_id']
+               for receipt in confirmed_checkpoint['operation_receipts']
+               for ref in receipt.get('emission_references', [])):
+        fail('confirmed effect lacks actual producing core emission')
+    admitted = coupled['host_owned_result_admission']
+    admitted_record = admitted['journal_after']['effect_records'][0]
+    admitted_receipt = admitted['checkpoint_after']['operation_receipts'][-1]
+    admitted_entries = [entry for runtime in admitted['checkpoint_after']['root_record']['aggregate_state']['runtimes']
+                        for entry in runtime['ready_mailbox'] + runtime['deferred_mailbox']
+                        if entry['envelope']['event_id'] == admitted_record['result_event_id']]
+    if (admitted['request']['operation'] != 'submit_result' or
+        admitted['expected']['counts'] != {'provider_calls': 0, 'core_calls': 1,
+                                          'new_claims': 0} or
+        admitted_record['invocation_state'] != 'result_admitted' or
+        admitted_receipt['operation_kind'] != 'acceptance' or
+        admitted_receipt != admitted_record['admission_receipt'] or
+        len(admitted_entries) != 1 or
+        admitted_entries[0]['envelope_digest'] != admitted_receipt['request_digest'] or
+        admitted_entries[0]['envelope']['source'] != {'host': True}):
+        fail('host-owned result admission lacks exact live mailbox and receipt')
+    recovery = coupled['interrupted_result_admission_recovery']
+    if (recovery['request']['operation'] != 'recover' or
+        recovery['journal_before']['effect_records'][0]['invocation_state'] != 'outcome_recorded' or
+        recovery['journal_before']['effect_records'][0]['admission_receipt'] is not None or
+        recovery['journal_after']['effect_records'][0]['admission_receipt'] != admitted_receipt or
+        recovery['expected']['counts'] != {'provider_calls': 0, 'core_calls': 1,
+                                           'new_claims': 0}):
+        fail('interrupted result admission lost host-owned recovery work')
+    stale_result = coupled['stale_result_replay_current_guard']
+    c_stale = next(item for item in authority['operations'] if item['id'] == 'stale_epoch_writer')
+    stale_response = json.loads((effects / stale_result['expected']['response']).read_text())
+    if (c_stale['expected_response']['error_code'] != 'stale_scope_authority' or
+        stale_response['error_code'] != 'stale_scope_authority' or
+        stale_result['checkpoint_before'] != stale_result['checkpoint_after'] or
+        stale_result['journal_before'] != stale_result['journal_after'] or
+        stale_result['expected']['counts'] != {'provider_calls': 0, 'core_calls': 0,
+                                               'new_claims': 0} or
+        stale['expected_response']['code'] != stale_response['error_code']):
+        fail('current authority guard was bypassed by retained result or source replay')
+    no_proof = coupled['ambiguous_provider_retry_without_proof_refused']
+    if (no_proof['request']['host_configuration']['destination_deduplication_proven'] or
+        no_proof['journal_before']['effect_records'][0]['invocation_state'] != 'ambiguous' or
+        no_proof['checkpoint_before'] != no_proof['checkpoint_after'] or
+        no_proof['journal_before'] != no_proof['journal_after'] or
+        no_proof['expected']['caller_kind'] != 'aborted' or
+        no_proof['expected']['counts']['provider_calls'] != 0):
+        fail('confirmed outbox or ambiguity authorized an unproved provider retry')
+    return len(profile['vectors']) + len(negative) + len(links)
