@@ -40,6 +40,9 @@ machines:
             blocked: {}
           states:
             child:
+              variables:
+                memo: { type: string, init: v }
+                external_memo: { type: string, external: true }
               deferred_events: [guard_defer, blocked]
               on_events:
                 guard_defer: { guard: "true" }

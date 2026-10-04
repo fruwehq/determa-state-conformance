@@ -246,7 +246,7 @@ The required native core coverage is grouped as follows:
 
 ### Exact candidate inspection driver (unreleased 0.3)
 
-Case 125 contains 41 `inspection_vectors` against a sealed B0 aggregate. The
+Case 125 contains 49 `inspection_vectors` against sealed B0 aggregates. The
 `core` profile requires structural inspection. The separately declared
 `safe_semantic` profile covers all seven normative CEL fuel pairs; the
 `without_safe_semantic` vectors require refusal without a
@@ -254,7 +254,12 @@ guard or external call. The vector schema and independent relational validator
 check exact request and outcome shapes against the pinned specification, bind
 target incarnation, aggregate digest, definition and guard digests, enforce
 branch order and deferral, and compare byte-identical before/after aggregate
-artifacts. The nine normative invalid-shape examples run in the validator test. The separate
+artifacts. Semantic preflight counts the whole normalized envelope and every live
+lexically visible variable value, including external bindings. Exact 65536/65537
+unit pairs exercise payload, ordinary variable, and external variable growth;
+combined bad-envelope vectors pin request, target, incarnation, and inactive
+runtime precedence. The nine normative invalid-shape examples run in the
+validator test. The separate
 [inspection-provider profile](conformance/profiles/inspection-provider/README.md)
 adds seven source-bound native vectors, exercised by a host only when it claims that
 optional configured provider capability.

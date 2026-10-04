@@ -12,10 +12,28 @@ artifacts:
       kind: aggregate_state_v1
       valid: true
     - file: inactive-before.json
-      kind: json_value
+      kind: aggregate_state_v1
       valid: true
     - file: inactive-after.json
-      kind: json_value
+      kind: aggregate_state_v1
+      valid: true
+    - file: variable-boundary-before.json
+      kind: aggregate_state_v1
+      valid: true
+    - file: variable-boundary-after.json
+      kind: aggregate_state_v1
+      valid: true
+    - file: variable-preflight-before.json
+      kind: aggregate_state_v1
+      valid: true
+    - file: variable-preflight-after.json
+      kind: aggregate_state_v1
+      valid: true
+    - file: external-preflight-before.json
+      kind: aggregate_state_v1
+      valid: true
+    - file: external-preflight-after.json
+      kind: aggregate_state_v1
       valid: true
     - file: requests.json
       kind: json_value
@@ -248,6 +266,54 @@ inspection_vectors:
       action_invocations: 0
       external_calls: 0
       emissions: 0
+  - name: missing_runtime_precedes_bad_envelope
+    covers:
+      - missing_runtime_precedes_bad_envelope
+    profile: core
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /missing_runtime_precedes_bad_envelope
+    outcome_file: outcomes.json
+    outcome_pointer: /missing_runtime_precedes_bad_envelope
+    expect:
+      guard_evaluations: 0
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: stale_incarnation_precedes_bad_envelope
+    covers:
+      - stale_incarnation_precedes_bad_envelope
+    profile: core
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /stale_incarnation_precedes_bad_envelope
+    outcome_file: outcomes.json
+    outcome_pointer: /stale_incarnation_precedes_bad_envelope
+    expect:
+      guard_evaluations: 0
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: inactive_precedes_bad_envelope
+    covers:
+      - inactive_precedes_bad_envelope
+    profile: core
+    bundle: machine.yaml
+    aggregate_before: inactive-before.json
+    aggregate_after: inactive-after.json
+    request_file: requests.json
+    request_pointer: /inactive_precedes_bad_envelope
+    outcome_file: outcomes.json
+    outcome_pointer: /inactive_precedes_bad_envelope
+    expect:
+      guard_evaluations: 0
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
   - name: stale_digest
     covers:
       - stale_digest
@@ -264,6 +330,22 @@ inspection_vectors:
       action_invocations: 0
       external_calls: 0
       emissions: 0
+  - name: stale_digest_precedes_target_and_envelope
+    covers:
+      - stale_digest_precedes_target_and_envelope
+    profile: core
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /stale_digest_precedes_target_and_envelope
+    outcome_file: outcomes.json
+    outcome_pointer: /stale_digest_precedes_target_and_envelope
+    expect:
+      guard_evaluations: 0
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
   - name: malformed_limits
     covers:
       - malformed_limits
@@ -275,6 +357,22 @@ inspection_vectors:
     request_pointer: /malformed_limits
     outcome_file: outcomes.json
     outcome_pointer: /malformed_limits
+    expect:
+      guard_evaluations: 0
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: malformed_limits_precede_target_and_envelope
+    covers:
+      - malformed_limits_precede_target_and_envelope
+    profile: core
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /malformed_limits_precede_target_and_envelope
+    outcome_file: outcomes.json
+    outcome_pointer: /malformed_limits_precede_target_and_envelope
     expect:
       guard_evaluations: 0
       action_invocations: 0
@@ -499,6 +597,54 @@ inspection_vectors:
     request_pointer: /semantic_value_preflight
     outcome_file: outcomes.json
     outcome_pointer: /semantic_value_preflight
+    expect:
+      guard_evaluations: 0
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: semantic_variable_boundary
+    covers:
+      - semantic_variable_boundary
+    profile: safe_semantic
+    bundle: machine.yaml
+    aggregate_before: variable-boundary-before.json
+    aggregate_after: variable-boundary-after.json
+    request_file: requests.json
+    request_pointer: /semantic_variable_boundary
+    outcome_file: outcomes.json
+    outcome_pointer: /semantic_variable_boundary
+    expect:
+      guard_evaluations: 1
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: semantic_variable_preflight
+    covers:
+      - semantic_variable_preflight
+    profile: safe_semantic
+    bundle: machine.yaml
+    aggregate_before: variable-preflight-before.json
+    aggregate_after: variable-preflight-after.json
+    request_file: requests.json
+    request_pointer: /semantic_variable_preflight
+    outcome_file: outcomes.json
+    outcome_pointer: /semantic_variable_preflight
+    expect:
+      guard_evaluations: 0
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: semantic_external_preflight
+    covers:
+      - semantic_external_preflight
+    profile: safe_semantic
+    bundle: machine.yaml
+    aggregate_before: external-preflight-before.json
+    aggregate_after: external-preflight-after.json
+    request_file: requests.json
+    request_pointer: /semantic_external_preflight
+    outcome_file: outcomes.json
+    outcome_pointer: /semantic_external_preflight
     expect:
       guard_evaluations: 0
       action_invocations: 0

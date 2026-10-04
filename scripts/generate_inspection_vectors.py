@@ -73,16 +73,35 @@ def success(request: dict, fingerprint: str, possibilities: list[str],
             'guard_evidence': evidence or []}
 
 
+def fixed_snapshot_units(request: dict) -> int:
+    """Closed root/host envelope fixture, excluding its payload and memo value."""
+    envelope=request['envelope']
+    target=envelope['target']['root']
+    field=lambda name: 1+len(name)
+    string=lambda value: 1+len(value)
+    source=field('host')+1
+    target_value=(field('root')+field('root_instance_id')+string(target['root_instance_id'])
+                  +field('root_runtime_id')+string(target['root_runtime_id']))
+    return (field('event')+string(envelope['event'])
+            +field('event_id')+string(envelope['event_id'])
+            +field('cause_id')+string(envelope['cause_id'])
+            +field('source')+source+field('target')+target_value
+            +field('payload'))
+
+
 def render() -> dict[str, bytes]:
     aggregate = create_v1_root(MACHINE, {'machine_id':'inspector','machine_version':'1',
         'root_instance_id':'inspector-1','creation_id':'create-inspector-1',
-        'bindings':{'input':{},'external':{}}})
+        'bindings':{'input':{},'external':{'external_memo':'e'}}})
     runtime = aggregate['runtimes'][0]
     runtime['active_state_activations'].append({'state_definition_pointer':PARENT,'activation_sequence':'0'})
     runtime['next_state_activation_sequences'].append({'definition_pointer':PARENT,'next_sequence':'1'})
     aggregate = seal_aggregate(aggregate)
     runtime = aggregate['runtimes'][0]
     fingerprint = bundle_fingerprint(MACHINE)
+    def variable(runtime: dict, name: str) -> dict:
+        return next(item for item in runtime['variables']
+            if item['variable_declaration_pointer'].endswith('/variables/'+name))
     assert runtime['active_leaf_state_definition_pointers'] == [STATE]
     inactive=copy.deepcopy(aggregate)
     inactive['runtimes'][0]['status']='completed'
@@ -135,10 +154,36 @@ def render() -> dict[str, bytes]:
         add(name,req,success(req,fingerprint,['invalid'],reason=reason))
     req=request();req['aggregate_state_digest']=inactive['aggregate_state_digest']
     add('inactive_runtime',req,success(req,fingerprint,['invalid'],reason='runtime_inactive'),snapshot='inactive')
+    req=request()
+    req['runtime_id']='sha256:'+'0'*64
+    req['envelope']['event']='internal_ping'
+    add('missing_runtime_precedes_bad_envelope',req,
+        success(req,fingerprint,['invalid'],reason='target_not_found'))
+    req=request()
+    req['runtime_incarnation']['root_instance_id']='old'
+    req['envelope']['payload']=['map',[['unexpected',['string','x']]]]
+    add('stale_incarnation_precedes_bad_envelope',req,
+        success(req,fingerprint,['invalid'],reason='target_incarnation_mismatch'))
+    req=request()
+    req['aggregate_state_digest']=inactive['aggregate_state_digest']
+    req['envelope']['event']='internal_ping'
+    add('inactive_precedes_bad_envelope',req,
+        success(req,fingerprint,['invalid'],reason='runtime_inactive'),snapshot='inactive')
     req=request();req['aggregate_state_digest']='sha256:'+'0'*64
     add('stale_digest',req,{'code':'invalid_inspection_request','source_locator':None})
+    req=request();req['aggregate_state_digest']='sha256:'+'0'*64
+    req['runtime_id']='sha256:'+'0'*64
+    req['envelope']['event']='internal_ping'
+    add('stale_digest_precedes_target_and_envelope',req,
+        {'code':'invalid_inspection_request','source_locator':None})
     req=request();req['limits']={'maximum_guard_evaluations':'1','maximum_evaluation_steps':'1'}
     add('malformed_limits',req,{'code':'invalid_inspection_request','source_locator':None})
+    req=request()
+    req['limits']={'maximum_guard_evaluations':'1','maximum_evaluation_steps':'1'}
+    req['runtime_id']='sha256:'+'0'*64
+    req['envelope']['event']='internal_ping'
+    add('malformed_limits_precede_target_and_envelope',req,
+        {'code':'invalid_inspection_request','source_locator':None})
     for field,value in [('maximum_guard_evaluations','65'),('maximum_evaluation_steps','1000001')]:
         req=request('literal_true','semantic','9')
         req['limits'][field]=value
@@ -164,7 +209,12 @@ def render() -> dict[str, bytes]:
             evidence=[{'state_id':STATE,**guard,'value':value}]),
             profile='safe_semantic',calls=1)
     req=request('large_payload','semantic','1')
-    req['envelope']['payload']=['map',[['blob',['string','x'*65530]]]]
+    # §12.2 counts every envelope field and the live lexical memo value, then
+    # the decoded payload map. Only the blob's Unicode scalars vary here.
+    variable_units=sum(1+len(item['value'][1]) for item in runtime['variables'])
+    blob_fixed=1+len('blob')+1
+    boundary_length=65536-fixed_snapshot_units(req)-variable_units-blob_fixed
+    req['envelope']['payload']=['map',[['blob',['string','x'*boundary_length]]]]
     guard=levels('large_payload')[0]['handler_branches'][0]
     add('semantic_value_boundary',req,success(req,fingerprint,['handled_now'],'large_payload',
         evidence=[{'state_id':STATE,**guard,'value':True}]),profile='safe_semantic',calls=1)
@@ -173,10 +223,44 @@ def render() -> dict[str, bytes]:
         'source_locator':levels('oversized_ast')[0]['handler_branches'][0]['guard_locator']},
         profile='safe_semantic',calls=0)
     req=request('large_payload','semantic','9')
-    req['envelope']['payload']=['map',[['blob',['string','x'*65536]]]]
+    req['envelope']['payload']=['map',[['blob',['string','x'*(boundary_length+1)]]]]
     add('semantic_value_preflight',req,{'code':'inspection_limit_exceeded',
         'source_locator':levels('large_payload')[0]['handler_branches'][0]['guard_locator']},
         profile='safe_semantic',calls=0)
+    for suffix,offset in [('boundary',0),('preflight',1)]:
+        req=request('literal_true','semantic','1')
+        # The empty payload contributes no units; the memo string contributes
+        # one scalar value plus its Unicode scalars.
+        external_units=1+len(variable(runtime,'external_memo')['value'][1])
+        memo_length=65536-fixed_snapshot_units(req)-external_units-1+offset
+        changed=copy.deepcopy(aggregate)
+        variable(changed['runtimes'][0],'memo')['value']=['string','x'*memo_length]
+        changed=seal_aggregate(changed)
+        snapshot='variable-'+suffix
+        outputs[snapshot+'-before.json']=canonical(changed)
+        outputs[snapshot+'-after.json']=canonical(changed)
+        req['aggregate_state_digest']=changed['aggregate_state_digest']
+        guard=levels('literal_true')[0]['handler_branches'][0]
+        if offset:
+            out={'code':'inspection_limit_exceeded','source_locator':guard['guard_locator']}
+        else:
+            out=success(req,fingerprint,['handled_now'],'literal_true',
+                evidence=[{'state_id':STATE,**guard,'value':True}])
+        add('semantic_variable_'+suffix,req,out,profile='safe_semantic',
+            calls=0 if offset else 1,snapshot=snapshot)
+    # The prior loop ended at the preflight snapshot. Start from its one-unit
+    # smaller passing counterpart and increase only the live external binding.
+    external_changed=copy.deepcopy(json.loads(outputs['variable-boundary-before.json']))
+    variable(external_changed['runtimes'][0],'external_memo')['value']=['string','ee']
+    external_changed=seal_aggregate(external_changed)
+    outputs['external-preflight-before.json']=canonical(external_changed)
+    outputs['external-preflight-after.json']=canonical(external_changed)
+    req=request('literal_true','semantic','1')
+    req['aggregate_state_digest']=external_changed['aggregate_state_digest']
+    guard=levels('literal_true')[0]['handler_branches'][0]
+    add('semantic_external_preflight',req,
+        {'code':'inspection_limit_exceeded','source_locator':guard['guard_locator']},
+        profile='safe_semantic',calls=0,snapshot='external-preflight')
     req=request('oversized_guard','semantic','9')
     add('semantic_source_preflight',req,{'code':'inspection_limit_exceeded',
         'source_locator':levels('oversized_guard')[0]['handler_branches'][0]['guard_locator']},
@@ -200,7 +284,7 @@ def render() -> dict[str, bytes]:
     outputs['outcomes.json']=canonical(outcomes)
     test={'title':'Exact candidate inspection of a sealed B0 runtime',
           'static':{'documents':[{'file':'machine.yaml','valid':True}]},
-          'artifacts':{'documents':[{'file':name,'kind':'aggregate_state_v1' if name.startswith('aggregate') else 'json_value','valid':True}
+          'artifacts':{'documents':[{'file':name,'kind':'aggregate_state_v1' if name.endswith(('-before.json','-after.json')) else 'json_value','valid':True}
                                     for name in outputs]},
           'inspection_vectors':vectors}
     from ruamel.yaml import YAML

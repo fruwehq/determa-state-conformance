@@ -12,6 +12,37 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 
+def typed_value_units(value: list) -> int:
+    tag=value[0]
+    if tag=='string': return 1+len(value[1])
+    if tag=='list': return sum(1+typed_value_units(item) for item in value[1])
+    if tag=='map': return sum(1+len(key)+typed_value_units(item) for key,item in value[1])
+    return 1
+
+
+def envelope_value_units(value: Any) -> int:
+    """Count the normalized envelope as semantic values, decoding only payload."""
+    if isinstance(value,dict):
+        return sum(1+len(key)+(typed_value_units(child) if key=='payload'
+            else envelope_value_units(child)) for key,child in value.items())
+    if isinstance(value,str):return 1+len(value)
+    if isinstance(value,list):return sum(1+envelope_value_units(child) for child in value)
+    return 1
+
+
+def snapshot_value_units(envelope: dict, runtime: dict) -> int:
+    active={(item['state_definition_pointer'],item['activation_sequence'])
+        for item in runtime['active_state_activations']}
+    visible=0
+    for variable in runtime['variables']:
+        declaration=variable['variable_declaration_pointer']
+        declaring_state=declaration.rsplit('/variables/',1)[0]
+        activation=(declaring_state,variable['declaring_state_activation_sequence'])
+        if activation in active:
+            visible+=typed_value_units(variable['value'])
+    return envelope_value_units(envelope)+visible
+
+
 def validate_inspection_vectors(case: Path, test: dict, bundle_paths: set[Path],
                                 artifact_paths: set[Path], spec_root: Path,
                                 overrides: dict[str, Any] | None = None) -> set[str]:
@@ -84,12 +115,6 @@ def validate_inspection_vectors(case: Path, test: dict, bundle_paths: set[Path],
                 options.add('deferred'); falls=False
         if falls: options.add('unhandled')
         return [item for item in ('handled_now','deferred','unhandled') if item in options]
-    def value_units(value: list) -> int:
-        tag=value[0]
-        if tag=='string': return 1+len(value[1])
-        if tag=='list': return sum(1+value_units(item) for item in value[1])
-        if tag=='map': return sum(1+len(key)+value_units(item) for key,item in value[1])
-        return 1
     def payload_valid(payload: list, declaration: dict) -> bool:
         if payload[0]!='map': return False
         fields=declaration.get('payload',{})
@@ -242,7 +267,7 @@ def validate_inspection_vectors(case: Path, test: dict, bundle_paths: set[Path],
                     else:
                         expression=pointer(bundle,slot['guard_locator'])
                         budget=req['limits']['maximum_evaluation_steps']
-                        snapshot_units=value_units(req['envelope']['payload'])
+                        snapshot_units=snapshot_value_units(req['envelope'],runtime)
                         answer=('inspection_limit_exceeded' if len(expression.encode('utf-8'))>4096
                                 or checked_ast_nodes(expression)>1024 or snapshot_units>65536
                                 else 'inspection_guard_failure' if expression=='1 / 0 == 0' and int(budget)>=10
@@ -266,7 +291,7 @@ def validate_inspection_vectors(case: Path, test: dict, bundle_paths: set[Path],
             out.get('source_locator') is not None and (
                 len(str(pointer(bundle,out['source_locator'])).encode('utf-8'))>4096 or
                 checked_ast_nodes(str(pointer(bundle,out['source_locator'])))>1024 or
-                value_units(req['envelope']['payload'])>65536))
+                snapshot_value_units(req['envelope'],runtime)>65536))
         if count != (1 if req.get('mode')=='semantic' and vector['profile'] in ('safe_semantic','safe_provider') and
                      out.get('code') not in ('invalid_inspection_request','inspection_capability_unavailable')
                      and out.get('reason') is None and not preflight else 0):

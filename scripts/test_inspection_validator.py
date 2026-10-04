@@ -14,7 +14,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from inspection_validator import validate_inspection_vectors
+from inspection_validator import validate_inspection_vectors, snapshot_value_units, typed_value_units
 from validate_conformance import ValidationFailure, load_fixture_document, hash_value, encode_typed_value, validated_bundle_fingerprint
 from generate_version1_vectors import seal_aggregate
 
@@ -36,9 +36,38 @@ def validate(overrides: dict | None = None) -> None:
     artifacts={CASE/item['file'] for item in test['artifacts']['documents']}
     validate_inspection_vectors(CASE,test,bundles,artifacts,SPEC,overrides)
 
+def independent_snapshot_units(request: dict, aggregate: dict) -> int:
+    """Decode payload values and count all normalized envelope and live variables."""
+    def ordinary(value: object) -> int:
+        if isinstance(value,dict):
+            return sum(1+len(key)+ordinary(child) for key,child in value.items())
+        if isinstance(value,str):return 1+len(value)
+        if isinstance(value,list):return sum(1+ordinary(child) for child in value)
+        return 1
+    def typed(value: list) -> int:
+        if value[0]=='string':return 1+len(value[1])
+        if value[0]=='map':return sum(1+len(key)+typed(child) for key,child in value[1])
+        if value[0]=='list':return sum(1+typed(child) for child in value[1])
+        return 1
+    envelope=copy.deepcopy(request['envelope'])
+    payload=envelope.pop('payload')
+    runtime=next(item for item in aggregate['runtimes'] if item['runtime_id']==request['runtime_id'])
+    active={(item['state_definition_pointer'],item['activation_sequence'])
+            for item in runtime['active_state_activations']}
+    visible=sum(typed(variable['value']) for variable in runtime['variables']
+        if (variable['variable_declaration_pointer'].rsplit('/variables/',1)[0],
+            variable['declaring_state_activation_sequence']) in active)
+    return ordinary(envelope)+1+len('payload')+typed(payload)+visible
+
 class InspectionValidatorTests(unittest.TestCase):
     def test_baseline(self) -> None:
         validate()
+
+    def test_recursive_unicode_value_units(self) -> None:
+        nested=['map',[['é',['list',[['string','😀'],['boolean',True]]]]]]
+        # One map entry and one Unicode key scalar; two list slots; string
+        # scalar plus emoji; Boolean scalar.
+        self.assertEqual(typed_value_units(nested),7)
 
     def test_all_nine_normative_invalid_shapes(self) -> None:
         schemas=[json.loads((SPEC/'schema'/name).read_text()) for name in
@@ -74,6 +103,100 @@ class InspectionValidatorTests(unittest.TestCase):
         requests=load('requests.json')
         requests['semantic_negated_true_3']['limits']['maximum_evaluation_steps']='2'
         with self.assertRaisesRegex(ValidationFailure,'outcome differs'):
+            validate({'requests.json':requests})
+
+    def test_full_envelope_and_visible_variable_boundaries(self) -> None:
+        requests=load('requests.json')
+        base=load('aggregate-before.json')
+        snapshots={
+            'semantic_value_boundary':base,
+            'semantic_value_preflight':base,
+            'semantic_variable_boundary':load('variable-boundary-before.json'),
+            'semantic_variable_preflight':load('variable-preflight-before.json'),
+            'semantic_external_preflight':load('external-preflight-before.json'),
+        }
+        expected={'semantic_value_boundary':65536,'semantic_value_preflight':65537,
+                  'semantic_variable_boundary':65536,'semantic_variable_preflight':65537,
+                  'semantic_external_preflight':65537}
+        for name,total in expected.items():
+            with self.subTest(name=name):
+                self.assertEqual(independent_snapshot_units(requests[name],snapshots[name]),total)
+        self.assertEqual(len(requests['semantic_value_boundary']['envelope']['payload'][1][0][1][1]),65290)
+        self.assertEqual(len(next(item['value'][1] for item in
+            snapshots['semantic_variable_boundary']['runtimes'][0]['variables']
+            if item['variable_declaration_pointer'].endswith('/memo'))),65300)
+
+    def test_component_and_owned_runtime_visibility_is_local(self) -> None:
+        source=ROOT/'conformance/core/117-version1-mailboxes'
+        for filename in ('component-isolation-aggregate.json','spawn-isolation-aggregate.json'):
+            aggregate=json.loads((source/filename).read_text())
+            runtime=next(item for item in aggregate['runtimes']
+                if item['identity_origin']['kind']!='root')
+            envelope={'event':'probe','event_id':'probe-1','cause_id':'probe-1',
+                      'source':{'host':True},'target':runtime['target_identity'],
+                      'payload':['map',[]]}
+            request={'runtime_id':runtime['runtime_id'],'envelope':envelope}
+            with self.subTest(filename=filename):
+                self.assertEqual(snapshot_value_units(envelope,runtime),
+                    independent_snapshot_units(request,aggregate))
+                other=next(item for item in aggregate['runtimes']
+                    if item['runtime_id']!=runtime['runtime_id'])
+                other['variables'].clear()
+                self.assertEqual(snapshot_value_units(envelope,runtime),
+                    independent_snapshot_units(request,aggregate))
+                if runtime['identity_origin']['kind']=='owned_spawned_instance':
+                    self.assertEqual(len(runtime['variables']),2)
+                else:
+                    changed=copy.deepcopy(runtime)
+                    changed['variables'][0]['value']=['list',[['string','é']]]
+                    self.assertEqual(snapshot_value_units(envelope,changed),
+                        snapshot_value_units(envelope,runtime)+3)
+
+    def test_envelope_overhead_changes_success_to_preflight_failure(self) -> None:
+        requests=load('requests.json')
+        requests['semantic_value_boundary']=copy.deepcopy(requests['semantic_value_preflight'])
+        with self.assertRaisesRegex(ValidationFailure,"outcome differs.*code"):
+            validate({'requests.json':requests})
+
+    def test_resealed_visible_variable_changes_success_to_preflight_failure(self) -> None:
+        requests=load('requests.json')
+        requests['semantic_variable_boundary']=copy.deepcopy(requests['semantic_variable_preflight'])
+        replacement=load('variable-preflight-before.json')
+        outcomes=load('outcomes.json')
+        outcomes['semantic_variable_boundary']['aggregate_state_digest']=replacement['aggregate_state_digest']
+        with self.assertRaisesRegex(ValidationFailure,"outcome differs.*code"):
+            validate({'requests.json':requests,'outcomes.json':outcomes,
+                'variable-boundary-before.json':replacement,
+                'variable-boundary-after.json':replacement})
+
+    def test_resealed_external_variable_changes_success_to_preflight_failure(self) -> None:
+        requests=load('requests.json')
+        requests['semantic_variable_boundary']=copy.deepcopy(requests['semantic_external_preflight'])
+        replacement=load('external-preflight-before.json')
+        outcomes=load('outcomes.json')
+        outcomes['semantic_variable_boundary']['aggregate_state_digest']=replacement['aggregate_state_digest']
+        with self.assertRaisesRegex(ValidationFailure,"outcome differs.*code"):
+            validate({'requests.json':requests,'outcomes.json':outcomes,
+                'variable-boundary-before.json':replacement,
+                'variable-boundary-after.json':replacement})
+
+    def test_target_precedence_over_bad_envelope_is_relational(self) -> None:
+        for name in ('missing_runtime_precedes_bad_envelope',
+                     'stale_incarnation_precedes_bad_envelope'):
+            requests=load('requests.json')
+            requests[name]=copy.deepcopy(requests['wrong_direction'])
+            with self.subTest(name=name), self.assertRaisesRegex(ValidationFailure,'outcome differs.*reason'):
+                validate({'requests.json':requests})
+
+    def test_request_precedence_over_target_and_envelope_is_relational(self) -> None:
+        requests=load('requests.json')
+        requests['stale_digest_precedes_target_and_envelope']['aggregate_state_digest']=(
+            load('aggregate-before.json')['aggregate_state_digest'])
+        with self.assertRaisesRegex(ValidationFailure,'outcome differs.*reason'):
+            validate({'requests.json':requests})
+        requests=load('requests.json')
+        requests['malformed_limits_precede_target_and_envelope']['limits']=None
+        with self.assertRaisesRegex(ValidationFailure,'outcome differs.*reason'):
             validate({'requests.json':requests})
 
     def test_changed_binding_digest(self) -> None:
