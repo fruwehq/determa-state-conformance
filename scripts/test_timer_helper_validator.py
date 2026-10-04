@@ -94,25 +94,26 @@ def main():
                  "configuration_digest": installation["configuration_digest"],
                  "storage_binding": installation["storage_binding"],
                  "provider_reference": reference, "claims": report["claims"],
-                 "passed_case_ids": ["schedule_first"],
+                 "observed_request_digests": [first["request"]["request_digest"]],
                  "authority": {"scope_identity": "scope-archive-example", "topology_identity": "local-fixture",
-                               "storage_binding": "test-storage", "passed_case_ids": ["guarded_commit"]},
+                               "storage_binding": "test-storage", "receipt_digests": [reference["content_digest"]]},
                  "delivery": {"scope_identity": "scope-archive-example", "topology_identity": "local-fixture",
-                              "storage_binding": "test-storage", "passed_case_ids": ["source_ack"]},
+                              "storage_binding": "test-storage", "receipt_digests": [reference["content_digest"]]},
                  "effects": {"scope_identity": "scope-archive-example", "topology_identity": "local-fixture",
-                             "storage_binding": "test-storage", "passed_case_ids": ["journal_commit"]}}
+                             "storage_binding": "test-storage", "receipt_digests": [reference["content_digest"]]}}
         observed = {"report": report, "installation": installation, "operational_proof": proof}
-        verify_configured(observed, args.spec_root, {"schedule_first"})
+        verify_configured(observed, args.spec_root, {first["request"]["request_digest"]})
         for name, mutate in (
             ("wrong source", lambda d: d["installation"].update(loaded_source_bytes_base64=base64.b64encode(b"other").decode())),
             ("false claim", lambda d: d["report"].update(claims=["coordinated_timer_admission"])),
-            ("missing execution", lambda d: d["operational_proof"].update(passed_case_ids=[])),
+            ("independent claim for coordinated runner", lambda d: d["report"].update(claims=["durable_timer_helper", "independent_timer_delivery"])),
+            ("missing execution", lambda d: d["operational_proof"].update(observed_request_digests=[])),
             ("wrong topology", lambda d: d["operational_proof"]["delivery"].update(topology_identity="other")),
         ):
             bad = json.loads(json.dumps(observed))
             mutate(bad)
             try:
-                verify_configured(bad, args.spec_root, {"schedule_first"})
+                verify_configured(bad, args.spec_root, {first["request"]["request_digest"]})
             except ValueError:
                 pass
             else:

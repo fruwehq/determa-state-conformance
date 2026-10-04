@@ -50,7 +50,7 @@ def operation_input(row, target_machine):
             "admission_disposition": row["admission_disposition"]}
 
 
-def verify_configured(observed, spec_root, completed_cases):
+def verify_configured(observed, spec_root, completed_request_digests):
     if type(observed) is not dict or set(observed) != {"report", "installation", "operational_proof"}:
         raise ValueError("configured helper omitted public report, installed closure or operational proof")
     report = observed["report"]
@@ -63,6 +63,8 @@ def verify_configured(observed, spec_root, completed_cases):
         raise ValueError("configured timer claim combination invalid")
     if "coordinated_timer_admission" in claims and "durable_timer_helper" not in claims:
         raise ValueError("coordinated timer admission requires durable helper storage")
+    if "coordinated_timer_admission" not in claims or "durable_timer_helper" not in claims:
+        raise ValueError("full timer lifecycle and archive runner requires durable coordinated helper claims")
     installation = observed["installation"]
     if type(installation) is not dict or set(installation) != {
             "loaded_source_path", "loaded_source_bytes_base64", "configuration_bytes_base64",
@@ -85,26 +87,30 @@ def verify_configured(observed, spec_root, completed_cases):
     proof = observed["operational_proof"]
     if type(proof) is not dict or set(proof) != {"scope_identity", "topology_identity",
             "configuration_digest", "storage_binding",
-            "provider_reference", "claims", "passed_case_ids", "authority", "delivery", "effects"} or \
+            "provider_reference", "claims", "observed_request_digests", "authority", "delivery", "effects"} or \
             type(proof["claims"]) is not list or not all(type(item) is str for item in proof["claims"]) or \
-            type(proof["passed_case_ids"]) is not list or not all(type(item) is str for item in proof["passed_case_ids"]) or \
+            type(proof["observed_request_digests"]) is not list or \
+            not all(type(item) is str and item.startswith("sha256:") and len(item) == 71
+                    for item in proof["observed_request_digests"]) or \
             proof["scope_identity"] != installation["scope_identity"] or \
             proof["topology_identity"] != installation["topology_identity"] or \
             proof["configuration_digest"] != installation["configuration_digest"] or \
             proof["storage_binding"] != installation["storage_binding"] or \
             not exact_json_equal(proof["provider_reference"], report["provider_reference"]) or \
             set(proof["claims"]) != claims or \
-            not completed_cases <= set(proof["passed_case_ids"]):
+            not completed_request_digests <= set(proof["observed_request_digests"]):
         raise ValueError("configured timer public operational proof differs from executed helper")
     if "coordinated_timer_admission" in claims:
         for category in ("authority", "delivery", "effects"):
             evidence = proof[category]
             if type(evidence) is not dict or set(evidence) != {
-                    "scope_identity", "topology_identity", "storage_binding", "passed_case_ids"} or \
+                    "scope_identity", "topology_identity", "storage_binding", "receipt_digests"} or \
                     evidence["scope_identity"] != installation["scope_identity"] or \
                     evidence["topology_identity"] != installation["topology_identity"] or \
                     evidence["storage_binding"] != installation["storage_binding"] or \
-                    type(evidence["passed_case_ids"]) is not list or not evidence["passed_case_ids"]:
+                    type(evidence["receipt_digests"]) is not list or not evidence["receipt_digests"] or \
+                    not all(type(item) is str and item.startswith("sha256:") and len(item) == 71
+                            for item in evidence["receipt_digests"]):
                 raise ValueError(f"coordinated timer lacks configured {category} operational proof")
     return report
 
@@ -167,12 +173,11 @@ def main():
     stage = strict_json((case_dir / "archive-stage.generated.json").read_bytes())
     for row in stage["cases"]:
         run_archive_case(args.adapter, "stage", row)
-    completed_cases = {"timer_lifecycle", "timer_archive_export", *[row["id"] for row in document["cases"]],
-                       *[row["id"] for row in document["clock_vectors"]],
-                       *[row["id"] for row in document["fence_vectors"]],
-                       *[row["case_id"] for row in stage["cases"]]}
+    completed_request_digests = {row["request"]["request_digest"]
+        for row in [*document["cases"], *document["clock_vectors"], *document["fence_vectors"]]
+        if "request_digest" in row["request"]}
     verify_configured(call(args.adapter, {"kind": "configured_timer_helper"}, "configured_timer_helper"),
-                      args.spec_root, completed_cases)
+                      args.spec_root, completed_request_digests)
     print(f"{len(document['cases'])} normative timer operations, {len(document['clock_vectors'])} clock boundaries, {len(document['fence_vectors'])} claim fences, one lifecycle and 3 archive participant cases passed with configured proof")
 
 
