@@ -558,8 +558,7 @@ def verify_source_integrity(before: dict, after: dict, source_reference: dict,
             source_after.get('state') != 'retired' or \
             source_after.get('authority_epoch') != expected_epoch or \
             source_after.get('scope_generation') != expected_generation or \
-            source_after.get('active_transfer_id', expected_transfer_id) != \
-            expected_transfer_id or \
+            source_after.get('active_transfer_id') != expected_transfer_id or \
             source_after.get('old_writes_fenced') is not True or \
             after['source_authority_ledger'][:-1] != prior_ledger or \
             len(after['source_authority_ledger']) != len(prior_ledger) + 1:
@@ -602,6 +601,11 @@ def verify_local_source_step(case: dict, before: dict, after: dict,
                 entry.get('transaction_fate') == 'known_committed']
     if len(retained) != 1:
         raise ValueError(label + ': source freeze was not retained before recovery operation')
+    prepared_reference = source_reference.get('prepared_authority_entry')
+    if prepared_reference is not None and \
+            (prepared_reference not in before['authority_ledger'] or
+             prepared_reference not in after['authority_ledger']):
+        raise ValueError(label + ': retained destination reservation changed')
     retiring = operation == 'commit_transfer' and \
         case['expected_result']['status'] == 'succeeded'
     transfer = case.get('expected_transfer_proof') if retiring else None
@@ -622,10 +626,20 @@ def verify_local_source_step(case: dict, before: dict, after: dict,
         raise ValueError(label + ': prepare or stage lacks the actual frozen source')
     if operation == 'prepare_transfer' and case['expected_result']['status'] == 'succeeded':
         proof = case['expected_transfer_proof']
-        if transaction is None or not any(type(item) is dict and
-                item not in before['authority_ledger'] and
-                all(item.get(key) == value for key, value in {
+        prepared = [item for item in after['authority_ledger']
+                    if type(item) is dict and
+                    item not in before['authority_ledger'] and
+                    all(item.get(key) == value for key, value in {
+                    'operation_kind': 'prepare_transfer',
                     'scope_identity': source_reference['scope_identity'],
+                    'transfer_id': proof['transfer_id'],
+                    'destination_scope_identity':
+                    case['request']['destination_scope_identity'],
+                    'destination_binding_digest': proof['destination_binding_digest'],
+                    'source_binding_digest': proof['source_binding_digest'],
+                    'authority_token_identity':
+                    source_reference['frozen_source_scope']['authority_token_identity'],
+                    'grant_state': 'reserved',
                     'transfer_proof_digest': proof['proof_digest'],
                     'source_storage_identity': source_reference['storage_identity'],
                     'source_native_instance_identity':
@@ -636,22 +650,99 @@ def verify_local_source_step(case: dict, before: dict, after: dict,
                     'native_transaction_id': transaction['native_transaction_id'],
                     'native_proof_id': transaction['proof_id'],
                     'transaction_fate': 'known_committed',
-                }.items()) for item in after['authority_ledger']):
+                }.items())] if transaction is not None else []
+        if len(prepared) != 1:
             raise ValueError(label + ': prepared transfer lacks native source-bound transaction')
+        source_reference['prepared_authority_entry'] = prepared[0]
     if operation == 'commit_transfer' and case['expected_result']['status'] == 'succeeded':
+        proof = case['expected_transfer_proof']
+        request = case['request']
+        destination = request['destination_scope_identity']
+        binding = request['arguments']['destination_binding_digest']
+        prepared = request['arguments']['prepared_proof_digest']
+        staged = request['arguments']['staged_record_digest']
+        source_token = source_reference['frozen_source_scope']['authority_token_identity']
+        prepared_entries = [item for item in before['authority_ledger']
+            if type(item) is dict and all(item.get(key) == value for key, value in {
+                'operation_kind': 'prepare_transfer',
+                'scope_identity': source_reference['scope_identity'],
+                'transfer_id': proof['transfer_id'],
+                'destination_scope_identity': destination,
+                'destination_binding_digest': binding,
+                'source_binding_digest': proof['source_binding_digest'],
+                'authority_token_identity': source_token,
+                'source_storage_identity': source_reference['storage_identity'],
+                'source_native_instance_identity':
+                    source_reference['native_instance_identity'],
+                'transfer_proof_digest': prepared,
+                'grant_state': 'reserved',
+            }.items())]
+        reserved_entries = [item for item in before['authority_ledger']
+                            if type(item) is dict and
+                            item.get('operation_kind') == 'prepare_transfer' and
+                            item.get('scope_identity') == source_reference['scope_identity'] and
+                            item.get('grant_state') == 'reserved']
+        staged_entries = [item for item in before['recovery_records']
+                          if type(item) is dict and
+                          item.get('mode') == 'relocation' and
+                          item.get('source', {}).get('logical_scope_identity') ==
+                          source_reference['scope_identity']]
+        retirement_binding = {
+            'operation_kind': 'commit_transfer',
+            'operation_id': request['operation_id'],
+            'scope_identity': source_reference['scope_identity'],
+            'source_native_instance_identity':
+            source_reference['native_instance_identity'],
+            'source_storage_identity': source_reference['storage_identity'],
+            'authority_token_identity': source_token,
+            'transfer_id': proof['transfer_id'],
+            'destination_scope_identity': destination,
+            'destination_binding_digest': binding,
+            'source_binding_digest': proof['source_binding_digest'],
+            'prepared_proof_digest': prepared,
+            'staged_record_digest': staged,
+            'committed_proof_digest': proof['proof_digest'],
+            'archive_digest': proof['archive_digest'],
+            'participant_contract_digest': proof['participant_contract_digest'],
+            'grant_state': 'consumed',
+            'destination_authority_epoch': proof['destination_authority_epoch'],
+            'destination_scope_generation': proof['destination_scope_generation'],
+            'native_transaction_id': transaction['native_transaction_id'] if transaction else None,
+            'native_proof_id': transaction['proof_id'] if transaction else None,
+            'freeze_native_transaction_id':
+            source_reference['freeze_native_transaction_id'],
+            'old_writes_fenced': True,
+            'transaction_fate': 'known_committed',
+        }
+        source_ledger = after['source_authority_ledger']
+        destination_entries = [item for item in after['authority_ledger']
+                               if type(item) is dict and
+                               all(item.get(key) == value for key, value in
+                                   retirement_binding.items())]
+        newly_consumed = [item for item in after['authority_ledger']
+                          if item not in before['authority_ledger'] and
+                          type(item) is dict and item.get('grant_state') == 'consumed']
         if transaction is None or source_before.get('state') != 'frozen' or \
                 source_after.get('state') != 'retired' or \
-                not any(type(item) is dict and all(item.get(key) == value for key, value in {
-                    'operation_kind': 'commit_transfer',
-                    'scope_identity': source_reference['scope_identity'],
-                    'native_transaction_id': transaction['native_transaction_id'],
-                    'native_proof_id': transaction['proof_id'],
-                    'freeze_native_transaction_id':
-                    source_reference['freeze_native_transaction_id'],
-                    'source_storage_identity': source_reference['storage_identity'],
-                    'old_writes_fenced': True,
-                    'transaction_fate': 'known_committed',
-                }.items()) for item in after['source_authority_ledger']):
+                len(prepared_entries) != 1 or \
+                prepared_entries[0] != prepared_reference or \
+                reserved_entries != prepared_entries or \
+                len(staged_entries) != 1 or \
+                staged_entries[0].get('destination_scope_identity') != destination or \
+                staged_entries[0].get('destination_binding_digest') != binding or \
+                digest(['determa-recovery-record-1', staged_entries[0]]) != staged or \
+                request['arguments']['transfer_id'] != proof['transfer_id'] or \
+                binding != proof['destination_binding_digest'] or \
+                source_ledger[-1] in before['source_authority_ledger'] or \
+                not all(source_ledger[-1].get(key) == value for key, value in
+                        retirement_binding.items()) or \
+                len(destination_entries) != 1 or \
+                newly_consumed != destination_entries or \
+                destination_entries[0] in before['authority_ledger'] or \
+                any(type(item) is dict and
+                    item.get('scope_identity') == source_reference['scope_identity'] and
+                    item.get('grant_state') == 'consumed'
+                    for item in before['source_authority_ledger']):
             raise ValueError(label + ': old owner retirement was not native and atomic')
         if any(type(claim) is dict and claim.get('scope_identity') ==
                source_reference['scope_identity'] and claim.get('state') == 'active'

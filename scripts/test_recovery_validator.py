@@ -321,6 +321,7 @@ def main() -> int:
     frozen_scope = {
         'scope_identity': source_identity, 'storage_identity': 'native-source-db',
         'native_instance_identity': 'native-source-instance', 'state': 'frozen',
+        'authority_token_identity': 'host-token',
         'authority_epoch': proof['source_authority_epoch'],
         'scope_generation': proof['source_scope_generation'],
         'inventory_digest': 'sha256:frozen-inventory',
@@ -342,6 +343,29 @@ def main() -> int:
     frozen_state.update(copy.deepcopy(frozen_inventory))
     frozen_state['source_scopes'] = [copy.deepcopy(frozen_scope)]
     frozen_state['source_authority_ledger'] = [copy.deepcopy(freeze_entry)]
+    commit_case = next(item for item in fixture['cases'] if item['case_id'] == 'local_commit')
+    commit_proof = commit_case['expected_transfer_proof']
+    commit_request = commit_case['request']
+    prepared_entry = {
+        'operation_kind': 'prepare_transfer', 'scope_identity': source_identity,
+        'transfer_id': commit_proof['transfer_id'],
+        'destination_scope_identity': commit_request['destination_scope_identity'],
+        'destination_binding_digest': commit_proof['destination_binding_digest'],
+        'source_binding_digest': commit_proof['source_binding_digest'],
+        'authority_token_identity': 'host-token',
+        'source_storage_identity': 'native-source-db',
+        'source_native_instance_identity': 'native-source-instance',
+        'transfer_proof_digest': commit_request['arguments']['prepared_proof_digest'],
+        'grant_state': 'reserved',
+        'freeze_native_transaction_id': 'native-freeze',
+        'freeze_native_proof_id': 'proof-freeze',
+        'native_transaction_id': 'native-prepare',
+        'native_proof_id': 'proof-prepare',
+        'transaction_fate': 'known_committed'}
+    frozen_state['authority_ledger'] = [copy.deepcopy(prepared_entry)]
+    stage_record = next(item for item in fixture['cases']
+                        if item['case_id'] == 'local_stage')['expected_record']
+    frozen_state['recovery_records'] = [copy.deepcopy(stage_record)]
     frozen_reference = {
         'scope_identity': source_identity,
         'storage_identity': 'native-source-db',
@@ -349,6 +373,7 @@ def main() -> int:
         'frozen_source_scope': copy.deepcopy(frozen_scope),
         'frozen_inventory': copy.deepcopy(frozen_inventory),
         'source_authority_ledger': [copy.deepcopy(freeze_entry)],
+        'prepared_authority_entry': copy.deepcopy(prepared_entry),
         'freeze_native_transaction_id': 'native-freeze',
         'freeze_native_proof_id': 'proof-freeze',
         'source_fault_cut': None}
@@ -357,6 +382,16 @@ def main() -> int:
         'scope_identity', 'native_instance_identity', 'storage_identity',
         'freeze_native_transaction_id', 'freeze_native_proof_id',
         'export_observation_id', 'source_fault_cut'}
+    prepare_case = next(item for item in fixture['cases']
+                        if item['case_id'] == 'local_prepare')
+    before_prepare = copy.deepcopy(frozen_state)
+    before_prepare['authority_ledger'] = []
+    prepare_reference = copy.deepcopy(frozen_reference)
+    prepare_reference.pop('prepared_authority_entry')
+    verify_local_source_step(prepare_case, before_prepare, frozen_state,
+        {'native_transaction_id': 'native-prepare', 'proof_id': 'proof-prepare'},
+        prepare_reference, fixture)
+    assert prepare_reference['prepared_authority_entry'] == prepared_entry
     stage_case = next(item for item in fixture['cases'] if item['case_id'] == 'local_stage')
     verify_local_source_step(stage_case, frozen_state, frozen_state, None,
                              copy.deepcopy(frozen_reference), fixture)
@@ -381,23 +416,78 @@ def main() -> int:
                  lambda state=changed: verify_source_integrity(
                      frozen_state, state, copy.deepcopy(frozen_reference),
                      'local archive stage'))
-    commit_case = next(item for item in fixture['cases'] if item['case_id'] == 'local_commit')
     committed_state = copy.deepcopy(frozen_state)
     committed_state['source_scopes'][0].update(
         state='retired', authority_epoch=proof['destination_authority_epoch'],
         scope_generation=proof['destination_scope_generation'],
-        old_writes_fenced=True)
-    committed_state['source_authority_ledger'].append({
-        'operation_kind': 'commit_transfer', 'scope_identity': source_identity,
+        active_transfer_id=commit_proof['transfer_id'], old_writes_fenced=True)
+    retired_entry = {
+        'operation_kind': 'commit_transfer',
+        'operation_id': commit_request['operation_id'],
+        'scope_identity': source_identity,
+        'source_native_instance_identity': 'native-source-instance',
+        'source_storage_identity': 'native-source-db',
+        'authority_token_identity': 'host-token',
+        'transfer_id': commit_proof['transfer_id'],
+        'destination_scope_identity': commit_request['destination_scope_identity'],
+        'destination_binding_digest': commit_proof['destination_binding_digest'],
+        'source_binding_digest': commit_proof['source_binding_digest'],
+        'prepared_proof_digest': commit_request['arguments']['prepared_proof_digest'],
+        'staged_record_digest': commit_request['arguments']['staged_record_digest'],
+        'committed_proof_digest': commit_proof['proof_digest'],
+        'archive_digest': commit_proof['archive_digest'],
+        'participant_contract_digest': commit_proof['participant_contract_digest'],
+        'grant_state': 'consumed',
+        'destination_authority_epoch': commit_proof['destination_authority_epoch'],
+        'destination_scope_generation': commit_proof['destination_scope_generation'],
         'native_transaction_id': 'native-retire',
         'native_proof_id': 'proof-retire',
         'freeze_native_transaction_id': 'native-freeze',
-        'source_storage_identity': 'native-source-db',
-        'old_writes_fenced': True, 'transaction_fate': 'known_committed'})
+        'old_writes_fenced': True, 'transaction_fate': 'known_committed'}
+    committed_state['source_authority_ledger'].append(copy.deepcopy(retired_entry))
+    committed_state['authority_ledger'].append(copy.deepcopy(retired_entry))
     retire_tx = {'native_transaction_id': 'native-retire', 'proof_id': 'proof-retire'}
     retired_reference = copy.deepcopy(frozen_reference)
     verify_local_source_step(commit_case, frozen_state, committed_state,
                              retire_tx, retired_reference, fixture)
+    for name, mutate in [
+        ('missing actual transfer', lambda state: state['source_scopes'][0].pop(
+            'active_transfer_id')),
+        ('wrong actual transfer', lambda state: state['source_scopes'][0].update(
+            active_transfer_id='competing-transfer')),
+        ('missing source grant', lambda state: state['source_authority_ledger'][-1].pop(
+            'transfer_id')),
+        ('wrong destination', lambda state: state['source_authority_ledger'][-1].update(
+            destination_binding_digest='sha256:competing-destination')),
+        ('unconsumed grant', lambda state: state['authority_ledger'][-1].update(
+            grant_state='reserved')),
+        ('competing consumed grant', lambda state: state['authority_ledger'].append(
+            {**state['authority_ledger'][-1],
+             'destination_binding_digest': 'sha256:competing-destination'})),
+    ]:
+        changed = copy.deepcopy(committed_state)
+        mutate(changed)
+        rejected('local retirement accepted ' + name,
+                 lambda state=changed: verify_local_source_step(
+                     commit_case, frozen_state, state, retire_tx,
+                     copy.deepcopy(frozen_reference), fixture))
+    for name, mutate in [
+        ('missing destination reservation', lambda state: state['authority_ledger'].clear()),
+        ('competing destination reservation', lambda state: state['authority_ledger'][0].update(
+            destination_binding_digest='sha256:competing-destination')),
+        ('second reserved destination', lambda state: state['authority_ledger'].append(
+            {**prepared_entry, 'destination_binding_digest':
+             'sha256:competing-destination'})),
+        ('second staged destination', lambda state: state['recovery_records'].append(
+            {**stage_record, 'destination_binding_digest':
+             'sha256:competing-destination'})),
+    ]:
+        changed = copy.deepcopy(frozen_state)
+        mutate(changed)
+        rejected('local retirement accepted ' + name,
+                 lambda state=changed: verify_local_source_step(
+                     commit_case, state, committed_state, retire_tx,
+                     copy.deepcopy(frozen_reference), fixture))
     for name, mutate in [
         ('deleted checkpoint', lambda state: state['source_checkpoints'].pop()),
         ('rewritten host journal', lambda state: state['source_host_journals'][0].update(
@@ -416,6 +506,17 @@ def main() -> int:
     activate_case = next(item for item in fixture['cases'] if item['case_id'] == 'local_activate')
     verify_local_source_step(activate_case, committed_state, committed_state,
                              None, copy.deepcopy(retired_reference), fixture)
+    consumed_case = next(item for item in fixture['cases']
+                         if item['case_id'] == 'local_consumed_grant')
+    verify_local_source_step(consumed_case, committed_state, committed_state,
+                             None, copy.deepcopy(retired_reference), fixture)
+    retry_changed = copy.deepcopy(committed_state)
+    retry_changed['authority_ledger'].append({**retired_entry,
+        'operation_id': consumed_case['request']['operation_id'],
+        'destination_binding_digest': 'sha256:competing-destination'})
+    rejected('lost-reply retry consumed grant for a competing destination',
+             lambda: verify_local_source_step(consumed_case, committed_state,
+                 retry_changed, None, copy.deepcopy(retired_reference), fixture))
     for name, mutate in [
         ('deleted checkpoint', lambda state: state['source_checkpoints'].pop()),
         ('rewritten participant', lambda state: state['source_participants'][0].update(

@@ -101,6 +101,13 @@ refusal. Commit must retire that same source and fence old writers in its native
 transaction. The source plan contains operations, never preseeded checkpoints,
 records or an expected after-state. Generic C/D/H capability proofs alone do
 not establish this particular source.
+The native retirement observer must retain the exact active transfer ID and one
+destination-bound consumed grant in the source and destination authority ledgers.
+Its committed record binds the source instance and store, authority token,
+destination identity and binding, staged record, prepared and committed proof,
+archive and participant contract, and the same native commit transaction. A
+different destination reservation, second staged destination, missing grant, or
+reused grant fails the hosted gate.
 No host may report `safe_relocation` from the static fixture or by copying a
 requested profile claim. The standalone runner never certifies local transfer.
 
