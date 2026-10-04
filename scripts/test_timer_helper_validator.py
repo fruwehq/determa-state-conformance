@@ -17,6 +17,7 @@ from run_timer_helper_profile import (loaded_closure_digest, operation_input,
                                       strict_json, verify_configured, verify_native_composition,
                                       trusted_bridge_registration, verify_archive_capture,
                                       run_timer_operation, lifecycle_call)
+from run_lossless_delivery_profile import run as run_delivery_case, CASE as DELIVERY_CASE
 from validate_portable_archive import validate_archive_integrity, validator_registry
 
 
@@ -99,6 +100,49 @@ def main():
                 raise AssertionError(f"accepted changed reviewed {field}")
     first = json.loads((root / "conformance/profiles/timer-helper/timer-01-external-helper/vectors.generated.json").read_text())["cases"][0]
     timer_case = root / "conformance/profiles/timer-helper/timer-01-external-helper"
+    with tempfile.TemporaryDirectory() as temporary:
+        delivery_case = Path(temporary)
+        timer_delivery = json.loads((timer_case / "timer-delivery.generated.json").read_text())
+        first_ingress = timer_delivery["vectors"][0]
+        timer_delivery["vectors"] = [first_ingress]
+        (delivery_case / "delivery-vectors-v1.json").write_text(json.dumps(timer_delivery))
+        ownership_artifact = json.loads((timer_case / "source-ownership.generated.json").read_text())
+        for filename, value in (("before-timer-checkpoint-v1.json", ownership_artifact["before_checkpoint"]),
+                                ("after-timer-checkpoint-v1.json", ownership_artifact["after_checkpoint"])):
+            (delivery_case / filename).write_text(json.dumps(value))
+        shutil.copyfile(timer_case / "target-machine.yaml", delivery_case / "machine.yaml")
+        shutil.copyfile(DELIVERY_CASE / "outbox-machine.yaml", delivery_case / "outbox-machine.yaml")
+        after = json.loads(json.dumps(first_ingress["after"]))
+        after["checkpoint"] = json.loads((delivery_case / after["checkpoint"]).read_text())
+        for mode in ("no_helper", "replaced_raw_return"):
+            fake_ingress = delivery_case / "fake_ingress.py"
+            fake_ingress.write_text(
+                "import json,sys\nfrom pathlib import Path\n"
+                f"sys.path.insert(0,{str(root / 'scripts')!r})\n"
+                "from run_lossless_delivery_profile import store_call,digest\n"
+                "from validate_conformance import canonical_json_bytes\n"
+                "r=json.load(sys.stdin)\n"
+                "host=Path(r['host_store_database_path'])\n"
+                + ("i=r['trusted_timer_invocation']\n"
+                   "store_call(host,'timer_invocation_start',run_id=r['run_id'],"
+                   "invocation_id=i['invocation_id'],request_digest=i['request_digest'],"
+                   "factory_identity=i['factory_identity'],public_request=i['public_request'])\n"
+                   if mode == "replaced_raw_return" else "") +
+                "store_call(host,'commit',run_id=r['run_id'],operation_id=r['operation_id'],"
+                "expected_before_digest=digest(canonical_json_bytes(r['before'])),"
+                f"after={after!r}" +
+                (",timer_invocation_receipt={'invocation_id':i['invocation_id'],'raw_return':{}}"
+                 if mode == "replaced_raw_return" else "") + ")\n"
+                f"sys.stdout.buffer.write(canonical_json_bytes({{'response':{first_ingress['expected_response']!r},"
+                f"'after':{after!r},'native_evidence':{{}}}}))\n")
+            try:
+                run_delivery_case([sys.executable, str(fake_ingress)], delivery_case,
+                                  timer_bridge_anchor={"factory_identity": "reviewed:timer"})
+            except AssertionError as error:
+                if "reviewed complete_fire return is not in the same native transaction" not in str(error):
+                    raise AssertionError(f"{mode}: wrong rejection: {error}") from error
+            else:
+                raise AssertionError(f"accepted {mode} with native C/D/H bytes but no real complete_fire")
     export = json.loads((timer_case / "archive-operational.generated.json").read_text())
     lifecycle = json.loads((timer_case / "lifecycle.generated.json").read_text())
     captured = {"checkpoint": lifecycle["expected_create_checkpoint"],

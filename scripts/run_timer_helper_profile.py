@@ -162,16 +162,18 @@ def attach_invocation(body, database, run_id, factory_identity):
     body["trusted_timer_invocation"] = {
         "command": [sys.executable, str(DELIVERY_STORE)], "database_path": str(database),
         "run_id": run_id, "invocation_id": invocation_id,
-        "request_digest": request_digest, "factory_identity": factory_identity}
+        "request_digest": request_digest, "factory_identity": factory_identity,
+        "public_request": strict_json(rfc8785.dumps(body))}
     return invocation_id, request_digest
 
 
 def verify_invocation(database, run_id, invocation_id, request_digest, factory_identity,
-                      raw_response, before, after):
+                      raw_response, before, after, public_request):
     journal = delivery_store_call(database, "timer_invocation_snapshot", run_id=run_id)["invocations"]
     if journal != [{"invocation_id": invocation_id, "request_digest": request_digest,
-                    "factory_identity": factory_identity,
+                    "factory_identity": factory_identity, "public_request": public_request,
                     "start_state_digest": delivery_digest(rfc8785.dumps(before)),
+                    "raw_return": raw_response, "native_transaction_id": None,
                     "return_digest": delivery_digest(rfc8785.dumps(raw_response)),
                     "return_state_digest": delivery_digest(rfc8785.dumps(after))}]:
         raise ValueError("reviewed timer bridge invocation/raw return was not independently journaled")
@@ -213,7 +215,9 @@ def run_timer_operation(command, row, target_machine, factory_identity="test-unv
             raise ValueError(f"{row['id']}: live helper result or call counts differ")
         persistent = delivery_store_call(database, "snapshot", run_id=run_id)
         verify_invocation(database, run_id, invocation_id, request_digest, factory_identity,
-                          observed, before, persistent["after"])
+                          observed, before, persistent["after"],
+                          {key: value for key, value in body.items()
+                           if key != "trusted_timer_invocation"})
         if not exact_json_equal(persistent["after"], expected_after):
             raise ValueError(f"{row['id']}: trusted helper/checkpoint store differs")
         changed = not exact_json_equal(before, expected_after)
@@ -277,7 +281,9 @@ def run_live_timer_archive(command, schedule_row, target_machine, export,
             raise ValueError("timer archive schedule did not invoke the installed helper")
         snapshot = delivery_store_call(database, "snapshot", run_id=run_id)
         verify_invocation(database, run_id, invocation_id, request_digest, factory_identity,
-                          observed, before, snapshot["after"])
+                          observed, before, snapshot["after"],
+                          {key: value for key, value in body.items()
+                           if key != "trusted_timer_invocation"})
         if len(snapshot["transactions"]) != 1 or \
                 snapshot["transactions"][0]["operation_id"] != operation_id or \
                 snapshot["crash_cuts"]:
@@ -308,7 +314,10 @@ def run_live_timer_archive(command, schedule_row, target_machine, export,
         if len(journal) != 2 or journal[1] != {
                 "invocation_id": export_invocation, "request_digest": export_request_digest,
                 "factory_identity": factory_identity,
+                "public_request": {key: value for key, value in archive_body.items()
+                                   if key != "trusted_timer_invocation"},
                 "start_state_digest": delivery_digest(rfc8785.dumps(snapshot["after"])),
+                "raw_return": response, "native_transaction_id": None,
                 "return_digest": delivery_digest(rfc8785.dumps(response)),
                 "return_state_digest": delivery_digest(rfc8785.dumps(snapshot["after"]))}:
             raise ValueError("live timer archive export lacks actual reviewed bridge invocation")
@@ -447,7 +456,8 @@ def verify_configured(observed, spec_root, completed_request_digests, bridge_att
     return report
 
 
-def run_native_delivery_proof(command, authority_command, spec_root, case_dir, ownership):
+def run_native_delivery_proof(command, authority_command, spec_root, case_dir, ownership,
+                              bridge_anchor):
     """Execute the full C/D/H chain, then timer ingress under that installation."""
     with tempfile.TemporaryDirectory(prefix="determa-timer-delivery-") as temporary:
         root = Path(temporary)
@@ -483,7 +493,8 @@ def run_native_delivery_proof(command, authority_command, spec_root, case_dir, o
         (timer_case / "outbox-machine.yaml").write_bytes((DELIVERY_CASE / "outbox-machine.yaml").read_bytes())
         native_operations = []
         if run_delivery_case(command, case=timer_case, run_id=summary["parent_run_id"],
-                             profile_links=links, proof_summary=native_operations) != 3:
+                             profile_links=links, proof_summary=native_operations,
+                             timer_bridge_anchor=bridge_anchor) != 3:
             raise ValueError("timer ingress native operations incomplete")
         if verify_configured_delivery_profile(command, summary["parent_run_id"], links) != report:
             raise ValueError("delivery installation changed after timer source run")
@@ -494,6 +505,16 @@ def run_native_delivery_proof(command, authority_command, spec_root, case_dir, o
                 native_operations[1]["crash_cut"] != {
                     "operation_id": native_operations[1]["operation_id"], "phase": "after_commit"} or \
                 not all(item["host_store_proof_id"] for item in native_operations) or \
+                any("timer_invocation" not in item for item in native_operations) or \
+                any(item["timer_invocation"]["factory_identity"] != bridge_anchor["factory_identity"]
+                    for item in native_operations) or \
+                native_operations[0]["timer_invocation"]["native_transaction_id"] != \
+                    native_operations[0]["native_transaction_id"] or \
+                native_operations[1]["timer_invocation"]["native_transaction_id"] != \
+                    native_operations[1]["native_transaction_id"] or \
+                native_operations[2]["timer_invocation"] != native_operations[1]["timer_invocation"] or \
+                native_operations[0]["timer_invocation"]["invocation_id"] == \
+                    native_operations[1]["timer_invocation"]["invocation_id"] or \
                 native_operations[2]["source_acknowledgements"] != [ownership["acknowledge_after_commit"]]:
             raise ValueError("timer source native commit, crash, or replay proof differs")
         return summary, native_operations
@@ -594,7 +615,9 @@ def lifecycle_call(command, lifecycle, machine, target_machine, label,
         verify_invocation(Path(main_provider["database_path"]), main_provider["run_id"],
                           invocation_id, request_digest, factory_identity, observed,
                           {"timer_artifact": timer_artifact(), "checkpoint": None},
-                          expected_states["main"][-1])
+                          expected_states["main"][-1],
+                          {key: value for key, value in body.items()
+                           if key != "trusted_timer_invocation"})
     expected = {"create_checkpoint": lifecycle["expected_create_checkpoint"],
                 "intent_emissions": lifecycle["expected_intent_emissions"],
                 "cancel_intent_emissions": lifecycle["expected_cancel_intent_emissions"],
@@ -657,7 +680,7 @@ def main():
         for name in ("schedule_request", "cancel_request", "claim_request", "complete_request"))
     ownership = strict_json((case_dir / "source-ownership.generated.json").read_bytes())
     delivery_summary, timer_operations = run_native_delivery_proof(
-        bridge, args.authority_adapter, args.spec_root, case_dir, ownership)
+        bridge, args.authority_adapter, args.spec_root, case_dir, ownership, bridge_anchor)
     configured = call(bridge, {"kind": "configured_timer_helper"}, "configured_timer_helper")
     attestation = call(bridge, {"kind": "trusted_timer_bridge_attestation"},
                        "trusted_timer_bridge_attestation")

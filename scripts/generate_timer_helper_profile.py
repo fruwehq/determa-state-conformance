@@ -102,6 +102,7 @@ def configured_lifecycle(original, scope):
             request = requests[item["operation_id"]]
             result = item["result"]
             result["event_id"] = fire_id
+            result["scope_identity"] = scope
             result["result_digest"] = digest(["determa-timer-result-1", request["request_digest"],
                 {key: part for key, part in result.items() if key != "result_digest"}])
             item["request_digest"] = request["request_digest"]

@@ -213,7 +213,8 @@ def check_transport(vector: dict, database: Path, sources: list[dict], before: d
 
 
 def run(command: list[str], case: Path = CASE, run_id: str | None = None,
-        profile_links: dict | None = None, proof_summary: list | None = None) -> int:
+        profile_links: dict | None = None, proof_summary: list | None = None,
+        timer_bridge_anchor: dict | None = None) -> int:
     manifest = strict_document((case / 'delivery-vectors-v1.json').read_bytes(), 'manifest')
     checkpoints = {path.name: strict_document(path.read_bytes(), path.name)
                    for path in case.glob('*-checkpoint-v1.json')}
@@ -221,6 +222,7 @@ def run(command: list[str], case: Path = CASE, run_id: str | None = None,
                 'outbound': (case / 'outbox-machine.yaml').read_text(encoding='utf-8')}
     count = 0
     sessions: dict[str, tuple[Path, Path, str, dict]] = {}
+    timer_sessions: dict[str, dict] = {}
     run_id = run_id or str(uuid.uuid4())
     profile_links = profile_links or {'authority_report_digest': None,
                                       'effect_report_digest': None,
@@ -261,6 +263,9 @@ def run(command: list[str], case: Path = CASE, run_id: str | None = None,
                 raise AssertionError(f'{vector["name"]}: resumed host store differs from original caller state')
             prior_transactions = len(trusted_before['transactions'])
             prior_crash_cuts = len(trusted_before['crash_cuts'])
+            prior_timer_invocations = store_call(
+                store_database, 'timer_invocation_snapshot', run_id=run_id)['invocations'] \
+                if 'timer_fire_context' in vector else []
             transfer_digest = (after['bindings'][0]['admission_binding_digest']
                                if after['bindings'] else
                                after['dead_letters'][0]['ingress_dead_letter_digest']
@@ -303,7 +308,27 @@ def run(command: list[str], case: Path = CASE, run_id: str | None = None,
             if 'ordering_context' in vector:
                 request['ordering_context'] = vector['ordering_context']
             if 'timer_fire_context' in vector:
+                if timer_bridge_anchor is None:
+                    raise AssertionError('timer ingress needs a reviewed helper bridge anchor')
                 request['timer_fire_context'] = vector['timer_fire_context']
+                if resume:
+                    retained_timer = timer_sessions.get(vector['replay_of'])
+                    if retained_timer is None or prior_timer_invocations != [retained_timer]:
+                        raise AssertionError('timer replay lost the original public helper invocation')
+                    request['trusted_timer_replay'] = {
+                        'invocation_id': retained_timer['invocation_id'],
+                        'native_transaction_id': retained_timer['native_transaction_id']}
+                else:
+                    invocation_id = str(uuid.uuid4())
+                    request['trusted_timer_invocation'] = {
+                        'command': [sys.executable, str(STORE)],
+                        'database_path': str(store_database), 'run_id': run_id,
+                        'invocation_id': invocation_id,
+                        'factory_identity': timer_bridge_anchor['factory_identity'],
+                        'public_request': vector['timer_fire_context'],
+                        'request_digest': digest(canonical_json_bytes(vector['timer_fire_context'])),
+                        'native_operation_id': operation_id,
+                        'required_atomic_commit': True}
             completed = subprocess.run(command, input=canonical_json_bytes(request),
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
             expected_response = ({'kind': 'typed_failure',
@@ -348,6 +373,36 @@ def run(command: list[str], case: Path = CASE, run_id: str | None = None,
             if transaction and (transaction['before_digest'] != digest(canonical_json_bytes(before)) or
                                 transaction['after_digest'] != digest(canonical_json_bytes(after))):
                 raise AssertionError(f'{vector["name"]}: trusted transaction committed different bytes')
+            timer_invocation = None
+            if 'timer_fire_context' in vector:
+                invocations = store_call(store_database, 'timer_invocation_snapshot',
+                                         run_id=run_id)['invocations']
+                complete = vector['timer_fire_context']['complete_request']
+                raw_result = next((item['result'] for item in after['timer_artifact']['operation_receipts']
+                                   if item['operation_id'] == complete['operation_id'] and
+                                   item['request_digest'] == complete['request_digest']), None)
+                if raw_result is None or transaction is None or \
+                        after['timer_artifact']['records'][0]['admission_receipt_digest'] != \
+                        complete['arguments']['admission_receipt_digest']:
+                    raise AssertionError(f'{vector["name"]}: timer helper/admission commit absent')
+                if resume:
+                    if invocations != prior_timer_invocations:
+                        raise AssertionError(f'{vector["name"]}: replay invoked complete_fire twice')
+                    timer_invocation = prior_timer_invocations[0]
+                else:
+                    expected_invocation = {
+                        'invocation_id': invocation_id,
+                        'request_digest': digest(canonical_json_bytes(vector['timer_fire_context'])),
+                        'factory_identity': timer_bridge_anchor['factory_identity'],
+                        'public_request': vector['timer_fire_context'],
+                        'start_state_digest': digest(canonical_json_bytes(before)),
+                        'raw_return': raw_result,
+                        'return_digest': digest(canonical_json_bytes(raw_result)),
+                        'return_state_digest': digest(canonical_json_bytes(after)),
+                        'native_transaction_id': transaction['native_transaction_id']}
+                    if invocations != [expected_invocation]:
+                        raise AssertionError(f'{vector["name"]}: reviewed complete_fire return is not in the same native transaction')
+                    timer_invocation = expected_invocation
             if not crashed_now:
                 check_native_evidence(observed['native_evidence'], operation_id,
                                       run_id, database, store_database, fate,
@@ -368,7 +423,11 @@ def run(command: list[str], case: Path = CASE, run_id: str | None = None,
                     'provider_call_kinds': [item['kind'] for item in new_calls],
                     'destination_receipt_ids': [item['destination_receipt_id']
                                                 for item in new_calls if item['kind'] == 'deliver']})
+                if timer_invocation is not None:
+                    proof_summary[-1]['timer_invocation'] = timer_invocation
             sessions[vector['name']] = (database, store_database, operation_id, after)
+            if timer_invocation is not None:
+                timer_sessions[vector['name']] = timer_invocation
             count += 1
     return count
 
