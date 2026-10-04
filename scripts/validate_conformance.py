@@ -8280,6 +8280,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             f"missing={sorted(REQUIRED_INSPECTION_PROVIDER_COVERAGE-inspection_provider_coverage)}, "
             f"unexpected={sorted(inspection_provider_coverage-REQUIRED_INSPECTION_PROVIDER_COVERAGE)}")
 
+    from committed_native_effects_validator import validate_profile as validate_committed_effects
+    committed_effect_vectors = validate_committed_effects(spec_root)
+
     return (
         f"validated {registry_entries} closed-code entries across "
         f"{registry_categories} categories; "
@@ -8298,8 +8301,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{authority_counts[1]} profile reports, {authority_counts[2]} clock values, "
         f"{authority_counts[3]} worker checks, {authority_counts[4]} native traces, "
         f"{authority_counts[5]} base-core refusals, "
-        f"{runtime_provider_vectors} runtime provider vectors, and "
-        f"{application_projection_vectors} application projection vectors, and "
+        f"{runtime_provider_vectors} runtime provider vectors, "
+        f"{application_projection_vectors} application projection vectors, "
+        f"{committed_effect_vectors} committed native effect vectors, and "
         f"{archive_vectors} portable archive vectors"
     )
 

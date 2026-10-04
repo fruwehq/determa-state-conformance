@@ -1,0 +1,33 @@
+format: 1
+namespace: conformance.committed_native_effects
+events:
+  invoke:
+    direction: input
+    payload:
+      operation_token: { type: string, required: true }
+  native_request:
+    direction: output
+    payload:
+      index: { type: int, required: true }
+  native_succeeded:
+    direction: input
+    payload:
+      provider_reference: { type: string, required: true }
+  native_cancelled:
+    direction: input
+    payload: {}
+machines:
+  - machine_id: workflow
+    version: 1
+    root:
+      type: simple
+      on_events:
+        invoke:
+          action:
+            - send:
+                event: native_request
+                to: { external: true }
+                payload: { index: "0" }
+                correlation_id: "event.payload.operation_token"
+        native_succeeded: {}
+        native_cancelled: {}

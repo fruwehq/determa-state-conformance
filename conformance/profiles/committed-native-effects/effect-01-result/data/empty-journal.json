@@ -1,0 +1,12 @@
+{
+  "host_effect_journal_format": "determa.host_effect_journal",
+  "host_effect_journal_schema_version": 1,
+  "scope_identity": "effect-scope-1",
+  "root_instance_id": "effect-root-1",
+  "checkpoint_revision": "1",
+  "checkpoint_digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135",
+  "journal_revision": "0",
+  "effect_records": [],
+  "operation_response_references": [],
+  "host_effect_journal_digest": "sha256:e9527630bc363a8d690485fd0498dc2ad2661dde32638552cccc3a280e1a23c6"
+}

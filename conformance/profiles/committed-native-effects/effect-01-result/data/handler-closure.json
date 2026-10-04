@@ -1,0 +1,17 @@
+{
+  "format": "determa.effect_handler_closure",
+  "schema_version": 1,
+  "files": [
+    {
+      "path": "handler/test_handler.py",
+      "sha256": "sha256:52cef142c4465254b54d7d03473cea7cc72ee7a4496f62552712aa13df7dc959",
+      "byte_length": 736
+    },
+    {
+      "path": "handler/test_handler.rs",
+      "sha256": "sha256:aab9c97a235d6fca6dccd4f770ce3965f24d89420e6eba118523b52e78a66663",
+      "byte_length": 979
+    }
+  ],
+  "closure_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+}

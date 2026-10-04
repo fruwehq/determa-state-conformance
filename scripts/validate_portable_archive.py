@@ -292,6 +292,48 @@ def validate_journal_inventory(archive: dict, configured: dict, validators: dict
         require(records == commitment['record_commitments'] and
                 journal['operation_response_references'] == commitment['response_commitments'],
                 'host journal inventory content commitment')
+        require(journal['scope_identity'] == archive['source']['logical_scope_identity'],
+                'journal source scope provenance')
+        for record in journal['effect_records']:
+            intent_locations = [item['intent'] for key in
+                ('pending_outbox_intents', 'terminal_outbox_records')
+                for item in checkpoint[key]
+                if item['intent']['effect_id'] == record['effect_id']]
+            tombstones = [item for item in checkpoint['outbox_effect_tombstones']
+                          if item['effect_id'] == record['effect_id']]
+            require(len(intent_locations) + len(tombstones) == 1,
+                    'host journal effect checkpoint location')
+            intent_digest = (digest(['determa-outbox-intent-digest-1', '1',
+                                     checkpoint['root_instance_id'], intent_locations[0]])
+                             if intent_locations else tombstones[0]['intent_digest'])
+            require(record['intent_digest'] == intent_digest,
+                    'host journal effect intent digest')
+            reports = record['attempt_records']
+            fences = [int(report['attempt_fence']) for report in reports]
+            require(fences == sorted(set(fences)) and
+                    all(fence <= int(record['attempt_fence']) for fence in fences),
+                    'host journal attempt fence order')
+            for report in reports:
+                report_payload = (record['outcome']['payload']
+                                  if record['outcome'] is not None and
+                                  report['report_kind'] == record['outcome']['kind']
+                                  else ['map', []])
+                require(report['report_digest'] == digest([
+                    'determa-effect-attempt-report-1', record['effect_id'],
+                    record['operation_token'], report['attempt_fence'],
+                    report['report_kind'], report_payload, report['reason']]),
+                    'host journal attempt report digest')
+            outcome = record['outcome']
+            if outcome is not None:
+                require(outcome['digest'] == digest([
+                    'determa-effect-outcome-1', record['effect_id'],
+                    record['operation_token'], outcome['kind'], outcome['payload'],
+                    outcome['attempt_fence']]), 'host journal outcome digest')
+                mapping = [item for item in record['result_mapping']
+                           if item['outcome_kind'] == outcome['kind']]
+                require(len(mapping) == 1 and record['result_event_id'] == digest([
+                    'determa-effect-result-event-1', record['effect_id'],
+                    mapping[0]['result_slot']]), 'host journal result event identity')
     responses = {item['operation_id']: digest([
         'determa-host-operation-response-1', item['normalized_response']])
         for item in payload['retained_operation_responses']}
