@@ -5,14 +5,15 @@
   "properties": {
     "fixture_format": {"const": "determa.timer_helper.conformance"},
     "fixture_schema_version": {"const": 1},
-    "specification_commit": {"const": "6207362e879ccca70f709e1eb4cc90448d910c0b"},
+    "specification_commit": {"const": "a9079c3578a9a00a2ef554e15484d933da14e4ff"},
     "machine_file": {"const": "machine.yaml"},
     "setup_test_file": {"const": "test.yaml"},
     "clock_cases": {"type": "object"},
     "clock_vectors": {"type": "array", "minItems": 25, "maxItems": 25, "items": {"$ref": "#/$defs/case"}},
+    "fence_vectors": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/case"}},
     "cases": {"type": "array", "minItems": 24, "items": {"$ref": "#/$defs/case"}}
   },
-  "required": ["fixture_format", "fixture_schema_version", "specification_commit", "machine_file", "setup_test_file", "clock_cases", "clock_vectors", "cases"],
+  "required": ["fixture_format", "fixture_schema_version", "specification_commit", "machine_file", "setup_test_file", "clock_cases", "clock_vectors", "fence_vectors", "cases"],
   "additionalProperties": false,
   "$defs": {
     "snapshot": {"type": "object", "properties": {

@@ -19,7 +19,7 @@ class TimerHelperValidationError(ValueError):
     pass
 
 
-def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, int]:
+def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, int, int]:
     case = repository_root / "conformance/profiles/timer-helper/timer-01-external-helper"
     expected_files = render(spec_root)
     for name, expected in expected_files.items():
@@ -137,6 +137,22 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
         elif row["expected_result"]["error_code"] != sample["expected_error"] or \
                 row["before"] != row["after"]:
             raise TimerHelperValidationError("overflow or unavailable clock mutated timer state")
+    if [row["id"] for row in document["fence_vectors"]] != [
+            "complete_at_expiry", "wrong_worker", "changed_fire_event"]:
+        raise TimerHelperValidationError("helper claim fence coverage changed")
+    for row, error, clock_calls in zip(document["fence_vectors"],
+                                       ("timer_stale_fence", "timer_worker_mismatch", "timer_event_conflict"),
+                                       (1, 0, 0)):
+        request = row["request"]
+        if request["request_digest"] != digest(["determa-timer-request-1",
+                {key: value for key, value in request.items() if key != "request_digest"}]) or \
+                row["expected_result"]["error_code"] != error or \
+                row["expected_calls"] != {"clock": clock_calls, "admission": 0} or \
+                row["before"] != row["after"] or \
+                row["before"]["helper_artifact"]["records"][0]["state"] != "claimed" or \
+                row["before"]["checkpoint"] != next(item for item in document["cases"]
+                    if item["id"] == "coordinated_fire_commits")["before"]["checkpoint"]:
+            raise TimerHelperValidationError("expired, wrong-worker or conflicting fire altered state")
     export = json.loads(expected_files["archive-export.generated.json"])
     stage = json.loads(expected_files["archive-stage.generated.json"])
     archive_schemas = validator_registry(spec_root)
@@ -235,4 +251,4 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
             terminal["resulting_aggregate_state_digest"] != lifecycle["expected_after_step_checkpoint"]["root_record"]["aggregate_state"]["aggregate_state_digest"] or \
             terminal["outcome"]["disposition"] != "unhandled":
         raise TimerHelperValidationError("step did not dispose of the fired event")
-    return len(document["cases"]), len(document["clock_vectors"]), 3
+    return len(document["cases"]), len(document["clock_vectors"]), len(document["fence_vectors"]), 3

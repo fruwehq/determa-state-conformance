@@ -151,7 +151,7 @@ def main():
                                     "target_admission": 1, "target_step": 1}}
     if not exact_json_equal(call(args.adapter, lifecycle_input, "timer_lifecycle"), lifecycle_expected):
         raise ValueError("timer_lifecycle: create/intent/schedule/claim/admit/step or complete state differs")
-    for row in [*document["cases"], *document["clock_vectors"]]:
+    for row in [*document["cases"], *document["clock_vectors"], *document["fence_vectors"]]:
         body = operation_input(row, target_machine)
         observed = call(args.adapter, body, row["id"])
         expected = {"result": row["expected_result"], "after": row["after"],
@@ -169,10 +169,11 @@ def main():
         run_archive_case(args.adapter, "stage", row)
     completed_cases = {"timer_lifecycle", "timer_archive_export", *[row["id"] for row in document["cases"]],
                        *[row["id"] for row in document["clock_vectors"]],
+                       *[row["id"] for row in document["fence_vectors"]],
                        *[row["case_id"] for row in stage["cases"]]}
     verify_configured(call(args.adapter, {"kind": "configured_timer_helper"}, "configured_timer_helper"),
                       args.spec_root, completed_cases)
-    print(f"{len(document['cases'])} normative timer operations, {len(document['clock_vectors'])} clock boundaries, one lifecycle and 3 archive participant cases passed with configured proof")
+    print(f"{len(document['cases'])} normative timer operations, {len(document['clock_vectors'])} clock boundaries, {len(document['fence_vectors'])} claim fences, one lifecycle and 3 archive participant cases passed with configured proof")
 
 
 if __name__ == "__main__":

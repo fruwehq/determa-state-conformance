@@ -20,7 +20,7 @@ def main():
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    assert validate_profile(args.spec_root, root) == (24, 25, 3)
+    assert validate_profile(args.spec_root, root) == (24, 25, 3, 3)
     first = json.loads((root / "conformance/profiles/timer-helper/timer-01-external-helper/vectors.generated.json").read_text())["cases"][0]
     submitted = operation_input(first, "target source")
     assert set(submitted) == {"kind", "machine_source", "before", "request", "trusted_now",

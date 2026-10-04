@@ -163,7 +163,7 @@ def render(spec_root: Path):
         add_clock(name, "delay_nanoseconds", sample["duration"], sample["now"],
                   deadline=deadline, error=sample.get("expected_error"))
     value = {"fixture_format": "determa.timer_helper.conformance", "fixture_schema_version": 1,
-             "specification_commit": "6207362e879ccca70f709e1eb4cc90448d910c0b",
+             "specification_commit": "a9079c3578a9a00a2ef554e15484d933da14e4ff",
              "machine_file": "machine.yaml", "setup_test_file": "test.yaml",
              "clock_cases": clock, "clock_vectors": clock_vectors, "cases": rows}
     fire_id = admission["fire_event_id"]
@@ -185,6 +185,27 @@ def render(spec_root: Path):
     helper_after_fire["operation_receipts"].append({"operation_id": fire_row["request"]["operation_id"],
         "request_digest": fire_row["request"]["request_digest"], "result": fire_row["expected_result"]})
     helper_after_fire = artifact(helper_after_fire["records"], helper_after_fire["operation_receipts"])
+    fence_vectors = []
+    for name, error, change, now, clock_calls in (
+            ("complete_at_expiry", "timer_stale_fence", {}, "130", 1),
+            ("wrong_worker", "timer_worker_mismatch", {"worker_principal": "worker-B"}, "120", 0),
+            ("changed_fire_event", "timer_event_conflict",
+             {"event_id": "sha256:" + "0" * 64}, "120", 0)):
+        request = copy.deepcopy(fire_row["request"])
+        request["operation_id"] = name
+        request["arguments"].update(change)
+        request["request_digest"] = digest(["determa-timer-request-1",
+            {key: item for key, item in request.items() if key != "request_digest"}])
+        result = copy.deepcopy(fire_row["expected_result"])
+        result.update(operation_id=name, status="rejected", record_revision="2",
+                      delivery_state="none", error_code=error, result_digest=None)
+        before = {"helper_artifact": claim_row["after"]["helper_artifact"],
+                  "checkpoint": delivery["before_admission"]}
+        fence_vectors.append({"id": name, "request": request, "trusted_now": now,
+            "claim_expires_at": None, "previous_attempt_fate": None,
+            "admission_disposition": None, "before": before, "expected_result": result,
+            "after": copy.deepcopy(before), "expected_calls": {"clock": clock_calls, "admission": 0}})
+    value["fence_vectors"] = fence_vectors
     create = {"operation": "create_v1", "bundle": {"bundle_file": "target-machine.yaml",
               "bundle_source_digest": "sha256:" + hashlib.sha256(target_source).hexdigest(),
               "validated_bundle_fingerprint": bundle_fingerprint_document(YAML(typ="safe").load(target_source))},
