@@ -107,6 +107,7 @@ def render() -> dict[str, bytes]:
     inactive['runtimes'][0]['status']='completed'
     inactive['runtimes'][0]['active_leaf_state_definition_pointers']=[]
     inactive['runtimes'][0]['active_state_activations']=[]
+    inactive['runtimes'][0]['variables']=[]
     inactive=seal_aggregate(inactive)
     outputs: dict[str, bytes] = {'aggregate-before.json':canonical(aggregate),
                                  'aggregate-after.json':canonical(aggregate),
