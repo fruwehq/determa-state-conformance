@@ -13,6 +13,7 @@ import uuid
 from pathlib import Path
 
 from validate_conformance import analyze_json_artifact_source, canonical_json_bytes
+from generate_lossless_delivery_profile import SPEC_PIN
 from run_committed_native_effects_profile import (
     adapter_run as effect_adapter_run, check_observation as check_effect_observation,
     verified_profile as verified_effect_profile,
@@ -545,7 +546,7 @@ def verify_delivery_proof_summary(summary: dict, command: list[str],
     if type(summary) is not dict or set(summary) != expected_keys or \
             summary['format'] != 'determa.conformance.lossless_delivery.proof_summary' or \
             type(summary['schema_version']) is not int or summary['schema_version'] != 1 or \
-            summary['spec_commit'] != '6207362e879ccca70f709e1eb4cc90448d910c0b' or \
+            summary['spec_commit'] != SPEC_PIN or \
             summary['profile_vectors_digest'] != digest((case / 'delivery-vectors-v1.json').read_bytes()) or \
             summary['runner_source_sha256'] != digest(Path(__file__).read_bytes()) or \
             summary['adapter_command_digest'] != digest(canonical_json_bytes(command)) or \
@@ -710,8 +711,8 @@ def main() -> int:
     if args.proof_summary_output is not None:
         spec_commit = subprocess.run(['git', 'rev-parse', 'HEAD'], cwd=args.spec_root,
                                      capture_output=True, text=True, check=True).stdout.strip()
-        if spec_commit != '6207362e879ccca70f709e1eb4cc90448d910c0b':
-            raise SystemExit('lossless delivery proof summary requires pinned specification 6207362')
+        if spec_commit != SPEC_PIN:
+            raise SystemExit(f'lossless delivery proof summary requires pinned specification {SPEC_PIN}')
         summary = {
             'format': 'determa.conformance.lossless_delivery.proof_summary',
             'schema_version': 1, 'spec_commit': spec_commit,

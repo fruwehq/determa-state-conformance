@@ -62,6 +62,6 @@ machines:
                         event: event_envelope
                         variables: typed_variables
                       output_type: structured_actions
-                  - send: { event: accepted, to: { external: true } }
+                  - send: { event: accepted, to: { external: true }, correlation_id: "'provider-correlation'" }
                 transition_to: complete
         complete: { type: final }

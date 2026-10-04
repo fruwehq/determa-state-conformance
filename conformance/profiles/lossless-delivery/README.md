@@ -1,6 +1,7 @@
 # Lossless delivery profile
 
-This optional profile exercises SPEC §21 and binds only implementations that claim
+This optional profile exercises SPEC §21 at immutable specification commit
+`86bb88dd21cb1f799eefe5020b6e49dabf6e7225` and binds only implementations that claim
 lossless delivery. The driver seeds a durable test transport with each original
 source item and a separate controlled host store with the complete before state.
 The adapter installs both through its public production source and store provider

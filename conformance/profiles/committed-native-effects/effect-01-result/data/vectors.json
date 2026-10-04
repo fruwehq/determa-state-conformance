@@ -5,7 +5,7 @@
   },
   "format": "determa.committed_native_effects.vectors",
   "schema_version": 1,
-  "spec_commit": "6207362e879ccca70f709e1eb4cc90448d910c0b",
+  "spec_commit": "86bb88dd21cb1f799eefe5020b6e49dabf6e7225",
   "normative_examples": {
     "examples/effects/active-effect-claim-v1.json": "sha256:55df5a9104e559994ce49364d64c2b68618a199f31918c3a49542b17a4eeb00c",
     "examples/effects/cancel-after-possible-call-journal-v1.json": "sha256:94f7530172371306d674c8b753334ea186ddd97ab403d729daa81016e08f5137",
