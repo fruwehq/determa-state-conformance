@@ -242,6 +242,36 @@ The required native core coverage is grouped as follows:
 | `122-native-v1-migration-execution` | unchanged-definition resume; route adjacency, order, cycle, and absence; retry; all migration-then-processing outcomes; terminal migration |
 | `123-native-v1-migration-guards` | trust, resource and security limits, request validation, transform faults, and failure/discriminator precedence |
 | `124-native-v1-occurrence-identity` | occurrence-local bindings plus exact decimal target identity boundaries for spawn and component activation sequences |
+| `125-exact-candidate-inspection` | exact runtime inspection, structural branch and deferral precedence, invalid targets/envelopes, bounded CEL fuel, and CEL preflight (§12) |
+
+### Exact candidate inspection driver (unreleased 0.3)
+
+Case 125 contains 49 `inspection_vectors` against sealed B0 aggregates. The
+`core` profile requires structural inspection. The separately declared
+`safe_semantic` profile covers all seven normative CEL fuel pairs; the
+`without_safe_semantic` vectors require refusal without a
+guard or external call. The vector schema and independent relational validator
+check exact request and outcome shapes against the pinned specification, bind
+target incarnation, aggregate digest, definition and guard digests, enforce
+branch order and deferral, and compare byte-identical before/after aggregate
+artifacts. Semantic preflight counts the whole normalized envelope and every live
+lexically visible variable value, including external bindings. Exact 65536/65537
+unit pairs exercise payload, ordinary variable, and external variable growth;
+combined bad-envelope vectors pin request, target, incarnation, and inactive
+runtime precedence. The nine normative invalid-shape examples run in the
+validator test. The separate
+[inspection-provider profile](conformance/profiles/inspection-provider/README.md)
+adds seven source-bound native vectors, exercised by a host only when it claims that
+optional configured provider capability.
+
+A runtime harness loads the named validated bundle and aggregate through its
+production decode path, calls its production `inspect_candidate` with the six
+literal request members, serializes the raw result or two-member failure, and
+compares the exact outcome and before/after aggregate bytes. It also checks the
+declared guard evaluations, action invocations, emissions, and external calls.
+Names and `covers` labels are indexing metadata, never inputs to inspection.
+The fixture generator constructs expected artifacts and is not a runtime oracle.
+Run `python scripts/generate_inspection_vectors.py --check` after edits.
 
 Generate or independently verify the canonical fixtures with:
 
@@ -418,7 +448,7 @@ declare them and do not standardize storage or a public API. See the profile REA
 | 26–28 | unreachable state, dead branch, and reachable positive validation (§5) |
 | 29 | owned spawn with typed input binding and completion (§7) |
 | 30 | synchronous owned-instance cancellation (§7) |
-| 31 | intentionally absent: no standardized enabled-event inspection shape |
+| 31 | historically absent; exact candidate inspection is case 125 (§12) |
 | 32 | explicit history resume versus plain restart (§6) |
 | 33 | history capture only when the composite exits (§6) |
 | 34 | first-entry history fallback (§6) |

@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "5f3bedb4b8f831a630c0903bb97a20c0a19a3cefcc4a045e99a236103b7c77be",
+  "registry_sha256": "80a9425e1309c0649e20296dd14d745f96553c1ca6b6bc8d7f45f69b3bebb46c",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -117,6 +117,33 @@
         "invalid_extension_configuration",
         "invalid_extension_descriptor",
         "unknown_extension"
+      ]
+    },
+    {
+      "id": "inspection_disposition",
+      "codes": [
+        "deferred",
+        "handled_now",
+        "invalid",
+        "unhandled"
+      ]
+    },
+    {
+      "id": "inspection_failure",
+      "codes": [
+        "inspection_capability_unavailable",
+        "inspection_guard_failure",
+        "inspection_limit_exceeded",
+        "invalid_inspection_request"
+      ]
+    },
+    {
+      "id": "inspection_reason",
+      "codes": [
+        "invalid_envelope",
+        "runtime_inactive",
+        "target_incarnation_mismatch",
+        "target_not_found"
       ]
     },
     {

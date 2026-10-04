@@ -95,6 +95,71 @@ NON_FINITE_DOUBLE_MARKERS = frozenset(
 INSTANCE_REFERENCE_FIELDS = frozenset(
     {"root_instance_id", "instance_id", "machine_id", "machine_version"}
 )
+REQUIRED_INSPECTION_CORE_COVERAGE = frozenset(
+    (
+        'structural_guard_defer',
+        'structural_guard_default',
+        'structural_ancestor',
+        'structural_blocked',
+        'structural_none',
+        'structural_literal_true',
+        'wrong_target',
+        'wrong_direction',
+        'wrong_payload',
+        'wrong_visibility',
+        'reserved_failure_event',
+        'missing_runtime',
+        'stale_incarnation',
+        'inactive_runtime',
+        'missing_runtime_precedes_bad_envelope',
+        'stale_incarnation_precedes_bad_envelope',
+        'inactive_precedes_bad_envelope',
+        'stale_digest',
+        'stale_digest_precedes_target_and_envelope',
+        'malformed_limits',
+        'malformed_limits_precede_target_and_envelope',
+        'oversized_maximum_guard_evaluations',
+        'oversized_maximum_evaluation_steps',
+        'semantic_literal_true_1',
+        'semantic_negated_true_2',
+        'semantic_negated_true_3',
+        'semantic_both_operands_3',
+        'semantic_both_operands_4',
+        'semantic_string_size_8',
+        'semantic_string_size_9',
+        'semantic_exact_ast_boundary',
+        'semantic_exact_source_boundary',
+        'semantic_value_boundary',
+        'semantic_ast_preflight',
+        'semantic_value_preflight',
+        'semantic_variable_boundary',
+        'semantic_variable_preflight',
+        'semantic_external_preflight',
+        'semantic_source_preflight',
+        'semantic_unicode_size_8',
+        'semantic_unicode_size_9',
+        'semantic_unicode_equal_6',
+        'semantic_unicode_equal_7',
+        'semantic_list_equal_22',
+        'semantic_list_equal_23',
+        'semantic_map_size_13',
+        'semantic_map_size_14',
+        'semantic_guard_failure',
+        'semantic_unavailable',
+    )
+)
+REQUIRED_INSPECTION_PROVIDER_COVERAGE = frozenset(
+    (
+        'structural_safe',
+        'structural_unsafe',
+        'structural_mixed',
+        'semantic_safe',
+        'semantic_unsafe_refused',
+        'semantic_mixed_refused_before_cel',
+        'semantic_safe_fuel_exhausted',
+    )
+)
+
 ARTIFACT_KINDS = {
     "aggregate_state_v1": "aggregate-state-v1.schema.json",
     "migration_descriptor_v1": "migration-descriptor-v1.schema.json",
@@ -4238,6 +4303,18 @@ def validate_version1_vectors(
                     )
             if operation == "migrate_then_process_v1":
                 assert prior_aggregate is not None
+                delivery = selected["delivery"]
+                expected_envelope_digest = hash_value([
+                    "determa-inbox-envelope-digest-1",
+                    "1",
+                    prior_aggregate["root_instance_id"],
+                    delivery["delivery_mode"],
+                    delivery["envelope"],
+                ])
+                if delivery["envelope_digest"] != expected_envelope_digest:
+                    raise ValidationFailure(
+                        f"{location}: combined operation envelope digest differs from the request"
+                    )
                 migration_state_name = vector.get("migration_state_after")
                 migration_manifest = manifests.get(migration_state_name)
                 if (
@@ -7649,6 +7726,66 @@ def validate_case_62(case: Path, test: dict[str, Any]) -> None:
 
 
 
+def validate_initial_identity_oracles(
+    case: Path, test: dict[str, Any], bundle_path: Path,
+    root_instance_id: str, creation_id: str,
+) -> None:
+    """Check the two initialization identity fixtures from their literal operands."""
+    if case.name not in {
+        "75-root-initialization-fault",
+        "86-initial-component-completion-order",
+    }:
+        return
+    bundle = normalized_bundle_value(bundle_path)
+    machine = bundle["machines"][0]
+    namespace = bundle["namespace"]
+    machine_id = machine["machine_id"]
+    version = str(machine["version"])
+    root_runtime_id = hash_value([
+        "determa-root-runtime-identity-1", "1",
+        validated_bundle_fingerprint(bundle_path), namespace, machine_id,
+        version, root_instance_id,
+    ])
+    if case.name.startswith("75-"):
+        expected = hash_value([
+            "determa-cause-identity-1", "1", "root_initialization",
+            root_instance_id, root_runtime_id, root_runtime_id, creation_id,
+            "0", "/machines/0/root", "0",
+        ])
+        if test["create"]["expect"]["fault"]["cause_id"] != expected:
+            raise ValidationFailure(f"{case.name}: root initialization cause identity mismatch")
+        return
+
+    input_event_id = f"conformance:{case.name}:step:0:input"
+    component_events = []
+    final_cause = None
+    for index, _ in enumerate(machine["root"]["states"]["processing"]["components"]):
+        pointer = f"/machines/0/root/states/processing/components/{index}"
+        component_runtime_id = hash_value([
+            "determa-component-runtime-identity-1", "1", root_instance_id,
+            root_runtime_id, pointer, "0", namespace, machine_id, version,
+        ])
+        final_cause = hash_value([
+            "determa-cause-identity-1", "1", "component_initialization",
+            root_instance_id, root_runtime_id, component_runtime_id,
+            input_event_id, "1", pointer, str(index),
+        ])
+        component_events.append(hash_value([
+            "determa-event-identity-1", "1", root_instance_id,
+            component_runtime_id, root_runtime_id, final_cause, "1",
+            "system:component_completion", "0",
+        ]))
+    assert final_cause is not None
+    done_event = hash_value([
+        "determa-event-identity-1", "1", root_instance_id,
+        root_runtime_id, root_runtime_id, final_cause, "1",
+        "system:component_completion", "1",
+    ])
+    actual = [item["event_id"] for item in test["steps"][0]["expect"]["emissions"]]
+    if actual != [*component_events, done_event]:
+        raise ValidationFailure(f"{case.name}: initial component completion identities mismatch")
+
+
 def validate_repository(repository_root: Path, spec_root: Path) -> str:
     try:
         registry_categories, registry_entries = validate_registry(repository_root)
@@ -7686,6 +7823,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             / "schemas"
             / "durable-host-profile-v1.schema.json"
         ),
+        "inspection_vectors": (
+            repository_root / "scripts" / "schemas" / "inspection-vectors.schema.json"
+        ),
+        "inspection_v1": spec_root / "schema" / "inspection-v1.schema.json",
     }
     schemas: dict[str, dict[str, Any]] = {}
     resources: list[tuple[str, Resource[Any]]] = []
@@ -7718,6 +7859,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     )
     durable_host_vector_validator = Draft202012Validator(
         schemas["durable_host_vectors"], registry=registry
+    )
+    inspection_vector_validator = Draft202012Validator(
+        schemas["inspection_vectors"], registry=registry
     )
 
     conformance_version = (repository_root / "VERSION").read_text().strip()
@@ -7763,13 +7907,19 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     version1_coverage: set[str] = set()
     durable_host_vectors = 0
     durable_host_coverage: set[str] = set()
+    inspection_vectors = 0
+    inspection_coverage: set[str] = set()
+    inspection_core_coverage: set[str] = set()
+    inspection_provider_coverage: set[str] = set()
+    inspection_core_vectors = 0
+    inspection_provider_vectors = 0
 
     for case in cases:
         test = load_fixture_document(case / "test.yaml")
         validate_driver_markers(test, case.name)
         profile_modes = {
             name
-            for name in ("version1_vectors", "durable_host_vectors")
+            for name in ("version1_vectors", "durable_host_vectors", "inspection_vectors")
             if name in test
         }
         if len(profile_modes) > 1:
@@ -7780,6 +7930,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             validate_fixture_schema(test, version1_vector_validator, case)
         if "durable_host_vectors" in test:
             validate_fixture_schema(test, durable_host_vector_validator, case)
+        if "inspection_vectors" in test:
+            validate_fixture_schema(test, inspection_vector_validator, case)
         if "load" in test and test["load"] != {"valid": True}:
             raise ValidationFailure(f"{case.name}: unsupported load assertion")
 
@@ -7842,6 +7994,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             if creation_id in creation_ids:
                 raise ValidationFailure(f"{case.name}: duplicate creation_id")
             creation_ids.add(creation_id)
+            validate_initial_identity_oracles(
+                case, test, primary, root_instance_id, creation_id
+            )
 
             captures: set[str] = set()
             for index, step in enumerate(test.get("steps", [])):
@@ -8018,6 +8173,24 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 )
             durable_host_coverage.update(case_coverage)
             durable_host_vectors += len(test["durable_host_vectors"])
+        elif "inspection_vectors" in test:
+            from inspection_validator import validate_inspection_vectors
+            case_coverage = validate_inspection_vectors(
+                case, test, referenced, referenced_artifacts, spec_root
+            )
+            duplicate_coverage = inspection_coverage & case_coverage
+            if duplicate_coverage:
+                raise ValidationFailure(
+                    f"{case.name}: inspection coverage repeated: {sorted(duplicate_coverage)}"
+                )
+            inspection_coverage.update(case_coverage)
+            inspection_vectors += len(test["inspection_vectors"])
+            if "core" in case.parts:
+                inspection_core_coverage.update(case_coverage)
+                inspection_core_vectors += len(test["inspection_vectors"])
+            else:
+                inspection_provider_coverage.update(case_coverage)
+                inspection_provider_vectors += len(test["inspection_vectors"])
 
         actual_bundles = {
             path
@@ -8070,6 +8243,15 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 f"unexpected={sorted(unexpected_coverage)}"
             )
 
+    if inspection_core_coverage != REQUIRED_INSPECTION_CORE_COVERAGE:
+        raise ValidationFailure("inspection core coverage mismatch: "
+            f"missing={sorted(REQUIRED_INSPECTION_CORE_COVERAGE-inspection_core_coverage)}, "
+            f"unexpected={sorted(inspection_core_coverage-REQUIRED_INSPECTION_CORE_COVERAGE)}")
+    if inspection_provider_coverage != REQUIRED_INSPECTION_PROVIDER_COVERAGE:
+        raise ValidationFailure("inspection provider coverage mismatch: "
+            f"missing={sorted(REQUIRED_INSPECTION_PROVIDER_COVERAGE-inspection_provider_coverage)}, "
+            f"unexpected={sorted(inspection_provider_coverage-REQUIRED_INSPECTION_PROVIDER_COVERAGE)}")
+
     return (
         f"validated {registry_entries} closed-code entries across "
         f"{registry_categories} categories; "
@@ -8081,6 +8263,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{static_schema_passes} schema-valid static documents, and "
         f"{scenarios} runtime scenarios, {version1_vectors} version-1 vectors, "
         f"{durable_host_vectors} durable host vectors, and "
+        f"{inspection_vectors} inspection vectors "
+        f"({inspection_core_vectors} core, {inspection_provider_vectors} optional provider), "
         f"{extension_vectors} extension negotiation vectors; "
         f"{authority_counts[0]} host authority operations, "
         f"{authority_counts[1]} profile reports, {authority_counts[2]} clock values"

@@ -1,0 +1,184 @@
+title: Optional exact native provider inspection closure
+static:
+  documents:
+    - file: machine.yaml
+      valid: true
+artifacts:
+  documents:
+    - file: provider-closure.json
+      kind: json_value
+      valid: true
+    - file: aggregate-before.json
+      kind: aggregate_state_v1
+      valid: true
+    - file: aggregate-after.json
+      kind: aggregate_state_v1
+      valid: true
+    - file: requests.json
+      kind: json_value
+      valid: true
+    - file: outcomes.json
+      kind: json_value
+      valid: true
+inspection_vectors:
+  - name: structural_safe
+    covers:
+      - structural_safe
+    profile: core
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /structural_safe
+    outcome_file: outcomes.json
+    outcome_pointer: /structural_safe
+    provider_closure_file: provider-closure.json
+    provider_sources:
+      - provider/test_provider.py
+      - provider/test_provider.rs
+    expect:
+      guard_evaluations: 0
+      provider_inspections: 0
+      ordinary_provider_evaluations: 0
+      provider_state_unchanged: true
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: structural_unsafe
+    covers:
+      - structural_unsafe
+    profile: core
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /structural_unsafe
+    outcome_file: outcomes.json
+    outcome_pointer: /structural_unsafe
+    provider_closure_file: provider-closure.json
+    provider_sources:
+      - provider/test_provider.py
+      - provider/test_provider.rs
+    expect:
+      guard_evaluations: 0
+      provider_inspections: 0
+      ordinary_provider_evaluations: 0
+      provider_state_unchanged: true
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: structural_mixed
+    covers:
+      - structural_mixed
+    profile: core
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /structural_mixed
+    outcome_file: outcomes.json
+    outcome_pointer: /structural_mixed
+    provider_closure_file: provider-closure.json
+    provider_sources:
+      - provider/test_provider.py
+      - provider/test_provider.rs
+    expect:
+      guard_evaluations: 0
+      provider_inspections: 0
+      ordinary_provider_evaluations: 0
+      provider_state_unchanged: true
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: semantic_safe
+    covers:
+      - semantic_safe
+    profile: safe_provider
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /semantic_safe
+    outcome_file: outcomes.json
+    outcome_pointer: /semantic_safe
+    provider_closure_file: provider-closure.json
+    provider_sources:
+      - provider/test_provider.py
+      - provider/test_provider.rs
+    expect:
+      guard_evaluations: 1
+      provider_inspections: 1
+      ordinary_provider_evaluations: 0
+      provider_state_unchanged: true
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: semantic_unsafe_refused
+    covers:
+      - semantic_unsafe_refused
+    profile: unsafe_provider
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /semantic_unsafe_refused
+    outcome_file: outcomes.json
+    outcome_pointer: /semantic_unsafe_refused
+    provider_closure_file: provider-closure.json
+    provider_sources:
+      - provider/test_provider.py
+      - provider/test_provider.rs
+    expect:
+      guard_evaluations: 0
+      provider_inspections: 0
+      ordinary_provider_evaluations: 0
+      provider_state_unchanged: true
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: semantic_mixed_refused_before_cel
+    covers:
+      - semantic_mixed_refused_before_cel
+    profile: unsafe_provider
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /semantic_mixed_refused_before_cel
+    outcome_file: outcomes.json
+    outcome_pointer: /semantic_mixed_refused_before_cel
+    provider_closure_file: provider-closure.json
+    provider_sources:
+      - provider/test_provider.py
+      - provider/test_provider.rs
+    expect:
+      guard_evaluations: 0
+      provider_inspections: 0
+      ordinary_provider_evaluations: 0
+      provider_state_unchanged: true
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
+  - name: semantic_safe_fuel_exhausted
+    covers:
+      - semantic_safe_fuel_exhausted
+    profile: safe_provider
+    bundle: machine.yaml
+    aggregate_before: aggregate-before.json
+    aggregate_after: aggregate-after.json
+    request_file: requests.json
+    request_pointer: /semantic_safe_fuel_exhausted
+    outcome_file: outcomes.json
+    outcome_pointer: /semantic_safe_fuel_exhausted
+    provider_closure_file: provider-closure.json
+    provider_sources:
+      - provider/test_provider.py
+      - provider/test_provider.rs
+    expect:
+      guard_evaluations: 1
+      provider_inspections: 1
+      ordinary_provider_evaluations: 0
+      provider_state_unchanged: true
+      action_invocations: 0
+      external_calls: 0
+      emissions: 0
