@@ -39,6 +39,22 @@
       "description": "Closed infrastructure outcomes surfaced by an execution-store transaction."
     },
     {
+      "id": "extension_negotiation_failure",
+      "description": "Closed failures from public extension registration, configuration, identity, and capability negotiation."
+    },
+    {
+      "id": "inspection_disposition",
+      "description": "Closed snapshot dispatch predictions from exact candidate inspection."
+    },
+    {
+      "id": "inspection_failure",
+      "description": "Closed failures from exact candidate inspection."
+    },
+    {
+      "id": "inspection_reason",
+      "description": "Closed reasons for an invalid exact candidate inspection prediction."
+    },
+    {
       "id": "machine_load_failure",
       "description": "Closed source, schema, semantic, and CEL failures from loading a format-1 bundle."
     },
@@ -417,6 +433,114 @@
       "code": "transient_processing_failure",
       "condition": "A durable-host ingress failure is classified as transient and must be retried from committed state.",
       "source": "SPEC.md section 15 durable persistence host behavior"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "duplicate_extension_registration",
+      "condition": "Registration attempts to replace a factory with the same category, identifier, and exact version.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "extension_capability_mismatch",
+      "condition": "An exact healthy configured instance lacks a required verified capability.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "extension_identity_mismatch",
+      "condition": "An exact provider version, digest, loaded closure, or configured reference differs.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "invalid_extension_configuration",
+      "condition": "Host-owned configuration fails validation before opening an instance.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "invalid_extension_descriptor",
+      "condition": "A descriptor, reference, report, or requirement violates its closed shape.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "extension_negotiation_failure",
+      "code": "unknown_extension",
+      "condition": "No registered factory matches the required category and identifier.",
+      "source": "SPEC.md section 11.5"
+    },
+    {
+      "category": "inspection_disposition",
+      "code": "deferred",
+      "condition": "Same-state deferral preempts ancestor handling.",
+      "source": "SPEC.md section 12.1"
+    },
+    {
+      "category": "inspection_disposition",
+      "code": "handled_now",
+      "condition": "A reachable handler handles in the supplied snapshot.",
+      "source": "SPEC.md section 12.1"
+    },
+    {
+      "category": "inspection_disposition",
+      "code": "invalid",
+      "condition": "The exact runtime or envelope is invalid for inspection.",
+      "source": "SPEC.md section 12.1"
+    },
+    {
+      "category": "inspection_disposition",
+      "code": "unhandled",
+      "condition": "No reachable handler or deferral handles the candidate.",
+      "source": "SPEC.md section 12.1"
+    },
+    {
+      "category": "inspection_failure",
+      "code": "inspection_capability_unavailable",
+      "condition": "A safe bounded guard introspection capability is unavailable for the exact guard closure.",
+      "source": "SPEC.md section 12"
+    },
+    {
+      "category": "inspection_failure",
+      "code": "inspection_guard_failure",
+      "condition": "A safely inspected guard failed during evaluation.",
+      "source": "SPEC.md section 12"
+    },
+    {
+      "category": "inspection_failure",
+      "code": "inspection_limit_exceeded",
+      "condition": "Inspection preflight or abstract fuel was exhausted at the first reached guard.",
+      "source": "SPEC.md section 12"
+    },
+    {
+      "category": "inspection_failure",
+      "code": "invalid_inspection_request",
+      "condition": "The closed inspection request, digest, or maximum limits are invalid.",
+      "source": "SPEC.md section 12"
+    },
+    {
+      "category": "inspection_reason",
+      "code": "invalid_envelope",
+      "condition": "The candidate envelope is invalid for the exact runtime.",
+      "source": "SPEC.md section 12.1"
+    },
+    {
+      "category": "inspection_reason",
+      "code": "runtime_inactive",
+      "condition": "The exact runtime is inactive.",
+      "source": "SPEC.md section 12.1"
+    },
+    {
+      "category": "inspection_reason",
+      "code": "target_incarnation_mismatch",
+      "condition": "The runtime ID exists with a different portable incarnation.",
+      "source": "SPEC.md section 12.1"
+    },
+    {
+      "category": "inspection_reason",
+      "code": "target_not_found",
+      "condition": "The requested runtime ID is absent.",
+      "source": "SPEC.md section 12.1"
     },
     {
       "category": "machine_load_failure",

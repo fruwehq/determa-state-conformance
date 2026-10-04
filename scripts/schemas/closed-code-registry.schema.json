@@ -13,6 +13,10 @@
         "engine_fault",
         "execution_store_adapter_failure",
         "execution_store_failure",
+        "extension_negotiation_failure",
+        "inspection_disposition",
+        "inspection_failure",
+        "inspection_reason",
         "machine_load_failure",
         "persistence_failure",
         "projection_failure"

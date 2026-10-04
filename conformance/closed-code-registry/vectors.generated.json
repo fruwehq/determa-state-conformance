@@ -1,6 +1,6 @@
 {
   "vector_schema_version": 1,
-  "registry_sha256": "a6802e91406feff6e55f729e5cc339ebc89b4d8eca613977c3de6367cf82d5e0",
+  "registry_sha256": "55453330a2d127feefdea0caf4c3788da004911b143eb0d06def6498def90a4b",
   "categories": [
     {
       "id": "checkpoint_artifact_failure",
@@ -106,6 +106,44 @@
         "permanent_processing_failure",
         "response_lost_after_commit",
         "transient_processing_failure"
+      ]
+    },
+    {
+      "id": "extension_negotiation_failure",
+      "codes": [
+        "duplicate_extension_registration",
+        "extension_capability_mismatch",
+        "extension_identity_mismatch",
+        "invalid_extension_configuration",
+        "invalid_extension_descriptor",
+        "unknown_extension"
+      ]
+    },
+    {
+      "id": "inspection_disposition",
+      "codes": [
+        "deferred",
+        "handled_now",
+        "invalid",
+        "unhandled"
+      ]
+    },
+    {
+      "id": "inspection_failure",
+      "codes": [
+        "inspection_capability_unavailable",
+        "inspection_guard_failure",
+        "inspection_limit_exceeded",
+        "invalid_inspection_request"
+      ]
+    },
+    {
+      "id": "inspection_reason",
+      "codes": [
+        "invalid_envelope",
+        "runtime_inactive",
+        "target_incarnation_mismatch",
+        "target_not_found"
       ]
     },
     {

@@ -35,6 +35,7 @@ from ruamel.yaml.tokens import (
 )
 
 from closed_code_registry import RegistryValidationError, validate_registry
+from validate_extension_negotiation import ExtensionValidationError, validate_profile
 
 
 JSON_NUMBER = re.compile(
@@ -93,6 +94,71 @@ NON_FINITE_DOUBLE_MARKERS = frozenset(
 INSTANCE_REFERENCE_FIELDS = frozenset(
     {"root_instance_id", "instance_id", "machine_id", "machine_version"}
 )
+REQUIRED_INSPECTION_CORE_COVERAGE = frozenset(
+    (
+        'structural_guard_defer',
+        'structural_guard_default',
+        'structural_ancestor',
+        'structural_blocked',
+        'structural_none',
+        'structural_literal_true',
+        'wrong_target',
+        'wrong_direction',
+        'wrong_payload',
+        'wrong_visibility',
+        'reserved_failure_event',
+        'missing_runtime',
+        'stale_incarnation',
+        'inactive_runtime',
+        'missing_runtime_precedes_bad_envelope',
+        'stale_incarnation_precedes_bad_envelope',
+        'inactive_precedes_bad_envelope',
+        'stale_digest',
+        'stale_digest_precedes_target_and_envelope',
+        'malformed_limits',
+        'malformed_limits_precede_target_and_envelope',
+        'oversized_maximum_guard_evaluations',
+        'oversized_maximum_evaluation_steps',
+        'semantic_literal_true_1',
+        'semantic_negated_true_2',
+        'semantic_negated_true_3',
+        'semantic_both_operands_3',
+        'semantic_both_operands_4',
+        'semantic_string_size_8',
+        'semantic_string_size_9',
+        'semantic_exact_ast_boundary',
+        'semantic_exact_source_boundary',
+        'semantic_value_boundary',
+        'semantic_ast_preflight',
+        'semantic_value_preflight',
+        'semantic_variable_boundary',
+        'semantic_variable_preflight',
+        'semantic_external_preflight',
+        'semantic_source_preflight',
+        'semantic_unicode_size_8',
+        'semantic_unicode_size_9',
+        'semantic_unicode_equal_6',
+        'semantic_unicode_equal_7',
+        'semantic_list_equal_22',
+        'semantic_list_equal_23',
+        'semantic_map_size_13',
+        'semantic_map_size_14',
+        'semantic_guard_failure',
+        'semantic_unavailable',
+    )
+)
+REQUIRED_INSPECTION_PROVIDER_COVERAGE = frozenset(
+    (
+        'structural_safe',
+        'structural_unsafe',
+        'structural_mixed',
+        'semantic_safe',
+        'semantic_unsafe_refused',
+        'semantic_mixed_refused_before_cel',
+        'semantic_safe_fuel_exhausted',
+    )
+)
+
 ARTIFACT_KINDS = {
     "aggregate_state_v1": "aggregate-state-v1.schema.json",
     "migration_descriptor_v1": "migration-descriptor-v1.schema.json",
@@ -7653,6 +7719,12 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         registry_categories, registry_entries = validate_registry(repository_root)
     except RegistryValidationError as error:
         raise ValidationFailure(f"closed-code registry: {error}") from error
+    try:
+        extension_vectors = validate_profile(
+            spec_root, repository_root / "conformance/profiles/extension-negotiation"
+        )
+    except (ExtensionValidationError, OSError, ValueError) as error:
+        raise ValidationFailure(f"extension negotiation profile: {error}") from error
     validate_direct_descriptor_expectation_probes()
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
@@ -7676,6 +7748,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         "application_projection_vectors": (
             repository_root / "scripts" / "schemas" / "application-projection-profile-v1.schema.json"
         ),
+        "inspection_vectors": (
+            repository_root / "scripts" / "schemas" / "inspection-vectors.schema.json"
+        ),
+        "inspection_v1": spec_root / "schema" / "inspection-v1.schema.json",
     }
     schemas: dict[str, dict[str, Any]] = {}
     resources: list[tuple[str, Resource[Any]]] = []
@@ -7711,6 +7787,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     )
     application_projection_vector_validator = Draft202012Validator(
         schemas["application_projection_vectors"], registry=registry
+    )
+    inspection_vector_validator = Draft202012Validator(
+        schemas["inspection_vectors"], registry=registry
     )
 
     conformance_version = (repository_root / "VERSION").read_text().strip()
@@ -7757,6 +7836,12 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     durable_host_vectors = 0
     application_projection_vectors = 0
     durable_host_coverage: set[str] = set()
+    inspection_vectors = 0
+    inspection_coverage: set[str] = set()
+    inspection_core_coverage: set[str] = set()
+    inspection_provider_coverage: set[str] = set()
+    inspection_core_vectors = 0
+    inspection_provider_vectors = 0
 
     for case in cases:
         test = load_fixture_document(case / "test.yaml")
@@ -7764,6 +7849,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         profile_modes = {
             name
             for name in ("version1_vectors", "durable_host_vectors", "application_projection_vectors")
+            for name in ("version1_vectors", "durable_host_vectors", "application_projection_vectors", "inspection_vectors")
             if name in test
         }
         if len(profile_modes) > 1:
@@ -7776,6 +7862,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             validate_fixture_schema(test, durable_host_vector_validator, case)
         if "application_projection_vectors" in test:
             validate_fixture_schema(test, application_projection_vector_validator, case)
+        if "inspection_vectors" in test:
+            validate_fixture_schema(test, inspection_vector_validator, case)
         if "load" in test and test["load"] != {"valid": True}:
             raise ValidationFailure(f"{case.name}: unsupported load assertion")
 
@@ -8019,6 +8107,24 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             application_projection_vectors += validate_application_projection(
                 case, test, referenced_artifacts
             )
+        elif "inspection_vectors" in test:
+            from inspection_validator import validate_inspection_vectors
+            case_coverage = validate_inspection_vectors(
+                case, test, referenced, referenced_artifacts, spec_root
+            )
+            duplicate_coverage = inspection_coverage & case_coverage
+            if duplicate_coverage:
+                raise ValidationFailure(
+                    f"{case.name}: inspection coverage repeated: {sorted(duplicate_coverage)}"
+                )
+            inspection_coverage.update(case_coverage)
+            inspection_vectors += len(test["inspection_vectors"])
+            if "core" in case.parts:
+                inspection_core_coverage.update(case_coverage)
+                inspection_core_vectors += len(test["inspection_vectors"])
+            else:
+                inspection_provider_coverage.update(case_coverage)
+                inspection_provider_vectors += len(test["inspection_vectors"])
 
         actual_bundles = {
             path
@@ -8071,6 +8177,15 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 f"unexpected={sorted(unexpected_coverage)}"
             )
 
+    if inspection_core_coverage != REQUIRED_INSPECTION_CORE_COVERAGE:
+        raise ValidationFailure("inspection core coverage mismatch: "
+            f"missing={sorted(REQUIRED_INSPECTION_CORE_COVERAGE-inspection_core_coverage)}, "
+            f"unexpected={sorted(inspection_core_coverage-REQUIRED_INSPECTION_CORE_COVERAGE)}")
+    if inspection_provider_coverage != REQUIRED_INSPECTION_PROVIDER_COVERAGE:
+        raise ValidationFailure("inspection provider coverage mismatch: "
+            f"missing={sorted(REQUIRED_INSPECTION_PROVIDER_COVERAGE-inspection_provider_coverage)}, "
+            f"unexpected={sorted(inspection_provider_coverage-REQUIRED_INSPECTION_PROVIDER_COVERAGE)}")
+
     return (
         f"validated {registry_entries} closed-code entries across "
         f"{registry_categories} categories; "
@@ -8081,7 +8196,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{structural_rejections} expected structural rejections, "
         f"{static_schema_passes} schema-valid static documents, and "
         f"{scenarios} runtime scenarios, {version1_vectors} version-1 vectors, "
-        f"and {durable_host_vectors} durable host vectors, "
+        f"{durable_host_vectors} durable host vectors, "
+        f"{inspection_vectors} inspection vectors "
+        f"({inspection_core_vectors} core, {inspection_provider_vectors} optional provider), "
+        f"{extension_vectors} extension negotiation vectors, and "
         f"{application_projection_vectors} application projection vectors"
     )
 

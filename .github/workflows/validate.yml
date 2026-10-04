@@ -64,8 +64,31 @@ jobs:
       - name: Check generated version-1 fixtures
         run: python scripts/generate_version1_vectors.py --check
 
+      - name: Check generated extension negotiation fixtures
+        run: >-
+          python scripts/generate_extension_negotiation_profile.py
+          --spec-root .determa-state-spec --check
+
+      - name: Install Rust provider test toolchain
+        run: rustup toolchain install 1.86.0 --profile minimal
+
+      - name: Test extension negotiation relational validation
+        env:
+          RUSTUP_TOOLCHAIN: "1.86.0"
+        run: >-
+          python scripts/test_extension_negotiation_validator.py
+          --spec-root .determa-state-spec
+
       - name: Check generated durable-host fixtures
         run: python scripts/generate_execution_checkpoint_profile.py --check
 
       - name: Check generated application-projection fixtures
         run: python scripts/generate_application_projection_profile.py --check
+      - name: Test inspection relational validation
+        run: python scripts/test_inspection_validator.py
+
+      - name: Check generated inspection fixtures
+        run: python scripts/generate_inspection_vectors.py --check
+
+      - name: Check generated optional inspection provider fixtures
+        run: python scripts/generate_inspection_provider_profile.py --check
