@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           repository: fruwehq/determa-state-spec
-          ref: e3167ca96c8296bd2609da17a09c60c2938ea273
+          ref: 6bd25e3fcdf068af861aa289903a8489bd8f0139
           path: .determa-state-spec
           persist-credentials: false
 
@@ -60,6 +60,21 @@ jobs:
 
       - name: Check generated version-1 fixtures
         run: python scripts/generate_version1_vectors.py --check
+
+      - name: Check generated extension negotiation fixtures
+        run: >-
+          python scripts/generate_extension_negotiation_profile.py
+          --spec-root .determa-state-spec --check
+
+      - name: Install Rust provider test toolchain
+        run: rustup toolchain install 1.86.0 --profile minimal
+
+      - name: Test extension negotiation relational validation
+        env:
+          RUSTUP_TOOLCHAIN: "1.86.0"
+        run: >-
+          python scripts/test_extension_negotiation_validator.py
+          --spec-root .determa-state-spec
 
       - name: Check generated durable-host fixtures
         run: python scripts/generate_execution_checkpoint_profile.py --check

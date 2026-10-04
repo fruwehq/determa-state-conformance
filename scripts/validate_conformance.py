@@ -35,6 +35,7 @@ from ruamel.yaml.tokens import (
 )
 
 from closed_code_registry import RegistryValidationError, validate_registry
+from validate_extension_negotiation import ExtensionValidationError, validate_profile
 
 
 JSON_NUMBER = re.compile(
@@ -7652,6 +7653,12 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         registry_categories, registry_entries = validate_registry(repository_root)
     except RegistryValidationError as error:
         raise ValidationFailure(f"closed-code registry: {error}") from error
+    try:
+        extension_vectors = validate_profile(
+            spec_root, repository_root / "conformance/profiles/extension-negotiation"
+        )
+    except (ExtensionValidationError, OSError, ValueError) as error:
+        raise ValidationFailure(f"extension negotiation profile: {error}") from error
     validate_direct_descriptor_expectation_probes()
     schema_paths = {
         "machine": spec_root / "schema" / "machine.schema.json",
@@ -8066,7 +8073,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{structural_rejections} expected structural rejections, "
         f"{static_schema_passes} schema-valid static documents, and "
         f"{scenarios} runtime scenarios, {version1_vectors} version-1 vectors, "
-        f"and {durable_host_vectors} durable host vectors"
+        f"{durable_host_vectors} durable host vectors, and "
+        f"{extension_vectors} extension negotiation vectors"
     )
 
 

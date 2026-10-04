@@ -1,0 +1,3648 @@
+{
+  "format": "determa.extension-negotiation-v1",
+  "schema_version": 1,
+  "specification_commit": "6bd25e3fcdf068af861aa289903a8489bd8f0139",
+  "provider_closure": {
+    "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6",
+    "closure_files": [
+      "provider/test_provider.py",
+      "provider/test_provider.rs"
+    ]
+  },
+  "driver_operations": [
+    "register",
+    "validate_configuration",
+    "capabilities",
+    "health",
+    "negotiate"
+  ],
+  "vectors": [
+    {
+      "id": "configured_capability_satisfied",
+      "source_case": "configured_capability_satisfied",
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "accepted",
+        "reports": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "health": "healthy",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "effective": {}
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "missing_configured_claim",
+      "source_case": "missing_configured_claim",
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:cea9d40855acd1911f7fb917174dbb37a70a8d659bf195841823948c9c90283a",
+            "claims": [
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "unhealthy_instance",
+      "source_case": "unhealthy_instance",
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "unknown"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:3d33a70b40681af4ef7fe02b0eeefe9a9e82db2ae8ed768cfbbd5d4bdd14a31b",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "wrong_provider_digest",
+      "source_case": "wrong_provider_digest",
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_identity_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "duplicate_registration",
+      "source_case": "duplicate_registration",
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        },
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}",
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "duplicate_extension_registration"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "category_confusion",
+      "source_case": "category_confusion",
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "authoritative_scope_fencing"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"authoritative_scope_fencing\"]}"
+      ],
+      "configurations": [],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_descriptor"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "unrecognized_requirement",
+      "source_case": "unrecognized_requirement",
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "magic_transfer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_descriptor"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "version_range",
+      "source_case": "version_range",
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "^1.2",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"^1.2\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_descriptor"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "uri_no_privilege",
+      "source_case": "uri_no_privilege",
+      "registrations": [
+        {
+          "category": "authority",
+          "provider_reference": {
+            "identifier": "sample.authority",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "authoritative_scope_fencing"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"authority\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.authority\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"authoritative_scope_fencing\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "authority",
+          "provider_reference": {
+            "identifier": "sample.authority",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "local",
+            "claims": [],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "authority",
+          "provider_reference": {
+            "identifier": "sample.authority",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "local",
+          "capability": "authoritative_scope_fencing"
+        }
+      ],
+      "lookup_uri": "authority://local",
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "authority",
+            "provider_reference": {
+              "identifier": "sample.authority",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "local",
+            "configuration_digest": "sha256:f63330adfcd23532c04b5b662190718fc67de8ac06f05ffa4744698bea54e247",
+            "claims": []
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "missing_provider",
+      "source_case": "missing_provider",
+      "registrations": [],
+      "registration_bytes": [],
+      "configurations": [],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "unknown_extension"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "composition_all_and_any",
+      "source_case": "composition_all_and_any",
+      "registrations": [
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "pure",
+            "deterministic",
+            "external_io_capable"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "guard",
+            "claims": [
+              "pure",
+              "deterministic"
+            ],
+            "health": "healthy"
+          }
+        },
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "action",
+            "claims": [
+              "deterministic",
+              "external_io_capable"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "compose",
+        "requested_profile": null,
+        "projection": [
+          "pure",
+          "deterministic",
+          "external_io_capable",
+          "weak_profile_opt_in_required"
+        ]
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "guard",
+            "configuration_digest": "sha256:3de019ac4161c97c236d10a7b35d6720c5f49be3d4b08d1c5c3acb50c16c6b8f",
+            "claims": [
+              "pure",
+              "deterministic"
+            ]
+          },
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "action",
+            "configuration_digest": "sha256:efcd54f9d4a353ee8ca2ddb66e46a43c09f4e789ee24f9e164374437be8269a9",
+            "claims": [
+              "deterministic",
+              "external_io_capable"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": true
+      },
+      "expected": {
+        "status": "accepted",
+        "reports": [
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "guard",
+            "health": "healthy",
+            "claims": [
+              "pure",
+              "deterministic"
+            ]
+          },
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "action",
+            "health": "healthy",
+            "claims": [
+              "deterministic",
+              "external_io_capable"
+            ]
+          }
+        ],
+        "effective": {
+          "pure": false,
+          "deterministic": true,
+          "external_io_capable": true,
+          "weak_profile_opt_in_required": true
+        }
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "healthy_report_omits_io_hazard",
+      "source_case": "healthy_report_omits_io_hazard",
+      "registrations": [
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "pure",
+            "deterministic",
+            "external_io_capable"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "action",
+            "claims": [],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "compose",
+        "requested_profile": "automatic_retry_without_external_io",
+        "projection": [
+          "external_io_capable",
+          "weak_profile_opt_in_required"
+        ]
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "action",
+            "configuration_digest": "sha256:985c1c71abae2d2e4606f0da7479b513ae8dd195aa65939ea77c712978f3f282",
+            "claims": []
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "fencing_does_not_imply_safe_relocation",
+      "source_case": "fencing_does_not_imply_safe_relocation",
+      "registrations": [
+        {
+          "category": "authority",
+          "provider_reference": {
+            "identifier": "sample.authority",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "authoritative_scope_fencing",
+            "safe_relocation"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"authority\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.authority\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"authoritative_scope_fencing\",\"safe_relocation\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "authority",
+          "provider_reference": {
+            "identifier": "sample.authority",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "local",
+            "claims": [
+              "authoritative_scope_fencing"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "authority",
+          "provider_reference": {
+            "identifier": "sample.authority",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "local",
+          "capability": "safe_relocation"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "authority",
+            "provider_reference": {
+              "identifier": "sample.authority",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "local",
+            "configuration_digest": "sha256:d181a1f2a38803867a2230deac56475c43c0f724d1d8e20b9fd57b7110a2b11b",
+            "claims": [
+              "authoritative_scope_fencing"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "changed_exact_version",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.4",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_identity_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "changed_exact_digest",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_identity_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "changed_instance",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "other",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "changed_category",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "projection",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "lossless_projection"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "unknown_extension"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "changed_health",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "degraded"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "invalid_configuration",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy",
+            "secret": "unexpected"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "durable_single_writer"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "composition_all_guarantees",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "deterministic",
+            "pure",
+            "portable",
+            "semantically_introspectable",
+            "process_contained",
+            "external_io_capable"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"deterministic\",\"pure\",\"portable\",\"semantically_introspectable\",\"process_contained\",\"external_io_capable\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "guard",
+            "claims": [
+              "deterministic",
+              "pure",
+              "portable",
+              "semantically_introspectable",
+              "process_contained"
+            ],
+            "health": "healthy"
+          }
+        },
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "action",
+            "claims": [
+              "deterministic",
+              "pure",
+              "portable",
+              "semantically_introspectable",
+              "process_contained"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "compose",
+        "requested_profile": null,
+        "projection": [
+          "deterministic",
+          "pure",
+          "portable",
+          "semantically_introspectable",
+          "process_contained",
+          "external_io_capable",
+          "weak_profile_opt_in_required"
+        ]
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "guard",
+            "configuration_digest": "sha256:2a818ad4371dbdc850e261f701263567577a0e00a5e16deeaf2b39cbd9bfbdf0",
+            "claims": [
+              "deterministic",
+              "pure",
+              "portable",
+              "semantically_introspectable",
+              "process_contained"
+            ]
+          },
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "action",
+            "configuration_digest": "sha256:540755772b47eaa2d31dd573a3be2345e669939012aa43d8cc07db1fead1f955",
+            "claims": [
+              "deterministic",
+              "pure",
+              "portable",
+              "semantically_introspectable",
+              "process_contained"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "accepted",
+        "reports": [
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "guard",
+            "health": "healthy",
+            "claims": [
+              "deterministic",
+              "pure",
+              "portable",
+              "semantically_introspectable",
+              "process_contained"
+            ]
+          },
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "action",
+            "health": "healthy",
+            "claims": [
+              "deterministic",
+              "pure",
+              "portable",
+              "semantically_introspectable",
+              "process_contained"
+            ]
+          }
+        ],
+        "effective": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true,
+          "external_io_capable": false,
+          "weak_profile_opt_in_required": false
+        }
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "unknown_health_is_possible_io",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "pure",
+            "deterministic",
+            "external_io_capable"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"runtime_provider\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"example.native\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"pure\",\"deterministic\",\"external_io_capable\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "runtime_provider",
+          "provider_reference": {
+            "identifier": "example.native",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "action",
+            "claims": [],
+            "health": "unknown"
+          }
+        }
+      ],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "compose",
+        "requested_profile": "automatic_retry_without_external_io",
+        "projection": [
+          "external_io_capable",
+          "weak_profile_opt_in_required"
+        ]
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "runtime_provider",
+            "provider_reference": {
+              "identifier": "example.native",
+              "version": "1.0.0",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "action",
+            "configuration_digest": "sha256:d8fb8e3382702db2778fdaa1b3407e83df2ffd87a8a910576ad8a880e1ff5c74",
+            "claims": []
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "unregistered_config_without_requirements",
+      "source_case": null,
+      "registrations": [],
+      "registration_bytes": [],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "unknown_extension"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "configured_digest_mismatch_without_requirements",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "extension_identity_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "unsupported_claim_without_requirements",
+      "source_case": null,
+      "registrations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer",
+            "root_identity_retention"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.sqlite\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"durable_single_writer\",\"root_identity_retention\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "sample.sqlite",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention",
+              "shared_application_transaction"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "execution_store",
+            "provider_reference": {
+              "identifier": "sample.sqlite",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:95ac9155d9ada08bfbbbab01e7e7779e8b378c61e108b3112065c862191f6a5d",
+            "claims": [
+              "durable_single_writer",
+              "root_identity_retention",
+              "shared_application_transaction"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0
+    }
+  ],
+  "public_vectors": [
+    {
+      "id": "loaded_provider_no_claim",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "accepted",
+        "report": {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "conformance.provider",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "health": "healthy",
+          "claims": []
+        }
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": null,
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "accepted",
+            "report": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "health": "healthy",
+              "claims": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "direct_injection_no_claim",
+      "installation": "direct_injection",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "accepted",
+        "report": {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "conformance.provider",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "health": "healthy",
+          "claims": []
+        }
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "direct_injection",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": null,
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "accepted",
+            "report": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "health": "healthy",
+              "claims": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "direct_injection_identity_mismatch",
+      "installation": "direct_injection",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.1",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "extension_identity_mismatch"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "direct_injection",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.1",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "extension_identity_mismatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "unproved_claim_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "extension_capability_mismatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "self_asserted_claim_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [
+          "durable_single_writer"
+        ],
+        "health": "healthy"
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "health": "healthy",
+        "claims": [
+          "durable_single_writer"
+        ]
+      },
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer"
+            ],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": [
+            "durable_single_writer"
+          ]
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "extension_capability_mismatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "unknown_provider_refused",
+      "installation": "register",
+      "registration": null,
+      "configuration": null,
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "unknown_extension"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [],
+      "expected_stages": [
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "unknown_extension"
+          }
+        }
+      ]
+    },
+    {
+      "id": "version_fallback_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.1",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "extension_identity_mismatch"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.1",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "extension_identity_mismatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "digest_fallback_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "extension_identity_mismatch"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+              },
+              "instance_id": "primary",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "extension_identity_mismatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "instance_swap_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "other",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "other",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "extension_capability_mismatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "health_downgrade_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "degraded"
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "degraded"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "degraded"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "extension_capability_mismatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "uri_hint_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": "store://conformance.provider",
+      "expected": {
+        "status": "rejected",
+        "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "execution_store",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "capability": "durable_single_writer"
+            },
+            "lookup_uri": "store://conformance.provider"
+          },
+          "output": {
+            "status": "rejected",
+            "code": "extension_capability_mismatch"
+          }
+        }
+      ]
+    },
+    {
+      "id": "invalid_configuration_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy",
+        "unexpected": true
+      },
+      "requirement": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "durable_single_writer"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy",
+            "unexpected": true
+          },
+          "output": {
+            "status": "rejected",
+            "code": "invalid_extension_configuration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "duplicate_registration_refused",
+      "installation": "register",
+      "registration": [
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "conformance.provider",
+            "version": "1.0.0",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer"
+          ]
+        },
+        {
+          "category": "execution_store",
+          "provider_reference": {
+            "identifier": "conformance.provider",
+            "version": "1.0.0",
+            "content_digest": "sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "durable_single_writer"
+          ]
+        }
+      ],
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "duplicate_extension_registration"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "rejected",
+            "code": "duplicate_extension_registration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "malformed_descriptor_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 2,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_descriptor"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":2,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":2,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "rejected",
+            "code": "invalid_extension_descriptor"
+          }
+        }
+      ]
+    },
+    {
+      "id": "category_swap_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": {
+        "category": "projection",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "instance_id": "primary",
+        "capability": "lossless_projection"
+      },
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "unknown_extension"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "capabilities",
+          "input": "primary",
+          "output": []
+        },
+        {
+          "operation": "health",
+          "input": "primary",
+          "output": "healthy"
+        },
+        {
+          "operation": "negotiate",
+          "input": {
+            "requirement": {
+              "category": "projection",
+              "provider_reference": {
+                "identifier": "conformance.provider",
+                "version": "1.0.0",
+                "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+              },
+              "instance_id": "primary",
+              "capability": "lossless_projection"
+            },
+            "lookup_uri": null
+          },
+          "output": {
+            "status": "rejected",
+            "code": "unknown_extension"
+          }
+        }
+      ]
+    },
+    {
+      "id": "empty_instance_id_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "",
+        "claims": [],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "",
+            "claims": [],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "rejected",
+            "code": "invalid_extension_configuration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "non_string_claim_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [
+          7
+        ],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [
+              7
+            ],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "rejected",
+            "code": "invalid_extension_configuration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "duplicate_claim_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [
+          "durable_single_writer",
+          "durable_single_writer"
+        ],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [
+              "durable_single_writer",
+              "durable_single_writer"
+            ],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "rejected",
+            "code": "invalid_extension_configuration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "unknown_claim_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [
+          "magic_transfer"
+        ],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [
+              "magic_transfer"
+            ],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "rejected",
+            "code": "invalid_extension_configuration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "unsupported_claim_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [
+          "shared_application_transaction"
+        ],
+        "health": "healthy"
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [
+              "shared_application_transaction"
+            ],
+            "health": "healthy"
+          },
+          "output": {
+            "status": "rejected",
+            "code": "invalid_extension_configuration"
+          }
+        }
+      ]
+    },
+    {
+      "id": "non_string_health_refused",
+      "installation": "register",
+      "registration": {
+        "category": "execution_store",
+        "provider_reference": {
+          "identifier": "conformance.provider",
+          "version": "1.0.0",
+          "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+        },
+        "interface_version": 1,
+        "supported_capabilities": [
+          "durable_single_writer"
+        ]
+      },
+      "configuration": {
+        "instance_id": "primary",
+        "claims": [],
+        "health": 7
+      },
+      "requirement": null,
+      "untrusted_candidate_report": null,
+      "lookup_uri": null,
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_configuration"
+      },
+      "expected_core_mutations": 0,
+      "registration_bytes": [
+        "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}"
+      ],
+      "expected_stages": [
+        {
+          "operation": "register",
+          "input": "{\"category\":\"execution_store\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"conformance.provider\",\"version\":\"1.0.0\"},\"supported_capabilities\":[\"durable_single_writer\"]}",
+          "output": {
+            "status": "accepted",
+            "value": null
+          }
+        },
+        {
+          "operation": "validate_configuration",
+          "input": {
+            "instance_id": "primary",
+            "claims": [],
+            "health": 7
+          },
+          "output": {
+            "status": "rejected",
+            "code": "invalid_extension_configuration"
+          }
+        }
+      ]
+    }
+  ]
+}
