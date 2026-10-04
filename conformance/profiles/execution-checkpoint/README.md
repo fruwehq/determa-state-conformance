@@ -67,8 +67,8 @@ mode, and dependencies; adapter registration or configuration; composed capabili
 or the complete persistence transaction input. There is no generic parameter map and
 replay repeats the original operation request.
 
-Each replay vector names its first operation with the closed `replay_of` relation.
-The caller request is byte-identical after normalization, including scope, operation
+Each replay vector names an earlier atomic first operation with the closed
+`replay_of` relation. The caller request is byte-identical after normalization, including scope, operation
 identity, digest, transaction inputs, and the original checkpoint revision/digest.
 A retry does not acquire a fresh caller precondition. The host reads the current
 checkpoint or store independently; the vector names it as `checkpoint_before` or
@@ -87,7 +87,7 @@ The repository validator derives operation-specific invariants from those reques
 requires each first writer's request checkpoint identity to equal its
 `checkpoint_before` and each replay's identity to equal the first writer's original
 checkpoint and binds canonical envelope digests, ordered allocation, targets,
-receipts, effects,
+receipts, effects, the creation receipt digest computed from the literal request,
 disposition, retention transition, store inbox, and application writes to the named
 before/after artifacts. Creation commits revision `0`; each admission, processing,
 outbox, pruning, or tombstone mutation advances exactly one revision; the combined

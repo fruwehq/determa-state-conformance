@@ -5996,6 +5996,29 @@ def validate_checkpoint_derivation(
                 f"{location}: atomic operation must advance revision exactly once"
             )
     if operation == "checkpoint_create_v1":
+        if operation_result["result"] in {"committed", "replayed"}:
+            definition = operation_input["machine"]
+            expected_request_digest = hash_value([
+                "determa-creation-request-digest-1",
+                "1",
+                operation_input["bundle"]["validated_bundle_fingerprint"],
+                definition["namespace"],
+                definition["machine_id"],
+                str(canonical_decimal(definition["machine_version"], location)),
+                operation_input["root_instance_id"],
+                operation_input["creation_id"],
+                encode_typed_value(operation_input["bindings"]),
+            ])
+            matching_receipts = [
+                receipt for receipt in checkpoint_after["operation_receipts"]
+                if receipt["operation_kind"] == "creation"
+                and receipt["creation_id"] == operation_input["creation_id"]
+            ]
+            if (len(matching_receipts) != 1
+                    or matching_receipts[0]["request_digest"] != expected_request_digest):
+                raise ValidationFailure(
+                    f"{location}: creation receipt request digest differs from literal caller request"
+                )
         if not mutates:
             return
         aggregate = checkpoint_aggregate(checkpoint_after)
@@ -7049,8 +7072,14 @@ def validate_durable_host_vectors(
             raise ValidationFailure(f"{location}: operation input does not match vector")
         replay_original_checkpoint = None
         if "replay_of" in vector:
-            first = vectors_by_name.get(vector["replay_of"])
-            if (first is None or first is vector or "request" not in first
+            first_index = next((candidate_index for candidate_index, candidate in
+                enumerate(test["durable_host_vectors"])
+                if candidate["name"] == vector["replay_of"]), None)
+            if first_index is None or first_index >= index:
+                raise ValidationFailure(f"{location}: replay_of requires a prior committed witness")
+            first = test["durable_host_vectors"][first_index]
+            if (first is None or first is vector or first.get("replay_of") is not None
+                    or "request" not in first
                     or "request" not in vector or first["operation"] != vector["operation"]
                     or first["expect"]["mutation"] != "atomic"
                     or first["expect"]["result"] not in {"committed", "crashed"}

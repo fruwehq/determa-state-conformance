@@ -28,6 +28,7 @@ from validate_conformance import (
     validate_writer_checkpoint_context,
 )
 from generate_execution_checkpoint_profile import process
+from generate_version1_vectors import seal_checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance" / "profiles" / "execution-checkpoint"
@@ -73,6 +74,48 @@ class DurableHostValidatorTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.input_validator = production_input_validator()
 
+    def test_replay_requires_prior_committed_witness(self) -> None:
+        case = PROFILE / "checkpoint-03-native-retention"
+        test = load_fixture_document(case / "test.yaml")
+        vectors = test["durable_host_vectors"]
+        first = next(i for i, value in enumerate(vectors)
+            if value["name"] == "checkpoint_dependency_safe_pruning")
+        retry = next(i for i, value in enumerate(vectors)
+            if value["name"] == "checkpoint_equal_pruning_replay")
+        vectors[first], vectors[retry] = vectors[retry], vectors[first]
+        with self.assertRaisesRegex(ValidationFailure, "prior committed witness"):
+            validate_durable_host_vectors(
+                case, test, set(case.glob("*.json")), self.input_validator
+            )
+
+    def test_creation_receipt_digest_is_bound_to_literal_request(self) -> None:
+        case = PROFILE / "checkpoint-01-native-lifecycle"
+        with tempfile.TemporaryDirectory() as temporary:
+            mutated_case = Path(temporary) / case.name
+            shutil.copytree(case, mutated_case)
+            checkpoint_path = mutated_case / "created-checkpoint-v1.json"
+            checkpoint = load(checkpoint_path)
+            checkpoint["operation_receipts"][0]["request_digest"] = "sha256:" + "1" * 64
+            checkpoint = seal_checkpoint(checkpoint)
+            checkpoint_path.write_text(json.dumps(checkpoint, indent=2) + "\n", encoding="utf-8")
+            response_path = mutated_case / "responses-v1.json"
+            responses = load(response_path)
+            for key in ("create", "create_replay"):
+                responses["responses"][key]["body"]["receipt"]["request_digest"] = "sha256:" + "1" * 64
+            response_path.write_text(json.dumps(responses, indent=2) + "\n", encoding="utf-8")
+            test = load_fixture_document(mutated_case / "test.yaml")
+            with self.assertRaisesRegex(ValidationFailure, "creation receipt request digest differs from literal caller request"):
+                validate_durable_host_vectors(
+                    mutated_case, test, set(mutated_case.glob("*.json")), self.input_validator
+                )
+            request = load(mutated_case / "inputs-v1.json")["requests"]["create_replay"]
+            replay = load(mutated_case / "results-v1.json")["results"]["replayed"]
+            with self.assertRaisesRegex(ValidationFailure, "creation receipt request digest differs from literal caller request"):
+                validate_checkpoint_derivation(
+                    request, replay, checkpoint, checkpoint, "replay digest",
+                    mutated_case / "machine.yaml",
+                )
+
     def test_every_replay_reuses_exact_first_caller_request(self) -> None:
         count = 0
         for case in (*PROFILE.iterdir(), *PERSISTENCE_PROFILE.iterdir()):
@@ -100,7 +143,7 @@ class DurableHostValidatorTests(unittest.TestCase):
                 if vector["name"] == "pending_admission_replay").update(
                     replay_of="rejected_delivery"
                 ),
-            "invalid replay_of committed first operation",
+            "prior committed witness",
         )
         self._assert_complete_test_mutation_fails(
             lambda test: next(vector for vector in test["durable_host_vectors"]

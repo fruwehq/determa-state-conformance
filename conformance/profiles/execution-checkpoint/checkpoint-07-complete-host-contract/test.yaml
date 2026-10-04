@@ -33,6 +33,15 @@ durable_host_vectors:
     result: { file: results-v1.json, pointer: /results/creation_rejected }
     raw_response: { file: responses-v1.json, pointer: /responses/creation_rejection }
     expect: { result: rejected, code: creation_rejected, mutation: none, core_calls: 1 }
+  - name: concurrent_writer_winner
+    covers: [concurrent_one_winner]
+    operation: checkpoint_admit_v1
+    checkpoint_before: created-checkpoint-v1.json
+    checkpoint_after: accepted-checkpoint-v1.json
+    request: { file: inputs-v1.json, pointer: /requests/concurrent_winner }
+    result: { file: results-v1.json, pointer: /results/committed }
+    raw_response: { file: responses-v1.json, pointer: /responses/concurrent_winner }
+    expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: pending_admission_replay
     replay_of: concurrent_writer_winner
     covers: [pending_admission_replay, checkpoint_request_exact_before_identity]
@@ -283,15 +292,6 @@ durable_host_vectors:
     result: { file: results-v1.json, pointer: /results/event_conflict }
     raw_response: { file: responses-v1.json, pointer: /responses/stale_replay_conflict }
     expect: { result: rejected, code: event_id_conflict, mutation: none, core_calls: 0 }
-  - name: concurrent_writer_winner
-    covers: [concurrent_one_winner]
-    operation: checkpoint_admit_v1
-    checkpoint_before: created-checkpoint-v1.json
-    checkpoint_after: accepted-checkpoint-v1.json
-    request: { file: inputs-v1.json, pointer: /requests/concurrent_winner }
-    result: { file: results-v1.json, pointer: /results/committed }
-    raw_response: { file: responses-v1.json, pointer: /responses/concurrent_winner }
-    expect: { result: committed, mutation: atomic, core_calls: 1 }
   - name: concurrent_writer_loser
     covers: [concurrent_loser_revision_conflict]
     operation: checkpoint_admit_v1

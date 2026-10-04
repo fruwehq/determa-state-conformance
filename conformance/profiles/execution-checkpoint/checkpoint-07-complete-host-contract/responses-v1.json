@@ -8,6 +8,22 @@
         "code": "creation_rejected"
       }
     },
+    "concurrent_winner": {
+      "kind": "admission",
+      "body": {
+        "evidence": [
+          {
+            "operation_kind": "acceptance",
+            "receipt_sequence": "1",
+            "event_id": "complete-increment",
+            "request_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf",
+            "acceptance_sequence": "0",
+            "accepted_revision": "1",
+            "delivery_mode": "input"
+          }
+        ]
+      }
+    },
     "pending_admission_replay": {
       "kind": "admission",
       "body": {
@@ -722,22 +738,6 @@
       "kind": "typed_failure",
       "body": {
         "code": "event_id_conflict"
-      }
-    },
-    "concurrent_winner": {
-      "kind": "admission",
-      "body": {
-        "evidence": [
-          {
-            "operation_kind": "acceptance",
-            "receipt_sequence": "1",
-            "event_id": "complete-increment",
-            "request_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf",
-            "acceptance_sequence": "0",
-            "accepted_revision": "1",
-            "delivery_mode": "input"
-          }
-        ]
       }
     },
     "concurrent_loser": {
