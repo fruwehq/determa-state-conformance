@@ -9,4 +9,3 @@ The row's `amount`, `token`, and `region` are typed §16.2 source fields. Snapsh
 The external-refresh witnesses use a separate two-machine bundle. The success handler copies the admitted `changed` fields; the fault handler requests an absent `refresh.only` field, commits the exact `action_fault` and checkpoint receipt, and leaves the selected application row unchanged. The prior snapshot remains caller-owned.
 
 The JSON profile and `test.yaml` use closed schema-version-1 driver formats. Machine source still uses `format: 1`; the conformance and specification repositories remain SemVer `0.3.0`. Rebuild only this profile with `python scripts/generate_application_projection_profile.py`, and check it with `--check`. The repository validator and `scripts/test_application_projection_validator.py` independently reject schema-valid row, result, checkpoint, code, and coverage substitutions.
-
