@@ -18,7 +18,7 @@ from generate_version1_vectors import digest, seal_checkpoint, seal_aggregate, t
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / 'conformance/profiles/committed-native-effects/effect-01-result'
-SPEC_COMMIT = '6bd25e3fcdf068af861aa289903a8489bd8f0139'
+SPEC_COMMIT = '6207362e879ccca70f709e1eb4cc90448d910c0b'
 TOKEN = 'business-order-42'
 SCOPE = 'effect-scope-1'
 
