@@ -268,6 +268,27 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
     installed_fire_id = digest(["determa-timer-fire-event-1", "1",
         installed_schedule["scope_identity"], installed_schedule["root_instance_id"],
         installed_schedule["root_runtime_id"], installed_schedule["timer_id"]])
+    for name in ("schedule", "cancel", "claim", "complete"):
+        operation = installed_lifecycle[name + "_request"]
+        if operation["request_digest"] != digest(["determa-timer-request-1",
+                {key: part for key, part in operation.items() if key != "request_digest"}]):
+            raise TimerHelperValidationError("configured timer request digest changed")
+    for name in ("schedule", "cancel", "claim", "fire"):
+        helper = installed_lifecycle["expected_helper_after_" + name]
+        if helper != artifact(helper["records"], helper["operation_receipts"]):
+            raise TimerHelperValidationError("configured timer helper artifact digest changed")
+        for item in helper["operation_receipts"]:
+            request_for_item = next((installed_lifecycle[part + "_request"] for part in
+                ("schedule", "cancel", "claim", "complete") if
+                installed_lifecycle[part + "_request"]["operation_id"] == item["operation_id"]), None)
+            if request_for_item is None or item["request_digest"] != request_for_item["request_digest"] or \
+                    item["result"]["result_digest"] != digest(["determa-timer-result-1",
+                        item["request_digest"], {key: part for key, part in item["result"].items()
+                                                 if key != "result_digest"}]):
+                raise TimerHelperValidationError("configured timer retained operation result changed")
+    installed_aggregate = installed_checkpoint["root_record"]["aggregate_state"]
+    installed_step = installed_lifecycle["expected_after_step_checkpoint"]
+    installed_terminal = installed_step["operation_receipts"][-1]
     if installed_schedule["scope_identity"] != "effect-scope-1" or \
             installed_envelope["event_id"] != installed_fire_id or \
             installed_envelope["cause_id"] != installed_fire_id or \
@@ -277,6 +298,16 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
                 "determa-execution-checkpoint-digest-1",
                 {key: part for key, part in installed_checkpoint.items()
                  if key != "execution_checkpoint_digest"}]) or \
+            installed_aggregate["aggregate_state_digest"] != digest([
+                "determa-aggregate-state-digest-1",
+                {key: part for key, part in installed_aggregate.items()
+                 if key != "aggregate_state_digest"}]) or \
+            installed_step["execution_checkpoint_digest"] != digest([
+                "determa-execution-checkpoint-digest-1",
+                {key: part for key, part in installed_step.items()
+                 if key != "execution_checkpoint_digest"}]) or \
+            installed_terminal["event_id"] != installed_fire_id or \
+            installed_terminal["request_digest"] != installed_receipt["request_digest"] or \
             installed_lifecycle["expected_helper_after_fire"]["records"][0]["admission_receipt_digest"] != \
                 digest(["determa-timer-admission-receipt-1", installed_receipt]):
         raise TimerHelperValidationError("installed timer scope or ordinary admission changed")
