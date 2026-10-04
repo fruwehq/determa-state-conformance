@@ -147,7 +147,9 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
         _validate(schemas["runtime-provider-descriptor-v1.schema.json"], descriptor,
                   registry, f"{kind} descriptor")
     _require(dependency["identifier"] == "example.native-common", "dependency identity changed")
-    safe_branch = safe_machine["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"][1]
+    safe_branch = safe_machine["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"]
+    _require(isinstance(safe_branch, dict) and set(safe_branch) == {"guard", "action"},
+             "safe inspection must encounter its provider first")
     for kind, binding in (("guard", safe_branch["guard"]["provider"]),
                           ("actions", safe_branch["action"][0]["provider_actions"])):
         _require(binding["provider_reference"]["content_digest"] == closure_digest and
@@ -218,6 +220,19 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
                      f"{vector['name']}: typed provider payload changed")
         else:
             _require(setup is None, "non-execution operation has setup")
+        if request["operation"] == "restore":
+            selected = original_compiled if request["bundle"] == "norm-compiled-machine.json" else machine
+            _require(request["arguments"].get("definition_fingerprint") ==
+                     bundle_fingerprint_document(selected), "restoration definition changed")
+            compiler_ref = compiler
+            installed_ids = {ref["identifier"] for ref in installed["providers"]}
+            if vector["name"] in {"restore_without_compiler", "restore_runtime_without_compiler"}:
+                _require(compiler_ref["identifier"] not in installed_ids,
+                         "restoration unexpectedly installed compiler")
+            if vector["name"] == "restore_missing_runtime":
+                _require(compiler_ref["identifier"] in installed_ids and
+                         guard["provider_reference"]["identifier"] not in installed_ids,
+                         "missing runtime case did not retain only compiler closure")
         _require(installed["source_digest"] == source_digest, "installed source digest changed")
         identities = [(ref["identifier"], ref["version"], ref["content_digest"])
                       for ref in installed["providers"]]

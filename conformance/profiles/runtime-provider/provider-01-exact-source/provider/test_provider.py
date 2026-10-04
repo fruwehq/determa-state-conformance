@@ -10,7 +10,6 @@ class Provider:
     def __init__(self):
         self.guard_calls = 0
         self.action_calls = 0
-        self.inspection_calls = 0
         self.external_calls = 0
         self.irreversible_effects = 0
         self.external_effect_log = []
@@ -49,7 +48,6 @@ class Provider:
         ]}
 
     def inspect_guard(self, snapshot, maximum_guard_evaluations, maximum_evaluation_steps):
-        self.inspection_calls += 1
         if maximum_guard_evaluations < 1 or maximum_evaluation_steps < 2:
             raise ValueError("inspection_limit_exceeded")
         approved = dict(snapshot["event"]["payload"][1])["approved"][1]

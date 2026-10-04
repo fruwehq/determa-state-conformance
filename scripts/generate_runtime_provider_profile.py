@@ -116,19 +116,17 @@ def render(spec_root: Path) -> dict[str, bytes]:
     yaml.indent(mapping=2, sequence=4, offset=2)
     def dump_machine(document):
         yaml_data = copy.deepcopy(document)
-        native_branch = yaml_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"][1]
+        branches = yaml_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"]
+        native_branch = branches[1] if isinstance(branches, list) else branches
         for native in (native_branch["guard"]["provider"], native_branch["action"][0]["provider_actions"]):
             native["provider_reference"]["version"] = DoubleQuotedScalarString("1.0.0")
             native["dependencies"][0]["version"] = DoubleQuotedScalarString("1.0.0")
         stream = StringIO()
         yaml.dump(yaml_data, stream)
-        return stream.getvalue().encode()
+        return stream.getvalue().replace(": \n", ":\n").encode()
     safe_data = machine(safe_guard, safe_actions)
-    safe_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"] = [
-        safe_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"][1]]
-    # Keep a two-branch structure for the YAML emitter's native-binding quoting.
-    safe_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"].insert(
-        0, {"guard": "false"})
+    safe_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"] = (
+        safe_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"][1])
     stream = dump_machine(data)
     outputs = {"machine.yaml": stream, "machine-safe.yaml": dump_machine(safe_data),
                "provider-closure.json": closure,
@@ -157,10 +155,11 @@ def render(spec_root: Path) -> dict[str, bytes]:
     outputs["source-package.json"] = canonical(source)
     outputs["source-manifest.json"] = canonical(manifest)
 
-    installed = [dependency, guard["provider_reference"], actions["provider_reference"],
-                 reference("example.guard-compiler", digest)]
+    installed = [dependency, guard["provider_reference"], actions["provider_reference"]]
+    compiler_installed = [dependency, reference("example.guard-compiler", digest)]
     exact = {"mode": "exact", "providers": installed, "closure_digest": digest,
              "source_digest": source_digest, "trusted": True}
+    compiler_exact = dict(exact, providers=compiler_installed)
     weak_profile = {"deterministic": False, "pure": False, "portable": False,
                     "semantically_introspectable": False, "process_contained": False,
                     "external_io_capable": True}
@@ -207,9 +206,13 @@ def render(spec_root: Path) -> dict[str, bytes]:
                     after["output_count"] = expected["value"]["emissions"]
             expected["state_before"] = before
             expected["state_after"] = after
+        if operation == "restore":
+            selected = compiled if bundle_file == "norm-compiled-machine.json" else data
+            arguments["definition_fingerprint"] = bundle_fingerprint_document(selected)
         vectors.append({"name": name, "request": {
             "operation": operation, "bundle": bundle_file,
-            "installed": copy.deepcopy(exact if installed_override is None else installed_override),
+            "installed": copy.deepcopy((compiler_exact if operation == "compile" else exact)
+                                       if installed_override is None else installed_override),
             "setup": setup, "arguments": arguments,
         }, "expected": expected})
 
@@ -296,64 +299,59 @@ def render(spec_root: Path) -> dict[str, bytes]:
                     guarantees={"deterministic": True, "pure": True, "portable": True,
                                 "semantically_introspectable": True,
                                 "process_contained": True, "external_io_capable": False}),
-        bundle_file="norm-compiled-machine.json", compiler_installed=False,
-        runtime_installed=False)
+        bundle_file="norm-compiled-machine.json", source_file="source-package.json",
+        manifest_file="source-manifest.json")
     add("restore_runtime_without_compiler", "restore", expected=observation(
         "accepted", stages=["resolve_runtime_closure", "restore"],
-        guarantees=weak_profile), compiler_installed=False, runtime_installed=True)
-    add("restore_missing_runtime", "restore", dict(exact, providers=[]),
+        guarantees=weak_profile))
+    add("restore_missing_runtime", "restore", compiler_exact,
         observation("rejected", code="runtime_provider_unavailable",
-                    stages=["resolve_runtime_closure"]),
-        compiler_installed=True, runtime_installed=False)
+                    stages=["resolve_runtime_closure"]))
     add("restore_changed_runtime", "restore", changed,
         observation("rejected", code="runtime_provider_unavailable",
-                    stages=["resolve_runtime_closure"]),
-        compiler_installed=False, runtime_installed=True)
+                    stages=["resolve_runtime_closure"]))
     add("restore_untrusted_runtime", "restore", dict(exact, trusted=False),
         observation("rejected", code="runtime_provider_unavailable",
-                    stages=["resolve_runtime_closure"]),
-        compiler_installed=False, runtime_installed=True)
+                    stages=["resolve_runtime_closure"]))
     add("compile_exact_source", "compile", expected=observation(
         "accepted", stages=["validate_source", "resolve_compiler_closure", "compile_region",
                             "strict_load", "verify_manifest"], guarantees=safe_profile,
         value={"generated_guard": "event.payload.approved"}),
         source_file="source-package.json", manifest_file="source-manifest.json",
-        generated_bundle_file="norm-compiled-machine.json", compiler_installed=True)
-    add("compile_missing_compiler", "compile", dict(exact, providers=[]),
+        generated_bundle_file="norm-compiled-machine.json")
+    add("compile_missing_compiler", "compile", dict(compiler_exact, providers=[]),
         observation("rejected", code="runtime_provider_unavailable",
                     stages=["validate_source", "resolve_compiler_closure"]),
-        source_file="source-package.json", compiler_installed=False)
-    compiler_changed = copy.deepcopy(exact)
+        source_file="source-package.json")
+    compiler_changed = copy.deepcopy(compiler_exact)
     compiler_changed["providers"][-1]["content_digest"] = "sha256:" + "2" * 64
     add("compile_changed_compiler", "compile", compiler_changed,
         observation("rejected", code="runtime_provider_unavailable",
                     stages=["validate_source", "resolve_compiler_closure"]),
-        source_file="source-package.json", compiler_installed=True)
-    add("compile_untrusted_compiler", "compile", dict(exact, trusted=False),
+        source_file="source-package.json")
+    add("compile_untrusted_compiler", "compile", dict(compiler_exact, trusted=False),
         observation("rejected", code="runtime_provider_unavailable",
                     stages=["validate_source", "resolve_compiler_closure"]),
-        source_file="source-package.json", compiler_installed=True)
+        source_file="source-package.json")
     add("compile_manifest_fingerprint_mismatch", "compile", expected=observation(
         "rejected", code="language_compilation_failed",
         stages=["validate_source", "resolve_compiler_closure", "compile_region",
                 "strict_load", "verify_manifest"]),
         source_file="source-package.json", manifest_file="source-manifest.json",
         generated_bundle_file="norm-compiled-machine.json",
-        manifest_fingerprint_override="sha256:" + "3" * 64, compiler_installed=True)
+        manifest_fingerprint_override="sha256:" + "3" * 64)
     add("compile_source_digest_mismatch", "compile", expected=observation(
         "rejected", code="language_compilation_failed", stages=["validate_source"]),
-        source_file="source-package.json", source_digest_override="sha256:" + "4" * 64,
-        compiler_installed=True)
+        source_file="source-package.json", source_digest_override="sha256:" + "4" * 64)
     add("compile_limit_exceeded", "compile", expected=observation(
         "rejected", code="language_compilation_limit_exceeded",
         stages=["validate_source", "resolve_compiler_closure", "compile_region"]),
-        source_file="source-package.json", compiler_installed=True,
+        source_file="source-package.json",
         maximum_compilation_steps=0)
     add("compile_bad_region_source", "compile", expected=observation(
         "rejected", code="language_compilation_failed",
         stages=["validate_source", "resolve_compiler_closure", "compile_region"]),
-        source_file="source-package.json", source_override="invalid expression",
-        compiler_installed=True)
+        source_file="source-package.json", source_override="invalid expression")
     outputs["vectors.generated.json"] = canonical({
         "format": "determa.runtime_provider_vectors", "version": 1,
         "source_files": list(SOURCES), "source_closure_file": "provider-closure.json",

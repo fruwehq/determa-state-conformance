@@ -1,11 +1,10 @@
 // Executable equivalent fixture for Rust hosts. The closure includes this file.
 pub struct ExternalReply { pub approved: bool }
 
-#[derive(Default)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Provider {
     pub guard_calls: u64,
     pub action_calls: u64,
-    pub inspection_calls: u64,
     pub external_calls: u64,
     pub irreversible_effects: u64,
     pub external_effect_log: Vec<&'static str>,
@@ -27,9 +26,8 @@ impl Provider {
         if invalid { return Ok("{\"actions\":[{\"assign\":{\"variable\":\"accepted\",\"value\":[\"boolean\",true]}},{\"stop\":{}}]}".into()); }
         Ok("{\"actions\":[{\"assign\":{\"variable\":\"accepted\",\"value\":[\"boolean\",true]}},{\"send\":{\"event\":\"accepted\",\"to\":{\"external\":true},\"payload\":[\"map\",[]]}}]}".into())
     }
-    pub fn inspect_guard(&mut self, approved: bool, guards: u64, steps: u64)
+    pub fn inspect_guard(&self, approved: bool, guards: u64, steps: u64)
         -> Result<(bool,u64,u64), &'static str> {
-        self.inspection_calls += 1;
         if guards < 1 || steps < 2 { return Err("inspection_limit_exceeded"); }
         Ok((approved,1,2))
     }

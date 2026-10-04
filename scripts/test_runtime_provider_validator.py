@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import importlib.util
 import json
 import shutil
@@ -67,13 +68,25 @@ def main() -> None:
     assert result == json.loads((case / "norm-action-output.json").read_text())
     assert provider.evaluate_actions(snapshot, invalid=True) == json.loads(
         (case / "norm-invalid-action-output.json").read_text())
-    assert provider.inspect_guard(snapshot, 1, 2) == (False, 1, 2)
+    safe_provider = module.Provider()
+    provider_before_inspection = copy.deepcopy(safe_provider.__dict__)
+    host_inspection_calls = 0
+    assert safe_provider.inspect_guard(snapshot, 1, 2) == (False, 1, 2)
+    host_inspection_calls += 1
+    assert safe_provider.__dict__ == provider_before_inspection
     try:
-        provider.inspect_guard(snapshot, 1, 1)
+        safe_provider.inspect_guard(snapshot, 1, 1)
     except ValueError as error:
         assert str(error) == "inspection_limit_exceeded"
     else:
         raise AssertionError("inspection budget accepted")
+    host_inspection_calls += 1
+    assert safe_provider.__dict__ == provider_before_inspection
+    unsafe_provider = module.Provider()
+    unsafe_before = copy.deepcopy(unsafe_provider.__dict__)
+    # Host preflight refuses the unsafe binding before either evaluator is entered.
+    assert unsafe_provider.__dict__ == unsafe_before
+    assert host_inspection_calls == 2
     try:
         provider.evaluate_actions(snapshot, fail=True, external_io=True)
     except ValueError as error:
@@ -93,11 +106,36 @@ def main() -> None:
         raise AssertionError("invalid compiler input accepted")
 
     with tempfile.TemporaryDirectory() as temporary:
+        wrapper = Path(temporary) / "provider_source_rows.rs"
+        wrapper.write_text(f'''include!(r#"{case / "provider/test_provider.rs"}"#);
+fn main() {{
+    let mut provider = Provider::default();
+    assert_eq!(provider.evaluate_guard(false, Some(true), false, false), Ok(true));
+    assert_eq!(provider.evaluate_guard(false, None, false, false), Ok(false));
+    println!("{{}}", provider.evaluate_actions(false, false, false).unwrap());
+    println!("{{}}", provider.evaluate_actions(true, false, false).unwrap());
+    assert_eq!(provider.evaluate_actions(false, true, true), Err("action_fault"));
+    assert_eq!(provider.external_calls, 1);
+    assert_eq!(provider.irreversible_effects, 1);
+    assert_eq!(provider.external_effect_log, vec!["fixture-io-1:external_write:before_commit"]);
+    let safe = Provider::default();
+    let before = safe.clone();
+    assert_eq!(safe.inspect_guard(true, 1, 2), Ok((true, 1, 2)));
+    assert_eq!(safe, before);
+    assert_eq!(safe.inspect_guard(true, 1, 1), Err("inspection_limit_exceeded"));
+    assert_eq!(safe, before);
+    assert_eq!(compile_region("event.payload.approved"), Ok("event.payload.approved"));
+    assert_eq!(compile_region("invalid expression"), Err("language_compilation_failed"));
+}}
+''')
         for toolchain in ("1.86.0", "stable"):
-            command = ["rustc", f"+{toolchain}", "--crate-type", "lib", "--emit", "metadata",
-                       "-o", str(Path(temporary) / f"provider-{toolchain}.rmeta"),
-                       str(case / "provider/test_provider.rs")]
+            executable = Path(temporary) / f"provider-{toolchain}"
+            command = ["rustc", f"+{toolchain}", "-o", str(executable), str(wrapper)]
             subprocess.run(command, check=True, capture_output=True)
+            result = subprocess.run([str(executable)], check=True, capture_output=True, text=True)
+            outputs = [json.loads(line) for line in result.stdout.splitlines()]
+            assert outputs == [json.loads((case / "norm-action-output.json").read_text()),
+                               json.loads((case / "norm-invalid-action-output.json").read_text())]
     with tempfile.TemporaryDirectory() as temporary:
         location = Path(temporary)
         adapter = location / "reject_adapter.py"
@@ -108,7 +146,8 @@ def main() -> None:
             "files = sorted(str(p.relative_to(request['profile_root'])) for p in "
             "pathlib.Path(request['profile_root']).rglob('*') if p.is_file())\n"
             "pathlib.Path(sys.argv[1]).write_text(json.dumps({'request': request, 'files': files}))\n"
-            "print('{}')\n"
+            "sys.stdout.buffer.write(pathlib.Path(sys.argv[2]).read_bytes() if len(sys.argv) > 2 "
+            "else b'{}')\n"
         )
         run = subprocess.run([
             sys.executable, str(ROOT / "scripts/run_runtime_provider_profile.py"),
@@ -121,6 +160,37 @@ def main() -> None:
                                              "source_closure_file"}
         assert "vectors.generated.json" not in recorded["files"]
         assert "expected" not in recorded["request"] and "name" not in recorded["request"]
+        fixture_vectors = json.loads((case / "vectors.generated.json").read_text())["vectors"]
+        first = fixture_vectors[0]
+        closure = first["request"]["installed"]["closure_digest"]
+        source_evidence = json.loads((case / "provider-closure.json").read_text())["files"]
+        valid = {"observation": first["expected"],
+                 "loaded_source": {source_evidence[0]["path"]: source_evidence[0]["sha256"]},
+                 "loaded_closure_digest": closure}
+        variants = {
+            "duplicate": b'{"observation":{},"observation":{}}',
+            "nonfinite": json.dumps(valid).replace('"irreversible_side_effects": 0',
+                                                  '"irreversible_side_effects": NaN').encode(),
+            "boolean_counter": json.dumps({**valid, "observation": {
+                **first["expected"], "irreversible_side_effects": False}}).encode(),
+            "integer_boolean": json.dumps({**valid, "observation": {
+                **first["expected"], "determa_state_committed": 0}}).encode(),
+            "nested_boolean_counter": json.dumps({**valid, "observation": {
+                **first["expected"], "calls": {**first["expected"]["calls"],
+                                                "guard": False}}}).encode(),
+            "invalid_utf8": b"\xff",
+        }
+        for variant, raw in variants.items():
+            response_file = location / f"{variant}.json"
+            response_file.write_bytes(raw)
+            rejected = subprocess.run([
+                sys.executable, str(ROOT / "scripts/run_runtime_provider_profile.py"),
+                "--spec-root", str(args.spec_root),
+                "--adapter", f"{sys.executable} {adapter} {capture} {response_file}",
+            ], capture_output=True, text=True)
+            assert rejected.returncode != 0, f"malformed child output accepted: {variant}"
+            assert ("invalid adapter JSON" in rejected.stderr or
+                    "invalid observation" in rejected.stderr), rejected.stderr
     print("runtime provider relational tamper probes and Python/Rust source checks passed")
 
 

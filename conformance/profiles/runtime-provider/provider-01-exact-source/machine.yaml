@@ -32,17 +32,17 @@ machines:
                     provider_reference:
                       identifier: example.native-review
                       version: "1.0.0"
-                      content_digest: 
-                        sha256:d8ee0a09ae034314146fd520ab48b06da4c0f230d74838bb123c97474e2ad51c
-                    source_media_type: 
+                      content_digest:
+                        sha256:1e7f6e1d067fe59df4a81e7d7b651c240f7168e32344f8b10bfa1af0e62a9008
+                    source_media_type:
                       application/vnd.determa.runtime-fixture+json
-                    source_digest: 
-                      sha256:f3e579a426e9fea94cf860b041381ff6e673f88094fd4316f56d0ab32b55285e
+                    source_digest:
+                      sha256:ab38f2505cdbcfdfb857afdcf521d842b6584143bea664f2f7c7ed2b14ba79e4
                     dependencies:
                       - identifier: example.native-common
                         version: "1.0.0"
-                        content_digest: 
-                          sha256:d8ee0a09ae034314146fd520ab48b06da4c0f230d74838bb123c97474e2ad51c
+                        content_digest:
+                          sha256:1e7f6e1d067fe59df4a81e7d7b651c240f7168e32344f8b10bfa1af0e62a9008
                     capabilities:
                       deterministic: false
                       pure: false
@@ -59,17 +59,17 @@ machines:
                       provider_reference:
                         identifier: example.native-actions
                         version: "1.0.0"
-                        content_digest: 
-                          sha256:d8ee0a09ae034314146fd520ab48b06da4c0f230d74838bb123c97474e2ad51c
-                      source_media_type: 
+                        content_digest:
+                          sha256:1e7f6e1d067fe59df4a81e7d7b651c240f7168e32344f8b10bfa1af0e62a9008
+                      source_media_type:
                         application/vnd.determa.runtime-fixture+json
-                      source_digest: 
-                        sha256:f3e579a426e9fea94cf860b041381ff6e673f88094fd4316f56d0ab32b55285e
+                      source_digest:
+                        sha256:ab38f2505cdbcfdfb857afdcf521d842b6584143bea664f2f7c7ed2b14ba79e4
                       dependencies:
                         - identifier: example.native-common
                           version: "1.0.0"
-                          content_digest: 
-                            sha256:d8ee0a09ae034314146fd520ab48b06da4c0f230d74838bb123c97474e2ad51c
+                          content_digest:
+                            sha256:1e7f6e1d067fe59df4a81e7d7b651c240f7168e32344f8b10bfa1af0e62a9008
                       capabilities:
                         deterministic: false
                         pure: false
