@@ -1,0 +1,85 @@
+format: 1
+namespace: example.runtime_profile
+events:
+  submit:
+    direction: input
+    payload:
+      approved:
+        type: bool
+        required: true
+  accepted:
+    direction: output
+machines:
+  - machine_id: order
+    root:
+      type: composite
+      variables:
+        accepted:
+          type: bool
+          init: false
+      initial:
+        transition_to: pending
+      states:
+        pending:
+          on_events:
+            submit:
+              guard:
+                provider:
+                  provider_reference:
+                    identifier: example.native-safe
+                    version: "1.0.0"
+                    content_digest:
+                      sha256:1e7f6e1d067fe59df4a81e7d7b651c240f7168e32344f8b10bfa1af0e62a9008
+                  source_media_type:
+                    application/vnd.determa.runtime-fixture+json
+                  source_digest:
+                    sha256:ab38f2505cdbcfdfb857afdcf521d842b6584143bea664f2f7c7ed2b14ba79e4
+                  dependencies:
+                    - identifier: example.native-common
+                      version: "1.0.0"
+                      content_digest:
+                        sha256:1e7f6e1d067fe59df4a81e7d7b651c240f7168e32344f8b10bfa1af0e62a9008
+                  capabilities:
+                    deterministic: true
+                    pure: true
+                    portable: false
+                    semantically_introspectable: true
+                    process_contained: true
+                    external_io_capable: false
+                  input_types:
+                    event: event_envelope
+                    variables: typed_variables
+                  output_type: bool
+              action:
+                - provider_actions:
+                    provider_reference:
+                      identifier: example.native-safe-actions
+                      version: "1.0.0"
+                      content_digest:
+                        sha256:1e7f6e1d067fe59df4a81e7d7b651c240f7168e32344f8b10bfa1af0e62a9008
+                    source_media_type:
+                      application/vnd.determa.runtime-fixture+json
+                    source_digest:
+                      sha256:ab38f2505cdbcfdfb857afdcf521d842b6584143bea664f2f7c7ed2b14ba79e4
+                    dependencies:
+                      - identifier: example.native-common
+                        version: "1.0.0"
+                        content_digest:
+                          sha256:1e7f6e1d067fe59df4a81e7d7b651c240f7168e32344f8b10bfa1af0e62a9008
+                    capabilities:
+                      deterministic: true
+                      pure: true
+                      portable: false
+                      semantically_introspectable: true
+                      process_contained: true
+                      external_io_capable: false
+                    input_types:
+                      event: event_envelope
+                      variables: typed_variables
+                    output_type: structured_actions
+                - send:
+                    event: accepted
+                    to:
+                      external: true
+        complete:
+          type: final

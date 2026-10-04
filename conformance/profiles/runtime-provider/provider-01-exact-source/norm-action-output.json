@@ -1,0 +1,1 @@
+{"actions":[{"assign":{"variable":"accepted","value":["boolean",true]}},{"send":{"event":"accepted","to":{"external":true},"payload":["map",[]]}}]}
