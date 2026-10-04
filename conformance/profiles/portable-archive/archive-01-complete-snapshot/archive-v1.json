@@ -1,0 +1,2348 @@
+{
+  "archive_format": "determa.scope_archive",
+  "archive_schema_version": 1,
+  "source": {
+    "profile_kind": "checkpoint_host",
+    "profile_claims": [
+      "durable_embedded_processing"
+    ],
+    "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+    "logical_scope_identity": "scope-archive-example",
+    "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+    "scope_generation": "7"
+  },
+  "participant_contract": {
+    "required_participant_ids": [
+      "helper-state"
+    ],
+    "optional_participant_ids": [],
+    "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448"
+  },
+  "selection": {
+    "root_instance_ids": [
+      "effect-1",
+      "fault-1",
+      "job-42",
+      "server-1"
+    ],
+    "consistency_token": "capture-7"
+  },
+  "checkpoints": [
+    {
+      "execution_checkpoint_format": "determa.execution_checkpoint",
+      "execution_checkpoint_schema_version": 1,
+      "root_instance_id": "effect-1",
+      "revision": "4",
+      "root_record": {
+        "status": "retained",
+        "aggregate_state": {
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "machine_format": 1,
+          "validated_bundle_fingerprint": "sha256:69614f5c10828364f93960fa5347d212750e67f0c37b8056d8fd0966e334c74f",
+          "namespace": "example.archive_effects",
+          "root_machine_id": "effects",
+          "root_machine_version": "1",
+          "root_instance_id": "effect-1",
+          "creation_id": "create-effect-1",
+          "root_runtime_id": "sha256:b37c524b9e24c7657a253253ab483e84b15feb65cfca1a66d37f58a8fc1bc23d",
+          "migration_sequence": "0",
+          "next_logical_step_sequence": "1",
+          "next_output_sequence": "3",
+          "next_acceptance_sequence": "0",
+          "next_queue_sequence": "0",
+          "runtimes": [
+            {
+              "runtime_id": "sha256:b37c524b9e24c7657a253253ab483e84b15feb65cfca1a66d37f58a8fc1bc23d",
+              "identity_origin": {
+                "kind": "root",
+                "definition": {
+                  "validated_bundle_fingerprint": "sha256:69614f5c10828364f93960fa5347d212750e67f0c37b8056d8fd0966e334c74f",
+                  "machine": {
+                    "namespace": "example.archive_effects",
+                    "machine_id": "effects",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "root_instance_id": "effect-1"
+              },
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "effect-1",
+                  "root_runtime_id": "sha256:b37c524b9e24c7657a253253ab483e84b15feb65cfca1a66d37f58a8fc1bc23d"
+                }
+              },
+              "current_definition": {
+                "validated_bundle_fingerprint": "sha256:69614f5c10828364f93960fa5347d212750e67f0c37b8056d8fd0966e334c74f",
+                "machine": {
+                  "namespace": "example.archive_effects",
+                  "machine_id": "effects",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "relation": {
+                "kind": "root"
+              },
+              "status": "running",
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root"
+              ],
+              "active_state_activations": [
+                {
+                  "state_definition_pointer": "/machines/0/root",
+                  "activation_sequence": "0"
+                }
+              ],
+              "variables": [],
+              "history": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_component_activation_sequences": [],
+              "ready_mailbox": [],
+              "deferred_mailbox": [],
+              "fault": null
+            }
+          ],
+          "aggregate_state_digest": "sha256:980d8c2ffdc7264768c480e3ab36e7f6a0bb6105d7ef10302c29ce85bb25074d"
+        }
+      },
+      "replay_retention": {
+        "mode": "permanent",
+        "permanent_replay_eligible": true,
+        "pruned_through_receipt_sequence": null,
+        "policy_identifier": null
+      },
+      "next_operation_receipt_sequence": "1",
+      "operation_receipts": [
+        {
+          "operation_kind": "creation",
+          "receipt_sequence": "0",
+          "creation_id": "create-effect-1",
+          "request_digest": "sha256:b9749908aaf173cda745167936c23cdcda723de70ed583627d98d90e495eea16",
+          "committed_revision": "0",
+          "resulting_aggregate_state_digest": "sha256:980d8c2ffdc7264768c480e3ab36e7f6a0bb6105d7ef10302c29ce85bb25074d",
+          "status": "running",
+          "fault": null,
+          "emission_references": [
+            {
+              "kind": "external_outbox",
+              "emission_index": "0",
+              "effect_id": "sha256:fe78520c0ca9460e6292f33c30c022e5ec0f62e74a2143f9121241b777b89209"
+            },
+            {
+              "kind": "external_outbox",
+              "emission_index": "0",
+              "effect_id": "sha256:7385a8ba000dfadd94d5f30e2fb1e765229e815603479f3539f7245f37e3ad7d"
+            },
+            {
+              "kind": "external_outbox",
+              "emission_index": "0",
+              "effect_id": "sha256:ca805923f4306de41157b41fd7a28924a3fc44a1b1750d48f610f9926a737a56"
+            }
+          ]
+        }
+      ],
+      "event_identity_tombstones": [],
+      "pending_outbox_intents": [
+        {
+          "intent": {
+            "effect_id": "sha256:fe78520c0ca9460e6292f33c30c022e5ec0f62e74a2143f9121241b777b89209",
+            "sequence": "0",
+            "event": "pending_notice",
+            "payload": [
+              "map",
+              []
+            ],
+            "correlation_id": "corr-0"
+          },
+          "state_revision": "4",
+          "delivery_state": {
+            "status": "ambiguous",
+            "reason_code": "unknown_confirmation"
+          }
+        }
+      ],
+      "next_outbox_terminal_sequence": "2",
+      "terminal_outbox_records": [
+        {
+          "terminal_sequence": "0",
+          "intent": {
+            "effect_id": "sha256:7385a8ba000dfadd94d5f30e2fb1e765229e815603479f3539f7245f37e3ad7d",
+            "sequence": "1",
+            "event": "terminal_notice",
+            "payload": [
+              "map",
+              []
+            ],
+            "correlation_id": "corr-1"
+          },
+          "committed_revision": "1",
+          "outcome": {
+            "status": "confirmed"
+          }
+        }
+      ],
+      "outbox_effect_tombstones": [
+        {
+          "terminal_sequence": "1",
+          "effect_id": "sha256:ca805923f4306de41157b41fd7a28924a3fc44a1b1750d48f610f9926a737a56",
+          "intent_digest": "sha256:528e0033d2b7de611e1c5797ef2a6a943d84057a5a6bd6a75a29e87622d2845c",
+          "committed_revision": "2",
+          "outcome": {
+            "status": "dead_lettered",
+            "reason_code": "policy"
+          }
+        }
+      ],
+      "migration_audit_records": [],
+      "execution_checkpoint_digest": "sha256:5667b9609eaf93f15abbd803110b46fb291f2e1b842f35ab2541387213fc1f8b"
+    },
+    {
+      "execution_checkpoint_format": "determa.execution_checkpoint",
+      "execution_checkpoint_schema_version": 1,
+      "root_instance_id": "fault-1",
+      "revision": "2",
+      "root_record": {
+        "status": "retained",
+        "aggregate_state": {
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "machine_format": 1,
+          "validated_bundle_fingerprint": "sha256:d9c63e89dac38aedbd3d439a9049158d39e8f3791dd55f7856540f684d16ffcc",
+          "namespace": "example.transaction_server",
+          "root_machine_id": "transaction_server",
+          "root_machine_version": "1",
+          "root_instance_id": "fault-1",
+          "creation_id": "create-fault-1",
+          "root_runtime_id": "sha256:b11138f6570635b03603a5518928c7ecc62105a7cd6b0d3d915593d7eb7ef321",
+          "migration_sequence": "0",
+          "next_logical_step_sequence": "2",
+          "next_output_sequence": "0",
+          "next_acceptance_sequence": "1",
+          "next_queue_sequence": "1",
+          "runtimes": [
+            {
+              "runtime_id": "sha256:b11138f6570635b03603a5518928c7ecc62105a7cd6b0d3d915593d7eb7ef321",
+              "identity_origin": {
+                "kind": "root",
+                "definition": {
+                  "validated_bundle_fingerprint": "sha256:d9c63e89dac38aedbd3d439a9049158d39e8f3791dd55f7856540f684d16ffcc",
+                  "machine": {
+                    "namespace": "example.transaction_server",
+                    "machine_id": "transaction_server",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "root_instance_id": "fault-1"
+              },
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "fault-1",
+                  "root_runtime_id": "sha256:b11138f6570635b03603a5518928c7ecc62105a7cd6b0d3d915593d7eb7ef321"
+                }
+              },
+              "current_definition": {
+                "validated_bundle_fingerprint": "sha256:d9c63e89dac38aedbd3d439a9049158d39e8f3791dd55f7856540f684d16ffcc",
+                "machine": {
+                  "namespace": "example.transaction_server",
+                  "machine_id": "transaction_server",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "relation": {
+                "kind": "root"
+              },
+              "status": "faulted",
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/busy/states/receiving"
+              ],
+              "active_state_activations": [
+                {
+                  "state_definition_pointer": "/machines/0/root",
+                  "activation_sequence": "0"
+                },
+                {
+                  "state_definition_pointer": "/machines/0/root/states/busy",
+                  "activation_sequence": "0"
+                },
+                {
+                  "state_definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                  "activation_sequence": "0"
+                }
+              ],
+              "variables": [],
+              "history": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/busy",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_component_activation_sequences": [],
+              "ready_mailbox": [],
+              "deferred_mailbox": [],
+              "fault": {
+                "definition_fingerprint": "sha256:d9c63e89dac38aedbd3d439a9049158d39e8f3791dd55f7856540f684d16ffcc",
+                "runtime_id": "sha256:b11138f6570635b03603a5518928c7ecc62105a7cd6b0d3d915593d7eb7ef321",
+                "cause_id": "overflow-1",
+                "code": "deferred_event_capacity_exceeded",
+                "step_sequence": "1",
+                "source_locator": "system:deferred_event_capacity"
+              }
+            }
+          ],
+          "aggregate_state_digest": "sha256:02c8345ee8d74c98be7b763735318af0842e33fbd9754ba40c4afca075354510"
+        }
+      },
+      "replay_retention": {
+        "mode": "permanent",
+        "permanent_replay_eligible": true,
+        "pruned_through_receipt_sequence": null,
+        "policy_identifier": null
+      },
+      "next_operation_receipt_sequence": "3",
+      "operation_receipts": [
+        {
+          "operation_kind": "creation",
+          "receipt_sequence": "0",
+          "creation_id": "create-fault-1",
+          "request_digest": "sha256:e4835fb79a0cd3af5b8ebacab3646f9b2a6b6b178df429c0de3593dd135cc27e",
+          "committed_revision": "0",
+          "resulting_aggregate_state_digest": "sha256:d51449c410ebaa8fed40dd0f9f264bd1b1b46c62627453924a8fed2c96529d37",
+          "status": "running",
+          "fault": null,
+          "emission_references": []
+        },
+        {
+          "operation_kind": "acceptance",
+          "receipt_sequence": "1",
+          "event_id": "overflow-1",
+          "request_digest": "sha256:4ed718dabf911b5770ae1bb7cfc3fcfeee8659fdb2a7f135ccb8bf67496521d8",
+          "acceptance_sequence": "0",
+          "accepted_revision": "1",
+          "delivery_mode": "input"
+        },
+        {
+          "operation_kind": "event_terminal",
+          "receipt_sequence": "2",
+          "event_id": "overflow-1",
+          "request_digest": "sha256:4ed718dabf911b5770ae1bb7cfc3fcfeee8659fdb2a7f135ccb8bf67496521d8",
+          "acceptance_sequence": "0",
+          "final_queue_sequence": "0",
+          "committed_revision": "2",
+          "resulting_aggregate_state_digest": "sha256:02c8345ee8d74c98be7b763735318af0842e33fbd9754ba40c4afca075354510",
+          "outcome": {
+            "status": "faulted",
+            "disposition": "faulted",
+            "fault": {
+              "definition_fingerprint": "sha256:d9c63e89dac38aedbd3d439a9049158d39e8f3791dd55f7856540f684d16ffcc",
+              "runtime_id": "sha256:b11138f6570635b03603a5518928c7ecc62105a7cd6b0d3d915593d7eb7ef321",
+              "cause_id": "overflow-1",
+              "code": "deferred_event_capacity_exceeded",
+              "step_sequence": "1",
+              "source_locator": "system:deferred_event_capacity"
+            },
+            "rejection": null
+          },
+          "emission_references": []
+        }
+      ],
+      "event_identity_tombstones": [],
+      "pending_outbox_intents": [],
+      "next_outbox_terminal_sequence": "0",
+      "terminal_outbox_records": [],
+      "outbox_effect_tombstones": [],
+      "migration_audit_records": [],
+      "execution_checkpoint_digest": "sha256:858ee24a45897e02b481bf4b4155f3d95eb3a8eafb5b81d45b95bc4a0088ec49"
+    },
+    {
+      "execution_checkpoint_format": "determa.execution_checkpoint",
+      "execution_checkpoint_schema_version": 1,
+      "root_instance_id": "job-42",
+      "revision": "1",
+      "root_record": {
+        "status": "retained",
+        "aggregate_state": {
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "machine_format": 1,
+          "validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+          "namespace": "example.persistence",
+          "root_machine_id": "job",
+          "root_machine_version": "1",
+          "root_instance_id": "job-42",
+          "creation_id": "create-1",
+          "root_runtime_id": "sha256:245dfc1b8526956791e6fa2591c9f3cc5b379e93926f7b290d59abd769656c60",
+          "migration_sequence": "1",
+          "next_logical_step_sequence": "1",
+          "next_output_sequence": "0",
+          "next_acceptance_sequence": "0",
+          "next_queue_sequence": "0",
+          "runtimes": [
+            {
+              "runtime_id": "sha256:245dfc1b8526956791e6fa2591c9f3cc5b379e93926f7b290d59abd769656c60",
+              "identity_origin": {
+                "kind": "root",
+                "definition": {
+                  "validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+                  "machine": {
+                    "namespace": "example.persistence",
+                    "machine_id": "job",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "root_instance_id": "job-42"
+              },
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "job-42",
+                  "root_runtime_id": "sha256:245dfc1b8526956791e6fa2591c9f3cc5b379e93926f7b290d59abd769656c60"
+                }
+              },
+              "current_definition": {
+                "validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+                "machine": {
+                  "namespace": "example.persistence",
+                  "machine_id": "job",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "relation": {
+                "kind": "root"
+              },
+              "status": "running",
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root"
+              ],
+              "active_state_activations": [
+                {
+                  "state_definition_pointer": "/machines/0/root",
+                  "activation_sequence": "0"
+                }
+              ],
+              "variables": [],
+              "history": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_component_activation_sequences": [],
+              "ready_mailbox": [],
+              "deferred_mailbox": [],
+              "fault": null
+            }
+          ],
+          "aggregate_state_digest": "sha256:aef98cb6fed0f87aea4b4d52a3af47b621cb966a8c5f9e79479acedde8b38d44"
+        }
+      },
+      "replay_retention": {
+        "mode": "permanent",
+        "permanent_replay_eligible": true,
+        "pruned_through_receipt_sequence": null,
+        "policy_identifier": null
+      },
+      "next_operation_receipt_sequence": "2",
+      "operation_receipts": [
+        {
+          "operation_kind": "creation",
+          "receipt_sequence": "0",
+          "creation_id": "create-1",
+          "request_digest": "sha256:d45fc61bc0c9db90b3f7bca2f0c3e01ef3444c2f7ec54ef241ad7557d0dbf2a9",
+          "committed_revision": "0",
+          "resulting_aggregate_state_digest": "sha256:c401a9a5534d2dc17520ac6c9d672e611c2baaf35f120a0ec00d4f608291a81e",
+          "status": "running",
+          "fault": null,
+          "emission_references": []
+        },
+        {
+          "operation_kind": "maintenance_migration",
+          "receipt_sequence": "1",
+          "operation_id": "maintenance-job-1",
+          "request_digest": "sha256:7aac2401e5ae580e722f10d92e09f9b23eecfd1e3a5e4813c8a8d3839a926a85",
+          "committed_revision": "1",
+          "source_aggregate_state_digest": "sha256:c401a9a5534d2dc17520ac6c9d672e611c2baaf35f120a0ec00d4f608291a81e",
+          "target_validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+          "resulting_aggregate_state_digest": "sha256:aef98cb6fed0f87aea4b4d52a3af47b621cb966a8c5f9e79479acedde8b38d44",
+          "migration_sequences": [
+            "1"
+          ],
+          "result_code": "migration_applied"
+        }
+      ],
+      "event_identity_tombstones": [],
+      "pending_outbox_intents": [],
+      "next_outbox_terminal_sequence": "0",
+      "terminal_outbox_records": [],
+      "outbox_effect_tombstones": [],
+      "migration_audit_records": [
+        {
+          "migration_audit_record_schema_version": 1,
+          "root_instance_id": "job-42",
+          "root_runtime_id": "sha256:245dfc1b8526956791e6fa2591c9f3cc5b379e93926f7b290d59abd769656c60",
+          "migration_sequence": "1",
+          "source_validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+          "target_validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+          "migration_descriptor_digest": "sha256:9e0ca69f03366de7c5cb92dea67d8b7bd7979c117a22ea9de37e6c6f73a8e7d9",
+          "source_aggregate_state_digest": "sha256:c401a9a5534d2dc17520ac6c9d672e611c2baaf35f120a0ec00d4f608291a81e",
+          "target_aggregate_state_digest": "sha256:aef98cb6fed0f87aea4b4d52a3af47b621cb966a8c5f9e79479acedde8b38d44",
+          "result_code": "migration_applied"
+        }
+      ],
+      "execution_checkpoint_digest": "sha256:f1f157b29245d86bfab1c06a7f2a14a54180fb2503d55b82a7f05190f3999a79"
+    },
+    {
+      "execution_checkpoint_format": "determa.execution_checkpoint",
+      "execution_checkpoint_schema_version": 1,
+      "root_instance_id": "server-1",
+      "revision": "3",
+      "root_record": {
+        "status": "retained",
+        "aggregate_state": {
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "machine_format": 1,
+          "validated_bundle_fingerprint": "sha256:a4458940ab5bc76a120889379294fa4df840465f8e05b97fa368587e3167cb86",
+          "namespace": "example.transaction_server",
+          "root_machine_id": "transaction_server",
+          "root_machine_version": "1",
+          "root_instance_id": "server-1",
+          "creation_id": "create-server-1",
+          "root_runtime_id": "sha256:1f170c213b530bdb78a4652461f516b4f7378bc19d70277fa6226475e528e992",
+          "migration_sequence": "0",
+          "next_logical_step_sequence": "1",
+          "next_output_sequence": "0",
+          "next_acceptance_sequence": "2",
+          "next_queue_sequence": "3",
+          "runtimes": [
+            {
+              "runtime_id": "sha256:1f170c213b530bdb78a4652461f516b4f7378bc19d70277fa6226475e528e992",
+              "identity_origin": {
+                "kind": "root",
+                "definition": {
+                  "validated_bundle_fingerprint": "sha256:a4458940ab5bc76a120889379294fa4df840465f8e05b97fa368587e3167cb86",
+                  "machine": {
+                    "namespace": "example.transaction_server",
+                    "machine_id": "transaction_server",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "root_instance_id": "server-1"
+              },
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "server-1",
+                  "root_runtime_id": "sha256:1f170c213b530bdb78a4652461f516b4f7378bc19d70277fa6226475e528e992"
+                }
+              },
+              "current_definition": {
+                "validated_bundle_fingerprint": "sha256:a4458940ab5bc76a120889379294fa4df840465f8e05b97fa368587e3167cb86",
+                "machine": {
+                  "namespace": "example.transaction_server",
+                  "machine_id": "transaction_server",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "relation": {
+                "kind": "root"
+              },
+              "status": "running",
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/busy/states/receiving"
+              ],
+              "active_state_activations": [
+                {
+                  "state_definition_pointer": "/machines/0/root",
+                  "activation_sequence": "0"
+                },
+                {
+                  "state_definition_pointer": "/machines/0/root/states/busy",
+                  "activation_sequence": "0"
+                },
+                {
+                  "state_definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                  "activation_sequence": "0"
+                }
+              ],
+              "variables": [],
+              "history": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/busy",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_component_activation_sequences": [],
+              "ready_mailbox": [
+                {
+                  "acceptance_sequence": "1",
+                  "queue_sequence": "2",
+                  "delivery_mode": "input",
+                  "envelope": {
+                    "event": "received",
+                    "event_id": "received-1",
+                    "cause_id": "received-1",
+                    "source": {
+                      "host": true
+                    },
+                    "target": {
+                      "root": {
+                        "root_instance_id": "server-1",
+                        "root_runtime_id": "sha256:1f170c213b530bdb78a4652461f516b4f7378bc19d70277fa6226475e528e992"
+                      }
+                    },
+                    "payload": [
+                      "map",
+                      []
+                    ]
+                  },
+                  "envelope_digest": "sha256:8196b6f468495c0f89ba9ce8e8f9b2814fdfc9951c5b0007326501da95d6118a",
+                  "deferral_count": "0"
+                }
+              ],
+              "deferred_mailbox": [
+                {
+                  "acceptance_sequence": "0",
+                  "queue_sequence": "1",
+                  "delivery_mode": "input",
+                  "envelope": {
+                    "event": "new_request",
+                    "event_id": "request-2",
+                    "cause_id": "request-2",
+                    "source": {
+                      "host": true
+                    },
+                    "target": {
+                      "root": {
+                        "root_instance_id": "server-1",
+                        "root_runtime_id": "sha256:1f170c213b530bdb78a4652461f516b4f7378bc19d70277fa6226475e528e992"
+                      }
+                    },
+                    "payload": [
+                      "map",
+                      [
+                        [
+                          "transaction_id",
+                          [
+                            "string",
+                            "transaction-2"
+                          ]
+                        ]
+                      ]
+                    ]
+                  },
+                  "envelope_digest": "sha256:555c51c8c72c73220ed82838c006306711f2e4b67217143a30baa7b3e235fdca",
+                  "deferral_count": "1"
+                }
+              ],
+              "fault": null
+            }
+          ],
+          "aggregate_state_digest": "sha256:ac915eb405d3137058d9ed39c90106f5c9141a1335a7abf07b572d4c906d71a3"
+        }
+      },
+      "replay_retention": {
+        "mode": "permanent",
+        "permanent_replay_eligible": true,
+        "pruned_through_receipt_sequence": null,
+        "policy_identifier": null
+      },
+      "next_operation_receipt_sequence": "3",
+      "operation_receipts": [
+        {
+          "operation_kind": "creation",
+          "receipt_sequence": "0",
+          "creation_id": "create-server-1",
+          "request_digest": "sha256:520caae7bfbc833e81ee10e5185ad49fa5e57e6c0738ecfd418815c0738ca6c9",
+          "committed_revision": "0",
+          "resulting_aggregate_state_digest": "sha256:914b5dabca46525b897dfb91314771b9ea7baeabed0271dae97b6c3671111b98",
+          "status": "running",
+          "fault": null,
+          "emission_references": []
+        },
+        {
+          "operation_kind": "acceptance",
+          "receipt_sequence": "1",
+          "event_id": "request-2",
+          "request_digest": "sha256:555c51c8c72c73220ed82838c006306711f2e4b67217143a30baa7b3e235fdca",
+          "acceptance_sequence": "0",
+          "accepted_revision": "1",
+          "delivery_mode": "input"
+        },
+        {
+          "operation_kind": "acceptance",
+          "receipt_sequence": "2",
+          "event_id": "received-1",
+          "request_digest": "sha256:8196b6f468495c0f89ba9ce8e8f9b2814fdfc9951c5b0007326501da95d6118a",
+          "acceptance_sequence": "1",
+          "accepted_revision": "3",
+          "delivery_mode": "input"
+        }
+      ],
+      "event_identity_tombstones": [],
+      "pending_outbox_intents": [],
+      "next_outbox_terminal_sequence": "0",
+      "terminal_outbox_records": [],
+      "outbox_effect_tombstones": [],
+      "migration_audit_records": [],
+      "execution_checkpoint_digest": "sha256:9aab07243e93507e23e99e2a7c9c3001a14335a280022199c6bcb2a686fe273b"
+    }
+  ],
+  "normalized_definitions": [
+    {
+      "validated_bundle_fingerprint": "sha256:69614f5c10828364f93960fa5347d212750e67f0c37b8056d8fd0966e334c74f",
+      "normalized_bundle": [
+        "map",
+        [
+          [
+            "events",
+            [
+              "map",
+              [
+                [
+                  "compact_notice",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "output"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "pending_notice",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "output"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "terminal_notice",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "output"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "format",
+            [
+              "integer",
+              "1"
+            ]
+          ],
+          [
+            "machines",
+            [
+              "list",
+              [
+                [
+                  "map",
+                  [
+                    [
+                      "languages",
+                      [
+                        "map",
+                        [
+                          [
+                            "action",
+                            [
+                              "string",
+                              "determa"
+                            ]
+                          ],
+                          [
+                            "guard",
+                            [
+                              "string",
+                              "cel"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "machine_id",
+                      [
+                        "string",
+                        "effects"
+                      ]
+                    ],
+                    [
+                      "root",
+                      [
+                        "map",
+                        [
+                          [
+                            "entry",
+                            [
+                              "list",
+                              [
+                                [
+                                  "map",
+                                  [
+                                    [
+                                      "send",
+                                      [
+                                        "map",
+                                        [
+                                          [
+                                            "correlation_id",
+                                            [
+                                              "string",
+                                              "\"corr-0\""
+                                            ]
+                                          ],
+                                          [
+                                            "event",
+                                            [
+                                              "string",
+                                              "pending_notice"
+                                            ]
+                                          ],
+                                          [
+                                            "to",
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "external",
+                                                  [
+                                                    "boolean",
+                                                    true
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "map",
+                                  [
+                                    [
+                                      "send",
+                                      [
+                                        "map",
+                                        [
+                                          [
+                                            "correlation_id",
+                                            [
+                                              "string",
+                                              "\"corr-1\""
+                                            ]
+                                          ],
+                                          [
+                                            "event",
+                                            [
+                                              "string",
+                                              "terminal_notice"
+                                            ]
+                                          ],
+                                          [
+                                            "to",
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "external",
+                                                  [
+                                                    "boolean",
+                                                    true
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "map",
+                                  [
+                                    [
+                                      "send",
+                                      [
+                                        "map",
+                                        [
+                                          [
+                                            "correlation_id",
+                                            [
+                                              "string",
+                                              "\"corr-2\""
+                                            ]
+                                          ],
+                                          [
+                                            "event",
+                                            [
+                                              "string",
+                                              "compact_notice"
+                                            ]
+                                          ],
+                                          [
+                                            "to",
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "external",
+                                                  [
+                                                    "boolean",
+                                                    true
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "type",
+                            [
+                              "string",
+                              "simple"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "version",
+                      [
+                        "integer",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "namespace",
+            [
+              "string",
+              "example.archive_effects"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "validated_bundle_fingerprint": "sha256:a4458940ab5bc76a120889379294fa4df840465f8e05b97fa368587e3167cb86",
+      "normalized_bundle": [
+        "map",
+        [
+          [
+            "events",
+            [
+              "map",
+              [
+                [
+                  "authorized",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "new_request",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ],
+                      [
+                        "payload",
+                        [
+                          "map",
+                          [
+                            [
+                              "transaction_id",
+                              [
+                                "map",
+                                [
+                                  [
+                                    "required",
+                                    [
+                                      "boolean",
+                                      true
+                                    ]
+                                  ],
+                                  [
+                                    "type",
+                                    [
+                                      "string",
+                                      "string"
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "priority_request",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "received",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "retry",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "format",
+            [
+              "integer",
+              "1"
+            ]
+          ],
+          [
+            "machines",
+            [
+              "list",
+              [
+                [
+                  "map",
+                  [
+                    [
+                      "languages",
+                      [
+                        "map",
+                        [
+                          [
+                            "action",
+                            [
+                              "string",
+                              "determa"
+                            ]
+                          ],
+                          [
+                            "guard",
+                            [
+                              "string",
+                              "cel"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "machine_id",
+                      [
+                        "string",
+                        "transaction_server"
+                      ]
+                    ],
+                    [
+                      "root",
+                      [
+                        "map",
+                        [
+                          [
+                            "deferred_event_capacity",
+                            [
+                              "integer",
+                              "16"
+                            ]
+                          ],
+                          [
+                            "history",
+                            [
+                              "string",
+                              "none"
+                            ]
+                          ],
+                          [
+                            "initial",
+                            [
+                              "map",
+                              [
+                                [
+                                  "transition_to",
+                                  [
+                                    "string",
+                                    "busy.receiving"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "states",
+                            [
+                              "map",
+                              [
+                                [
+                                  "busy",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "deferred_events",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "string",
+                                              "new_request"
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "history",
+                                        [
+                                          "string",
+                                          "none"
+                                        ]
+                                      ],
+                                      [
+                                        "initial",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "transition_to",
+                                              [
+                                                "string",
+                                                "busy.receiving"
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "priority_request",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "idle"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "states",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "authorizing",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "deferred_events",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "string",
+                                                          "priority_request"
+                                                        ],
+                                                        [
+                                                          "string",
+                                                          "retry"
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "on_events",
+                                                    [
+                                                      "map",
+                                                      [
+                                                        [
+                                                          "authorized",
+                                                          [
+                                                            "map",
+                                                            [
+                                                              [
+                                                                "lang",
+                                                                [
+                                                                  "string",
+                                                                  "cel"
+                                                                ]
+                                                              ],
+                                                              [
+                                                                "transition_to",
+                                                                [
+                                                                  "string",
+                                                                  "idle"
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ],
+                                                        [
+                                                          "new_request",
+                                                          [
+                                                            "map",
+                                                            [
+                                                              [
+                                                                "lang",
+                                                                [
+                                                                  "string",
+                                                                  "cel"
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ],
+                                                        [
+                                                          "retry",
+                                                          [
+                                                            "map",
+                                                            [
+                                                              [
+                                                                "guard",
+                                                                [
+                                                                  "string",
+                                                                  "false"
+                                                                ]
+                                                              ],
+                                                              [
+                                                                "lang",
+                                                                [
+                                                                  "string",
+                                                                  "cel"
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "type",
+                                                    [
+                                                      "string",
+                                                      "simple"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "receiving",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "on_events",
+                                                    [
+                                                      "map",
+                                                      [
+                                                        [
+                                                          "received",
+                                                          [
+                                                            "map",
+                                                            [
+                                                              [
+                                                                "lang",
+                                                                [
+                                                                  "string",
+                                                                  "cel"
+                                                                ]
+                                                              ],
+                                                              [
+                                                                "transition_to",
+                                                                [
+                                                                  "string",
+                                                                  "busy.authorizing"
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "type",
+                                                    [
+                                                      "string",
+                                                      "simple"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "composite"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "idle",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "new_request",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "busy.receiving"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "simple"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "type",
+                            [
+                              "string",
+                              "composite"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "version",
+                      [
+                        "integer",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "namespace",
+            [
+              "string",
+              "example.transaction_server"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+      "normalized_bundle": [
+        "map",
+        [
+          [
+            "format",
+            [
+              "integer",
+              "1"
+            ]
+          ],
+          [
+            "machines",
+            [
+              "list",
+              [
+                [
+                  "map",
+                  [
+                    [
+                      "languages",
+                      [
+                        "map",
+                        [
+                          [
+                            "action",
+                            [
+                              "string",
+                              "determa"
+                            ]
+                          ],
+                          [
+                            "guard",
+                            [
+                              "string",
+                              "cel"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "machine_id",
+                      [
+                        "string",
+                        "job"
+                      ]
+                    ],
+                    [
+                      "root",
+                      [
+                        "map",
+                        [
+                          [
+                            "type",
+                            [
+                              "string",
+                              "simple"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "version",
+                      [
+                        "integer",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "namespace",
+            [
+              "string",
+              "example.persistence"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "validated_bundle_fingerprint": "sha256:d9c63e89dac38aedbd3d439a9049158d39e8f3791dd55f7856540f684d16ffcc",
+      "normalized_bundle": [
+        "map",
+        [
+          [
+            "events",
+            [
+              "map",
+              [
+                [
+                  "authorized",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "new_request",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ],
+                      [
+                        "payload",
+                        [
+                          "map",
+                          [
+                            [
+                              "transaction_id",
+                              [
+                                "map",
+                                [
+                                  [
+                                    "required",
+                                    [
+                                      "boolean",
+                                      true
+                                    ]
+                                  ],
+                                  [
+                                    "type",
+                                    [
+                                      "string",
+                                      "string"
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "priority_request",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "received",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "retry",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "format",
+            [
+              "integer",
+              "1"
+            ]
+          ],
+          [
+            "machines",
+            [
+              "list",
+              [
+                [
+                  "map",
+                  [
+                    [
+                      "languages",
+                      [
+                        "map",
+                        [
+                          [
+                            "action",
+                            [
+                              "string",
+                              "determa"
+                            ]
+                          ],
+                          [
+                            "guard",
+                            [
+                              "string",
+                              "cel"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "machine_id",
+                      [
+                        "string",
+                        "transaction_server"
+                      ]
+                    ],
+                    [
+                      "root",
+                      [
+                        "map",
+                        [
+                          [
+                            "deferred_event_capacity",
+                            [
+                              "integer",
+                              "0"
+                            ]
+                          ],
+                          [
+                            "history",
+                            [
+                              "string",
+                              "none"
+                            ]
+                          ],
+                          [
+                            "initial",
+                            [
+                              "map",
+                              [
+                                [
+                                  "transition_to",
+                                  [
+                                    "string",
+                                    "busy.receiving"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "states",
+                            [
+                              "map",
+                              [
+                                [
+                                  "busy",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "deferred_events",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "string",
+                                              "new_request"
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "history",
+                                        [
+                                          "string",
+                                          "none"
+                                        ]
+                                      ],
+                                      [
+                                        "initial",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "transition_to",
+                                              [
+                                                "string",
+                                                "busy.receiving"
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "priority_request",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "idle"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "states",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "authorizing",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "deferred_events",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "string",
+                                                          "priority_request"
+                                                        ],
+                                                        [
+                                                          "string",
+                                                          "retry"
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "on_events",
+                                                    [
+                                                      "map",
+                                                      [
+                                                        [
+                                                          "authorized",
+                                                          [
+                                                            "map",
+                                                            [
+                                                              [
+                                                                "lang",
+                                                                [
+                                                                  "string",
+                                                                  "cel"
+                                                                ]
+                                                              ],
+                                                              [
+                                                                "transition_to",
+                                                                [
+                                                                  "string",
+                                                                  "idle"
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ],
+                                                        [
+                                                          "new_request",
+                                                          [
+                                                            "map",
+                                                            [
+                                                              [
+                                                                "lang",
+                                                                [
+                                                                  "string",
+                                                                  "cel"
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ],
+                                                        [
+                                                          "retry",
+                                                          [
+                                                            "map",
+                                                            [
+                                                              [
+                                                                "guard",
+                                                                [
+                                                                  "string",
+                                                                  "false"
+                                                                ]
+                                                              ],
+                                                              [
+                                                                "lang",
+                                                                [
+                                                                  "string",
+                                                                  "cel"
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "type",
+                                                    [
+                                                      "string",
+                                                      "simple"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "receiving",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "on_events",
+                                                    [
+                                                      "map",
+                                                      [
+                                                        [
+                                                          "received",
+                                                          [
+                                                            "map",
+                                                            [
+                                                              [
+                                                                "lang",
+                                                                [
+                                                                  "string",
+                                                                  "cel"
+                                                                ]
+                                                              ],
+                                                              [
+                                                                "transition_to",
+                                                                [
+                                                                  "string",
+                                                                  "busy.authorizing"
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "type",
+                                                    [
+                                                      "string",
+                                                      "simple"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "composite"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "idle",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "new_request",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "busy.receiving"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "simple"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "type",
+                            [
+                              "string",
+                              "composite"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "version",
+                      [
+                        "integer",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "namespace",
+            [
+              "string",
+              "example.transaction_server"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+      "normalized_bundle": [
+        "map",
+        [
+          [
+            "format",
+            [
+              "integer",
+              "1"
+            ]
+          ],
+          [
+            "machines",
+            [
+              "list",
+              [
+                [
+                  "map",
+                  [
+                    [
+                      "languages",
+                      [
+                        "map",
+                        [
+                          [
+                            "action",
+                            [
+                              "string",
+                              "determa"
+                            ]
+                          ],
+                          [
+                            "guard",
+                            [
+                              "string",
+                              "cel"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "machine_id",
+                      [
+                        "string",
+                        "job"
+                      ]
+                    ],
+                    [
+                      "root",
+                      [
+                        "map",
+                        [
+                          [
+                            "type",
+                            [
+                              "string",
+                              "simple"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "version",
+                      [
+                        "integer",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "meta",
+            [
+              "map",
+              [
+                [
+                  "release",
+                  [
+                    "string",
+                    "next"
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "namespace",
+            [
+              "string",
+              "example.persistence"
+            ]
+          ]
+        ]
+      ]
+    }
+  ],
+  "migration_descriptors": [
+    {
+      "migration_descriptor_format": "determa.aggregate_migration",
+      "migration_descriptor_schema_version": 1,
+      "source_machine_format": 1,
+      "target_machine_format": 1,
+      "source_validated_bundle_fingerprint": "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+      "target_validated_bundle_fingerprint": "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+      "source_aggregate_shape_fingerprint": "sha256:2e66cdbbdcfe44dad5a2edd52e5c1693e28c6c60ae590682f4862ee56fe058cc",
+      "target_aggregate_shape_fingerprint": "sha256:2e66cdbbdcfe44dad5a2edd52e5c1693e28c6c60ae590682f4862ee56fe058cc",
+      "mode": "compatible",
+      "mappings": {
+        "machines": [],
+        "active_states": [],
+        "variables": [],
+        "history": [],
+        "components": [],
+        "owned_runtimes": [],
+        "lifetime_holders": [],
+        "counters": []
+      },
+      "terminal_policy": {
+        "completed": "preserve",
+        "faulted": "preserve"
+      },
+      "resource_requirements": {
+        "maximum_transformed_output_bytes": "0",
+        "maximum_cel_expression_length": "0",
+        "maximum_cel_ast_nodes": "0",
+        "maximum_cel_evaluation_steps": "0"
+      },
+      "queued_event_default": "preserve_if_compatible",
+      "queued_event_rules": [],
+      "migration_descriptor_digest": "sha256:9e0ca69f03366de7c5cb92dea67d8b7bd7979c117a22ea9de37e6c6f73a8e7d9"
+    }
+  ],
+  "participants": [
+    {
+      "participant_format": "determa.archive_participant",
+      "participant_schema_version": 1,
+      "participant_id": "helper-state",
+      "required": true,
+      "provider_reference": {
+        "identifier": "example.helper-state",
+        "version": "1.0.0",
+        "content_digest": "sha256:db53fa5c8190bb2c847324efb8bd4d8c3de6490f834ab4d8e1a1252eed727e8a"
+      },
+      "participant_schema_digest": "sha256:bdf0bc0a1ad1991fbc78dd7ba91c0dc9c9c44297fa419d9ef7333b6679040850",
+      "dependencies": [],
+      "storage": "embedded",
+      "payload_digest": "sha256:40563466152aa319fa8f88d60816acf38b5fcf39dd28d12bef77f402b7419446",
+      "payload": [
+        "map",
+        [
+          [
+            "cursor",
+            [
+              "integer",
+              "7"
+            ]
+          ],
+          [
+            "note",
+            [
+              "string",
+              "captured"
+            ]
+          ]
+        ]
+      ]
+    }
+  ],
+  "members": [
+    {
+      "identity": "checkpoint:effect-1",
+      "digest": "sha256:627757ddac10c57ebf1b4ac1365f09da5f9b34bed3f04ef3b16e5fee9da9e73a",
+      "byte_length": "4293"
+    },
+    {
+      "identity": "checkpoint:fault-1",
+      "digest": "sha256:d17adff30dd289da48d3bdd34208027b94fceaab872078db2137c82c617830a4",
+      "byte_length": "4827"
+    },
+    {
+      "identity": "checkpoint:job-42",
+      "digest": "sha256:09a9581cf0b671ecbde1145bda902c59fc35f8fc8a2150f28357f077f792c036",
+      "byte_length": "4377"
+    },
+    {
+      "identity": "checkpoint:server-1",
+      "digest": "sha256:067ae27cc1423241c581a2e95f290d4b5bea75667b0ff5243338db6b7ae903e8",
+      "byte_length": "4915"
+    },
+    {
+      "identity": "definition:sha256:69614f5c10828364f93960fa5347d212750e67f0c37b8056d8fd0966e334c74f",
+      "digest": "sha256:738fc1a924c63291f89404c998dfcccd8cd48392d952229e830bd211e7dcdcec",
+      "byte_length": "1147"
+    },
+    {
+      "identity": "definition:sha256:a4458940ab5bc76a120889379294fa4df840465f8e05b97fa368587e3167cb86",
+      "digest": "sha256:5ff39256730ef29f0077f62bcecd8ee57f73edac76032769c0aacac7966555bc",
+      "byte_length": "2105"
+    },
+    {
+      "identity": "definition:sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+      "digest": "sha256:ad2099453fee3b1dd6a69a9368187a9c3b0389cd9b3f76eef1b9505f8e4ce339",
+      "byte_length": "435"
+    },
+    {
+      "identity": "definition:sha256:d9c63e89dac38aedbd3d439a9049158d39e8f3791dd55f7856540f684d16ffcc",
+      "digest": "sha256:af18d7cf7fddaccb632bd3b284b8b5e155e42de2462f90475a05e536f9782710",
+      "byte_length": "2104"
+    },
+    {
+      "identity": "definition:sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc",
+      "digest": "sha256:d51914056b84e5ecef1b07e7cb904ea04035cf1577307b70dd79835becb52d27",
+      "byte_length": "484"
+    },
+    {
+      "identity": "migration_descriptor:sha256:9e0ca69f03366de7c5cb92dea67d8b7bd7979c117a22ea9de37e6c6f73a8e7d9",
+      "digest": "sha256:a3daa4a486fb1e80edf2c0576cf2d8b9f7430d6a5b0a497a5f1e36ddbcf20bfd",
+      "byte_length": "1169"
+    },
+    {
+      "identity": "participant:helper-state",
+      "digest": "sha256:7b171c70cad4975f2ca779528ac739203f116c3a615668e290dccc7ba74fb85c",
+      "byte_length": "609"
+    }
+  ],
+  "required_determa_capabilities": [
+    "archive_participant",
+    "migration_descriptor",
+    "normalized_definition",
+    "portable_archive",
+    "portable_checkpoint"
+  ],
+  "optional_participant_references": [],
+  "source_fence_reference": null,
+  "transfer_reference": null,
+  "archive_digest": "sha256:69fd70da2e0223005f51aa29d7e48fc2a59bf4b00ccdf4a92208b3dda1250d9d"
+}

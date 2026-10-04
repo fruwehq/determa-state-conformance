@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/examples/archives/stage-configuration-v1.schema.json",
+  "title": "Archive fixture configured import evidence",
+  "type": "object",
+  "required": [
+    "available_provider_references",
+    "supported_participant_schema_digests",
+    "capability_reports",
+    "trusted_source_profiles",
+    "trusted_participant_contracts",
+    "trusted_host_journal_inventories",
+    "supported_determa_capabilities",
+    "trusted_optional_participant_references"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "available_provider_references": {
+      "type": "array",
+      "items": {
+        "$ref": "../../schema/provider-reference-v1.schema.json"
+      }
+    },
+    "supported_participant_schema_digests": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^sha256:[0-9a-f]{64}$"
+      }
+    },
+    "capability_reports": {
+      "type": "array",
+      "items": {
+        "$ref": "../../schema/extension-capability-report-v1.schema.json"
+      }
+    },
+    "trusted_source_profiles": {
+      "type": "array",
+      "items": {
+        "$ref": "../../schema/archive-v1.schema.json#/$defs/source"
+      }
+    },
+    "trusted_participant_contracts": {
+      "type": "array",
+      "items": {
+        "$ref": "../../schema/archive-v1.schema.json#/$defs/participantContract"
+      }
+    },
+    "resolved_external_payloads": {
+      "type": "object",
+      "patternProperties": {
+        "^sha256:[0-9a-f]{64}$": {
+          "$ref": "../../schema/aggregate-state-v1.schema.json#/$defs/typedValue"
+        }
+      },
+      "additionalProperties": false
+    },
+    "trusted_host_journal_inventories": {
+      "type": "array",
+      "items": {
+        "$ref": "../../schema/archive-host-journal-inventory-v1.schema.json"
+      }
+    },
+    "supported_determa_capabilities": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "$ref": "../../schema/archive-v1.schema.json#/$defs/capability"
+      }
+    },
+    "trusted_optional_participant_references": {
+      "type": "array",
+      "items": {
+        "$ref": "../../schema/archive-v1.schema.json#/$defs/optionalParticipantReference"
+      }
+    }
+  }
+}

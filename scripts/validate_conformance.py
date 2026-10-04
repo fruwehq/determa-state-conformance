@@ -39,6 +39,7 @@ from validate_extension_negotiation import ExtensionValidationError, validate_pr
 from validate_host_authority import AuthorityValidationError, validate_profile as validate_authority_profile
 from runtime_provider_validator import RuntimeProviderValidationError, validate_profile as validate_runtime_provider_profile
 from timer_helper_validator import TimerHelperValidationError, validate_profile as validate_timer_helper_profile
+from validate_portable_archive import ArchiveValidationError, validate_profile as validate_archive_profile
 
 
 JSON_NUMBER = re.compile(
@@ -7791,6 +7792,10 @@ def validate_initial_identity_oracles(
 
 def validate_repository(repository_root: Path, spec_root: Path) -> str:
     try:
+        archive_vectors = validate_archive_profile(spec_root)
+    except (ArchiveValidationError, OSError, ValueError, KeyError, IndexError) as error:
+        raise ValidationFailure(f'portable archive profile: {error}') from error
+    try:
         registry_categories, registry_entries = validate_registry(repository_root)
     except RegistryValidationError as error:
         raise ValidationFailure(f"closed-code registry: {error}") from error
@@ -7934,6 +7939,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
 
     for case in cases:
         test = load_fixture_document(case / "test.yaml")
+        if case == repository_root / 'conformance/profiles/portable-archive/archive-01-complete-snapshot':
+            # The §22 validator checks this case's complete raw artifacts and manifest.
+            continue
         validate_driver_markers(test, case.name)
         profile_modes = {
             name
@@ -8300,8 +8308,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{authority_counts[5]} base-core refusals, "
         f"{runtime_provider_vectors} runtime provider vectors, "
         f"{timer_helper_vectors} timer helper vectors, "
-        f"{application_projection_vectors} application projection vectors, and "
-        f"{committed_effect_vectors} committed native effect vectors"
+        f"{application_projection_vectors} application projection vectors, "
+        f"{committed_effect_vectors} committed native effect vectors, and "
+        f"{archive_vectors} portable archive vectors"
     )
 
 
