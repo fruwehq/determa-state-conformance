@@ -18,7 +18,7 @@ class TimerHelperValidationError(ValueError):
     pass
 
 
-def validate_profile(spec_root: Path, repository_root: Path) -> int:
+def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, int]:
     case = repository_root / "conformance/profiles/timer-helper/timer-01-external-helper"
     expected_files = render(spec_root)
     for name, expected in expected_files.items():
@@ -192,4 +192,4 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
             terminal["resulting_aggregate_state_digest"] != lifecycle["expected_after_step_checkpoint"]["root_record"]["aggregate_state"]["aggregate_state_digest"] or \
             terminal["outcome"]["disposition"] != "unhandled":
         raise TimerHelperValidationError("step did not dispose of the fired event")
-    return len(document["cases"])
+    return len(document["cases"]), len(document["clock_vectors"]), 3

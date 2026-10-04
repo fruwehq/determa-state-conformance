@@ -20,7 +20,7 @@ def main():
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    assert validate_profile(args.spec_root, root) == 24
+    assert validate_profile(args.spec_root, root) == (24, 25, 3)
     with tempfile.TemporaryDirectory() as temporary:
         copy = Path(temporary)
         case = copy / "conformance/profiles/timer-helper/timer-01-external-helper"
