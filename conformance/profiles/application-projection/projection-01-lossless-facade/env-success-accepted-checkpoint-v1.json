@@ -1,0 +1,188 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "projection-env-success-root",
+  "revision": "1",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+      "namespace": "conformance.application_projection_env",
+      "root_machine_id": "refresh_all",
+      "root_machine_version": "1",
+      "root_instance_id": "projection-env-success-root",
+      "creation_id": "projection-env-success-create",
+      "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "1",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "1",
+      "next_queue_sequence": "1",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+              "machine": {
+                "namespace": "conformance.application_projection_env",
+                "machine_id": "refresh_all",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "projection-env-success-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "projection-env-success-root",
+              "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "machine": {
+              "namespace": "conformance.application_projection_env",
+              "machine_id": "refresh_all",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/region",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "string",
+                "east"
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/token",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "string",
+                "old"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [
+            {
+              "envelope": {
+                "event": "env",
+                "event_id": "projection-env-success-event",
+                "cause_id": "projection-env-success-event",
+                "source": {
+                  "host": true
+                },
+                "target": {
+                  "root": {
+                    "root_instance_id": "projection-env-success-root",
+                    "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+                  }
+                },
+                "payload": [
+                  "map",
+                  [
+                    [
+                      "changed",
+                      [
+                        "map",
+                        [
+                          [
+                            "region",
+                            [
+                              "string",
+                              "west"
+                            ]
+                          ],
+                          [
+                            "token",
+                            [
+                              "string",
+                              "new"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              },
+              "envelope_digest": "sha256:8a1b520278c0f8ce38b2d57ee02d3ac031e0ba8b69951020969250245a0d80ea",
+              "delivery_mode": "input",
+              "acceptance_sequence": "0",
+              "queue_sequence": "0",
+              "deferral_count": "0"
+            }
+          ],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:08cf34084c4e715707229f12cabb017b4b069bb5e16b2940ac6a9d9b7140e82b"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "projection-env-success-create",
+      "request_digest": "sha256:275d44b60edb46bf257cd3f38f24b591452df38a7224cdd1867d3d0538d5b409",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:60ac022276588421bac7751a49cb96acccf7956066d8a075787fef88674367c2",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "1",
+      "event_id": "projection-env-success-event",
+      "request_digest": "sha256:8a1b520278c0f8ce38b2d57ee02d3ac031e0ba8b69951020969250245a0d80ea",
+      "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    }
+  ],
+  "next_operation_receipt_sequence": "2",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:569562358e32e5006f67e5323f3ecc6b58d3699b3460a4ea70843f9fbee1cae8"
+}

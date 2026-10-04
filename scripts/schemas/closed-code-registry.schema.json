@@ -14,7 +14,8 @@
         "execution_store_adapter_failure",
         "execution_store_failure",
         "machine_load_failure",
-        "persistence_failure"
+        "persistence_failure",
+        "projection_failure"
       ]
     }
   },
@@ -40,7 +41,10 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["id", "description"],
+        "required": [
+          "id",
+          "description"
+        ],
         "properties": {
           "id": {
             "$ref": "#/$defs/category"
@@ -58,7 +62,12 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["category", "code", "condition", "source"],
+        "required": [
+          "category",
+          "code",
+          "condition",
+          "source"
+        ],
         "properties": {
           "category": {
             "$ref": "#/$defs/category"

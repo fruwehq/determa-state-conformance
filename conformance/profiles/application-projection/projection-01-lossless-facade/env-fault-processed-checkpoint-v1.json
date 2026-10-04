@@ -1,0 +1,170 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "projection-env-fault-root",
+  "revision": "2",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+      "namespace": "conformance.application_projection_env",
+      "root_machine_id": "refresh_only",
+      "root_machine_version": "1",
+      "root_instance_id": "projection-env-fault-root",
+      "creation_id": "projection-env-fault-create",
+      "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "2",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "1",
+      "next_queue_sequence": "1",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+              "machine": {
+                "namespace": "conformance.application_projection_env",
+                "machine_id": "refresh_only",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/1/root"
+              }
+            },
+            "root_instance_id": "projection-env-fault-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "projection-env-fault-root",
+              "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "machine": {
+              "namespace": "conformance.application_projection_env",
+              "machine_id": "refresh_only",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/1/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "faulted",
+          "active_leaf_state_definition_pointers": [
+            "/machines/1/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/1/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/1/root/variables/region",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "string",
+                "east"
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/1/root/variables/token",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "string",
+                "old"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/1/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": {
+            "definition_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+            "cause_id": "projection-env-fault-event",
+            "code": "action_fault",
+            "step_sequence": "1",
+            "source_locator": "/machines/1/root/on_events/env/action/0/refresh/only/0"
+          },
+          "ready_mailbox": [],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:b2a65b0c9a4352fcb9fb0122bb69b09bb72be7362b026e0df4d03f2fbc30b883"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "projection-env-fault-create",
+      "request_digest": "sha256:57fc4e19e10246b83be2eeb610b8551908e725730dc7fb82bbc057c03be80167",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:767f6ea1cbca3c71c88ceebc93d9b43075f49f41f0d1ef4d512069535ce03453",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "1",
+      "event_id": "projection-env-fault-event",
+      "request_digest": "sha256:45dc9f39b4b19888b2555328da779f6ae46a4b1a6479ec3fdfb284bf07149542",
+      "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    },
+    {
+      "operation_kind": "event_terminal",
+      "receipt_sequence": "2",
+      "event_id": "projection-env-fault-event",
+      "request_digest": "sha256:45dc9f39b4b19888b2555328da779f6ae46a4b1a6479ec3fdfb284bf07149542",
+      "acceptance_sequence": "0",
+      "final_queue_sequence": "0",
+      "committed_revision": "2",
+      "resulting_aggregate_state_digest": "sha256:b2a65b0c9a4352fcb9fb0122bb69b09bb72be7362b026e0df4d03f2fbc30b883",
+      "outcome": {
+        "disposition": "faulted",
+        "status": "faulted",
+        "fault": {
+          "definition_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+          "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+          "cause_id": "projection-env-fault-event",
+          "code": "action_fault",
+          "step_sequence": "1",
+          "source_locator": "/machines/1/root/on_events/env/action/0/refresh/only/0"
+        },
+        "rejection": null
+      },
+      "emission_references": []
+    }
+  ],
+  "next_operation_receipt_sequence": "3",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:4e103316afd6c156f9492bf65c38e7fd12a6d5b06614269d8da48fa8a65d447e"
+}

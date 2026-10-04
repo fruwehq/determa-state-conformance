@@ -101,6 +101,7 @@ ARTIFACT_KINDS = {
     "execution_checkpoint_v1": "execution-checkpoint-v1.schema.json",
 }
 DRIVER_ARTIFACT_KINDS = {
+    "application_projection_v1": "application-projection-v1.schema.json",
     "version1_operation_inputs": "version1-operation-inputs.schema.json",
     "version1_operation_result": "version1-operation-result.schema.json",
     "version1_operation_failures": "version1-operation-failures.schema.json",
@@ -7672,6 +7673,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             / "schemas"
             / "durable-host-profile-v1.schema.json"
         ),
+        "application_projection_vectors": (
+            repository_root / "scripts" / "schemas" / "application-projection-profile-v1.schema.json"
+        ),
     }
     schemas: dict[str, dict[str, Any]] = {}
     resources: list[tuple[str, Resource[Any]]] = []
@@ -7704,6 +7708,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     )
     durable_host_vector_validator = Draft202012Validator(
         schemas["durable_host_vectors"], registry=registry
+    )
+    application_projection_vector_validator = Draft202012Validator(
+        schemas["application_projection_vectors"], registry=registry
     )
 
     conformance_version = (repository_root / "VERSION").read_text().strip()
@@ -7748,6 +7755,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
     version1_vectors = 0
     version1_coverage: set[str] = set()
     durable_host_vectors = 0
+    application_projection_vectors = 0
     durable_host_coverage: set[str] = set()
 
     for case in cases:
@@ -7755,7 +7763,7 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         validate_driver_markers(test, case.name)
         profile_modes = {
             name
-            for name in ("version1_vectors", "durable_host_vectors")
+            for name in ("version1_vectors", "durable_host_vectors", "application_projection_vectors")
             if name in test
         }
         if len(profile_modes) > 1:
@@ -7766,6 +7774,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             validate_fixture_schema(test, version1_vector_validator, case)
         if "durable_host_vectors" in test:
             validate_fixture_schema(test, durable_host_vector_validator, case)
+        if "application_projection_vectors" in test:
+            validate_fixture_schema(test, application_projection_vector_validator, case)
         if "load" in test and test["load"] != {"valid": True}:
             raise ValidationFailure(f"{case.name}: unsupported load assertion")
 
@@ -8004,6 +8014,11 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 )
             durable_host_coverage.update(case_coverage)
             durable_host_vectors += len(test["durable_host_vectors"])
+        elif "application_projection_vectors" in test:
+            from validate_application_projection import validate_application_projection
+            application_projection_vectors += validate_application_projection(
+                case, test, referenced_artifacts
+            )
 
         actual_bundles = {
             path
@@ -8066,7 +8081,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{structural_rejections} expected structural rejections, "
         f"{static_schema_passes} schema-valid static documents, and "
         f"{scenarios} runtime scenarios, {version1_vectors} version-1 vectors, "
-        f"and {durable_host_vectors} durable host vectors"
+        f"and {durable_host_vectors} durable host vectors, "
+        f"{application_projection_vectors} application projection vectors"
     )
 
 

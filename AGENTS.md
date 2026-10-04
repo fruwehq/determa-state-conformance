@@ -87,9 +87,12 @@ The version-1 generators and durable-host profiles are documented in their READM
 Durable validation proves fixture construction, schema dispositions, and cross-artifact
 semantics; it does not replace each implementation's runtime harness.
 
-CI checks both deterministic generators. Run
+CI checks all three deterministic generators. Run
 `python scripts/generate_execution_checkpoint_profile.py --check` after changing any
 durable-host request, result, checkpoint, store, call-log, or profile manifest.
+
+The application-projection generator is checked with
+`python scripts/generate_application_projection_profile.py --check`.
 
 The non-normative CLI profile runner is retained at
 `conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.

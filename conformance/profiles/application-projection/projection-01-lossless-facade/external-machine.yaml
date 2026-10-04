@@ -1,0 +1,23 @@
+format: 1
+namespace: conformance.application_projection_env
+machines:
+  - machine_id: refresh_all
+    version: 1
+    root:
+      variables:
+        token: { type: string, external: true }
+        region: { type: string, external: true }
+      on_events:
+        env:
+          action:
+            - refresh: {}
+  - machine_id: refresh_only
+    version: 1
+    root:
+      variables:
+        token: { type: string, external: true }
+        region: { type: string, external: true }
+      on_events:
+        env:
+          action:
+            - refresh: { only: [token] }

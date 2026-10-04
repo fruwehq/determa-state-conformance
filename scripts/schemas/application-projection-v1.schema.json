@@ -1,0 +1,586 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/application-projection-v1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "application_projection_format",
+    "application_projection_schema_version",
+    "vectors"
+  ],
+  "properties": {
+    "application_projection_format": {
+      "const": "determa.conformance.application_projection"
+    },
+    "application_projection_schema_version": {
+      "const": 1
+    },
+    "vectors": {
+      "type": "array",
+      "minItems": 17,
+      "items": {
+        "$ref": "#/$defs/vector"
+      }
+    }
+  },
+  "$defs": {
+    "checkpointFile": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-z0-9-]+-checkpoint-v1\\.json$"
+    },
+    "typed": {
+      "$ref": "https://determa.dev/state/schema/aggregate-state-v1.schema.json#/$defs/typedValue"
+    },
+    "row": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "row_id",
+        "root_instance_id",
+        "status",
+        "amount"
+      ],
+      "properties": {
+        "row_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "root_instance_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "done"
+          ]
+        },
+        "amount": {
+          "$ref": "#/$defs/typed"
+        },
+        "token": {
+          "$ref": "#/$defs/typed"
+        },
+        "region": {
+          "$ref": "#/$defs/typed"
+        }
+      }
+    },
+    "snapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "selected_rows",
+        "checkpoint",
+        "supplemental_checkpoint"
+      ],
+      "properties": {
+        "selected_rows": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/row"
+          }
+        },
+        "checkpoint": {
+          "$ref": "#/$defs/checkpointFile"
+        },
+        "supplemental_checkpoint": {
+          "$ref": "#/$defs/checkpointFile"
+        }
+      }
+    },
+    "mappedInput": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "required": [
+        "field",
+        "declaration",
+        "value"
+      ],
+      "properties": {
+        "field": {
+          "type": "string",
+          "minLength": 1
+        },
+        "declaration": {
+          "enum": [
+            "integer",
+            "float",
+            "string"
+          ]
+        },
+        "value": {
+          "$ref": "#/$defs/typed"
+        }
+      }
+    },
+    "request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "root_instance_id",
+        "selected_row_ids",
+        "boundary",
+        "mapped_input",
+        "delivery",
+        "expected_checkpoint",
+        "shared_transaction_requested",
+        "shared_transaction_available",
+        "supplemental_capacity",
+        "creation",
+        "target_runtime_id",
+        "mapping"
+      ],
+      "properties": {
+        "operation": {
+          "enum": [
+            "create",
+            "admit",
+            "step"
+          ]
+        },
+        "root_instance_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "selected_row_ids": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "boundary": {
+          "enum": [
+            "declared_input",
+            "external_refresh",
+            "create_binding",
+            "direct_state_write"
+          ]
+        },
+        "mapped_input": {
+          "$ref": "#/$defs/mappedInput"
+        },
+        "delivery": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/delivery"
+            }
+          ]
+        },
+        "expected_checkpoint": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "root_instance_id",
+                "revision",
+                "digest"
+              ],
+              "properties": {
+                "root_instance_id": {
+                  "type": "string"
+                },
+                "revision": {
+                  "type": "string",
+                  "pattern": "^(0|[1-9][0-9]*)$"
+                },
+                "digest": {
+                  "type": "string",
+                  "pattern": "^sha256:[0-9a-f]{64}$"
+                }
+              }
+            }
+          ]
+        },
+        "shared_transaction_requested": {
+          "type": "boolean"
+        },
+        "shared_transaction_available": {
+          "type": "boolean"
+        },
+        "supplemental_capacity": {
+          "enum": [
+            "complete",
+            "none",
+            "truncate"
+          ]
+        },
+        "target_runtime_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "creation": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/creation"
+            }
+          ]
+        },
+        "mapping": {
+          "$ref": "#/$defs/mapping"
+        }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "delivery_mode",
+        "envelope",
+        "envelope_digest"
+      ],
+      "properties": {
+        "delivery_mode": {
+          "const": "input"
+        },
+        "envelope": {
+          "$ref": "https://determa.dev/state/schema/aggregate-state-v1.schema.json#/$defs/envelope"
+        },
+        "envelope_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        }
+      }
+    },
+    "outcome": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "code",
+        "core_calls",
+        "committed",
+        "result_value"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "result",
+            "replay",
+            "failure"
+          ]
+        },
+        "code": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "core_calls": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1
+        },
+        "committed": {
+          "type": "boolean"
+        },
+        "result_value": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "https://determa.dev/state/schema/core-step-result-v1.schema.json"
+            },
+            {
+              "$ref": "#/$defs/createResult"
+            },
+            {
+              "$ref": "#/$defs/admitResult"
+            },
+            {
+              "$ref": "#/$defs/acceptanceReceipt"
+            }
+          ]
+        }
+      }
+    },
+    "vector": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "covers",
+        "request",
+        "before",
+        "after",
+        "outcome"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "covers": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]*$"
+        },
+        "request": {
+          "$ref": "#/$defs/request"
+        },
+        "before": {
+          "$ref": "#/$defs/snapshot"
+        },
+        "after": {
+          "$ref": "#/$defs/snapshot"
+        },
+        "outcome": {
+          "$ref": "#/$defs/outcome"
+        },
+        "candidate_checkpoint": {
+          "$ref": "#/$defs/checkpointFile"
+        }
+      }
+    },
+    "createResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "state",
+        "emissions",
+        "lifecycle_dispositions",
+        "fault",
+        "rejection"
+      ],
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "https://determa.dev/state/schema/aggregate-state-v1.schema.json"
+        },
+        "emissions": {
+          "type": "array"
+        },
+        "lifecycle_dispositions": {
+          "type": "array"
+        },
+        "fault": {
+          "type": "null"
+        },
+        "rejection": {
+          "type": "null"
+        }
+      }
+    },
+    "admitResult": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "accepted",
+        "state",
+        "rejection"
+      ],
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "accepted": {
+          "const": true
+        },
+        "state": {
+          "$ref": "https://determa.dev/state/schema/aggregate-state-v1.schema.json"
+        },
+        "rejection": {
+          "type": "null"
+        }
+      }
+    },
+    "creation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "machine_id",
+        "machine_version",
+        "creation_id",
+        "bindings"
+      ],
+      "properties": {
+        "machine_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "machine_version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "creation_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bindings": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "input",
+            "external"
+          ],
+          "properties": {
+            "input": {
+              "type": "object",
+              "maxProperties": 0
+            },
+            "external": {
+              "type": "object",
+              "maxProperties": 0
+            }
+          }
+        }
+      }
+    },
+    "acceptanceReceipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation_kind",
+        "receipt_sequence",
+        "event_id",
+        "request_digest",
+        "acceptance_sequence",
+        "accepted_revision",
+        "delivery_mode"
+      ],
+      "properties": {
+        "operation_kind": {
+          "const": "acceptance"
+        },
+        "receipt_sequence": {
+          "type": "string"
+        },
+        "event_id": {
+          "type": "string"
+        },
+        "request_digest": {
+          "type": "string"
+        },
+        "acceptance_sequence": {
+          "type": "string"
+        },
+        "accepted_revision": {
+          "type": "string"
+        },
+        "delivery_mode": {
+          "const": "input"
+        }
+      }
+    },
+    "mapping": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mapping_id",
+            "row_id_field",
+            "root_identity_field",
+            "source_field",
+            "input_event",
+            "input_payload_field",
+            "input_declaration",
+            "supplemental_field",
+            "status_field",
+            "status_rule"
+          ],
+          "properties": {
+            "mapping_id": {
+              "const": "order-amount-v1"
+            },
+            "row_id_field": {
+              "const": "row_id"
+            },
+            "root_identity_field": {
+              "const": "root_instance_id"
+            },
+            "source_field": {
+              "const": "amount"
+            },
+            "input_event": {
+              "const": "increment"
+            },
+            "input_payload_field": {
+              "const": "amount"
+            },
+            "input_declaration": {
+              "const": "integer"
+            },
+            "supplemental_field": {
+              "const": "supplemental_checkpoint"
+            },
+            "status_field": {
+              "const": "status"
+            },
+            "status_rule": {
+              "const": "done_when_count_positive"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "mapping_id",
+            "row_id_field",
+            "root_identity_field",
+            "source_fields",
+            "target",
+            "declarations",
+            "supplemental_field"
+          ],
+          "properties": {
+            "mapping_id": {
+              "const": "external-token-region-v1"
+            },
+            "row_id_field": {
+              "const": "row_id"
+            },
+            "root_identity_field": {
+              "const": "root_instance_id"
+            },
+            "source_fields": {
+              "const": [
+                "region",
+                "token"
+              ]
+            },
+            "target": {
+              "const": "env.changed"
+            },
+            "declarations": {
+              "const": [
+                "string",
+                "string"
+              ]
+            },
+            "supplemental_field": {
+              "const": "supplemental_checkpoint"
+            }
+          }
+        }
+      ]
+    }
+  }
+}

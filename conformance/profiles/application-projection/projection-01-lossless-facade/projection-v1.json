@@ -1,0 +1,2444 @@
+{
+  "application_projection_format": "determa.conformance.application_projection",
+  "application_projection_schema_version": 1,
+  "vectors": [
+    {
+      "name": "create_result_shape",
+      "covers": "create_result_shape",
+      "request": {
+        "operation": "create",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": {
+          "machine_id": "counter",
+          "machine_version": "1",
+          "creation_id": "complete-host-create",
+          "bindings": {
+            "input": {},
+            "external": {}
+          }
+        },
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "create_binding",
+        "mapped_input": null,
+        "delivery": null,
+        "expected_checkpoint": null,
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": null,
+        "supplemental_checkpoint": null
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "status": "running",
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+            "namespace": "conformance.execution_checkpoint_complete_host_contract",
+            "root_machine_id": "counter",
+            "root_machine_version": "1",
+            "root_instance_id": "complete-host-root",
+            "creation_id": "complete-host-create",
+            "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "1",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "0",
+            "next_queue_sequence": "0",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+                    "machine": {
+                      "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                      "machine_id": "counter",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "complete-host-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "complete-host-root",
+                    "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+                  "machine": {
+                    "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                    "machine_id": "counter",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/0/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/0/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/count",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "integer",
+                      "0"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/0/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:63c5a178d608504baf5a37e8380cf286f0b15f3d0588ebf5dc70488de7907e77"
+          },
+          "emissions": [],
+          "lifecycle_dispositions": [],
+          "fault": null,
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    },
+    {
+      "name": "typed_row_input_atomic_admit",
+      "covers": "typed_row_input_atomic_admit",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": {
+          "field": "amount",
+          "declaration": "integer",
+          "value": [
+            "integer",
+            "1"
+          ]
+        },
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "status": "running",
+          "accepted": true,
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+            "namespace": "conformance.execution_checkpoint_complete_host_contract",
+            "root_machine_id": "counter",
+            "root_machine_version": "1",
+            "root_instance_id": "complete-host-root",
+            "creation_id": "complete-host-create",
+            "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "1",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+                    "machine": {
+                      "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                      "machine_id": "counter",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "complete-host-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "complete-host-root",
+                    "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+                  "machine": {
+                    "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                    "machine_id": "counter",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/0/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/0/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/count",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "integer",
+                      "0"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/0/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [
+                  {
+                    "envelope": {
+                      "event": "increment",
+                      "event_id": "complete-increment",
+                      "cause_id": "complete-increment",
+                      "source": {
+                        "host": true
+                      },
+                      "target": {
+                        "root": {
+                          "root_instance_id": "complete-host-root",
+                          "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+                        }
+                      },
+                      "payload": [
+                        "map",
+                        [
+                          [
+                            "amount",
+                            [
+                              "integer",
+                              "1"
+                            ]
+                          ]
+                        ]
+                      ]
+                    },
+                    "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf",
+                    "delivery_mode": "input",
+                    "acceptance_sequence": "0",
+                    "queue_sequence": "0",
+                    "deferral_count": "0"
+                  }
+                ],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:5b79586502b53c79a53aa41c2676bb93ee5c278f9354ccbf84f0105e69602956"
+          },
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    },
+    {
+      "name": "step_preserves_complete_result",
+      "covers": "step_preserves_complete_result",
+      "request": {
+        "operation": "step",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": null,
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "1",
+          "digest": "sha256:c5846378fc3dfd5f07e379ae5cb456cea9b0b901acf7d59aa1bf0438e7fd43fb"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "done",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "handled-checkpoint-v1.json",
+        "supplemental_checkpoint": "handled-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "core_step_result_format": "determa.core_step_result",
+          "core_step_result_schema_version": 1,
+          "status": "running",
+          "disposition": "handled",
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+            "namespace": "conformance.execution_checkpoint_complete_host_contract",
+            "root_machine_id": "counter",
+            "root_machine_version": "1",
+            "root_instance_id": "complete-host-root",
+            "creation_id": "complete-host-create",
+            "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "2",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+                    "machine": {
+                      "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                      "machine_id": "counter",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "complete-host-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "complete-host-root",
+                    "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+                  "machine": {
+                    "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                    "machine_id": "counter",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/0/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/0/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/count",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "integer",
+                      "1"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/0/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:caaef4b16fb6fd67fa78bebdaeb11c554046aef5e583f2e29006887886c4d511"
+          },
+          "emissions": [],
+          "lifecycle_dispositions": [],
+          "fault": null,
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    },
+    {
+      "name": "row_float_to_integer_rejected",
+      "covers": "row_float_to_integer_rejected",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": {
+          "field": "amount",
+          "declaration": "integer",
+          "value": [
+            "float",
+            "401c000000000000"
+          ]
+        },
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "float",
+              "401c000000000000"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "float",
+              "401c000000000000"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "invalid_projection_input",
+        "result_value": null,
+        "core_calls": 0,
+        "committed": false
+      }
+    },
+    {
+      "name": "undeclared_row_field_rejected",
+      "covers": "undeclared_row_field_rejected",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": {
+          "field": "unknown",
+          "declaration": "integer",
+          "value": [
+            "integer",
+            "1"
+          ]
+        },
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "invalid_projection_input",
+        "result_value": null,
+        "core_calls": 0,
+        "committed": false
+      }
+    },
+    {
+      "name": "equal_delivery_replay",
+      "covers": "equal_delivery_replay",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": null,
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "replay",
+        "code": null,
+        "result_value": {
+          "operation_kind": "acceptance",
+          "receipt_sequence": "1",
+          "event_id": "complete-increment",
+          "request_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf",
+          "acceptance_sequence": "0",
+          "accepted_revision": "1",
+          "delivery_mode": "input"
+        },
+        "core_calls": 0,
+        "committed": false
+      }
+    },
+    {
+      "name": "changed_identity_conflict_before_payload",
+      "covers": "changed_identity_conflict_before_payload",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": null,
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "float",
+                    "401c000000000000"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:c550f9fce12aa8539f1163bb1aa5c705125a56b7091b8f27957122b0ed825621"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "event_id_conflict",
+        "result_value": null,
+        "core_calls": 0,
+        "committed": false
+      }
+    },
+    {
+      "name": "direct_state_edit_unsupported",
+      "covers": "direct_state_edit_unsupported",
+      "request": {
+        "operation": "step",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "direct_state_write",
+        "mapped_input": null,
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "unsupported_projection_boundary",
+        "result_value": null,
+        "core_calls": 0,
+        "committed": false
+      }
+    },
+    {
+      "name": "enum_only_prior_unrepresentable",
+      "covers": "enum_only_prior_unrepresentable",
+      "request": {
+        "operation": "step",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": null,
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "1",
+          "digest": "sha256:c5846378fc3dfd5f07e379ae5cb456cea9b0b901acf7d59aa1bf0438e7fd43fb"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "none"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": null,
+        "supplemental_checkpoint": null
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": null,
+        "supplemental_checkpoint": null
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "projection_not_lossless",
+        "result_value": null,
+        "core_calls": 0,
+        "committed": false
+      }
+    },
+    {
+      "name": "proposed_supplement_truncation",
+      "covers": "proposed_supplement_truncation",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": null,
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "truncate"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "projection_not_lossless",
+        "result_value": null,
+        "core_calls": 1,
+        "committed": false
+      },
+      "candidate_checkpoint": "accepted-checkpoint-v1.json"
+    },
+    {
+      "name": "wrong_root_row_selection",
+      "covers": "wrong_root_row_selection",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": null,
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "foreign-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "foreign-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "invalid_projection_selection",
+        "result_value": null,
+        "core_calls": 0,
+        "committed": false
+      }
+    },
+    {
+      "name": "shared_transaction_unavailable",
+      "covers": "shared_transaction_unavailable",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": null,
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "increment",
+            "event_id": "complete-increment",
+            "cause_id": "complete-increment",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "complete-host-root",
+                "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "amount",
+                  [
+                    "integer",
+                    "1"
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": false,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "created-checkpoint-v1.json",
+        "supplemental_checkpoint": "created-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "projection_transaction_unavailable",
+        "result_value": null,
+        "core_calls": 0,
+        "committed": false
+      }
+    },
+    {
+      "name": "stale_revision_rolls_back_rows",
+      "covers": "stale_revision_rolls_back_rows",
+      "request": {
+        "operation": "step",
+        "root_instance_id": "complete-host-root",
+        "mapping": {
+          "mapping_id": "order-amount-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_field": "amount",
+          "input_event": "increment",
+          "input_payload_field": "amount",
+          "input_declaration": "integer",
+          "supplemental_field": "supplemental_checkpoint",
+          "status_field": "status",
+          "status_rule": "done_when_count_positive"
+        },
+        "creation": null,
+        "target_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "declared_input",
+        "mapped_input": null,
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "complete-host-root",
+          "revision": "0",
+          "digest": "sha256:7a3ab6da30e6f644aada66b7ab4b28cc37fce62b312e89374ecdd4c1015affaf"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "complete-host-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ]
+          }
+        ],
+        "checkpoint": "accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "accepted-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "failure",
+        "code": "checkpoint_revision_conflict",
+        "result_value": null,
+        "core_calls": 1,
+        "committed": false
+      }
+    },
+    {
+      "name": "env_success_admission",
+      "covers": "env_success_admission",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "projection-env-success-root",
+        "mapping": {
+          "mapping_id": "external-token-region-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_fields": [
+            "region",
+            "token"
+          ],
+          "target": "env.changed",
+          "declarations": [
+            "string",
+            "string"
+          ],
+          "supplemental_field": "supplemental_checkpoint"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "external_refresh",
+        "mapped_input": {
+          "field": "token",
+          "declaration": "string",
+          "value": [
+            "string",
+            "new"
+          ]
+        },
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "env",
+            "event_id": "projection-env-success-event",
+            "cause_id": "projection-env-success-event",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "projection-env-success-root",
+                "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "changed",
+                  [
+                    "map",
+                    [
+                      [
+                        "region",
+                        [
+                          "string",
+                          "west"
+                        ]
+                      ],
+                      [
+                        "token",
+                        [
+                          "string",
+                          "new"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:8a1b520278c0f8ce38b2d57ee02d3ac031e0ba8b69951020969250245a0d80ea"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "projection-env-success-root",
+          "revision": "0",
+          "digest": "sha256:3e7466b778faf0cb23f643452ccea5b427b91feb3da6354e8a6cadd7059dcedc"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-success-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ],
+            "token": [
+              "string",
+              "new"
+            ],
+            "region": [
+              "string",
+              "west"
+            ]
+          }
+        ],
+        "checkpoint": "env-success-created-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-success-created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-success-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ],
+            "token": [
+              "string",
+              "new"
+            ],
+            "region": [
+              "string",
+              "west"
+            ]
+          }
+        ],
+        "checkpoint": "env-success-accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-success-accepted-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "status": "running",
+          "accepted": true,
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "namespace": "conformance.application_projection_env",
+            "root_machine_id": "refresh_all",
+            "root_machine_version": "1",
+            "root_instance_id": "projection-env-success-root",
+            "creation_id": "projection-env-success-create",
+            "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "1",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                    "machine": {
+                      "namespace": "conformance.application_projection_env",
+                      "machine_id": "refresh_all",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "projection-env-success-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "projection-env-success-root",
+                    "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "machine": {
+                    "namespace": "conformance.application_projection_env",
+                    "machine_id": "refresh_all",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/0/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/0/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/region",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "string",
+                      "east"
+                    ]
+                  },
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/token",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "string",
+                      "old"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/0/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [
+                  {
+                    "envelope": {
+                      "event": "env",
+                      "event_id": "projection-env-success-event",
+                      "cause_id": "projection-env-success-event",
+                      "source": {
+                        "host": true
+                      },
+                      "target": {
+                        "root": {
+                          "root_instance_id": "projection-env-success-root",
+                          "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+                        }
+                      },
+                      "payload": [
+                        "map",
+                        [
+                          [
+                            "changed",
+                            [
+                              "map",
+                              [
+                                [
+                                  "region",
+                                  [
+                                    "string",
+                                    "west"
+                                  ]
+                                ],
+                                [
+                                  "token",
+                                  [
+                                    "string",
+                                    "new"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    },
+                    "envelope_digest": "sha256:8a1b520278c0f8ce38b2d57ee02d3ac031e0ba8b69951020969250245a0d80ea",
+                    "delivery_mode": "input",
+                    "acceptance_sequence": "0",
+                    "queue_sequence": "0",
+                    "deferral_count": "0"
+                  }
+                ],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:08cf34084c4e715707229f12cabb017b4b069bb5e16b2940ac6a9d9b7140e82b"
+          },
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    },
+    {
+      "name": "env_success_step",
+      "covers": "env_success_step",
+      "request": {
+        "operation": "step",
+        "root_instance_id": "projection-env-success-root",
+        "mapping": {
+          "mapping_id": "external-token-region-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_fields": [
+            "region",
+            "token"
+          ],
+          "target": "env.changed",
+          "declarations": [
+            "string",
+            "string"
+          ],
+          "supplemental_field": "supplemental_checkpoint"
+        },
+        "creation": null,
+        "target_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "external_refresh",
+        "mapped_input": null,
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "projection-env-success-root",
+          "revision": "1",
+          "digest": "sha256:569562358e32e5006f67e5323f3ecc6b58d3699b3460a4ea70843f9fbee1cae8"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-success-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ],
+            "token": [
+              "string",
+              "new"
+            ],
+            "region": [
+              "string",
+              "west"
+            ]
+          }
+        ],
+        "checkpoint": "env-success-accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-success-accepted-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-success-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ],
+            "token": [
+              "string",
+              "new"
+            ],
+            "region": [
+              "string",
+              "west"
+            ]
+          }
+        ],
+        "checkpoint": "env-success-processed-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-success-processed-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "core_step_result_format": "determa.core_step_result",
+          "core_step_result_schema_version": 1,
+          "status": "running",
+          "disposition": "handled",
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "namespace": "conformance.application_projection_env",
+            "root_machine_id": "refresh_all",
+            "root_machine_version": "1",
+            "root_instance_id": "projection-env-success-root",
+            "creation_id": "projection-env-success-create",
+            "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "2",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                    "machine": {
+                      "namespace": "conformance.application_projection_env",
+                      "machine_id": "refresh_all",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "projection-env-success-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "projection-env-success-root",
+                    "root_runtime_id": "sha256:16940b9f7cd42eda9bb5aa1f8119c3498256509142df04afafbefb0cc8a8855b"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "machine": {
+                    "namespace": "conformance.application_projection_env",
+                    "machine_id": "refresh_all",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/0/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/0/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/region",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "string",
+                      "west"
+                    ]
+                  },
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/token",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "string",
+                      "new"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/0/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:5a26490eb5e6cd234ef28e41aecef0faafe9673600aa999a31dd891695f58d69"
+          },
+          "emissions": [],
+          "lifecycle_dispositions": [],
+          "fault": null,
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    },
+    {
+      "name": "env_fault_admission",
+      "covers": "env_fault_admission",
+      "request": {
+        "operation": "admit",
+        "root_instance_id": "projection-env-fault-root",
+        "mapping": {
+          "mapping_id": "external-token-region-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_fields": [
+            "region",
+            "token"
+          ],
+          "target": "env.changed",
+          "declarations": [
+            "string",
+            "string"
+          ],
+          "supplemental_field": "supplemental_checkpoint"
+        },
+        "creation": null,
+        "target_runtime_id": null,
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "external_refresh",
+        "mapped_input": {
+          "field": "region",
+          "declaration": "string",
+          "value": [
+            "string",
+            "west"
+          ]
+        },
+        "delivery": {
+          "delivery_mode": "input",
+          "envelope": {
+            "event": "env",
+            "event_id": "projection-env-fault-event",
+            "cause_id": "projection-env-fault-event",
+            "source": {
+              "host": true
+            },
+            "target": {
+              "root": {
+                "root_instance_id": "projection-env-fault-root",
+                "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+              }
+            },
+            "payload": [
+              "map",
+              [
+                [
+                  "changed",
+                  [
+                    "map",
+                    [
+                      [
+                        "region",
+                        [
+                          "string",
+                          "west"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          },
+          "envelope_digest": "sha256:45dc9f39b4b19888b2555328da779f6ae46a4b1a6479ec3fdfb284bf07149542"
+        },
+        "expected_checkpoint": {
+          "root_instance_id": "projection-env-fault-root",
+          "revision": "0",
+          "digest": "sha256:858cecb7e89dda888f7228545d599695c7da1c04ff49a31b47f6807a70c2afbb"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-fault-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ],
+            "token": [
+              "string",
+              "old"
+            ],
+            "region": [
+              "string",
+              "west"
+            ]
+          }
+        ],
+        "checkpoint": "env-fault-created-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-fault-created-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-fault-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ],
+            "token": [
+              "string",
+              "old"
+            ],
+            "region": [
+              "string",
+              "west"
+            ]
+          }
+        ],
+        "checkpoint": "env-fault-accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-fault-accepted-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "status": "running",
+          "accepted": true,
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "namespace": "conformance.application_projection_env",
+            "root_machine_id": "refresh_only",
+            "root_machine_version": "1",
+            "root_instance_id": "projection-env-fault-root",
+            "creation_id": "projection-env-fault-create",
+            "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "1",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                    "machine": {
+                      "namespace": "conformance.application_projection_env",
+                      "machine_id": "refresh_only",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/1/root"
+                    }
+                  },
+                  "root_instance_id": "projection-env-fault-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "projection-env-fault-root",
+                    "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "machine": {
+                    "namespace": "conformance.application_projection_env",
+                    "machine_id": "refresh_only",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/1/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/1/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/1/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/1/root/variables/region",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "string",
+                      "east"
+                    ]
+                  },
+                  {
+                    "variable_declaration_pointer": "/machines/1/root/variables/token",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "string",
+                      "old"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/1/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [
+                  {
+                    "envelope": {
+                      "event": "env",
+                      "event_id": "projection-env-fault-event",
+                      "cause_id": "projection-env-fault-event",
+                      "source": {
+                        "host": true
+                      },
+                      "target": {
+                        "root": {
+                          "root_instance_id": "projection-env-fault-root",
+                          "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+                        }
+                      },
+                      "payload": [
+                        "map",
+                        [
+                          [
+                            "changed",
+                            [
+                              "map",
+                              [
+                                [
+                                  "region",
+                                  [
+                                    "string",
+                                    "west"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    },
+                    "envelope_digest": "sha256:45dc9f39b4b19888b2555328da779f6ae46a4b1a6479ec3fdfb284bf07149542",
+                    "delivery_mode": "input",
+                    "acceptance_sequence": "0",
+                    "queue_sequence": "0",
+                    "deferral_count": "0"
+                  }
+                ],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:2c3af0754851579c46ce158c6650e903787de64e1e9d17abd4dc18b0d5c39d94"
+          },
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    },
+    {
+      "name": "env_fault_step",
+      "covers": "env_fault_step",
+      "request": {
+        "operation": "step",
+        "root_instance_id": "projection-env-fault-root",
+        "mapping": {
+          "mapping_id": "external-token-region-v1",
+          "row_id_field": "row_id",
+          "root_identity_field": "root_instance_id",
+          "source_fields": [
+            "region",
+            "token"
+          ],
+          "target": "env.changed",
+          "declarations": [
+            "string",
+            "string"
+          ],
+          "supplemental_field": "supplemental_checkpoint"
+        },
+        "creation": null,
+        "target_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+        "selected_row_ids": [
+          "order-1"
+        ],
+        "boundary": "external_refresh",
+        "mapped_input": null,
+        "delivery": null,
+        "expected_checkpoint": {
+          "root_instance_id": "projection-env-fault-root",
+          "revision": "1",
+          "digest": "sha256:6b32e82e3ad7f310689b02acbd024795a04e31067b38ff1bc1b4060f121c651f"
+        },
+        "shared_transaction_requested": true,
+        "shared_transaction_available": true,
+        "supplemental_capacity": "complete"
+      },
+      "before": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-fault-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ],
+            "token": [
+              "string",
+              "old"
+            ],
+            "region": [
+              "string",
+              "west"
+            ]
+          }
+        ],
+        "checkpoint": "env-fault-accepted-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-fault-accepted-checkpoint-v1.json"
+      },
+      "after": {
+        "selected_rows": [
+          {
+            "row_id": "order-1",
+            "root_instance_id": "projection-env-fault-root",
+            "status": "pending",
+            "amount": [
+              "integer",
+              "1"
+            ],
+            "token": [
+              "string",
+              "old"
+            ],
+            "region": [
+              "string",
+              "west"
+            ]
+          }
+        ],
+        "checkpoint": "env-fault-processed-checkpoint-v1.json",
+        "supplemental_checkpoint": "env-fault-processed-checkpoint-v1.json"
+      },
+      "outcome": {
+        "kind": "result",
+        "code": null,
+        "result_value": {
+          "core_step_result_format": "determa.core_step_result",
+          "core_step_result_schema_version": 1,
+          "status": "faulted",
+          "disposition": "faulted",
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "namespace": "conformance.application_projection_env",
+            "root_machine_id": "refresh_only",
+            "root_machine_version": "1",
+            "root_instance_id": "projection-env-fault-root",
+            "creation_id": "projection-env-fault-create",
+            "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "2",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                    "machine": {
+                      "namespace": "conformance.application_projection_env",
+                      "machine_id": "refresh_only",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/1/root"
+                    }
+                  },
+                  "root_instance_id": "projection-env-fault-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "projection-env-fault-root",
+                    "root_runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "machine": {
+                    "namespace": "conformance.application_projection_env",
+                    "machine_id": "refresh_only",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/1/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "faulted",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/1/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/1/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/1/root/variables/region",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "string",
+                      "east"
+                    ]
+                  },
+                  {
+                    "variable_declaration_pointer": "/machines/1/root/variables/token",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "string",
+                      "old"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/1/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": {
+                  "definition_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+                  "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+                  "cause_id": "projection-env-fault-event",
+                  "code": "action_fault",
+                  "step_sequence": "1",
+                  "source_locator": "/machines/1/root/on_events/env/action/0/refresh/only/0"
+                },
+                "ready_mailbox": [],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:b2a65b0c9a4352fcb9fb0122bb69b09bb72be7362b026e0df4d03f2fbc30b883"
+          },
+          "emissions": [],
+          "lifecycle_dispositions": [],
+          "fault": {
+            "definition_fingerprint": "sha256:070cb2fbb527f338c710f2caa8013d7a5186502fb02594c26bf90620927a0278",
+            "runtime_id": "sha256:410818e4edb789f3633457529978326ed40300fa98f21da2d1572554a5c714fa",
+            "cause_id": "projection-env-fault-event",
+            "code": "action_fault",
+            "step_sequence": "1",
+            "source_locator": "/machines/1/root/on_events/env/action/0/refresh/only/0"
+          },
+          "rejection": null
+        },
+        "core_calls": 1,
+        "committed": true
+      }
+    }
+  ]
+}
