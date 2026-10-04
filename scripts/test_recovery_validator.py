@@ -16,7 +16,9 @@ from unittest.mock import patch
 from validate_portable_archive import (ArchiveValidationError, canonical, digest, read_json,
                                        validate_archive_integrity, validator_registry, without, ROOT)
 from validate_recovery_profile import CASE, validate_profile, validate_owned_definition_closure
-from run_recovery_profile import input_for, run_case, store_call, trusted_bridge
+from run_recovery_profile import (CALLS, STATE, input_for, run_case, source_fault_cut,
+                                  store_call, trusted_bridge, validate_source_plan,
+                                  verify_local_source_step)
 from run_hosted_recovery_profile import observed_binding
 
 
@@ -96,6 +98,7 @@ def main() -> int:
             'configured_provider_content_digest': sha(engine),
             'configured_authority_token_identity': None,
             'configured_topology_identifier': None,
+            'source_lifecycle_plan_sha256': None,
         }
         installation['effective_configuration_digest'] = digest({})
         installation['dependency_inventory_digest'] = digest([])
@@ -110,7 +113,8 @@ def main() -> int:
             'dependency_inventory_digest', 'build_anchor_digest',
             'configured_provider_content_digest',
             'configured_authority_token_identity',
-            'configured_topology_identifier')}
+            'configured_topology_identifier',
+            'source_lifecycle_plan_sha256')}
         registration.update({
             'format': 'determa.conformance.recovery.bridge_registration',
             'schema_version': 1, 'command': [sys.executable, '-I', '-S', str(bridge)],
@@ -251,6 +255,106 @@ def main() -> int:
     assert all(item['request']['arguments']['external_idempotency_namespace'] ==
                fixture['records']['standalone_inactive']['record']['external_idempotency_namespace']
                for item in namespace['cases'])
+    local_archive = read_json(CASE / 'archive-local-transfer-v1.json')
+    local = next(item for item in fixture['cases'] if item['case_id'] == 'local_prepare')
+    with patch('run_recovery_profile.trusted_bridge', return_value='test-reviewed-bridge'):
+        rejected('local transfer without actual source lifecycle plan',
+                 lambda: run_case(['golden-echo'], local, fixture,
+                                  hosted_binding_digest='sha256:host',
+                                  hosted_authority_token_identity='authority-token'))
+    plan = {'format': 'determa.conformance.recovery.source_lifecycle',
+            'schema_version': 1,
+            'source_scope_identity': local_archive['source']['logical_scope_identity'],
+            'root_instance_ids': local_archive['selection']['root_instance_ids'],
+            'operations': ([{'operation': operation, 'root_instance_id': None,
+                             'arguments': {}} for operation in
+                            ('configure_scope', 'allocate_scope')] +
+                           [{'operation': 'create_root', 'root_instance_id': root,
+                             'arguments': {}} for root in
+                            local_archive['selection']['root_instance_ids']] +
+                           [{'operation': operation,
+                             'root_instance_id': (local_archive['selection']['root_instance_ids'][0]
+                                                  if operation in ('admit_event', 'step_root') else None),
+                             'arguments': {}} for operation in
+                            ('admit_event', 'step_root', 'append_host_journal', 'claim_worker')])}
+    validate_source_plan(plan, local_archive)
+    def fake_source(command, *, input, **kwargs):
+        if command != ['golden-source']:
+            return original_run(command, input=input, **kwargs)
+        return SimpleNamespace(returncode=0, stderr=b'', stdout=canonical({
+            'caller_response_kind': 'source_result',
+            'caller_response_body': {'status': 'succeeded'},
+            'native_evidence': None}))
+    with patch('run_recovery_profile.trusted_bridge', return_value='test-reviewed-bridge'), \
+         patch('run_recovery_profile.subprocess.run', side_effect=fake_source):
+        rejected('hosted local source created only by a golden child response',
+                 lambda: run_case(['golden-source'], local, fixture,
+                     hosted_binding_digest='sha256:host',
+                     hosted_authority_token_identity='authority-token',
+                     hosted_source_plan=plan,
+                     hosted_source_binding={
+                         'topology_identifier': 'local',
+                         'provider_content_digest': 'sha256:provider',
+                         'configuration_digest': 'sha256:configuration'}))
+    malformed = copy.deepcopy(plan)
+    malformed['operations'][2]['arguments']['checkpoint'] = local_archive['checkpoints'][0]
+    rejected('source lifecycle plan seeds a golden checkpoint',
+             lambda: validate_source_plan(malformed, local_archive))
+    source_identity = local_archive['source']['logical_scope_identity']
+    source_state = {key: [] for key in STATE}
+    source_state['source_scopes'] = [{
+        'scope_identity': source_identity, 'storage_identity': 'native-source-db',
+        'native_instance_identity': 'native-source-instance', 'state': 'frozen'}]
+    source_reference = {'scope_identity': source_identity,
+                        'storage_identity': 'native-source-db',
+                        'native_instance_identity': 'native-source-instance',
+                        'freeze_native_transaction_id': 'missing-freeze',
+                        'freeze_native_proof_id': 'missing-proof',
+                        'source_fault_cut': None}
+    rejected('prepare uses only a transfer result with no prior native source freeze',
+             lambda: verify_local_source_step(local, source_state, source_state,
+                                              None, source_reference, fixture))
+    with tempfile.TemporaryDirectory(prefix='determa-recovery-source-cut-') as temporary:
+        database = Path(temporary) / 'source.sqlite'
+        initial = {key: [] for key in STATE}
+        initial['native_calls'] = {key: 0 for key in CALLS}
+        store_call(database, 'source-run', 'init', initial=initial)
+        class FalseCut:
+            returncode = 0
+            stdout = canonical({'status': 'in_doubt'})
+            stderr = b''
+        with patch('run_recovery_profile.subprocess.run',
+                   side_effect=lambda command, **kwargs: original_run(command, **kwargs)
+                   if command != ['false-cut'] else FalseCut()):
+            rejected('in-doubt source response without owned process cut',
+                     lambda: source_fault_cut(['false-cut'], database, 'source-run',
+                                              'test-reviewed-bridge', 'sha256:host',
+                                              local_archive,
+                                              fixture['trusted_transfer_proofs'][0]))
+        cut_bridge = Path(temporary) / 'controlled_cut_bridge.py'
+        cut_bridge.write_text('''import hashlib, json, subprocess, sys
+request = json.load(sys.stdin)
+def strict(value):
+    return json.dumps(value, sort_keys=True, separators=(',', ':')).encode()
+def call(kind, **fields):
+    payload = {'kind': kind, 'database_path': request['store_database_path'],
+               'run_id': request['run_id'], **fields}
+    subprocess.run(request['store_command'], input=strict(payload), check=True,
+                   stdout=subprocess.PIPE)
+operation = request['operation_id']
+call('invocation_start', operation_id=operation, phase='source_fault_cut',
+     request_digest='sha256:' + hashlib.sha256(strict(request['payload'])).hexdigest(),
+     bridge_identity=request['bridge_identity'])
+call('source_process_cut', operation_id=operation,
+     scope_identity=request['payload']['scope_identity'],
+     source_authority_epoch=request['payload']['expected_authority_epoch'],
+     source_scope_generation=request['payload']['expected_scope_generation'])
+''')
+        cut = source_fault_cut([sys.executable, str(cut_bridge)], database,
+                                  'source-run', 'test-reviewed-bridge', 'sha256:host',
+                                  local_archive, fixture['trusted_transfer_proofs'][0])
+        assert store_call(database, 'source-run', 'snapshot')['source_process_cuts'][-1] == cut
+        assert cut['scope_identity'] == source_identity and cut['fate'] == 'in_doubt'
     with patch('run_hosted_recovery_profile.verify_delivery_proof_summary',
                side_effect=lambda summary, command: summary):
         rejected('base-only delivery proof used for safe relocation',

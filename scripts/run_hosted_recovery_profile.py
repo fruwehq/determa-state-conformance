@@ -13,7 +13,7 @@ import tempfile
 
 from validate_portable_archive import canonical, digest, parse_json_bytes, read_json
 from validate_recovery_profile import CASE, validate_profile
-from run_recovery_profile import run_case, trusted_bridge
+from run_recovery_profile import run_case, trusted_bridge, validate_source_plan
 from run_lossless_delivery_profile import (verify_delivery_proof_summary,
     verify_configured_delivery_profile)
 
@@ -160,6 +160,8 @@ def main() -> int:
                         help='reviewed §24 production invocation bridge')
     parser.add_argument('--recovery-bridge-registration', required=True, type=Path,
                         help='trusted runner-selected §24 bridge installation anchor')
+    parser.add_argument('--source-lifecycle-plan', required=True, type=Path,
+                        help='trusted source create/admit/step/journal/worker plan for local transfers')
     args = parser.parse_args()
     command, authority_command = shlex.split(args.adapter), shlex.split(args.authority_adapter)
     recovery_command = shlex.split(args.recovery_bridge)
@@ -182,13 +184,18 @@ def main() -> int:
         summary = parse_json_bytes(path.read_bytes(), 'same-run C/D/H proof summary')
     initial, binding = observed_binding(command, authority_command, summary, fixture)
     registration = read_json(args.recovery_bridge_registration)
+    source_plan_raw = args.source_lifecycle_plan.read_bytes()
+    source_plan = parse_json_bytes(source_plan_raw, 'trusted local source lifecycle plan')
+    validate_source_plan(source_plan, read_json(CASE / 'archive-local-transfer-v1.json'))
     if registration['configured_provider_content_digest'] != \
             initial['provider_reference']['content_digest'] or \
             registration['effective_configuration_digest'] != initial['configuration_digest'] or \
             registration['configured_authority_token_identity'] != \
             initial['authority_token_identity'] or \
             registration['configured_topology_identifier'] != \
-            initial['topology_identifier']:
+            initial['topology_identifier'] or \
+            registration['source_lifecycle_plan_sha256'] != \
+            'sha256:' + sha256(source_plan_raw).hexdigest():
         raise ValueError('reviewed recovery bridge installation differs from same-run C/D/H host')
     owned = read_json(CASE / 'recovery-two-root-vectors-v1.json')
     namespace = read_json(CASE / 'recovery-namespace-vectors-v1.json')
@@ -201,9 +208,16 @@ def main() -> int:
         run_case(recovery_command, case, fixture, hosted_binding_digest=binding,
                  hosted_authority_token_identity=initial['authority_token_identity'],
                  bridge_registration=args.recovery_bridge_registration,
-                 expected_bridge_identity=installed_bridge)
+                 expected_bridge_identity=installed_bridge,
+                 hosted_source_plan=source_plan,
+                 hosted_source_binding={
+                     'topology_identifier': initial['topology_identifier'],
+                     'provider_content_digest': initial['provider_reference']['content_digest'],
+                     'configuration_digest': initial['configuration_digest']})
     if trusted_bridge(recovery_command, args.recovery_bridge_registration) != installed_bridge:
         raise ValueError('reviewed recovery bridge changed during hosted proof')
+    if args.source_lifecycle_plan.read_bytes() != source_plan_raw:
+        raise ValueError('trusted source lifecycle plan changed during hosted proof')
     if observed_binding(command, authority_command, summary, fixture) != (initial, binding):
         raise ValueError('configured C/D/H/recovery installation changed during recovery proof')
     print('52 recovery responses and native observations passed under one configured local host')

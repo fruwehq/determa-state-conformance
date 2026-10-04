@@ -69,7 +69,8 @@ proved continuity. Static fixture success is never a production certificate.
 For an advertised local single-authority topology, the host runs
 `scripts/run_hosted_recovery_profile.py --spec-root SPEC --adapter HOST
 --authority-adapter AUTHORITY --recovery-bridge BRIDGE
---recovery-bridge-registration REGISTRATION`. This gate requires the same actual configured
+--recovery-bridge-registration REGISTRATION
+--source-lifecycle-plan PLAN`. This gate requires the same actual configured
 installation to pass the §18/§19/§21 native runner. It verifies the merged
 runner's same-run proof summary, including its unique parent run, C/D native
 proof IDs, H durable store proofs, report digests and actual installed store and
@@ -80,6 +81,20 @@ proofs, a frozen full inventory, known native transaction fate, retired source,
 single-use grant, imported checkpoint/participant bytes, and unchanged state on
 refusal. A successful run requires a real production I2 adapter and is not
 claimed by this repository's source checks.
+For each local case, the trusted runner-selected plan drives source
+configuration, allocation, root creation, admission, stepping, journal writes
+and a worker claim through the reviewed production bridge. Its separate native
+observer must find the exact source scope and root instances, complete source
+checkpoints, host journals and participants in the same configured store. A
+guarded freeze must revoke the actual worker and retain a native transaction
+and complete inventory proof before `prepare_transfer`. A production §22 export
+must read that frozen source and return the exact local archive; the export is
+read-only in host state. The in-doubt case injects a native process cut after
+the retained export and requires an unresolved source fate before its prepare
+refusal. Commit must retire that same source and fence old writers in its native
+transaction. The source plan contains operations, never preseeded checkpoints,
+records or an expected after-state. Generic C/D/H capability proofs alone do
+not establish this particular source.
 No host may report `safe_relocation` from the static fixture or by copying a
 requested profile claim. The standalone runner never certifies local transfer.
 

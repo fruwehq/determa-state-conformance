@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 from hashlib import sha256
+import signal
 import subprocess
 import sys
 import tempfile
@@ -22,7 +23,9 @@ STATE = ('recovery_records', 'scope_allocations', 'namespace_allocations',
          'operation_ledgers', 'checkpoints', 'host_journals', 'participants',
          'worker_claims', 'external_dispatches', 'ingress_acknowledgements',
          'authority_ledger', 'transfer_proofs', 'staged_archives',
-         'terminated_scopes')
+         'terminated_scopes', 'source_scopes', 'source_checkpoints',
+         'source_host_journals', 'source_participants', 'source_worker_claims',
+         'source_authority_ledger')
 CALLS = ('core_create', 'core_admit', 'core_step', 'core_migration',
          'effect_dispatch', 'helper_dispatch', 'ingress_acknowledge',
          'provider_evaluate', 'timer_fire', 'authority_commit')
@@ -48,7 +51,8 @@ def trusted_bridge(command: list[str], registration: Path | None = None) -> str:
             'dependency_inventory_digest', 'build_anchor_digest',
             'configured_provider_content_digest',
             'configured_authority_token_identity',
-            'configured_topology_identifier'}
+            'configured_topology_identifier',
+            'source_lifecycle_plan_sha256'}
     if type(entry) is not dict or set(entry) != keys or \
             entry['format'] != 'determa.conformance.recovery.bridge_registration' or \
             type(entry['schema_version']) is not int or entry['schema_version'] != 1 or \
@@ -58,11 +62,13 @@ def trusted_bridge(command: list[str], registration: Path | None = None) -> str:
             not all(type(entry[key]) is str and entry[key]
                     for key in keys - {'format', 'schema_version', 'command',
                                        'configured_authority_token_identity',
-                                       'configured_topology_identifier'}) or \
+                                       'configured_topology_identifier',
+                                       'source_lifecycle_plan_sha256'}) or \
             any(entry[key] is not None and
                 (type(entry[key]) is not str or not entry[key])
                 for key in ('configured_authority_token_identity',
-                            'configured_topology_identifier')):
+                            'configured_topology_identifier',
+                            'source_lifecycle_plan_sha256')):
         raise ValueError('production execution unverified: closed bridge registration differs')
     def anchored(root_key: str, path_key: str, hash_key: str) -> Path:
         original_root = Path(entry[root_key])
@@ -95,7 +101,8 @@ def trusted_bridge(command: list[str], registration: Path | None = None) -> str:
                      'build_inputs', 'features', 'toolchain',
                      'effective_configuration', 'configured_provider_content_digest',
                      'configured_authority_token_identity',
-                     'configured_topology_identifier'}
+                     'configured_topology_identifier',
+                     'source_lifecycle_plan_sha256'}
     if type(installed) is not dict or set(installed) != manifest_keys or \
             installed['format'] != 'determa.conformance.recovery.installation' or \
             type(installed['schema_version']) is not int or installed['schema_version'] != 1 or \
@@ -143,9 +150,9 @@ def store_call(database: Path, run_id: str, kind: str, **fields) -> dict:
 
 
 def native_call(command: list[str], database: Path, run_id: str, operation_id: str,
-                phase: str, payload: dict, expected: dict,
+                phase: str, payload: dict, expected: dict | None,
                 hosted_binding_digest: str | None,
-                bridge_identity: str) -> tuple[dict, dict, dict]:
+                bridge_identity: str) -> tuple[dict, dict, dict, dict | None]:
     before = store_call(database, run_id, 'snapshot')
     driver_request = {
         'kind': phase, 'operation_id': operation_id, 'run_id': run_id,
@@ -162,16 +169,25 @@ def native_call(command: list[str], database: Path, run_id: str, operation_id: s
         raise ValueError(f'{phase}: adapter exited {completed.returncode}: '
                          f'{completed.stderr.decode("utf-8", "replace")[:500]}')
     observed = parse_json_bytes(completed.stdout, phase + ': adapter response')
-    fields = ({'caller_response_kind', 'caller_response_body', 'native_evidence'} if
-              phase in ('archive_stage', 'scope_terminate') else
-              {'result', 'record', 'transfer_proof', 'caller_response_kind',
-               'caller_response_body', 'native_evidence'})
+    fields = ({'result', 'record', 'transfer_proof', 'caller_response_kind',
+               'caller_response_body', 'native_evidence'} if phase == 'recovery' else
+              {'archive', 'caller_response_kind', 'caller_response_body',
+               'native_evidence'} if phase == 'archive_export' else
+              {'caller_response_kind', 'caller_response_body', 'native_evidence'})
     if type(observed) is not dict or set(observed) != fields:
         raise ValueError(phase + ': incomplete literal production response')
-    equal(observed['caller_response_body'], expected, phase + ': literal caller body')
+    if expected is None:
+        body = observed['caller_response_body']
+        if type(body) is not dict or body.get('status') not in (
+                'succeeded', 'accepted', 'frozen', 'exported'):
+            raise ValueError(phase + ': actual source operation did not succeed')
+    else:
+        equal(observed['caller_response_body'], expected, phase + ': literal caller body')
     expected_kind = ('archive_result' if phase == 'archive_stage' else
                      'scope_termination_result' if phase == 'scope_terminate' else
-                     'recovery_result')
+                     'recovery_result' if phase == 'recovery' else
+                     'archive_export_result' if phase == 'archive_export' else
+                     'source_result')
     if observed['caller_response_kind'] != expected_kind:
         raise ValueError(phase + ': literal caller response kind')
     after = store_call(database, run_id, 'snapshot')
@@ -190,7 +206,7 @@ def native_call(command: list[str], database: Path, run_id: str, operation_id: s
         transaction = transactions[0]
         if transaction['operation_id'] != operation_id or transaction['phase'] != phase or \
                 transaction['request_digest'] != digest(payload) or \
-                transaction['response_digest'] != digest(expected) or \
+                transaction['response_digest'] != digest(observed['caller_response_body']) or \
                 transaction['before_digest'] != digest(before['state']) or \
                 transaction['after_digest'] != digest(after['state']) or \
                 observed['native_evidence'] != {
@@ -199,7 +215,7 @@ def native_call(command: list[str], database: Path, run_id: str, operation_id: s
             raise ValueError(phase + ': native transaction differs from response or exact input')
     elif observed['native_evidence'] is not None:
         raise ValueError(phase + ': response invented a native commit')
-    return observed, before['state'], after['state']
+    return observed, before['state'], after['state'], transactions[0] if transactions else None
 
 
 def equal(actual, expected, label: str) -> None:
@@ -276,11 +292,311 @@ def input_for(case: dict, fixture: dict) -> dict:
     return result
 
 
+SOURCE_OPERATIONS = ('configure_scope', 'allocate_scope', 'create_root',
+                     'admit_event', 'step_root', 'append_host_journal',
+                     'claim_worker')
+
+
+def validate_source_plan(plan: dict, archive: dict) -> None:
+    if type(plan) is not dict or set(plan) != {
+            'format', 'schema_version', 'source_scope_identity',
+            'root_instance_ids', 'operations'} or \
+            plan['format'] != 'determa.conformance.recovery.source_lifecycle' or \
+            type(plan['schema_version']) is not int or plan['schema_version'] != 1 or \
+            plan['source_scope_identity'] != archive['source']['logical_scope_identity'] or \
+            plan['root_instance_ids'] != archive['selection']['root_instance_ids'] or \
+            type(plan['operations']) is not list:
+        raise ValueError('hosted source lifecycle plan is incomplete or for another scope')
+    operations = plan['operations']
+    names = []
+    created = []
+    for item in operations:
+        if type(item) is not dict or set(item) != {
+                'operation', 'root_instance_id', 'arguments'} or \
+                item['operation'] not in SOURCE_OPERATIONS or \
+                type(item['arguments']) is not dict or \
+                any(key in item['arguments'] for key in (
+                    'checkpoint', 'checkpoints', 'archive', 'record', 'records',
+                    'source_capture', 'expected_result', 'expected_after')):
+            raise ValueError('source plan must contain actual lifecycle requests, never seeded state')
+        root_id = item['root_instance_id']
+        if root_id is not None and root_id not in plan['root_instance_ids']:
+            raise ValueError('source lifecycle step names an unselected instance')
+        if item['operation'] in ('create_root', 'admit_event', 'step_root') and root_id is None:
+            raise ValueError('source root operation lacks a native instance identity')
+        names.append(item['operation'])
+        if item['operation'] == 'create_root':
+            created.append(root_id)
+    if created != plan['root_instance_ids'] or \
+            not {'configure_scope', 'allocate_scope', 'admit_event', 'step_root',
+                 'append_host_journal', 'claim_worker'}.issubset(names):
+        raise ValueError('source lifecycle lacks create/admit/step/journal/worker coverage')
+
+
+def source_scope(state: dict, scope_identity: str) -> dict:
+    matches = [item for item in state['source_scopes']
+               if type(item) is dict and item.get('scope_identity') == scope_identity]
+    if len(matches) != 1:
+        raise ValueError('actual native source scope is absent or duplicated')
+    return matches[0]
+
+
+def source_fault_cut(command: list[str], database: Path, run_id: str,
+                     bridge_identity: str, binding: str, archive: dict,
+                     proof: dict) -> dict:
+    before = store_call(database, run_id, 'snapshot')
+    operation_id = str(uuid.uuid4())
+    payload = {'scope_identity': archive['source']['logical_scope_identity'],
+               'expected_authority_epoch': proof['source_authority_epoch'],
+               'expected_scope_generation': proof['source_scope_generation'],
+               'fault_injection': 'native_source_transaction_before_fate'}
+    child = subprocess.run(command, input=canonical({
+        'kind': 'source_fault_cut', 'operation_id': operation_id,
+        'run_id': run_id, 'store_command': [sys.executable, str(STORE)],
+        'store_database_path': str(database),
+        'store_source_sha256': 'sha256:' + sha256(STORE.read_bytes()).hexdigest(),
+        'expected_before_digest': digest(before['state']), 'payload': payload,
+        'configured_binding_digest': binding, 'bridge_identity': bridge_identity}),
+        capture_output=True, check=False, timeout=120)
+    after = store_call(database, run_id, 'snapshot')
+    cuts = after['source_process_cuts'][len(before['source_process_cuts']):]
+    invocations = after['invocations'][len(before['invocations']):]
+    if child.returncode != -signal.SIGKILL or child.stdout or \
+            after['state'] != before['state'] or \
+            after['transactions'] != before['transactions'] or \
+            len(cuts) != 1 or \
+            any(cuts[0].get(key) != value for key, value in {
+                'operation_id': operation_id,
+                'scope_identity': payload['scope_identity'],
+                'source_authority_epoch': proof['source_authority_epoch'],
+                'source_scope_generation': proof['source_scope_generation'],
+                'fate': 'in_doubt'}.items()) or \
+            not cuts[0].get('native_transaction_id') or \
+            cuts[0].get('attempt_proof_id') != digest([
+                'determa-recovery-source-cut-1', run_id, operation_id,
+                cuts[0]['native_transaction_id'], payload['scope_identity'],
+                proof['source_authority_epoch'], proof['source_scope_generation']]) or \
+            invocations != [{'operation_id': operation_id,
+                             'phase': 'source_fault_cut',
+                             'request_digest': digest(payload),
+                             'bridge_identity': bridge_identity,
+                             'response_digest': None, 'outcome': None}]:
+        raise ValueError('source in-doubt fate lacks a controlled native process cut')
+    return cuts[0]
+
+
+def run_hosted_source(command: list[str], database: Path, run_id: str,
+                      bridge_identity: str, binding: str, token: str,
+                      topology: str, provider_digest: str, config_digest: str,
+                      archive: dict, fixture: dict, plan: dict,
+                      *, in_doubt: bool) -> dict:
+    validate_source_plan(plan, archive)
+    source_identity = archive['source']['logical_scope_identity']
+    definitions = archive['normalized_definitions']
+    for step in plan['operations']:
+        payload = {'source_scope_identity': source_identity, 'step': step,
+                   'normalized_definitions': definitions if step['operation'] == 'create_root' else None}
+        _, _, _, transaction = native_call(
+            command, database, run_id, str(uuid.uuid4()), 'source_operation',
+            payload, None, binding, bridge_identity)
+        if transaction is None:
+            raise ValueError('actual production source lifecycle step did not commit')
+    before_freeze = store_call(database, run_id, 'snapshot')['state']
+    source = source_scope(before_freeze, source_identity)
+    required = {'scope_identity': source_identity,
+                'source_binding_digest': archive['source']['ownership_binding_digest'],
+                'source_profile_digest': archive['source']['profile_digest'],
+                'participant_contract_digest':
+                archive['participant_contract']['participant_contract_digest'],
+                'root_instance_ids': archive['selection']['root_instance_ids'],
+                'state': 'active', 'authority_token_identity': token,
+                'topology_identifier': topology,
+                'provider_content_digest': provider_digest,
+                'configuration_digest': config_digest,
+                'storage_identity': str(database)}
+    source_inventory_digest = digest({
+        'checkpoints': before_freeze['source_checkpoints'],
+        'host_journals': before_freeze['source_host_journals'],
+        'participants': before_freeze['source_participants'],
+        'worker_claims': before_freeze['source_worker_claims']})
+    if any(source.get(key) != value for key, value in required.items()) or \
+            not source.get('native_instance_identity') or \
+            source.get('complete_scope_inventory') is not True or \
+            source.get('inventory_digest') != source_inventory_digest or \
+            before_freeze['source_checkpoints'] != archive['checkpoints'] or \
+            before_freeze['source_participants'] != archive['participants'] or \
+            not before_freeze['source_host_journals'] or \
+            any(type(item) is not dict or
+                item.get('root_instance_id') not in plan['root_instance_ids']
+                for item in before_freeze['source_host_journals']) or \
+            {item['root_instance_id'] for item in before_freeze['source_host_journals']} != \
+            set(plan['root_instance_ids']) or \
+            not any(type(claim) is dict and claim.get('scope_identity') == source_identity and
+                    claim.get('state') == 'active'
+                    for claim in before_freeze['source_worker_claims']):
+        raise ValueError('hosted local transfer lacks a live complete native source inventory')
+    proof = fixture['trusted_transfer_proofs'][0]
+    freeze_payload = {'scope_identity': source_identity,
+                      'operation_id': archive['source_fence_reference']['operation_id'],
+                      'expected_authority_epoch': proof['source_authority_epoch'],
+                      'expected_scope_generation': proof['source_scope_generation'],
+                      'inventory_digest': source_inventory_digest}
+    freeze_response, _, frozen, freeze_tx = native_call(
+        command, database, run_id, str(uuid.uuid4()), 'source_freeze',
+        freeze_payload, None, binding, bridge_identity)
+    frozen_scope = source_scope(frozen, source_identity)
+    if freeze_tx is None or \
+            digest(freeze_response['caller_response_body']) != \
+            archive['source_fence_reference']['response_digest'] or \
+            frozen_scope.get('state') != 'frozen' or \
+            frozen_scope.get('authority_epoch') != proof['source_authority_epoch'] or \
+            frozen_scope.get('scope_generation') != proof['source_scope_generation'] or \
+            frozen['source_checkpoints'] != before_freeze['source_checkpoints'] or \
+            frozen['source_host_journals'] != before_freeze['source_host_journals'] or \
+            frozen['source_participants'] != before_freeze['source_participants'] or \
+            any(type(claim) is dict and claim.get('scope_identity') == source_identity and
+                claim.get('state') == 'active' for claim in frozen['source_worker_claims']):
+        raise ValueError('source freeze did not atomically retain inventory and revoke writers')
+    matching = [entry for entry in frozen['source_authority_ledger']
+                if type(entry) is dict and all(entry.get(key) == value for key, value in {
+                    'operation_kind': 'freeze_scope',
+                    'operation_id': archive['source_fence_reference']['operation_id'],
+                    'scope_identity': source_identity,
+                    'native_transaction_id': freeze_tx['native_transaction_id'],
+                    'native_proof_id': freeze_tx['proof_id'],
+                    'freeze_evidence_digest': proof['freeze_evidence_digest'],
+                    'authority_epoch': proof['source_authority_epoch'],
+                    'scope_generation': proof['source_scope_generation'],
+                    'inventory_digest': freeze_payload['inventory_digest'],
+                    'transaction_fate': 'known_committed',
+                    'claims_revoked': True,
+                }.items())]
+    if len(matching) != 1:
+        raise ValueError('prepare has no preexisting retained native freeze proof')
+    export_request = {
+        'request_format': 'determa.archive_export_request',
+        'request_schema_version': 1, 'source': archive['source'],
+        'root_instance_ids': archive['selection']['root_instance_ids'],
+        'required_participant_ids': archive['participant_contract']['required_participant_ids'],
+        'optional_participant_ids': archive['participant_contract']['optional_participant_ids'],
+        'consistency_token': archive['selection']['consistency_token']}
+    before_export = store_call(database, run_id, 'snapshot')
+    export_operation_id = str(uuid.uuid4())
+    exported, export_before, after_export, export_tx = native_call(
+        command, database, run_id, export_operation_id, 'archive_export',
+        {'request': export_request, 'source_scope_identity': source_identity},
+        None, binding, bridge_identity)
+    after_export_observation = store_call(database, run_id, 'snapshot')
+    if before_export['source_exports'] or \
+            exported['archive'] != archive or export_tx is not None or \
+            export_before != after_export or \
+            after_export_observation['source_exports'] != [{
+                'operation_id': export_operation_id,
+                'archive': archive,
+                'source_scope_identity': source_identity,
+                'freeze_native_transaction_id': freeze_tx['native_transaction_id'],
+                'inventory_digest': freeze_payload['inventory_digest'],
+                'storage_identity': str(database)}]:
+        raise ValueError('actual I1 export did not capture this frozen native source')
+    cut_id = (source_fault_cut(command, database, run_id, bridge_identity,
+                               binding, archive, proof) if in_doubt else None)
+    return {'scope_identity': source_identity,
+            'native_instance_identity': source['native_instance_identity'],
+            'storage_identity': str(database),
+            'freeze_native_transaction_id': freeze_tx['native_transaction_id'],
+            'freeze_native_proof_id': freeze_tx['proof_id'],
+            'export_observation_id': export_operation_id,
+            'source_fault_cut': cut_id}
+
+
+def verify_local_source_step(case: dict, before: dict, after: dict,
+                             transaction: dict | None, source_reference: dict,
+                             fixture: dict) -> None:
+    label = case['case_id']
+    operation = case['request']['operation']
+    source_before = source_scope(before, source_reference['scope_identity'])
+    source_after = source_scope(after, source_reference['scope_identity'])
+    if source_before.get('storage_identity') != source_reference['storage_identity'] or \
+            source_after.get('storage_identity') != source_reference['storage_identity'] or \
+            source_before.get('native_instance_identity') != \
+            source_reference['native_instance_identity'] or \
+            source_after.get('native_instance_identity') != \
+            source_reference['native_instance_identity']:
+        raise ValueError(label + ': recovery moved to an unproved source instance or store')
+    freeze = fixture['trusted_transfer_proofs'][0]
+    retained = [entry for entry in before['source_authority_ledger']
+                if type(entry) is dict and
+                entry.get('operation_kind') == 'freeze_scope' and
+                entry.get('scope_identity') == source_reference['scope_identity'] and
+                entry.get('native_transaction_id') ==
+                source_reference['freeze_native_transaction_id'] and
+                entry.get('native_proof_id') == source_reference['freeze_native_proof_id'] and
+                entry.get('freeze_evidence_digest') == freeze['freeze_evidence_digest'] and
+                entry.get('transaction_fate') == 'known_committed']
+    if len(retained) != 1:
+        raise ValueError(label + ': source freeze was not retained before recovery operation')
+    if source_reference['source_fault_cut'] is not None:
+        if label != 'local_in_doubt_source' or operation != 'prepare_transfer' or \
+                case['expected_result']['code'] != 'scope_transaction_in_doubt' or \
+                transaction is not None or after != before:
+            raise ValueError(label + ': unknown source transaction was promoted or changed')
+        return
+    if operation in ('prepare_transfer', 'stage_transfer') and \
+            (source_before.get('state') != 'frozen' or
+             source_after.get('state') != 'frozen'):
+        raise ValueError(label + ': prepare or stage lacks the actual frozen source')
+    if operation == 'prepare_transfer' and case['expected_result']['status'] == 'succeeded':
+        proof = case['expected_transfer_proof']
+        if transaction is None or not any(type(item) is dict and
+                item not in before['authority_ledger'] and
+                all(item.get(key) == value for key, value in {
+                    'scope_identity': source_reference['scope_identity'],
+                    'transfer_proof_digest': proof['proof_digest'],
+                    'source_storage_identity': source_reference['storage_identity'],
+                    'source_native_instance_identity':
+                    source_reference['native_instance_identity'],
+                    'freeze_native_transaction_id':
+                    source_reference['freeze_native_transaction_id'],
+                    'freeze_native_proof_id': source_reference['freeze_native_proof_id'],
+                    'native_transaction_id': transaction['native_transaction_id'],
+                    'native_proof_id': transaction['proof_id'],
+                    'transaction_fate': 'known_committed',
+                }.items()) for item in after['authority_ledger']):
+            raise ValueError(label + ': prepared transfer lacks native source-bound transaction')
+    if operation == 'commit_transfer' and case['expected_result']['status'] == 'succeeded':
+        if transaction is None or source_before.get('state') != 'frozen' or \
+                source_after.get('state') != 'retired' or \
+                not any(type(item) is dict and all(item.get(key) == value for key, value in {
+                    'operation_kind': 'commit_transfer',
+                    'scope_identity': source_reference['scope_identity'],
+                    'native_transaction_id': transaction['native_transaction_id'],
+                    'native_proof_id': transaction['proof_id'],
+                    'freeze_native_transaction_id':
+                    source_reference['freeze_native_transaction_id'],
+                    'source_storage_identity': source_reference['storage_identity'],
+                    'old_writes_fenced': True,
+                    'transaction_fate': 'known_committed',
+                }.items()) for item in after['source_authority_ledger']):
+            raise ValueError(label + ': old owner retirement was not native and atomic')
+        if any(type(claim) is dict and claim.get('scope_identity') ==
+               source_reference['scope_identity'] and claim.get('state') == 'active'
+               for claim in after['source_worker_claims']):
+            raise ValueError(label + ': old source writer survived retirement')
+    elif operation in ('activate_import', 'guarded_action') and \
+            (source_before.get('state') != 'retired' or
+             source_after.get('state') != 'retired'):
+        raise ValueError(label + ': destination action lacks retired source owner')
+    elif case['expected_result']['status'] == 'refused' and after != before:
+        raise ValueError(label + ': refused local operation changed source storage')
+
+
 def run_case(command: list[str], case: dict, fixture: dict,
              *, hosted_binding_digest: str | None = None,
              hosted_authority_token_identity: str | None = None,
              bridge_registration: Path | None = None,
-             expected_bridge_identity: str | None = None) -> None:
+             expected_bridge_identity: str | None = None,
+             hosted_source_plan: dict | None = None,
+             hosted_source_binding: dict | None = None) -> None:
     label = case['case_id']
     bridge_identity = trusted_bridge(command, bridge_registration)
     if expected_bridge_identity is not None and bridge_identity != expected_bridge_identity:
@@ -305,9 +621,23 @@ def run_case(command: list[str], case: dict, fixture: dict,
         initial = {key: [] for key in STATE}
         initial['native_calls'] = {key: 0 for key in CALLS}
         store_call(database, run_id, 'init', initial=initial)
+        local = case.get('configured_profile') == 'proved_local_same_authority'
+        if local and (hosted_source_plan is None or hosted_source_binding is None or
+                      hosted_binding_digest is None):
+            raise ValueError(label + ': actual hosted source lifecycle proof is required')
+        source_reference = (run_hosted_source(
+            command, database, run_id, bridge_identity, hosted_binding_digest,
+            hosted_authority_token_identity,
+            hosted_source_binding['topology_identifier'],
+            hosted_source_binding['provider_content_digest'],
+            hosted_source_binding['configuration_digest'],
+            request['source_archive'], fixture, hosted_source_plan,
+            in_doubt=label == 'local_in_doubt_source') if local else None)
         stage_payload = {key: request[key] for key in
                          ('source_archive', 'stage_archive', 'stage_request', 'stage_configuration')}
-        stage_response, stage_before, stage_after = native_call(
+        if local:
+            stage_payload['source_reference'] = source_reference
+        stage_response, stage_before, stage_after, _ = native_call(
             command, database, run_id, str(uuid.uuid4()), 'archive_stage',
             stage_payload, stage_expected, hosted_binding_digest, bridge_identity)
         stage = {'staging_identity': request['stage_request']['staging_identity'],
@@ -325,9 +655,13 @@ def run_case(command: list[str], case: dict, fixture: dict,
             setup_case = by_request.get(canonical(setup_request))
             if setup_case is None:
                 raise ValueError(label + ': unknown setup recovery request')
-            setup_observed, _, _ = native_call(
+            setup_payload = {'request': setup_request,
+                             'source_archive': request['source_archive']}
+            if local:
+                setup_payload['source_reference'] = source_reference
+            setup_observed, setup_before, setup_after, setup_tx = native_call(
                 command, database, run_id, str(uuid.uuid4()), 'recovery',
-                {'request': setup_request, 'source_archive': request['source_archive']},
+                setup_payload,
                 setup_case['expected_result'], hosted_binding_digest, bridge_identity)
             equal(setup_observed['result'], setup_case['expected_result'],
                   label + ': actual setup response')
@@ -336,9 +670,12 @@ def run_case(command: list[str], case: dict, fixture: dict,
             equal(setup_observed['transfer_proof'],
                   setup_case.get('expected_transfer_proof'),
                   label + ': actual setup transfer proof')
+            if local:
+                verify_local_source_step(setup_case, setup_before, setup_after,
+                                         setup_tx, source_reference, fixture)
         if case.get('terminated_setup_scope'):
             scope = fixture['records']['standalone_inactive']['record']['destination_scope_identity']
-            _, termination_before, termination_after = native_call(
+            _, termination_before, termination_after, _ = native_call(
                 command, database, run_id, str(uuid.uuid4()), 'scope_terminate',
                 {'scope_identity': scope},
                 {'status': 'terminated', 'scope_identity': scope},
@@ -349,10 +686,17 @@ def run_case(command: list[str], case: dict, fixture: dict,
                     scope not in termination_after['scope_allocations']:
                 raise ValueError(label + ': scope termination lost permanent identity allocation')
         expected = case['expected_result']
-        response, before, after = native_call(
+        tested_payload = {'request': request['request'],
+                          'source_archive': request['source_archive']}
+        if local:
+            tested_payload['source_reference'] = source_reference
+        response, before, after, recovery_transaction = native_call(
             command, database, run_id, str(uuid.uuid4()), 'recovery',
-            {'request': request['request'], 'source_archive': request['source_archive']},
+            tested_payload,
             expected, hosted_binding_digest, bridge_identity)
+        if local:
+            verify_local_source_step(case, before, after, recovery_transaction,
+                                     source_reference, fixture)
     equal(response['result'], expected, label + ': result')
     equal(response['record'], case.get('expected_record'), label + ': record')
     equal(response['transfer_proof'], case.get('expected_transfer_proof'),
@@ -436,7 +780,15 @@ def run_case(command: list[str], case: dict, fixture: dict,
                     entry.get('retained_checkpoint_digests') == sorted(
                         item['execution_checkpoint_digest'] for item in request['source_archive']['checkpoints']) and
                     entry.get('required_participant_ids') ==
-                    request['source_archive']['participant_contract']['required_participant_ids']]
+                    request['source_archive']['participant_contract']['required_participant_ids'] and
+                    (source_reference is None or
+                     entry.get('source_storage_identity') == source_reference['storage_identity'] and
+                     entry.get('source_native_instance_identity') ==
+                     source_reference['native_instance_identity'] and
+                     entry.get('freeze_native_transaction_id') ==
+                     source_reference['freeze_native_transaction_id'] and
+                     entry.get('freeze_native_proof_id') ==
+                     source_reference['freeze_native_proof_id'])]
         if not matching or proof['transaction_fate'] != 'known_committed' or not proof['claims_revoked']:
             raise ValueError(label + ': native freeze, retirement or transaction fate unproved')
         if proof['phase'] == 'committed' and (not proof['old_writes_fenced'] or
