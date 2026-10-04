@@ -36,10 +36,10 @@ def strict_json(payload: bytes):
 
 
 def call(command, body, label):
-    completed = subprocess.run(command, input=(json.dumps(body, separators=(",", ":")) + "\n").encode(),
-                               capture_output=True, check=False)
+    completed = subprocess.run(command, input=rfc8785.dumps(body) + b"\n",
+                               capture_output=True, check=False, timeout=120)
     if completed.returncode:
-        raise ValueError(f"{label}: child exited {completed.returncode}: {completed.stderr.decode(errors='replace')}")
+        raise ValueError(f"{label}: child exited {completed.returncode}: {completed.stderr.decode(errors='replace')[:500]}")
     return strict_json(completed.stdout)
 
 
