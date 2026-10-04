@@ -13,12 +13,14 @@ from jsonschema import Draft202012Validator
 from validate_conformance import (
     ValidationFailure,
     load_fixture_document,
+    validate_initial_identity_oracles,
     validate_version1_vectors,
 )
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE_CASE = ROOT / "conformance/core/120-native-v1-definition-package"
 MAILBOX_CASE = ROOT / "conformance/core/117-version1-mailboxes"
+MIGRATION_CASE = ROOT / "conformance/core/122-native-v1-migration-execution"
 
 
 def load(path: Path) -> dict:
@@ -48,6 +50,51 @@ def validate_case(
 
 
 class Version1ValidatorTests(unittest.TestCase):
+    def test_old_initialization_hashes_are_rejected(self) -> None:
+        for name, old_hash, field in (
+            (
+                "75-root-initialization-fault",
+                "sha256:1fd5180e9f39fdc5eeb458f13c58acf9b70e6cad17c41cd0e4144cfa8084e110",
+                "cause",
+            ),
+            (
+                "86-initial-component-completion-order",
+                "sha256:c605f731291ed327389d465ebc0b9881c061919e5888fcc6327637af0996a152",
+                "event",
+            ),
+        ):
+            with self.subTest(name=name):
+                case = ROOT / "conformance/core" / name
+                test = load_fixture_document(case / "test.yaml")
+                if field == "cause":
+                    test["create"]["expect"]["fault"]["cause_id"] = old_hash
+                else:
+                    test["steps"][0]["expect"]["emissions"][0]["event_id"] = old_hash
+                with self.assertRaisesRegex(ValidationFailure, "identit"):
+                    validate_initial_identity_oracles(
+                        case, test, case / "machine.yaml",
+                        f"conformance:{name}:root", f"conformance:{name}:create",
+                    )
+
+    def test_wrong_combined_delivery_digest_is_rejected_with_valid_results(self) -> None:
+        stale_digests = {
+            "migration_then_processing_handled": "sha256:4852e6c0a8c08aaac931556bf767f5d37cf982ca1befa897631c1212a8364a02",
+            "migration_then_processing_unhandled": "sha256:f3ee7378c14aee3d99ce24c933f4d4d95e3dfd9e9fb7bd4ef70d2d45fab688a3",
+            "migration_then_processing_faulted": "sha256:33e8e85e8d9ff1cb4a8ab99284a4097eef6a4697f4a9c7a39a4f0684cb21d0fa",
+            "migration_then_processing_rejected": "sha256:869f263e775656a2bea013bc8473f0075a4835ada36a1d23ba50d94f3b4c5a94",
+        }
+        for name, stale_digest in stale_digests.items():
+            with self.subTest(name=name):
+                requests = load(MIGRATION_CASE / "operation-inputs.json")
+                requests[name]["delivery"]["envelope_digest"] = stale_digest
+                with self.assertRaisesRegex(
+                    ValidationFailure, "combined operation envelope digest"
+                ):
+                    validate_case(
+                        MIGRATION_CASE,
+                        artifact_overrides={"operation-inputs.json": requests},
+                    )
+
     def test_exact_typed_failure_response_binding(self) -> None:
         responses = load(PACKAGE_CASE / "operation-failures.json")
         key = next(iter(responses["responses"]))
