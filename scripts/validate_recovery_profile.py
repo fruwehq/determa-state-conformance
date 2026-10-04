@@ -15,6 +15,26 @@ from validate_portable_archive import (ROOT, canonical, digest, read_json, requi
 CASE = ROOT / 'conformance/profiles/recovery/recovery-01-scope-lifecycle'
 
 
+def validate_owned_definition_closure(archive: dict, machine: Path, nested_machine: Path) -> None:
+    from validate_conformance import validated_bundle_fingerprint, validate_aggregate_against_bundle
+    from generate_version1_vectors import normalized_bundle, typed_value
+    sources = (nested_machine, machine)
+    expected = {validated_bundle_fingerprint(path): typed_value(normalized_bundle(path))
+                for path in sources}
+    attached = {item['validated_bundle_fingerprint']: item['normalized_bundle']
+                for item in archive['normalized_definitions']}
+    require(len(archive['normalized_definitions']) == len(expected) and attached == expected,
+            'real two-root normalized definition closure')
+    for checkpoint, path in zip(archive['checkpoints'], sources):
+        require(checkpoint['root_record']['aggregate_state']['validated_bundle_fingerprint'] ==
+                validated_bundle_fingerprint(path), 'two-root checkpoint machine fingerprint')
+        validate_aggregate_against_bundle(checkpoint['root_record']['aggregate_state'], path)
+    nested = archive['checkpoints'][0]['root_record']['aggregate_state']['runtimes']
+    require(len(nested) == 3 and
+            sum(runtime['relation']['kind'] == 'component' for runtime in nested) == 2,
+            'two real nested component runtimes retained')
+
+
 def validate_profile(spec_root: Path) -> int:
     spec_root = Path(spec_root)
     from generate_recovery_profile import generated
@@ -25,7 +45,7 @@ def validate_profile(spec_root: Path) -> int:
     fixture = read_json(CASE / 'recovery-cases-v1.json')
     manifest = YAML(typ='safe').load((CASE / 'test.yaml').read_text())
     require(set(manifest) == {'title', 'recovery_vectors'} and
-            set(manifest['recovery_vectors']) == {'early', 'cases'}, 'recovery manifest shape')
+            set(manifest['recovery_vectors']) == {'early', 'cases', 'owned'}, 'recovery manifest shape')
     early, cases = fixture['early_cases'], fixture['cases']
     ids = [c['case_id'] for c in [*early, *cases]]
     require(len(ids) == len(set(ids)) and len(ids) == 42, 'unique complete recovery cases')
@@ -136,4 +156,50 @@ def validate_profile(spec_root: Path) -> int:
                 case.get('configured_profile') == 'proved_local_same_authority' and
                 fixture['local_transfer_profile']['safe_relocation'] is True,
                 label + ': unadvertised safe relocation')
-    return len(ids)
+    owned = read_json(CASE / 'recovery-two-root-vectors-v1.json')
+    owned_archive = read_json(CASE / 'recovery-two-root-archive-v1.json')
+    owned_checkpoint = read_json(CASE / 'recovery-owned-checkpoint-v1.json')
+    require(manifest['recovery_vectors']['owned'] == [c['case_id'] for c in owned['cases']] and
+            len(owned['cases']) == 6, 'owned recovery manifest coverage')
+    validate_archive_integrity(owned_archive, validators)
+    require(owned['source_archive_digest'] == owned_archive['archive_digest'] and
+            owned_archive['selection']['root_instance_ids'] ==
+            ['component-migration-root', 'recovery-owned-1'] and
+            owned_archive['checkpoints'][1] == owned_checkpoint and
+            len(owned_checkpoint['root_record']['aggregate_state']['runtimes']) == 2 and
+            any(runtime['relation']['kind'] == 'owned_spawned_instance' and
+                len(runtime['deferred_mailbox']) == 1
+                for runtime in owned_checkpoint['root_record']['aggregate_state']['runtimes']) and
+            len(owned_archive['checkpoints'][0]['root_record']['aggregate_state']['runtimes']) == 3 and
+            len(owned_checkpoint['pending_outbox_intents']) == 1 and
+            owned_checkpoint['pending_outbox_intents'][0]['delivery_state']['status'] == 'ambiguous',
+            'real two-root owned, deferred, nested component and ambiguous effect lifecycle')
+    machine = CASE / 'recovery-owned-machine.yaml'
+    nested_machine = ROOT / 'conformance/profiles/portable-archive/archive-01-complete-snapshot/nested-component-machine.yaml'
+    validate_owned_definition_closure(owned_archive, machine, nested_machine)
+    validate('archive-import-request-v1', owned['stage_request'], 'owned stage request')
+    validate('archive-result-v1', owned['stage_result'], 'owned stage result')
+    require(owned['stage_request']['archive_digest'] == owned_archive['archive_digest'] and
+            owned['stage_result']['archive_digest'] == owned_archive['archive_digest'] and
+            owned_archive['source'] in owned['stage_configuration']['trusted_source_profiles'] and
+            owned_archive['participant_contract'] in owned['stage_configuration']['trusted_participant_contracts'],
+            'owned production stage source and participant policy')
+    for case in owned['cases']:
+        label = case['case_id']
+        validate('recovery-operation-v1', case['request'], label + ': request')
+        validate('recovery-operation-v1', case['expected_result'], label + ': result')
+        require(case['request']['request_digest'] == digest([
+            'determa-recovery-request-1', without(case['request'], 'request_digest')]) and
+            case['expected_result']['request_digest'] == case['request']['request_digest'] and
+            case['expected_result']['source']['archive_digest'] == owned_archive['archive_digest'],
+            label + ': request and source binding')
+        if case['expected_record'] is not None:
+            validate('recovery-record-v1', case['expected_record'], label + ': record')
+            require(case['expected_result']['record_digest'] == digest([
+                'determa-recovery-record-1', case['expected_record']]) and
+                case['expected_record']['retained_checkpoint_digests'] == sorted(
+                    [item['execution_checkpoint_digest'] for item in owned_archive['checkpoints']]) and
+                case['expected_record']['work'][0]['work_identity'] ==
+                owned_checkpoint['pending_outbox_intents'][0]['intent']['effect_id'],
+                label + ': complete record and inherited ambiguous work')
+    return len(ids) + len(owned['cases'])

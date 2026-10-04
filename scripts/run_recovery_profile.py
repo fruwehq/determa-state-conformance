@@ -31,8 +31,11 @@ def equal(actual, expected, label: str) -> None:
 
 def input_for(case: dict, fixture: dict) -> dict:
     local = case.get('configured_profile') == 'proved_local_same_authority'
-    archive = read_json(CASE / 'archive-local-transfer-v1.json') if local else read_json(
+    owned = case.get('archive_kind') == 'owned'
+    archive = read_json(CASE / 'recovery-two-root-archive-v1.json') if owned else (
+        read_json(CASE / 'archive-local-transfer-v1.json') if local else read_json(
         ROOT / 'conformance/profiles/portable-archive/archive-01-complete-snapshot/archive-v1.json')
+    )
     stage_fixture = read_json(ROOT /
         'conformance/profiles/portable-archive/archive-01-complete-snapshot/stage-cases-v1.json')
     ordinary_stage = next(item for item in stage_fixture['cases']
@@ -73,21 +76,19 @@ def input_for(case: dict, fixture: dict) -> dict:
     result = {
         'request': case.get('request', case.get('input')),
         'source_archive': archive,
-        'stage_receipt': fixture['local_transfer_stage_result'] if local else fixture['stage_receipt'],
-        'stage_request': fixture['local_transfer_stage_request'] if local else ordinary_stage['input_request'],
-        'stage_configuration': fixture['local_transfer_stage_configuration'] if local else ordinary_stage['configured_import'],
+        'stage_receipt': fixture['owned_stage_result'] if owned else (
+            fixture['local_transfer_stage_result'] if local else fixture['stage_receipt']),
+        'stage_request': fixture['owned_stage_request'] if owned else (
+            fixture['local_transfer_stage_request'] if local else ordinary_stage['input_request']),
+        'stage_configuration': fixture['owned_stage_configuration'] if owned else (
+            fixture['local_transfer_stage_configuration'] if local else ordinary_stage['configured_import']),
         'setup_requests': [by_id[name]['request'] for name in setup_names],
-        'configured_profile': fixture['local_transfer_profile'] if local else None,
-        'trusted_freeze_result': fixture['trusted_freeze_result'] if local else None,
-        'trusted_transfer_proofs': fixture['trusted_transfer_proofs'] if local else [],
-        'in_doubt_source_transaction': fixture['in_doubt_source_transaction'] if local else None,
-        'trusted_clone_isolation_evidence': fixture['trusted_clone_isolation_evidence'],
-        'clone_cancellation_evidence': fixture['clone_cancellation_evidence'],
     }
     return result
 
 
-def run_case(command: list[str], case: dict, fixture: dict) -> None:
+def run_case(command: list[str], case: dict, fixture: dict,
+             *, hosted_binding_digest: str | None = None) -> None:
     label = case['case_id']
     request = input_for(case, fixture)
     completed = subprocess.run(command, input=canonical(request), capture_output=True,
@@ -96,10 +97,15 @@ def run_case(command: list[str], case: dict, fixture: dict) -> None:
         raise ValueError(f'{label}: adapter exited {completed.returncode}: '
                          f'{completed.stderr.decode("utf-8", "replace")[:500]}')
     response = parse_json_bytes(completed.stdout, label + ': adapter response')
-    if set(response) != {'result', 'record', 'transfer_proof', 'before', 'after',
+    fields = {'result', 'record', 'transfer_proof', 'before', 'after',
                          'calls', 'caller_response_kind', 'caller_response_body',
-                         'mutation_paths', 'setup_responses'}:
+                         'mutation_paths', 'setup_responses'}
+    if hosted_binding_digest is not None:
+        fields.add('configured_binding_digest')
+    if set(response) != fields:
         raise ValueError(label + ': incomplete production response')
+    if hosted_binding_digest is not None and response['configured_binding_digest'] != hosted_binding_digest:
+        raise ValueError(label + ': production response uses a different configured installation')
     setup = response['setup_responses']
     if not isinstance(setup, list) or len(setup) != len(request['setup_requests']):
         raise ValueError(label + ': incomplete production setup responses')
@@ -150,6 +156,36 @@ def run_case(command: list[str], case: dict, fixture: dict) -> None:
             raise ValueError(label + ': complete record absent from observed durable storage')
         if not actual_paths:
             raise ValueError(label + ': successful mutation has no observed storage change')
+    proof = case.get('expected_transfer_proof')
+    if proof is not None:
+        if case['request']['operation'] in ('prepare_transfer', 'commit_transfer') and \
+                proof in before['transfer_proofs']:
+            raise ValueError(label + ': transfer proof existed before its native commit')
+        if proof not in after['transfer_proofs']:
+            raise ValueError(label + ': complete local transfer proof absent from guarded ledger')
+        matching = [entry for entry in after['authority_ledger']
+                    if isinstance(entry, dict) and entry.get('scope_identity') == proof['scope_identity'] and
+                    entry.get('authority_epoch') == proof['source_authority_epoch'] and
+                    entry.get('scope_generation') == proof['source_scope_generation'] and
+                    entry.get('state') == proof['source_state'] and
+                    entry.get('source_binding_digest') == proof['source_binding_digest'] and
+                    entry.get('transaction_fate') == 'known_committed' and
+                    entry.get('retained_checkpoint_digests') == sorted(
+                        item['execution_checkpoint_digest'] for item in request['source_archive']['checkpoints']) and
+                    entry.get('required_participant_ids') ==
+                    request['source_archive']['participant_contract']['required_participant_ids']]
+        if not matching or proof['transaction_fate'] != 'known_committed' or not proof['claims_revoked']:
+            raise ValueError(label + ': native freeze, retirement or transaction fate unproved')
+        if proof['phase'] == 'committed' and (not proof['old_writes_fenced'] or
+                                            proof['grant_state'] != 'consumed'):
+            raise ValueError(label + ': stale writes or transfer grant remain live')
+    if expected['safe_relocation']:
+        for checkpoint in request['source_archive']['checkpoints']:
+            if checkpoint not in after['checkpoints']:
+                raise ValueError(label + ': destination omitted a complete checkpoint')
+        for participant in request['source_archive']['participants']:
+            if participant not in after['participants']:
+                raise ValueError(label + ': destination omitted a required participant')
     if expected['safe_relocation'] and not case.get('configured_profile') == 'proved_local_same_authority':
         raise ValueError(label + ': unproved topology claimed safe relocation')
 
@@ -164,6 +200,11 @@ def main() -> int:
         parser.error('production adapter command required after --')
     validate_profile(args.spec_root)
     fixture = read_json(CASE / 'recovery-cases-v1.json')
+    owned = read_json(CASE / 'recovery-two-root-vectors-v1.json')
+    fixture['cases'] += owned['cases']
+    fixture['owned_stage_request'] = owned['stage_request']
+    fixture['owned_stage_configuration'] = owned['stage_configuration']
+    fixture['owned_stage_result'] = owned['stage_result']
     standalone = [case for case in fixture['cases']
                   if case.get('configured_profile') != 'proved_local_same_authority']
     for case in [*fixture['early_cases'], *standalone]:

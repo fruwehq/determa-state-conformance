@@ -1,0 +1,3311 @@
+{
+  "archive_format": "determa.scope_archive",
+  "archive_schema_version": 1,
+  "source": {
+    "profile_kind": "checkpoint_host",
+    "profile_claims": [
+      "durable_embedded_processing"
+    ],
+    "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+    "logical_scope_identity": "scope-archive-example",
+    "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+    "scope_generation": "7"
+  },
+  "participant_contract": {
+    "required_participant_ids": [
+      "helper-state"
+    ],
+    "optional_participant_ids": [],
+    "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448"
+  },
+  "selection": {
+    "root_instance_ids": [
+      "component-migration-root",
+      "recovery-owned-1"
+    ],
+    "consistency_token": "recovery-owned-capture-1"
+  },
+  "checkpoints": [
+    {
+      "execution_checkpoint_format": "determa.execution_checkpoint",
+      "execution_checkpoint_schema_version": 1,
+      "root_instance_id": "component-migration-root",
+      "revision": "0",
+      "root_record": {
+        "status": "retained",
+        "aggregate_state": {
+          "aggregate_state_digest": "sha256:44270ce2fd55b6cc0cef75d8cb355ca006fb2f1c5a54ed7742ce65b9561894fb",
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "creation_id": "component-migration-create",
+          "machine_format": 1,
+          "migration_sequence": "0",
+          "namespace": "conformance.case_09_parallel_components",
+          "next_acceptance_sequence": "5",
+          "next_logical_step_sequence": "3",
+          "next_output_sequence": "0",
+          "next_queue_sequence": "5",
+          "root_instance_id": "component-migration-root",
+          "root_machine_id": "parallel_components",
+          "root_machine_version": "1",
+          "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+          "runtimes": [
+            {
+              "active_leaf_state_definition_pointers": [],
+              "active_state_activations": [],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "activation_sequence": "0",
+                "component_definition_pointer": "/machines/0/root/states/processing/components/0",
+                "declaration_index": "0",
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/complete",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "activation_sequence": "0",
+                "component_id": "left",
+                "current_component_definition_pointer": "/machines/0/root/states/processing/components/0",
+                "declaration_index": "0",
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+              "status": "completed",
+              "target_identity": {
+                "component": {
+                  "activation_sequence": "0",
+                  "component_id": "left",
+                  "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                  "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                  "root_instance_id": "component-migration-root"
+                }
+              },
+              "variables": []
+            },
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/processing/components/1/root/states/running"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "activation_sequence": "0",
+                "component_definition_pointer": "/machines/0/root/states/processing/components/1",
+                "declaration_index": "1",
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "activation_sequence": "0",
+                "component_id": "right",
+                "current_component_definition_pointer": "/machines/0/root/states/processing/components/1",
+                "declaration_index": "1",
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+              "status": "running",
+              "target_identity": {
+                "component": {
+                  "activation_sequence": "0",
+                  "component_id": "right",
+                  "component_runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+                  "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                  "root_instance_id": "component-migration-root"
+                }
+              },
+              "variables": [
+                {
+                  "declaring_state_activation_sequence": "0",
+                  "value": [
+                    "list",
+                    []
+                  ],
+                  "variable_declaration_pointer": "/machines/0/root/states/processing/components/1/root/variables/trace"
+                }
+              ]
+            },
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/processing"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "root",
+                "root_instance_id": "component-migration-root"
+              },
+              "next_component_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "kind": "root"
+              },
+              "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+              "status": "running",
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "component-migration-root",
+                  "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                }
+              },
+              "variables": []
+            }
+          ],
+          "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+        }
+      },
+      "replay_retention": {
+        "mode": "permanent",
+        "permanent_replay_eligible": true,
+        "pruned_through_receipt_sequence": null,
+        "policy_identifier": null
+      },
+      "next_operation_receipt_sequence": "1",
+      "operation_receipts": [
+        {
+          "operation_kind": "creation",
+          "receipt_sequence": "0",
+          "creation_id": "component-migration-create",
+          "request_digest": "sha256:780729e9a3b39f47242cad556361fd2ee6d32dd865fa47a35ba016a867d0431d",
+          "committed_revision": "0",
+          "resulting_aggregate_state_digest": "sha256:44270ce2fd55b6cc0cef75d8cb355ca006fb2f1c5a54ed7742ce65b9561894fb",
+          "status": "running",
+          "fault": null,
+          "emission_references": []
+        }
+      ],
+      "event_identity_tombstones": [],
+      "pending_outbox_intents": [],
+      "next_outbox_terminal_sequence": "0",
+      "terminal_outbox_records": [],
+      "outbox_effect_tombstones": [],
+      "migration_audit_records": [],
+      "execution_checkpoint_digest": "sha256:c55258b1e1c3a53d5b65fa1b437487867a15e11133fce111084f9126ba47154a"
+    },
+    {
+      "execution_checkpoint_format": "determa.execution_checkpoint",
+      "execution_checkpoint_schema_version": 1,
+      "root_instance_id": "recovery-owned-1",
+      "revision": "6",
+      "root_record": {
+        "status": "retained",
+        "aggregate_state": {
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "machine_format": 1,
+          "validated_bundle_fingerprint": "sha256:370741b6ffe7db327d35d05513ca8ffb6f8f62dcd835281887ed62bd8845f8f6",
+          "namespace": "conformance.case_29_owned_spawn",
+          "root_machine_id": "order",
+          "root_machine_version": "1",
+          "root_instance_id": "recovery-owned-1",
+          "creation_id": "recovery-owned-create",
+          "root_runtime_id": "sha256:1ae27ab03350b43d26a7d81a657b2198160ff24df50957d81d22fa6f1226523c",
+          "migration_sequence": "0",
+          "next_logical_step_sequence": "4",
+          "next_output_sequence": "1",
+          "next_acceptance_sequence": "3",
+          "next_queue_sequence": "4",
+          "runtimes": [
+            {
+              "runtime_id": "sha256:1ae27ab03350b43d26a7d81a657b2198160ff24df50957d81d22fa6f1226523c",
+              "identity_origin": {
+                "kind": "root",
+                "definition": {
+                  "validated_bundle_fingerprint": "sha256:370741b6ffe7db327d35d05513ca8ffb6f8f62dcd835281887ed62bd8845f8f6",
+                  "machine": {
+                    "namespace": "conformance.case_29_owned_spawn",
+                    "machine_id": "order",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "root_instance_id": "recovery-owned-1"
+              },
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "recovery-owned-1",
+                  "root_runtime_id": "sha256:1ae27ab03350b43d26a7d81a657b2198160ff24df50957d81d22fa6f1226523c"
+                }
+              },
+              "current_definition": {
+                "validated_bundle_fingerprint": "sha256:370741b6ffe7db327d35d05513ca8ffb6f8f62dcd835281887ed62bd8845f8f6",
+                "machine": {
+                  "namespace": "conformance.case_29_owned_spawn",
+                  "machine_id": "order",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/0/root"
+                }
+              },
+              "relation": {
+                "kind": "root"
+              },
+              "status": "running",
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/checkout"
+              ],
+              "active_state_activations": [
+                {
+                  "state_definition_pointer": "/machines/0/root",
+                  "activation_sequence": "0"
+                },
+                {
+                  "state_definition_pointer": "/machines/0/root/states/checkout",
+                  "activation_sequence": "0"
+                }
+              ],
+              "variables": [
+                {
+                  "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+                  "declaring_state_activation_sequence": "0",
+                  "value": [
+                    "map",
+                    [
+                      [
+                        "instance_id",
+                        [
+                          "string",
+                          "sha256:36e3624d25bb6270a8268ad04bd8595384a8adfdc03bf282b3bd3ad4d844bedd"
+                        ]
+                      ],
+                      [
+                        "machine_id",
+                        [
+                          "string",
+                          "payment"
+                        ]
+                      ],
+                      [
+                        "machine_version",
+                        [
+                          "integer",
+                          "1"
+                        ]
+                      ],
+                      [
+                        "root_instance_id",
+                        [
+                          "string",
+                          "recovery-owned-1"
+                        ]
+                      ]
+                    ]
+                  ]
+                },
+                {
+                  "variable_declaration_pointer": "/machines/0/root/variables/total",
+                  "declaring_state_activation_sequence": "0",
+                  "value": [
+                    "integer",
+                    "100"
+                  ]
+                }
+              ],
+              "history": [],
+              "next_spawn_sequence": "1",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/checkout",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/idle",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_component_activation_sequences": [],
+              "fault": null,
+              "ready_mailbox": [],
+              "deferred_mailbox": []
+            },
+            {
+              "runtime_id": "sha256:36e3624d25bb6270a8268ad04bd8595384a8adfdc03bf282b3bd3ad4d844bedd",
+              "identity_origin": {
+                "kind": "owned_spawned_instance",
+                "definition": {
+                  "validated_bundle_fingerprint": "sha256:370741b6ffe7db327d35d05513ca8ffb6f8f62dcd835281887ed62bd8845f8f6",
+                  "machine": {
+                    "namespace": "conformance.case_29_owned_spawn",
+                    "machine_id": "payment",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/1/root"
+                  }
+                },
+                "owner_runtime_id": "sha256:1ae27ab03350b43d26a7d81a657b2198160ff24df50957d81d22fa6f1226523c",
+                "spawn_action_pointer": "/machines/0/root/states/idle/on_events/start/action/0/spawn",
+                "spawn_sequence": "0"
+              },
+              "target_identity": {
+                "spawned_instance": {
+                  "root_instance_id": "recovery-owned-1",
+                  "instance_id": "sha256:36e3624d25bb6270a8268ad04bd8595384a8adfdc03bf282b3bd3ad4d844bedd",
+                  "machine_id": "payment",
+                  "machine_version": "1"
+                }
+              },
+              "current_definition": {
+                "validated_bundle_fingerprint": "sha256:370741b6ffe7db327d35d05513ca8ffb6f8f62dcd835281887ed62bd8845f8f6",
+                "machine": {
+                  "namespace": "conformance.case_29_owned_spawn",
+                  "machine_id": "payment",
+                  "machine_version": "1",
+                  "root_definition_pointer": "/machines/1/root"
+                }
+              },
+              "relation": {
+                "kind": "owned_spawned_instance",
+                "owner_runtime_id": "sha256:1ae27ab03350b43d26a7d81a657b2198160ff24df50957d81d22fa6f1226523c",
+                "current_spawn_action_pointer": "/machines/0/root/states/idle/on_events/start/action/0/spawn",
+                "spawn_sequence": "0",
+                "lifetime_holder": {
+                  "holder_runtime_id": "sha256:1ae27ab03350b43d26a7d81a657b2198160ff24df50957d81d22fa6f1226523c",
+                  "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+                  "holder_state_activation_sequence": "0"
+                }
+              },
+              "status": "running",
+              "active_leaf_state_definition_pointers": [
+                "/machines/1/root/states/awaiting"
+              ],
+              "active_state_activations": [
+                {
+                  "state_definition_pointer": "/machines/1/root",
+                  "activation_sequence": "0"
+                },
+                {
+                  "state_definition_pointer": "/machines/1/root/states/awaiting",
+                  "activation_sequence": "0"
+                }
+              ],
+              "variables": [
+                {
+                  "variable_declaration_pointer": "/machines/1/root/variables/due",
+                  "declaring_state_activation_sequence": "0",
+                  "value": [
+                    "integer",
+                    "100"
+                  ]
+                },
+                {
+                  "variable_declaration_pointer": "/machines/1/root/variables/paid",
+                  "declaring_state_activation_sequence": "0",
+                  "value": [
+                    "integer",
+                    "0"
+                  ]
+                }
+              ],
+              "history": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/1/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/1/root/states/awaiting",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_component_activation_sequences": [],
+              "fault": null,
+              "ready_mailbox": [],
+              "deferred_mailbox": [
+                {
+                  "envelope": {
+                    "event": "hold",
+                    "event_id": "recovery-owned-hold",
+                    "cause_id": "recovery-owned-hold",
+                    "source": {
+                      "host": true
+                    },
+                    "target": {
+                      "spawned_instance": {
+                        "root_instance_id": "recovery-owned-1",
+                        "instance_id": "sha256:36e3624d25bb6270a8268ad04bd8595384a8adfdc03bf282b3bd3ad4d844bedd",
+                        "machine_id": "payment",
+                        "machine_version": "1"
+                      }
+                    },
+                    "payload": [
+                      "map",
+                      []
+                    ]
+                  },
+                  "envelope_digest": "sha256:34329cc3c1ab539d7a57a0b0f0d83f1e8f91882faba861ed2c47189dadcd28fe",
+                  "delivery_mode": "input",
+                  "acceptance_sequence": "2",
+                  "queue_sequence": "3",
+                  "deferral_count": "1"
+                }
+              ]
+            }
+          ],
+          "aggregate_state_digest": "sha256:09dad63c5f694e7122f0f0c95ffec3d2a2ff1980673c7cf45161087c38928ae5"
+        }
+      },
+      "operation_receipts": [
+        {
+          "operation_kind": "creation",
+          "receipt_sequence": "0",
+          "creation_id": "recovery-owned-create",
+          "request_digest": "sha256:ab5153bf4c3abc053990d64517f487a0b7e1f0566408b27d64ace39521b6f091",
+          "committed_revision": "0",
+          "resulting_aggregate_state_digest": "sha256:45ffe384f80023429848c7caa507cc25c8053fb894f6478a7ba5b53e503b31e1",
+          "status": "running",
+          "fault": null,
+          "emission_references": []
+        },
+        {
+          "operation_kind": "acceptance",
+          "receipt_sequence": "1",
+          "event_id": "recovery-owned-start",
+          "request_digest": "sha256:0956e3a9d98ec1f9b42e8e6223ede31e8101f088180b6e7368a1baafbc3868d6",
+          "acceptance_sequence": "0",
+          "accepted_revision": "1",
+          "delivery_mode": "input"
+        },
+        {
+          "operation_kind": "event_terminal",
+          "receipt_sequence": "2",
+          "event_id": "recovery-owned-start",
+          "request_digest": "sha256:0956e3a9d98ec1f9b42e8e6223ede31e8101f088180b6e7368a1baafbc3868d6",
+          "acceptance_sequence": "0",
+          "final_queue_sequence": "0",
+          "committed_revision": "2",
+          "resulting_aggregate_state_digest": "sha256:09e5bf67cfab0a517c3ff63d178ff739580364957bf6793f55c49f71205d2823",
+          "outcome": {
+            "disposition": "handled",
+            "status": "running",
+            "fault": null,
+            "rejection": null
+          },
+          "emission_references": []
+        },
+        {
+          "operation_kind": "acceptance",
+          "receipt_sequence": "3",
+          "event_id": "recovery-owned-invoke",
+          "request_digest": "sha256:c3b25dde3f3392c654409fe6e000e78cdfdbbd659cb1e8e8bf5a6b303e7721e9",
+          "acceptance_sequence": "1",
+          "accepted_revision": "3",
+          "delivery_mode": "input"
+        },
+        {
+          "operation_kind": "event_terminal",
+          "receipt_sequence": "4",
+          "event_id": "recovery-owned-invoke",
+          "request_digest": "sha256:c3b25dde3f3392c654409fe6e000e78cdfdbbd659cb1e8e8bf5a6b303e7721e9",
+          "acceptance_sequence": "1",
+          "final_queue_sequence": "1",
+          "committed_revision": "4",
+          "resulting_aggregate_state_digest": "sha256:daee9115319532a79e16708045a5e521f1a08894d635274319717d172470613c",
+          "outcome": {
+            "disposition": "handled",
+            "status": "running",
+            "fault": null,
+            "rejection": null
+          },
+          "emission_references": [
+            {
+              "kind": "external_outbox",
+              "emission_index": "0",
+              "effect_id": "sha256:964d7f41fc59363fdb4ff1748cb6782a84f994cdf637bce27a334a73500bdb8c"
+            }
+          ]
+        },
+        {
+          "operation_kind": "acceptance",
+          "receipt_sequence": "5",
+          "event_id": "recovery-owned-hold",
+          "request_digest": "sha256:34329cc3c1ab539d7a57a0b0f0d83f1e8f91882faba861ed2c47189dadcd28fe",
+          "acceptance_sequence": "2",
+          "accepted_revision": "5",
+          "delivery_mode": "input"
+        }
+      ],
+      "next_operation_receipt_sequence": "6",
+      "replay_retention": {
+        "mode": "permanent",
+        "permanent_replay_eligible": true,
+        "pruned_through_receipt_sequence": null,
+        "policy_identifier": null
+      },
+      "event_identity_tombstones": [],
+      "pending_outbox_intents": [
+        {
+          "intent": {
+            "effect_id": "sha256:964d7f41fc59363fdb4ff1748cb6782a84f994cdf637bce27a334a73500bdb8c",
+            "sequence": "0",
+            "event": "native_request",
+            "payload": [
+              "map",
+              [
+                [
+                  "index",
+                  [
+                    "integer",
+                    "0"
+                  ]
+                ]
+              ]
+            ],
+            "correlation_id": "recovery-token"
+          },
+          "state_revision": "4",
+          "delivery_state": {
+            "status": "ambiguous",
+            "reason_code": "unknown_confirmation"
+          }
+        }
+      ],
+      "next_outbox_terminal_sequence": "0",
+      "terminal_outbox_records": [],
+      "outbox_effect_tombstones": [],
+      "migration_audit_records": [],
+      "execution_checkpoint_digest": "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166"
+    }
+  ],
+  "normalized_definitions": [
+    {
+      "validated_bundle_fingerprint": "sha256:370741b6ffe7db327d35d05513ca8ffb6f8f62dcd835281887ed62bd8845f8f6",
+      "normalized_bundle": [
+        "map",
+        [
+          [
+            "events",
+            [
+              "map",
+              [
+                [
+                  "hold",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "invoke",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ],
+                      [
+                        "payload",
+                        [
+                          "map",
+                          [
+                            [
+                              "operation_token",
+                              [
+                                "map",
+                                [
+                                  [
+                                    "required",
+                                    [
+                                      "boolean",
+                                      true
+                                    ]
+                                  ],
+                                  [
+                                    "type",
+                                    [
+                                      "string",
+                                      "string"
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "native_request",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "output"
+                        ]
+                      ],
+                      [
+                        "payload",
+                        [
+                          "map",
+                          [
+                            [
+                              "index",
+                              [
+                                "map",
+                                [
+                                  [
+                                    "required",
+                                    [
+                                      "boolean",
+                                      true
+                                    ]
+                                  ],
+                                  [
+                                    "type",
+                                    [
+                                      "string",
+                                      "int"
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "pay",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ],
+                      [
+                        "payload",
+                        [
+                          "map",
+                          [
+                            [
+                              "amount",
+                              [
+                                "map",
+                                [
+                                  [
+                                    "required",
+                                    [
+                                      "boolean",
+                                      true
+                                    ]
+                                  ],
+                                  [
+                                    "type",
+                                    [
+                                      "string",
+                                      "int"
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "start",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "format",
+            [
+              "integer",
+              "1"
+            ]
+          ],
+          [
+            "machines",
+            [
+              "list",
+              [
+                [
+                  "map",
+                  [
+                    [
+                      "languages",
+                      [
+                        "map",
+                        [
+                          [
+                            "action",
+                            [
+                              "string",
+                              "determa"
+                            ]
+                          ],
+                          [
+                            "guard",
+                            [
+                              "string",
+                              "cel"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "machine_id",
+                      [
+                        "string",
+                        "order"
+                      ]
+                    ],
+                    [
+                      "root",
+                      [
+                        "map",
+                        [
+                          [
+                            "history",
+                            [
+                              "string",
+                              "none"
+                            ]
+                          ],
+                          [
+                            "initial",
+                            [
+                              "map",
+                              [
+                                [
+                                  "transition_to",
+                                  [
+                                    "string",
+                                    "idle"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "on_events",
+                            [
+                              "map",
+                              [
+                                [
+                                  "invoke",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "action",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "send",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "correlation_id",
+                                                        [
+                                                          "string",
+                                                          "event.payload.operation_token"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "event",
+                                                        [
+                                                          "string",
+                                                          "native_request"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "payload",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "index",
+                                                              [
+                                                                "string",
+                                                                "0"
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "to",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "external",
+                                                              [
+                                                                "boolean",
+                                                                true
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "lang",
+                                        [
+                                          "string",
+                                          "cel"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "states",
+                            [
+                              "map",
+                              [
+                                [
+                                  "checkout",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "done",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "paid"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "simple"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "idle",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "start",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "action",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "spawn",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "bind_to",
+                                                                    [
+                                                                      "string",
+                                                                      "payment_reference"
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "bindings",
+                                                                    [
+                                                                      "map",
+                                                                      [
+                                                                        [
+                                                                          "input",
+                                                                          [
+                                                                            "map",
+                                                                            [
+                                                                              [
+                                                                                "due",
+                                                                                [
+                                                                                  "string",
+                                                                                  "total"
+                                                                                ]
+                                                                              ]
+                                                                            ]
+                                                                          ]
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "machine_id",
+                                                                    [
+                                                                      "string",
+                                                                      "payment"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "checkout"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "simple"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "paid",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "simple"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "type",
+                            [
+                              "string",
+                              "composite"
+                            ]
+                          ],
+                          [
+                            "variables",
+                            [
+                              "map",
+                              [
+                                [
+                                  "payment_reference",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "init",
+                                        [
+                                          "null"
+                                        ]
+                                      ],
+                                      [
+                                        "machine_id",
+                                        [
+                                          "string",
+                                          "payment"
+                                        ]
+                                      ],
+                                      [
+                                        "nullable",
+                                        [
+                                          "boolean",
+                                          true
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "instance_reference"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "total",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "external",
+                                        [
+                                          "boolean",
+                                          false
+                                        ]
+                                      ],
+                                      [
+                                        "init",
+                                        [
+                                          "integer",
+                                          "100"
+                                        ]
+                                      ],
+                                      [
+                                        "input",
+                                        [
+                                          "boolean",
+                                          false
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "int"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "version",
+                      [
+                        "integer",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "map",
+                  [
+                    [
+                      "languages",
+                      [
+                        "map",
+                        [
+                          [
+                            "action",
+                            [
+                              "string",
+                              "determa"
+                            ]
+                          ],
+                          [
+                            "guard",
+                            [
+                              "string",
+                              "cel"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "machine_id",
+                      [
+                        "string",
+                        "payment"
+                      ]
+                    ],
+                    [
+                      "root",
+                      [
+                        "map",
+                        [
+                          [
+                            "deferred_event_capacity",
+                            [
+                              "integer",
+                              "16"
+                            ]
+                          ],
+                          [
+                            "history",
+                            [
+                              "string",
+                              "none"
+                            ]
+                          ],
+                          [
+                            "initial",
+                            [
+                              "map",
+                              [
+                                [
+                                  "transition_to",
+                                  [
+                                    "string",
+                                    "awaiting"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "states",
+                            [
+                              "map",
+                              [
+                                [
+                                  "awaiting",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "deferred_events",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "string",
+                                              "hold"
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "pay",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "action",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "assign",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "paid",
+                                                                    [
+                                                                      "string",
+                                                                      "event.payload.amount"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "guard",
+                                                    [
+                                                      "string",
+                                                      "event.payload.amount >= due"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "settled"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "simple"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "settled",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "final"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "type",
+                            [
+                              "string",
+                              "composite"
+                            ]
+                          ],
+                          [
+                            "variables",
+                            [
+                              "map",
+                              [
+                                [
+                                  "due",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "external",
+                                        [
+                                          "boolean",
+                                          false
+                                        ]
+                                      ],
+                                      [
+                                        "input",
+                                        [
+                                          "boolean",
+                                          true
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "int"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "paid",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "external",
+                                        [
+                                          "boolean",
+                                          false
+                                        ]
+                                      ],
+                                      [
+                                        "init",
+                                        [
+                                          "integer",
+                                          "0"
+                                        ]
+                                      ],
+                                      [
+                                        "input",
+                                        [
+                                          "boolean",
+                                          false
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "int"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "version",
+                      [
+                        "integer",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "namespace",
+            [
+              "string",
+              "conformance.case_29_owned_spawn"
+            ]
+          ]
+        ]
+      ]
+    },
+    {
+      "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6",
+      "normalized_bundle": [
+        "map",
+        [
+          [
+            "events",
+            [
+              "map",
+              [
+                [
+                  "aggregate_finish",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "cancel_after_send",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "cleanup_rollback",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "component_finish",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "internal"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "component_work",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "internal"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "enter_cleanup",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "enter_faulty",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "fanout",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "finish_left",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ],
+                [
+                  "finish_right",
+                  [
+                    "map",
+                    [
+                      [
+                        "direction",
+                        [
+                          "string",
+                          "input"
+                        ]
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "format",
+            [
+              "integer",
+              "1"
+            ]
+          ],
+          [
+            "machines",
+            [
+              "list",
+              [
+                [
+                  "map",
+                  [
+                    [
+                      "languages",
+                      [
+                        "map",
+                        [
+                          [
+                            "action",
+                            [
+                              "string",
+                              "determa"
+                            ]
+                          ],
+                          [
+                            "guard",
+                            [
+                              "string",
+                              "cel"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "machine_id",
+                      [
+                        "string",
+                        "parallel_components"
+                      ]
+                    ],
+                    [
+                      "root",
+                      [
+                        "map",
+                        [
+                          [
+                            "history",
+                            [
+                              "string",
+                              "none"
+                            ]
+                          ],
+                          [
+                            "initial",
+                            [
+                              "map",
+                              [
+                                [
+                                  "transition_to",
+                                  [
+                                    "string",
+                                    "processing"
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "on_events",
+                            [
+                              "map",
+                              [
+                                [
+                                  "aggregate_finish",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "action",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "send",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "event",
+                                                        [
+                                                          "string",
+                                                          "component_work"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "to",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "self",
+                                                              [
+                                                                "boolean",
+                                                                true
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "stop",
+                                                  [
+                                                    "map",
+                                                    []
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "lang",
+                                        [
+                                          "string",
+                                          "cel"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "enter_cleanup",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "lang",
+                                        [
+                                          "string",
+                                          "cel"
+                                        ]
+                                      ],
+                                      [
+                                        "transition_to",
+                                        [
+                                          "string",
+                                          "cleanup_failed"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "enter_faulty",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "lang",
+                                        [
+                                          "string",
+                                          "cel"
+                                        ]
+                                      ],
+                                      [
+                                        "transition_to",
+                                        [
+                                          "string",
+                                          "faulty_processing"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "states",
+                            [
+                              "map",
+                              [
+                                [
+                                  "cleanup_failed",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "components",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "component_id",
+                                                  [
+                                                    "string",
+                                                    "retained"
+                                                  ]
+                                                ],
+                                                [
+                                                  "root",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "type",
+                                                        [
+                                                          "string",
+                                                          "simple"
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "component_id",
+                                                  [
+                                                    "string",
+                                                    "retained_peer"
+                                                  ]
+                                                ],
+                                                [
+                                                  "root",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "type",
+                                                        [
+                                                          "string",
+                                                          "simple"
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "exit",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "assign",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "cleanup_marker",
+                                                        [
+                                                          "string",
+                                                          "1 / 0"
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "cleanup_rollback",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "action",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "send",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "event",
+                                                                    [
+                                                                      "string",
+                                                                      "component_work"
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "to",
+                                                                    [
+                                                                      "map",
+                                                                      [
+                                                                        [
+                                                                          "component",
+                                                                          [
+                                                                            "string",
+                                                                            "retained"
+                                                                          ]
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "finished"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "parallel"
+                                        ]
+                                      ],
+                                      [
+                                        "variables",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "cleanup_marker",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "external",
+                                                    [
+                                                      "boolean",
+                                                      false
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "init",
+                                                    [
+                                                      "integer",
+                                                      "0"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "input",
+                                                    [
+                                                      "boolean",
+                                                      false
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "type",
+                                                    [
+                                                      "string",
+                                                      "int"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "faulty_processing",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "components",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "component_id",
+                                                  [
+                                                    "string",
+                                                    "faulty"
+                                                  ]
+                                                ],
+                                                [
+                                                  "root",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "entry",
+                                                        [
+                                                          "list",
+                                                          [
+                                                            [
+                                                              "map",
+                                                              [
+                                                                [
+                                                                  "assign",
+                                                                  [
+                                                                    "map",
+                                                                    [
+                                                                      [
+                                                                        "count",
+                                                                        [
+                                                                          "string",
+                                                                          "count % 0"
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "type",
+                                                        [
+                                                          "string",
+                                                          "simple"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "variables",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "count",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "external",
+                                                                    [
+                                                                      "boolean",
+                                                                      false
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "init",
+                                                                    [
+                                                                      "integer",
+                                                                      "0"
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "input",
+                                                                    [
+                                                                      "boolean",
+                                                                      false
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "type",
+                                                                    [
+                                                                      "string",
+                                                                      "int"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "component_id",
+                                                  [
+                                                    "string",
+                                                    "observer"
+                                                  ]
+                                                ],
+                                                [
+                                                  "root",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "type",
+                                                        [
+                                                          "string",
+                                                          "simple"
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "entry",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "send",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "event",
+                                                        [
+                                                          "string",
+                                                          "component_work"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "to",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "component",
+                                                              [
+                                                                "string",
+                                                                "faulty"
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "parallel"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "finished",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "final"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ],
+                                [
+                                  "processing",
+                                  [
+                                    "map",
+                                    [
+                                      [
+                                        "components",
+                                        [
+                                          "list",
+                                          [
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "component_id",
+                                                  [
+                                                    "string",
+                                                    "left"
+                                                  ]
+                                                ],
+                                                [
+                                                  "root",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "history",
+                                                        [
+                                                          "string",
+                                                          "none"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "initial",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "transition_to",
+                                                              [
+                                                                "string",
+                                                                "running"
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "states",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "complete",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "type",
+                                                                    [
+                                                                      "string",
+                                                                      "final"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ],
+                                                            [
+                                                              "running",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "on_events",
+                                                                    [
+                                                                      "map",
+                                                                      [
+                                                                        [
+                                                                          "component_finish",
+                                                                          [
+                                                                            "map",
+                                                                            [
+                                                                              [
+                                                                                "action",
+                                                                                [
+                                                                                  "list",
+                                                                                  [
+                                                                                    [
+                                                                                      "map",
+                                                                                      [
+                                                                                        [
+                                                                                          "send",
+                                                                                          [
+                                                                                            "map",
+                                                                                            [
+                                                                                              [
+                                                                                                "event",
+                                                                                                [
+                                                                                                  "string",
+                                                                                                  "component_work"
+                                                                                                ]
+                                                                                              ],
+                                                                                              [
+                                                                                                "to",
+                                                                                                [
+                                                                                                  "map",
+                                                                                                  [
+                                                                                                    [
+                                                                                                      "self",
+                                                                                                      [
+                                                                                                        "boolean",
+                                                                                                        true
+                                                                                                      ]
+                                                                                                    ]
+                                                                                                  ]
+                                                                                                ]
+                                                                                              ]
+                                                                                            ]
+                                                                                          ]
+                                                                                        ]
+                                                                                      ]
+                                                                                    ]
+                                                                                  ]
+                                                                                ]
+                                                                              ],
+                                                                              [
+                                                                                "lang",
+                                                                                [
+                                                                                  "string",
+                                                                                  "cel"
+                                                                                ]
+                                                                              ],
+                                                                              [
+                                                                                "transition_to",
+                                                                                [
+                                                                                  "string",
+                                                                                  "complete"
+                                                                                ]
+                                                                              ]
+                                                                            ]
+                                                                          ]
+                                                                        ],
+                                                                        [
+                                                                          "component_work",
+                                                                          [
+                                                                            "map",
+                                                                            [
+                                                                              [
+                                                                                "action",
+                                                                                [
+                                                                                  "list",
+                                                                                  [
+                                                                                    [
+                                                                                      "map",
+                                                                                      [
+                                                                                        [
+                                                                                          "assign",
+                                                                                          [
+                                                                                            "map",
+                                                                                            [
+                                                                                              [
+                                                                                                "trace",
+                                                                                                [
+                                                                                                  "string",
+                                                                                                  "trace + ['left']"
+                                                                                                ]
+                                                                                              ]
+                                                                                            ]
+                                                                                          ]
+                                                                                        ]
+                                                                                      ]
+                                                                                    ]
+                                                                                  ]
+                                                                                ]
+                                                                              ],
+                                                                              [
+                                                                                "lang",
+                                                                                [
+                                                                                  "string",
+                                                                                  "cel"
+                                                                                ]
+                                                                              ]
+                                                                            ]
+                                                                          ]
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "type",
+                                                                    [
+                                                                      "string",
+                                                                      "simple"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "type",
+                                                        [
+                                                          "string",
+                                                          "composite"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "variables",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "trace",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "external",
+                                                                    [
+                                                                      "boolean",
+                                                                      false
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "init",
+                                                                    [
+                                                                      "list",
+                                                                      []
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "input",
+                                                                    [
+                                                                      "boolean",
+                                                                      false
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "type",
+                                                                    [
+                                                                      "string",
+                                                                      "list"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "map",
+                                              [
+                                                [
+                                                  "component_id",
+                                                  [
+                                                    "string",
+                                                    "right"
+                                                  ]
+                                                ],
+                                                [
+                                                  "root",
+                                                  [
+                                                    "map",
+                                                    [
+                                                      [
+                                                        "history",
+                                                        [
+                                                          "string",
+                                                          "none"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "initial",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "transition_to",
+                                                              [
+                                                                "string",
+                                                                "running"
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "states",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "complete",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "type",
+                                                                    [
+                                                                      "string",
+                                                                      "final"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ],
+                                                            [
+                                                              "running",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "on_events",
+                                                                    [
+                                                                      "map",
+                                                                      [
+                                                                        [
+                                                                          "component_finish",
+                                                                          [
+                                                                            "map",
+                                                                            [
+                                                                              [
+                                                                                "action",
+                                                                                [
+                                                                                  "list",
+                                                                                  [
+                                                                                    [
+                                                                                      "map",
+                                                                                      [
+                                                                                        [
+                                                                                          "send",
+                                                                                          [
+                                                                                            "map",
+                                                                                            [
+                                                                                              [
+                                                                                                "event",
+                                                                                                [
+                                                                                                  "string",
+                                                                                                  "component_work"
+                                                                                                ]
+                                                                                              ],
+                                                                                              [
+                                                                                                "to",
+                                                                                                [
+                                                                                                  "map",
+                                                                                                  [
+                                                                                                    [
+                                                                                                      "self",
+                                                                                                      [
+                                                                                                        "boolean",
+                                                                                                        true
+                                                                                                      ]
+                                                                                                    ]
+                                                                                                  ]
+                                                                                                ]
+                                                                                              ]
+                                                                                            ]
+                                                                                          ]
+                                                                                        ]
+                                                                                      ]
+                                                                                    ]
+                                                                                  ]
+                                                                                ]
+                                                                              ],
+                                                                              [
+                                                                                "lang",
+                                                                                [
+                                                                                  "string",
+                                                                                  "cel"
+                                                                                ]
+                                                                              ],
+                                                                              [
+                                                                                "transition_to",
+                                                                                [
+                                                                                  "string",
+                                                                                  "complete"
+                                                                                ]
+                                                                              ]
+                                                                            ]
+                                                                          ]
+                                                                        ],
+                                                                        [
+                                                                          "component_work",
+                                                                          [
+                                                                            "map",
+                                                                            [
+                                                                              [
+                                                                                "action",
+                                                                                [
+                                                                                  "list",
+                                                                                  [
+                                                                                    [
+                                                                                      "map",
+                                                                                      [
+                                                                                        [
+                                                                                          "assign",
+                                                                                          [
+                                                                                            "map",
+                                                                                            [
+                                                                                              [
+                                                                                                "trace",
+                                                                                                [
+                                                                                                  "string",
+                                                                                                  "trace + ['right']"
+                                                                                                ]
+                                                                                              ]
+                                                                                            ]
+                                                                                          ]
+                                                                                        ]
+                                                                                      ]
+                                                                                    ]
+                                                                                  ]
+                                                                                ]
+                                                                              ],
+                                                                              [
+                                                                                "lang",
+                                                                                [
+                                                                                  "string",
+                                                                                  "cel"
+                                                                                ]
+                                                                              ]
+                                                                            ]
+                                                                          ]
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "type",
+                                                                    [
+                                                                      "string",
+                                                                      "simple"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "type",
+                                                        [
+                                                          "string",
+                                                          "composite"
+                                                        ]
+                                                      ],
+                                                      [
+                                                        "variables",
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "trace",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "external",
+                                                                    [
+                                                                      "boolean",
+                                                                      false
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "init",
+                                                                    [
+                                                                      "list",
+                                                                      []
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "input",
+                                                                    [
+                                                                      "boolean",
+                                                                      false
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "type",
+                                                                    [
+                                                                      "string",
+                                                                      "list"
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "on_events",
+                                        [
+                                          "map",
+                                          [
+                                            [
+                                              "cancel_after_send",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "action",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "send",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "event",
+                                                                    [
+                                                                      "string",
+                                                                      "component_work"
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "to",
+                                                                    [
+                                                                      "map",
+                                                                      [
+                                                                        [
+                                                                          "component",
+                                                                          [
+                                                                            "string",
+                                                                            "left"
+                                                                          ]
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "finished"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "determa.component_completed",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "done",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "transition_to",
+                                                    [
+                                                      "string",
+                                                      "finished"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "fanout",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "action",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "send",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "event",
+                                                                    [
+                                                                      "string",
+                                                                      "component_work"
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "targets",
+                                                                    [
+                                                                      "list",
+                                                                      [
+                                                                        [
+                                                                          "map",
+                                                                          [
+                                                                            [
+                                                                              "component",
+                                                                              [
+                                                                                "string",
+                                                                                "left"
+                                                                              ]
+                                                                            ]
+                                                                          ]
+                                                                        ],
+                                                                        [
+                                                                          "map",
+                                                                          [
+                                                                            [
+                                                                              "component",
+                                                                              [
+                                                                                "string",
+                                                                                "right"
+                                                                              ]
+                                                                            ]
+                                                                          ]
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "finish_left",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "action",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "send",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "event",
+                                                                    [
+                                                                      "string",
+                                                                      "component_finish"
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "to",
+                                                                    [
+                                                                      "map",
+                                                                      [
+                                                                        [
+                                                                          "component",
+                                                                          [
+                                                                            "string",
+                                                                            "left"
+                                                                          ]
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ],
+                                            [
+                                              "finish_right",
+                                              [
+                                                "map",
+                                                [
+                                                  [
+                                                    "action",
+                                                    [
+                                                      "list",
+                                                      [
+                                                        [
+                                                          "map",
+                                                          [
+                                                            [
+                                                              "send",
+                                                              [
+                                                                "map",
+                                                                [
+                                                                  [
+                                                                    "event",
+                                                                    [
+                                                                      "string",
+                                                                      "component_finish"
+                                                                    ]
+                                                                  ],
+                                                                  [
+                                                                    "to",
+                                                                    [
+                                                                      "map",
+                                                                      [
+                                                                        [
+                                                                          "component",
+                                                                          [
+                                                                            "string",
+                                                                            "right"
+                                                                          ]
+                                                                        ]
+                                                                      ]
+                                                                    ]
+                                                                  ]
+                                                                ]
+                                                              ]
+                                                            ]
+                                                          ]
+                                                        ]
+                                                      ]
+                                                    ]
+                                                  ],
+                                                  [
+                                                    "lang",
+                                                    [
+                                                      "string",
+                                                      "cel"
+                                                    ]
+                                                  ]
+                                                ]
+                                              ]
+                                            ]
+                                          ]
+                                        ]
+                                      ],
+                                      [
+                                        "type",
+                                        [
+                                          "string",
+                                          "parallel"
+                                        ]
+                                      ]
+                                    ]
+                                  ]
+                                ]
+                              ]
+                            ]
+                          ],
+                          [
+                            "type",
+                            [
+                              "string",
+                              "composite"
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    [
+                      "version",
+                      [
+                        "integer",
+                        "1"
+                      ]
+                    ]
+                  ]
+                ]
+              ]
+            ]
+          ],
+          [
+            "namespace",
+            [
+              "string",
+              "conformance.case_09_parallel_components"
+            ]
+          ]
+        ]
+      ]
+    }
+  ],
+  "migration_descriptors": [],
+  "participants": [
+    {
+      "participant_format": "determa.archive_participant",
+      "participant_schema_version": 1,
+      "participant_id": "helper-state",
+      "required": true,
+      "provider_reference": {
+        "identifier": "example.helper-state",
+        "version": "1.0.0",
+        "content_digest": "sha256:db53fa5c8190bb2c847324efb8bd4d8c3de6490f834ab4d8e1a1252eed727e8a"
+      },
+      "participant_schema_digest": "sha256:bdf0bc0a1ad1991fbc78dd7ba91c0dc9c9c44297fa419d9ef7333b6679040850",
+      "dependencies": [],
+      "storage": "embedded",
+      "payload_digest": "sha256:40563466152aa319fa8f88d60816acf38b5fcf39dd28d12bef77f402b7419446",
+      "payload": [
+        "map",
+        [
+          [
+            "cursor",
+            [
+              "integer",
+              "7"
+            ]
+          ],
+          [
+            "note",
+            [
+              "string",
+              "captured"
+            ]
+          ]
+        ]
+      ]
+    }
+  ],
+  "members": [
+    {
+      "identity": "checkpoint:component-migration-root",
+      "digest": "sha256:815f5a7caa7539125815176244b152dbf09783254077a4957d7a634e133d7ef0",
+      "byte_length": "8386"
+    },
+    {
+      "identity": "checkpoint:recovery-owned-1",
+      "digest": "sha256:6121c041dc297e2c7261f7ac9efd35ec250bb7f8f32957e4d436c846d79d84b0",
+      "byte_length": "9033"
+    },
+    {
+      "identity": "definition:sha256:370741b6ffe7db327d35d05513ca8ffb6f8f62dcd835281887ed62bd8845f8f6",
+      "digest": "sha256:bf922764e5f71c2e5106cc01cd248212312755efa19e7d2ae6c57640538e56d2",
+      "byte_length": "3382"
+    },
+    {
+      "identity": "definition:sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6",
+      "digest": "sha256:9a1a0202ef8417bbc5b072fe0370802765d45b68c693fe9316a0a7febd4705cd",
+      "byte_length": "6035"
+    },
+    {
+      "identity": "participant:helper-state",
+      "digest": "sha256:7b171c70cad4975f2ca779528ac739203f116c3a615668e290dccc7ba74fb85c",
+      "byte_length": "609"
+    }
+  ],
+  "required_determa_capabilities": [
+    "archive_participant",
+    "normalized_definition",
+    "portable_archive",
+    "portable_checkpoint"
+  ],
+  "optional_participant_references": [],
+  "source_fence_reference": null,
+  "transfer_reference": null,
+  "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+}
