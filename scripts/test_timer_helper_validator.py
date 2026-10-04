@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 from timer_helper_validator import TimerHelperValidationError, validate_profile
-from run_timer_helper_profile import strict_json, verify_configured
+from run_timer_helper_profile import operation_input, strict_json, verify_configured
 
 
 def main():
@@ -21,6 +21,11 @@ def main():
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     assert validate_profile(args.spec_root, root) == (24, 25, 3)
+    first = json.loads((root / "conformance/profiles/timer-helper/timer-01-external-helper/vectors.generated.json").read_text())["cases"][0]
+    submitted = operation_input(first, "target source")
+    assert set(submitted) == {"kind", "machine_source", "before", "request", "trusted_now",
+                              "claim_expires_at", "previous_attempt_fate", "admission_disposition"}
+    assert "expected_result" not in submitted and "after" not in submitted and "id" not in submitted
     with tempfile.TemporaryDirectory() as temporary:
         copy = Path(temporary)
         case = copy / "conformance/profiles/timer-helper/timer-01-external-helper"

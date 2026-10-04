@@ -42,6 +42,14 @@ def call(command, body, label):
     return strict_json(completed.stdout)
 
 
+def operation_input(row, target_machine):
+    return {"kind": "timer_operation", "machine_source": target_machine,
+            "before": row["before"], "request": row["request"],
+            "trusted_now": row["trusted_now"], "claim_expires_at": row["claim_expires_at"],
+            "previous_attempt_fate": row["previous_attempt_fate"],
+            "admission_disposition": row["admission_disposition"]}
+
+
 def verify_configured(observed, spec_root, completed_cases):
     if type(observed) is not dict or set(observed) != {"report", "installation", "operational_proof"}:
         raise ValueError("configured helper omitted public report, installed closure or operational proof")
@@ -111,10 +119,10 @@ def main():
     document = strict_json((repository / "conformance/profiles/timer-helper/timer-01-external-helper/vectors.generated.json").read_bytes())
     case_dir = repository / "conformance/profiles/timer-helper/timer-01-external-helper"
     machine = (repository / "conformance/profiles/timer-helper/timer-01-external-helper/machine.yaml").read_text()
-    setup = (repository / "conformance/profiles/timer-helper/timer-01-external-helper/test.yaml").read_text()
+    target_machine = (case_dir / "target-machine.yaml").read_text()
     lifecycle = strict_json((case_dir / "lifecycle.generated.json").read_bytes())
     lifecycle_input = {"kind": "timer_lifecycle", "intent_machine_source": machine,
-                       "target_machine_source": (case_dir / "target-machine.yaml").read_text(),
+                       "target_machine_source": target_machine,
                        "intent_inputs": lifecycle["intent_inputs"],
                        "cancel_intent_inputs": lifecycle["cancel_intent_inputs"],
                        "create_request": lifecycle["create_request"],
@@ -144,11 +152,7 @@ def main():
     if not exact_json_equal(call(args.adapter, lifecycle_input, "timer_lifecycle"), lifecycle_expected):
         raise ValueError("timer_lifecycle: create/intent/schedule/claim/admit/step or complete state differs")
     for row in [*document["cases"], *document["clock_vectors"]]:
-        body = {"kind": "timer_operation", "machine_source": machine,
-                "setup_scenario": setup, "before": row["before"], "request": row["request"],
-                "trusted_now": row["trusted_now"], "claim_expires_at": row["claim_expires_at"],
-                "previous_attempt_fate": row["previous_attempt_fate"],
-                "admission_disposition": row["admission_disposition"]}
+        body = operation_input(row, target_machine)
         observed = call(args.adapter, body, row["id"])
         expected = {"result": row["expected_result"], "after": row["after"],
                     "calls": row["expected_calls"]}
