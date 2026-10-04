@@ -12,7 +12,7 @@ from pathlib import Path
 
 from validate_host_authority import AuthorityValidationError, PROFILE, compact, hash_value, load, validate_document
 from run_host_authority_profile import (AdapterOutputError, adapter_call, common_rule_input,
-                                        configured_unclaimed_probe,
+                                        configured_unclaimed_probe, report_binding,
                                         select_production_scenario, verify_configured_profile)
 
 
@@ -153,6 +153,21 @@ def main() -> int:
     worker_report = next(row for row in baseline["profiles"] if row["id"] ==
                          "guarded_local_worker_fencing")["expected_report"]
     assert select_production_scenario(baseline, worker_report)["id"] == "worker_sqlite"
+    worker_binding = report_binding(worker_report)
+    for role in ("journal", "worker"):
+        changed_source = copy.deepcopy(worker_report)
+        participant = next(item for item in changed_source["required_participants"]
+                           if item["role"] == role)
+        participant["provider_reference"]["content_digest"] = "sha256:" + "a" * 64
+        assert select_production_scenario(baseline, changed_source)["id"] == "worker_sqlite"
+        changed_binding = report_binding(changed_source)
+        assert changed_binding != worker_binding
+        unclaimed = next(row for row in baseline["unclaimed_guarantee_checks"]
+                         if row["id"] == "unclaimed_fence_worker")
+        probe, expected = configured_unclaimed_probe(unclaimed, changed_binding, changed_source)
+        assert probe["setup"]["binding"] == expected["binding"] == changed_binding
+        assert probe["setup"]["ledger_before"]["required_participant_records"] == [
+            "journal:journal-1", "worker:worker-1"]
     for name, mutate in [
         ("wrong journal instance", lambda report: report["required_participants"][0].update(
             instance_id="other-journal")),
