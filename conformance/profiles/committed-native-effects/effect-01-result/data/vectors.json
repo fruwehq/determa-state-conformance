@@ -1812,6 +1812,46 @@
       }
     },
     {
+      "name": "ambiguous_retry_with_proven_deduplication",
+      "covers": [
+        "19.3:ambiguous_retry_with_proof"
+      ],
+      "request": {
+        "operation": "claim",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/ambiguous-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null
+      },
+      "expected": {
+        "response": null,
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/ambiguous-retry-claim-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 1
+        }
+      }
+    },
+    {
       "name": "ambiguous_retry_requires_proof",
       "covers": [
         "19.3:ambiguous_retry_proof"

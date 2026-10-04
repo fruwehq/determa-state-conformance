@@ -143,6 +143,9 @@ def generate(spec_root: Path):
     ambiguous_record = copy.deepcopy(leased_record)
     ambiguous_record.update(invocation_state='ambiguous', attempt_records=[ambiguous_report])
     ambiguous = journal(pending, 3, ambiguous_record)
+    ambiguous_retry_record = copy.deepcopy(ambiguous_record)
+    ambiguous_retry_record.update(invocation_state='leased', attempt_fence='2')
+    ambiguous_retry_journal = journal(pending, 4, ambiguous_retry_record)
     ambiguous_response = result_response('report_recorded', effect_id, '1', report=ambiguous_report,
                                          checkpoint_revision=pending['revision'], journal_revision='3')
     retry_payload = typed_value({})
@@ -260,6 +263,7 @@ def generate(spec_root: Path):
         vector('claim_after_preclaim_cancel_refused', ['19.3:preclaim_cancel_blocks_dispatch'], 'claim', cp, 'preclaim-cancelled-journal.json', cp, 'preclaim-cancelled-journal.json', arguments={'effect_id': effect_id}),
         vector('cancel_before_claim_replay', ['19.3:cancel_equal_replay'], 'cancel_effect', cp, 'preclaim-cancelled-journal.json', cp, 'preclaim-cancelled-journal.json', arguments=cancel_request, response_file='cancel-response.json'),
         vector('cancel_after_possible_call', ['19.3:cancel_after_possible_call'], 'cancel_effect', cp, 'ambiguous-journal.json', cp, 'postcall-cancelled-journal.json', arguments={**cancel_request, 'operation_id': 'cancel-after-call'}, response_file='postcall-cancel-response.json'),
+        vector('ambiguous_retry_with_proven_deduplication', ['19.3:ambiguous_retry_with_proof'], 'claim', cp, 'ambiguous-journal.json', cp, 'ambiguous-retry-claim-journal.json', arguments={'effect_id': effect_id}, claims=1),
         vector('ambiguous_retry_requires_proof', ['19.3:ambiguous_retry_proof'], 'claim', cp, 'ambiguous-journal.json', cp, 'ambiguous-journal.json', arguments={'effect_id': effect_id}, config={'route_generation': '7', 'route_authorized': True, 'destination_deduplication_proven': False, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '1'}),
         vector('missing_cancel_mapping_refusal', ['19.3:missing_cancelled_mapping'], 'cancel_effect', cp, 'no-cancel-mapping-journal.json', cp, 'no-cancel-mapping-journal.json', arguments=cancel_request, response_file='cancel-rejected-response.json'),
     ]
@@ -311,6 +315,7 @@ def generate(spec_root: Path):
     files = {
         'no-cancel-mapping-journal.json': no_cancel_journal,
         'producer-request.json': producer_request, 'producer-response.json': producer_response,
+        'ambiguous-retry-claim-journal.json': ambiguous_retry_journal,
         'retryable-journal.json': retry_journal, 'retry-claim-journal.json': retry_claim_journal,
         'retryable-response.json': retry_response, 'retry-request.json': retry_request,
         'cancel-rejected-response.json': cancel_rejected_response,

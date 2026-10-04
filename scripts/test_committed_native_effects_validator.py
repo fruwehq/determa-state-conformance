@@ -84,7 +84,7 @@ class CommittedEffectsValidatorTests(unittest.TestCase):
         self.assertEqual(rfc8785.dumps(result), rfc8785.dumps(strict_json(rfc8785.dumps(result))))
 
     def test_source_and_artifact_gate(self):
-        self.assertEqual(validate_profile(SPEC), 38)
+        self.assertEqual(validate_profile(SPEC), 39)
 
     def test_all_complete_oracles_accept_matching_observations(self):
         for vector in self.manifest['vectors']:
