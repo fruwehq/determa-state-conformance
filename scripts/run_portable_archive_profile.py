@@ -16,7 +16,8 @@ from validate_portable_archive import CASE, canonical, parse_json_bytes, read_js
 CALLS = ('core_create', 'core_admit', 'core_step', 'core_migration',
          'worker_claim', 'effect_dispatch', 'timer_poll', 'clock_read',
          'authority_grant', 'credentials_create')
-STATE = ('active_scopes', 'authority_grants', 'credentials', 'staged_archives')
+STATE = ('active_scopes', 'authority_grants', 'credentials', 'checkpoints',
+         'host_journals', 'participant_storage', 'staged_archives')
 
 
 def require_equal(actual, expected, label: str) -> None:

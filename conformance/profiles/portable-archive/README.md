@@ -20,8 +20,11 @@ exported archive or null; `staged_archive` is the staged archive or null. The ru
 compares complete canonical results and archives.
 
 `before` and `after` are actual host observations with exactly `active_scopes`,
-`authority_grants`, `credentials`, and `staged_archives`. The first three are lists
-of host-owned identities. `staged_archives` is a list of objects with exact
+`authority_grants`, `credentials`, `checkpoints`, `host_journals`,
+`participant_storage`, and `staged_archives`. The first three are lists of
+host-owned identities. The next three are complete captured storage observations
+so a failed export or stage cannot silently mutate source data. `staged_archives`
+is a list of objects with exact
 `staging_identity` and `archive`. A successful stage appends one inert archive;
 refusals and exports leave this observation unchanged. `calls` has exact integer
 counts for `core_create`, `core_admit`, `core_step`, `core_migration`, `worker_claim`,
