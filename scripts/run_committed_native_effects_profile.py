@@ -6,6 +6,7 @@ import argparse
 import base64
 import binascii
 import hashlib
+import tempfile
 import shlex
 import subprocess
 import sys
@@ -375,6 +376,10 @@ def main():
     parser.add_argument('--adapter', required=True, help='production effect host adapter command')
     parser.add_argument('--authority-adapter', required=True,
                         help='same configured authority installation adapter for mandatory §18 native runner')
+    parser.add_argument('--parent-run-id',
+                        help='bind this verified effect run to a composed parent profile run')
+    parser.add_argument('--proof-summary-output', type=Path,
+                        help='write the verified same-run effect and authority proof receipt')
     args = parser.parse_args()
     count = validate_profile(args.spec_root)
     manifest = strict_json((CASE / 'data/vectors.json').read_bytes())
@@ -397,8 +402,12 @@ def main():
             c_scenario['id'] != 'worker_sqlite':
         raise SystemExit('§19 requires the proved §18 worker SQLite authority topology')
     c_runner = Path(__file__).with_name('run_host_authority_profile.py')
-    completed = subprocess.run([sys.executable, str(c_runner), '--spec-root', str(args.spec_root),
-                                '--adapter', *authority_command], capture_output=True, check=False)
+    with tempfile.TemporaryDirectory(prefix='determa-effect-authority-') as temporary:
+        c_summary_path = Path(temporary) / 'authority-proof.json'
+        completed = subprocess.run([sys.executable, str(c_runner), '--spec-root', str(args.spec_root),
+                                    '--proof-summary-output', str(c_summary_path),
+                                    '--adapter', *authority_command], capture_output=True, check=False)
+        c_summary = strict_json(c_summary_path.read_bytes()) if completed.returncode == 0 else None
     if completed.returncode:
         raise SystemExit('§18 native authority runner failed: ' +
                          completed.stderr.decode('utf-8', errors='replace').strip())
@@ -427,6 +436,19 @@ def main():
     bind_to_proved_authority(final_configured, c_report)
     if final_configured != configured or final['report_bytes'] != initial['report_bytes']:
         raise SystemExit('configured production profile changed during native probes')
+    if args.proof_summary_output is not None:
+        args.proof_summary_output.write_bytes(canonical({
+            'format': 'determa.conformance.committed_native_effects.proof_summary',
+            'schema_version': 1, 'parent_run_id': args.parent_run_id,
+            'run_id': run_id, 'report_digest': configured['report_digest'],
+            'authority_report_digest': configured['authority_report_digest'],
+            'scope_identity': configured['scope_identity'],
+            'topology_identifier': configured['topology_identifier'],
+            'handler_reference': configured['handler_reference'],
+            'destination_binding_digest': configured['destination_binding_digest'],
+            'authority_summary': c_summary,
+            'native_proof_ids': sorted(proof_ids),
+            'adapter_command_digest': sha256_bytes(canonical(command))}))
     print(f'passed {count} committed native effect production adapter vectors under one configured host')
 
 

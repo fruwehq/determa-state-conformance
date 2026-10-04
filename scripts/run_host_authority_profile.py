@@ -12,6 +12,7 @@ import json
 import subprocess
 from pathlib import Path
 
+from validate_conformance import canonical_json_bytes
 from validate_extension_negotiation import exact_json_equal
 from validate_host_authority import PROFILE, compact, hash_value, load, schema_validators, validate_profile
 
@@ -170,6 +171,8 @@ def main() -> int:
     parser.add_argument("--spec-root", type=Path, default=Path("../determa-state-spec"))
     parser.add_argument("--adapter", nargs="+", required=True,
                         help="production test harness executable; receives one closed JSON input per invocation")
+    parser.add_argument("--proof-summary-output", type=Path,
+                        help="write the verified same-run authority proof receipt")
     args = parser.parse_args()
     validate_profile(args.spec_root)
     manifest = load(PROFILE / "vectors.generated.json")
@@ -237,6 +240,21 @@ def main() -> int:
     if not exact_json_equal(final_report, actual_report) or report_binding(final_report) != binding:
         raise AdapterOutputError("configured authority changed during native proof")
     checked += 1
+    if args.proof_summary_output is not None:
+        args.proof_summary_output.write_bytes(canonical_json_bytes({
+            'format': 'determa.conformance.host_authority.proof_summary',
+            'schema_version': 1,
+            'adapter_command_digest': 'sha256:' + hashlib.sha256(
+                canonical_json_bytes(args.adapter)).hexdigest(),
+            'report_digest': 'sha256:' + hashlib.sha256(
+                canonical_json_bytes(actual_report)).hexdigest(),
+            'report_binding': binding,
+            'scope_identity': actual_report['scope_identity'],
+            'topology': actual_report['topology'],
+            'source_binding_digest': actual_report['source_binding_digest'],
+            'destination_binding_digest': actual_report['destination_binding_digest'],
+            'native_proof_ids': sorted(proved_ids),
+            'checked_count': checked}))
     print(f"checked {checked} direct production responses and observations")
     return 0
 
