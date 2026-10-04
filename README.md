@@ -37,6 +37,8 @@ migrated suite.
   lossless projection and embedded facade profile.
 - `conformance/profiles/lossless-delivery/` — the optional SPEC §21 source,
   mailbox, dead-letter, and outbound responsibility profile.
+- `conformance/profiles/portable-archive/` — the optional SPEC §22 complete export
+  and inert staging profile with declared participants.
 - `conformance/closed-code-registry/registry.json` — the single machine-readable
   authority for closed portable failure, rejection, fault, and disposition sets.
 - `conformance/closed-code-registry/vectors.generated.json` — the generated
@@ -64,6 +66,12 @@ malformed inputs, invalid evidence links, six complete core result observations,
 and five merged authority/effect
 relationships. Its [runner contract](conformance/profiles/lossless-delivery/README.md)
 uses the exact caller request and complete before/after host evidence.
+
+The optional [portable-archive profile](conformance/profiles/portable-archive/README.md)
+adds 52 complete export and inert staging vectors from the pinned §22 examples,
+plus an owned-instance, nested-component, and deferred-queue export and stage pair.
+The repository checks the raw artifacts and their relationships; implementations
+claiming the profile run the production adapter driver for an operational result.
 
 ## Release 0.3.0
 

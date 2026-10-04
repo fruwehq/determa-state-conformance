@@ -1,0 +1,17 @@
+{
+  "format": 1,
+  "machines": [
+    {
+      "languages": {
+        "action": "determa",
+        "guard": "cel"
+      },
+      "machine_id": "job",
+      "root": {
+        "type": "simple"
+      },
+      "version": 1
+    }
+  ],
+  "namespace": "example.persistence"
+}

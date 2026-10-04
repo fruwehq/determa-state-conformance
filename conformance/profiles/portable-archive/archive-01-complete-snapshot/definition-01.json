@@ -1,0 +1,57 @@
+{
+  "events": {
+    "compact_notice": {
+      "direction": "output"
+    },
+    "pending_notice": {
+      "direction": "output"
+    },
+    "terminal_notice": {
+      "direction": "output"
+    }
+  },
+  "format": 1,
+  "machines": [
+    {
+      "languages": {
+        "action": "determa",
+        "guard": "cel"
+      },
+      "machine_id": "effects",
+      "root": {
+        "entry": [
+          {
+            "send": {
+              "correlation_id": "\"corr-0\"",
+              "event": "pending_notice",
+              "to": {
+                "external": true
+              }
+            }
+          },
+          {
+            "send": {
+              "correlation_id": "\"corr-1\"",
+              "event": "terminal_notice",
+              "to": {
+                "external": true
+              }
+            }
+          },
+          {
+            "send": {
+              "correlation_id": "\"corr-2\"",
+              "event": "compact_notice",
+              "to": {
+                "external": true
+              }
+            }
+          }
+        ],
+        "type": "simple"
+      },
+      "version": 1
+    }
+  ],
+  "namespace": "example.archive_effects"
+}
