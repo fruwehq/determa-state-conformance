@@ -1712,6 +1712,174 @@
           "minimum_replay_until": null
         }
       }
+    },
+    {
+      "name": "confirmed_terminal_replay_no_resend",
+      "operation": "deliver_outbound",
+      "request": {
+        "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e"
+      },
+      "before": {
+        "checkpoint": "native-confirmed-checkpoint-v1.json",
+        "bindings": [],
+        "dead_letters": [],
+        "source_acknowledgements": [],
+        "provider_dispatches": 0,
+        "destination_receipts": [
+          {
+            "delivery_message_kind": "outbound_destination_receipt",
+            "root_instance_id": "checkpoint-outbox-root",
+            "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e",
+            "terminal_sequence": "0",
+            "outcome": "confirmed",
+            "reason_code": null,
+            "destination_receipt_id": "destination-acceptance-actual-1",
+            "destination_authority": {
+              "kind": "destination",
+              "identifier": "test-durable-destination"
+            },
+            "execution_checkpoint_digest": "sha256:0355fba691a16cb469c6e1522e35cc9c70d60b62c95fecda3fbe7df13beca947",
+            "outbound_destination_receipt_digest": "sha256:7c84998651d274804481e39a6696b3e3134c32d4c59e7fd4f7e0e7edc20e35fe"
+          }
+        ]
+      },
+      "after": {
+        "checkpoint": "native-confirmed-checkpoint-v1.json",
+        "bindings": [],
+        "dead_letters": [],
+        "source_acknowledgements": [],
+        "provider_dispatches": 0,
+        "destination_receipts": [
+          {
+            "delivery_message_kind": "outbound_destination_receipt",
+            "root_instance_id": "checkpoint-outbox-root",
+            "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e",
+            "terminal_sequence": "0",
+            "outcome": "confirmed",
+            "reason_code": null,
+            "destination_receipt_id": "destination-acceptance-actual-1",
+            "destination_authority": {
+              "kind": "destination",
+              "identifier": "test-durable-destination"
+            },
+            "execution_checkpoint_digest": "sha256:0355fba691a16cb469c6e1522e35cc9c70d60b62c95fecda3fbe7df13beca947",
+            "outbound_destination_receipt_digest": "sha256:7c84998651d274804481e39a6696b3e3134c32d4c59e7fd4f7e0e7edc20e35fe"
+          }
+        ]
+      },
+      "fault_injection": null,
+      "replay_of": "outbound_confirmed_is_destination_acceptance",
+      "expected_response": {
+        "delivery_message_kind": "outbound_decision",
+        "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e",
+        "outcome": "confirmed",
+        "reason_code": null,
+        "decision_authority": {
+          "kind": "host_profile",
+          "identifier": "orders-host"
+        },
+        "evidence": {
+          "checkpoint": {
+            "root_instance_id": "checkpoint-outbox-root",
+            "checkpoint_revision": "3",
+            "execution_checkpoint_digest": "sha256:0355fba691a16cb469c6e1522e35cc9c70d60b62c95fecda3fbe7df13beca947"
+          },
+          "outbox_location": {
+            "kind": "terminal",
+            "terminal_sequence": "0",
+            "committed_revision": "3"
+          }
+        },
+        "destination_receipt_id": "destination-acceptance-actual-1",
+        "retention": {
+          "profile": "permanent",
+          "minimum_replay_until": null
+        }
+      }
+    },
+    {
+      "name": "dead_letter_terminal_replay_no_resend",
+      "operation": "deliver_outbound",
+      "request": {
+        "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e"
+      },
+      "before": {
+        "checkpoint": "native-dead-lettered-checkpoint-v1.json",
+        "bindings": [],
+        "dead_letters": [],
+        "source_acknowledgements": [],
+        "provider_dispatches": 0,
+        "destination_receipts": [
+          {
+            "delivery_message_kind": "outbound_destination_receipt",
+            "root_instance_id": "checkpoint-outbox-root",
+            "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e",
+            "terminal_sequence": "0",
+            "outcome": "dead_lettered",
+            "reason_code": "destination_policy_rejected",
+            "destination_receipt_id": "destination-dead-letter-actual-1",
+            "destination_authority": {
+              "kind": "destination",
+              "identifier": "test-durable-destination"
+            },
+            "execution_checkpoint_digest": "sha256:78ace5a5620ca92abd112bc04d8500afcd3f4ebc40be71bad2342d22a6eb1673",
+            "outbound_destination_receipt_digest": "sha256:8d5e72f75eb0090e1bbc9b001c05e18e16a54859a5b3def12bccacfaa106cecf"
+          }
+        ]
+      },
+      "after": {
+        "checkpoint": "native-dead-lettered-checkpoint-v1.json",
+        "bindings": [],
+        "dead_letters": [],
+        "source_acknowledgements": [],
+        "provider_dispatches": 0,
+        "destination_receipts": [
+          {
+            "delivery_message_kind": "outbound_destination_receipt",
+            "root_instance_id": "checkpoint-outbox-root",
+            "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e",
+            "terminal_sequence": "0",
+            "outcome": "dead_lettered",
+            "reason_code": "destination_policy_rejected",
+            "destination_receipt_id": "destination-dead-letter-actual-1",
+            "destination_authority": {
+              "kind": "destination",
+              "identifier": "test-durable-destination"
+            },
+            "execution_checkpoint_digest": "sha256:78ace5a5620ca92abd112bc04d8500afcd3f4ebc40be71bad2342d22a6eb1673",
+            "outbound_destination_receipt_digest": "sha256:8d5e72f75eb0090e1bbc9b001c05e18e16a54859a5b3def12bccacfaa106cecf"
+          }
+        ]
+      },
+      "fault_injection": null,
+      "replay_of": "outbound_dead_letter_transfer",
+      "expected_response": {
+        "delivery_message_kind": "outbound_decision",
+        "effect_id": "sha256:78e4c92bf589334821bd4de7fb5b28c5f61d81695d9898f06558603ed30b200e",
+        "outcome": "dead_lettered",
+        "reason_code": "destination_policy_rejected",
+        "decision_authority": {
+          "kind": "host_profile",
+          "identifier": "orders-host"
+        },
+        "evidence": {
+          "checkpoint": {
+            "root_instance_id": "checkpoint-outbox-root",
+            "checkpoint_revision": "3",
+            "execution_checkpoint_digest": "sha256:78ace5a5620ca92abd112bc04d8500afcd3f4ebc40be71bad2342d22a6eb1673"
+          },
+          "outbox_location": {
+            "kind": "terminal",
+            "terminal_sequence": "0",
+            "committed_revision": "3"
+          }
+        },
+        "destination_receipt_id": "destination-dead-letter-actual-1",
+        "retention": {
+          "profile": "permanent",
+          "minimum_replay_until": null
+        }
+      }
     }
   ],
   "invalid_vectors": [

@@ -8,7 +8,7 @@
     "lossless_delivery_format": {"const": "determa.conformance.lossless_delivery"},
     "lossless_delivery_schema_version": {"const": 1},
     "configured_transport_claims": {"const": []},
-    "vectors": {"type": "array", "minItems": 20, "items": {"$ref": "#/$defs/vector"}},
+    "vectors": {"type": "array", "minItems": 22, "items": {"$ref": "#/$defs/vector"}},
     "invalid_vectors": {"type": "array", "minItems": 27, "items": {"$ref": "#/$defs/invalid_vector"}},
     "core_observability_vectors": {"type": "array", "minItems": 6, "maxItems": 6,
       "items": {"$ref": "#/$defs/core_observability_vector"}},

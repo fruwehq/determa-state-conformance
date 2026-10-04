@@ -236,6 +236,16 @@ def build(spec: Path) -> dict[str, bytes]:
                'reason_code': reason, 'destination_receipt_id': destination_id}},
               before['checkpoint'], after['checkpoint'], response, before=before, after=after)
 
+    # A retained terminal record and destination receipt answer a retry without
+    # asking the destination to accept or dead-letter the same intent again.
+    for original, replay in (
+            ('outbound_confirmed_is_destination_acceptance', 'confirmed_terminal_replay_no_resend'),
+            ('outbound_dead_letter_transfer', 'dead_letter_terminal_replay_no_resend')):
+        committed = next(item for item in vectors if item['name'] == original)
+        vectors.append(vector(replay, 'deliver_outbound', {'effect_id': effect},
+                              committed['after'], committed['after'],
+                              committed['expected_response'], replay_of=original))
+
     by_name = {item['name']: item for item in vectors}
     invalid_vectors = []
     malformed_base64 = {'nonzero_one_byte_pad_bits', 'nonzero_two_byte_pad_bits',

@@ -38,17 +38,25 @@ def handle(request: dict) -> dict:
                 intent_json BLOB);
             CREATE TABLE IF NOT EXISTS acknowledgement_barrier (
                 singleton INTEGER PRIMARY KEY CHECK(singleton=1),
-                observer_command_json BLOB NOT NULL, run_id TEXT NOT NULL,
+                store_command_json BLOB NOT NULL, store_database_path TEXT NOT NULL,
+                run_id TEXT NOT NULL,
                 operation_id TEXT NOT NULL, checkpoint_digest TEXT NOT NULL,
                 transfer_digest TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS acknowledgement_attempts (
+                sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+                scope TEXT NOT NULL, delivery_id TEXT NOT NULL,
+                status TEXT NOT NULL);
         ''')
         kind = request['kind']
         if kind == 'configure_acknowledgement_barrier':
-            command = request['observer_command']
+            command = request['store_command']
             if type(command) is not list or not command or any(type(part) is not str for part in command):
-                raise ValueError('observer command is incomplete')
-            connection.execute('INSERT OR REPLACE INTO acknowledgement_barrier VALUES(1,?,?,?,?,?)',
-                               (canonical_json_bytes(command), request['run_id'],
+                raise ValueError('trusted store command is incomplete')
+            previous = connection.execute('SELECT operation_id FROM acknowledgement_barrier WHERE singleton=1').fetchone()
+            if previous is not None and previous[0] == request['operation_id']:
+                raise ValueError('acknowledgement barrier cannot be reconfigured for one operation')
+            connection.execute('INSERT OR REPLACE INTO acknowledgement_barrier VALUES(1,?,?,?,?,?,?)',
+                               (canonical_json_bytes(command), request['store_database_path'], request['run_id'],
                                 request['operation_id'], request['checkpoint_digest'],
                                 request['transfer_digest']))
             return {'configured': True}
@@ -70,6 +78,10 @@ def handle(request: dict) -> dict:
             return {'source': document(row[0])}
         if kind == 'ack':
             scope, identity = request['source_scope'], request['source_delivery_id']
+            attempt = connection.execute(
+                'INSERT INTO acknowledgement_attempts(scope,delivery_id,status) VALUES(?,?,?)',
+                (scope, identity, 'rejected')).lastrowid
+            connection.commit()
             if not request.get('checkpoint_digest', '').startswith('sha256:') or \
                     not request.get('transfer_digest', '').startswith('sha256:'):
                 raise ValueError('acknowledgement lacks committed transfer identity')
@@ -77,23 +89,33 @@ def handle(request: dict) -> dict:
                                   ('fetch', scope, identity)).fetchone()[0] == 0:
                 raise ValueError('source acknowledgement preceded provider fetch')
             barrier = connection.execute(
-                'SELECT observer_command_json,run_id,operation_id,checkpoint_digest,transfer_digest '
+                'SELECT store_command_json,store_database_path,run_id,operation_id,checkpoint_digest,transfer_digest '
                 'FROM acknowledgement_barrier WHERE singleton=1').fetchone()
-            if barrier is None or (request['checkpoint_digest'], request['transfer_digest']) != barrier[3:]:
+            if barrier is None or (request['checkpoint_digest'], request['transfer_digest']) != barrier[4:]:
                 raise ValueError('acknowledgement differs from driver-bound transfer')
             observed = subprocess.run(json.loads(barrier[0]), input=canonical_json_bytes({
-                'kind': 'observe_delivery_state', 'run_id': barrier[1],
-                'operation_id': barrier[2], 'transport_database_path': str(path)}),
+                'kind': 'snapshot', 'run_id': barrier[2],
+                'database_path': barrier[1]}),
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
             if observed.returncode:
-                raise ValueError('fresh-process durable transfer observation failed before acknowledgement')
+                raise ValueError('trusted durable store read failed before acknowledgement')
             durable = document(observed.stdout)
             if observed.stdout != canonical_json_bytes(durable):
                 raise ValueError('noncanonical durable transfer observation')
             after = durable.get('after')
-            if type(after) is not dict or after.get('checkpoint', {}).get('execution_checkpoint_digest') != barrier[3] or \
-                    barrier[4] not in [item.get('admission_binding_digest') for item in after.get('bindings', [])] + \
-                    [item.get('ingress_dead_letter_digest') for item in after.get('dead_letters', [])]:
+            transactions = durable.get('transactions')
+            matching_bindings = [item for item in after.get('bindings', [])
+                                 if item.get('admission_binding_digest') == barrier[5] and
+                                 item.get('source_scope') == scope and
+                                 item.get('source_delivery_id') == identity] if type(after) is dict else []
+            matching_dead_letters = [item for item in after.get('dead_letters', [])
+                                     if item.get('ingress_dead_letter_digest') == barrier[5] and
+                                     item.get('source', {}).get('source_scope') == scope and
+                                     item.get('source', {}).get('source_delivery_id') == identity] if type(after) is dict else []
+            if type(after) is not dict or type(transactions) is not list or \
+                    not any(item.get('operation_id') == barrier[3] for item in transactions) or \
+                    after.get('checkpoint', {}).get('execution_checkpoint_digest') != barrier[4] or \
+                    len(matching_bindings) + len(matching_dead_letters) != 1:
                 raise ValueError('source acknowledgement preceded durable transfer')
             changed = connection.execute('UPDATE sources SET acknowledged=1 WHERE scope=? AND delivery_id=? AND acknowledged=0',
                                          (scope, identity)).rowcount
@@ -102,6 +124,8 @@ def handle(request: dict) -> dict:
             connection.execute('INSERT INTO calls(kind,scope,delivery_id,checkpoint_digest,transfer_digest) VALUES(?,?,?,?,?)',
                                ('ack', scope, identity, request['checkpoint_digest'],
                                 request['transfer_digest']))
+            connection.execute('UPDATE acknowledgement_attempts SET status=? WHERE sequence=?',
+                               ('accepted', attempt))
             return {'acknowledged': True}
         if kind == 'deliver':
             effect_id, route = request['effect_id'], request['route']
@@ -133,7 +157,12 @@ def handle(request: dict) -> dict:
                      for kind, scope, identity, effect_id, outcome, receipt,
                          checkpoint_digest, transfer_digest, intent in connection.execute(
                          'SELECT kind,scope,delivery_id,effect_id,outcome,receipt_id,checkpoint_digest,transfer_digest,intent_json FROM calls ORDER BY sequence')]
-            return {'sources': sources, 'calls': calls}
+            attempts = [{'source_scope': scope, 'source_delivery_id': identity,
+                         'status': status}
+                        for scope, identity, status in connection.execute(
+                            'SELECT scope,delivery_id,status FROM acknowledgement_attempts ORDER BY sequence')]
+            return {'sources': sources, 'calls': calls,
+                    'acknowledgement_attempts': attempts}
         raise ValueError('unknown transport operation')
 
 

@@ -17,7 +17,9 @@ from validate_lossless_delivery import validate_profile
 from run_lossless_delivery_profile import (run, run_integrations,
                                            run_core_observability, strict_document,
                                            strict_child_document,
-                                           transport_call, verify_configured_delivery_profile)
+                                           check_transport,
+                                           store_call, transport_call,
+                                           verify_configured_delivery_profile, STORE)
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / 'conformance/profiles/lossless-delivery/delivery-01-source-transfer'
@@ -105,6 +107,12 @@ def main() -> int:
         ('pending work erased', lambda p: vector(
             p, 'outbound_ambiguous_remains_pending')['after'].update(
                 checkpoint='native-confirmed-checkpoint-v1.json')),
+        ('confirmed terminal replay resends', lambda p: vector(
+            p, 'confirmed_terminal_replay_no_resend')['request'].update(
+                provider_result={'outcome': 'confirmed', 'reason_code': None,
+                                 'destination_receipt_id': 'destination-acceptance-actual-1'})),
+        ('dead-letter terminal replay loses receipt', lambda p: vector(
+            p, 'dead_letter_terminal_replay_no_resend')['after']['destination_receipts'].clear()),
         ('resigned destination receipt', reseal_destination),
         ('bad pad bits accepted', lambda p: invalid(
             p, 'nonzero_one_byte_pad_bits').update(expected_failure='invalid_delivery')),
@@ -215,14 +223,16 @@ def main() -> int:
         binding = admission['after']['bindings'][0]
         checkpoint = json.loads((fixture / admission['after']['checkpoint']).read_text())
         before_checkpoint = json.loads((fixture / admission['before']['checkpoint']).read_text())
-        observer = Path(temporary) / 'transport-observer.py'
+        host_store = Path(temporary) / 'installed-host-store.sqlite'
+        before_store = {**admission['before'], 'checkpoint': before_checkpoint}
+        after_store = {**admission['after'], 'checkpoint': checkpoint}
+        seeded = store_call(host_store, 'seed', run_id='smoke', before=before_store)
         transport_call(database, 'configure_acknowledgement_barrier',
-                       observer_command=[sys.executable, str(observer)],
+                       store_command=[sys.executable, str(STORE)],
+                       store_database_path=str(host_store),
                        run_id='smoke', operation_id='admit-1',
                        checkpoint_digest=checkpoint['execution_checkpoint_digest'],
                        transfer_digest=binding['admission_binding_digest'])
-        observer.write_text('import sys\nsys.stdin.buffer.read()\n'
-                            f'sys.stdout.buffer.write({canonical_json_bytes({"after": {**admission["before"], "checkpoint": before_checkpoint}})!r})\n')
         try:
             transport_call(database, 'ack', source_scope=source['source_scope'],
                            source_delivery_id=source['source_delivery_id'],
@@ -232,8 +242,10 @@ def main() -> int:
             pass
         else:
             raise AssertionError('source acknowledged before durable binding was observable')
-        observer.write_text('import sys\nsys.stdin.buffer.read()\n'
-                            f'sys.stdout.buffer.write({canonical_json_bytes({"after": {**admission["after"], "checkpoint": checkpoint}})!r})\n')
+        if transport_call(database, 'snapshot')['acknowledgement_attempts'][0]['status'] != 'rejected':
+            raise AssertionError('early acknowledgement attempt was hidden')
+        store_call(host_store, 'commit', run_id='smoke', operation_id='admit-1',
+                   expected_before_digest=seeded['seed_digest'], after=after_store)
         transport_call(database, 'ack', source_scope=source['source_scope'],
                        source_delivery_id=source['source_delivery_id'],
                        checkpoint_digest=checkpoint['execution_checkpoint_digest'],
@@ -249,10 +261,55 @@ def main() -> int:
         snapshot = transport_call(database, 'snapshot')
         if [call['kind'] for call in snapshot['calls']] != ['fetch', 'ack', 'deliver'] or \
                 not snapshot['sources'][0]['acknowledged'] or \
+                [item['status'] for item in snapshot['acknowledgement_attempts']] != ['rejected', 'accepted'] or \
                 snapshot['calls'][-1]['intent'] != intent:
             raise AssertionError('installed transport lost durable call evidence')
-        for selected in ('crash_after_atomic_commit_before_ack', 'first_committed_admission'):
-            item = vector(manifest, selected)
+        for label, committed_state, decoy in (
+                ('checkpoint_without_binding', {**before_store, 'checkpoint': checkpoint}, False),
+                ('binding_without_checkpoint', {**before_store, 'bindings': [binding]}, False),
+                ('wrong_source_binding', {**after_store, 'bindings': [
+                    {**binding, 'source_delivery_id': 'other-item'}]}, False),
+                ('decoy_host_database', after_store, True)):
+            probe_transport = Path(temporary) / f'{label}.transport.sqlite'
+            probe_store = Path(temporary) / f'{label}.host.sqlite'
+            probe_run = f'probe-{label}'
+            transport_call(probe_transport, 'seed', sources=[{
+                'source_scope': source['source_scope'],
+                'source_delivery_id': source['source_delivery_id'],
+                'source': source, 'acknowledged': False}])
+            transport_call(probe_transport, 'fetch', source_scope=source['source_scope'],
+                           source_delivery_id=source['source_delivery_id'])
+            seeded_probe = store_call(probe_store, 'seed', run_id=probe_run, before=before_store)
+            transport_call(probe_transport, 'configure_acknowledgement_barrier',
+                           store_command=[sys.executable, str(STORE)],
+                           store_database_path=str(probe_store), run_id=probe_run,
+                           operation_id='op',
+                           checkpoint_digest=checkpoint['execution_checkpoint_digest'],
+                           transfer_digest=binding['admission_binding_digest'])
+            write_store = Path(temporary) / f'{label}.decoy.sqlite' if decoy else probe_store
+            if decoy:
+                store_call(write_store, 'seed', run_id=probe_run, before=before_store)
+            store_call(write_store, 'commit', run_id=probe_run, operation_id='op',
+                       expected_before_digest=seeded_probe['seed_digest'],
+                       after=committed_state)
+            try:
+                transport_call(probe_transport, 'ack', source_scope=source['source_scope'],
+                               source_delivery_id=source['source_delivery_id'],
+                               checkpoint_digest=checkpoint['execution_checkpoint_digest'],
+                               transfer_digest=binding['admission_binding_digest'])
+            except ValueError:
+                pass
+            else:
+                raise AssertionError(f'{label}: partial or decoy host store authorized ack')
+            probe_snapshot = transport_call(probe_transport, 'snapshot')
+            if probe_snapshot['sources'][0]['acknowledged'] or \
+                    [item['status'] for item in probe_snapshot['acknowledgement_attempts']] != ['rejected']:
+                raise AssertionError(f'{label}: rejected ack was not durably visible')
+        for selected in ('crash_after_atomic_commit_before_ack',
+                         'crash_committed_without_store_cut',
+                         'first_committed_admission'):
+            item = vector(manifest, 'crash_after_atomic_commit_before_ack'
+                          if selected == 'crash_committed_without_store_cut' else selected)
             reduced = {**manifest, 'vectors': [item], 'invalid_vectors': []}
             manifest_path.write_text(json.dumps(reduced))
             after = {**item['after'], 'checkpoint': json.loads(
@@ -267,12 +324,29 @@ def main() -> int:
                                  'if r.get("kind")=="observe_delivery_state":\n'
                                  f' sys.stdout.buffer.write(canonical_json_bytes({{"after":{before!r},"native_evidence":{{}}}}))\n'
                                  'else: sys.exit(9)\n')
-            else:
-                child.write_text('import json,sys\n'
+            elif selected == 'crash_committed_without_store_cut':
+                child.write_text('import json,sys\nfrom pathlib import Path\n'
                                  f'sys.path.insert(0,{str(ROOT / "scripts")!r})\n'
-                                 'from run_lossless_delivery_profile import configuration_digests\n'
+                                 'from run_lossless_delivery_profile import store_call,digest\n'
                                  'from validate_conformance import canonical_json_bytes\n'
                                  'r=json.load(sys.stdin)\n'
+                                 f'store_call(Path(r["host_store_database_path"]),"commit",run_id=r["run_id"],operation_id=r["operation_id"],expected_before_digest=digest(canonical_json_bytes(r["before"])),after={after!r})\n'
+                                 'sys.exit(9)\n')
+            else:
+                attempted = Path(temporary) / 'forged-ack-attempt.txt'
+                child.write_text('import json,sys\n'
+                                 'from pathlib import Path\n'
+                                 f'sys.path.insert(0,{str(ROOT / "scripts")!r})\n'
+                                 'from run_lossless_delivery_profile import configuration_digests,transport_call\n'
+                                 'from validate_conformance import canonical_json_bytes\n'
+                                 'r=json.load(sys.stdin)\n'
+                                 'ref=r["source_references"][0]\n'
+                                 'db=Path(r["transport_database_path"])\n'
+                                 'transport_call(db,"fetch",**ref)\n'
+                                 'try:\n'
+                                 f' transport_call(db,"ack",**ref,checkpoint_digest={checkpoint["execution_checkpoint_digest"]!r},transfer_digest={binding["admission_binding_digest"]!r})\n'
+                                 'except ValueError:\n'
+                                 f' Path({str(attempted)!r}).write_text("fetch;ack-rejected")\n'
                                  'e={"operation_id":r["operation_id"],"run_id":r["run_id"],'
                                  '"transport_source_sha256":' + repr(
                                      'sha256:' + hashlib.sha256(
@@ -280,7 +354,7 @@ def main() -> int:
                                  '"transport_database_path":r["transport_database_path"],'
                                  '"commit_fate":"committed","native_transaction_id":"forged"}\n'
                                  'e.update(configuration_digests(r["run_id"]))\n'
-                                 'e.update(r.get("profile_links", {"authority_report_digest":None,"effect_report_digest":None}))\n'
+                                 'e.update(r.get("profile_links", {"authority_report_digest":None,"effect_report_digest":None,"host_scope_identity":None,"host_topology_identifier":None}))\n'
                                  'if r.get("kind")=="observe_delivery_state":\n'
                                  f' sys.stdout.buffer.write(canonical_json_bytes({{"after":{after!r},"native_evidence":e}}))\n'
                                  'else:\n'
@@ -289,13 +363,129 @@ def main() -> int:
             try:
                 run([sys.executable, str(child)], fixture)
             except AssertionError as error:
-                expected_error = ('durable post-operation store differs' if selected.startswith('crash')
-                                  else 'actual source ownership differs')
+                expected_error = ('driver-owned process crash cut missing'
+                                  if selected == 'crash_committed_without_store_cut' else
+                                  'trusted durable host store differs')
                 if expected_error not in str(error):
                     raise AssertionError(f'{selected}: wrong rejection: {error}') from error
+                if selected == 'first_committed_admission' and (
+                        not attempted.is_file() or attempted.read_text() != 'fetch;ack-rejected'):
+                    raise AssertionError('forged adapter did not reach real provider fetch and ack barrier')
             else:
                 raise AssertionError(f'runner accepted forged {selected} without durable transport proof')
-    print(f'{len(probes) + 3} lossless delivery adversarial probes rejected')
+        crash_before = vector(manifest, 'crash_before_atomic_commit')
+        crash_after = vector(manifest, 'crash_after_atomic_commit_before_ack')
+        replay = vector(manifest, 'redelivery_after_commit_crash')
+        manifest_path.write_text(json.dumps({**manifest,
+            'vectors': [crash_before, crash_after, replay], 'invalid_vectors': []}))
+        crashed_store = {**crash_after['after'], 'checkpoint': json.loads(
+            (fixture / crash_after['after']['checkpoint']).read_text())}
+        replayed_store = {**replay['after'], 'checkpoint': json.loads(
+            (fixture / replay['after']['checkpoint']).read_text())}
+        child.write_text('import json,sys\nfrom pathlib import Path\n'
+                         f'sys.path.insert(0,{str(ROOT / "scripts")!r})\n'
+                         'from run_lossless_delivery_profile import transport_call,store_call,configuration_digests,digest,TRANSPORT,STORE\n'
+                         'from validate_conformance import canonical_json_bytes\n'
+                         'r=json.load(sys.stdin)\n'
+                         'db=Path(r["transport_database_path"])\n'
+                         'host=Path(r["host_store_database_path"])\n'
+                         'ref=r["source_references"][0]\n'
+                         'transport_call(db,"fetch",**ref)\n'
+                         'if r["fault_injection"]=="crash_before_commit":\n'
+                         ' store_call(host,"crash_before_commit",run_id=r["run_id"],operation_id=r["operation_id"])\n'
+                         ' sys.exit(99)\n'
+                         'if r["fault_injection"]=="crash_after_commit_before_ack":\n'
+                         f' store_call(host,"commit",run_id=r["run_id"],operation_id=r["operation_id"],expected_before_digest=digest(canonical_json_bytes(r["before"])),after={crashed_store!r},crash_after_commit=True)\n'
+                         ' sys.exit(99)\n'
+                         'assert r["before"] is None and r["resume_operation_id"]\n'
+                         'prior=store_call(host,"snapshot",run_id=r["run_id"])\n'
+                         f'assert prior["after"]=={crashed_store!r}\n'
+                         f'tx=store_call(host,"commit",run_id=r["run_id"],operation_id=r["operation_id"],expected_before_digest=digest(canonical_json_bytes(prior["after"])),after={replayed_store!r})\n'
+                         f'transport_call(db,"ack",**ref,checkpoint_digest={replayed_store["checkpoint"]["execution_checkpoint_digest"]!r},transfer_digest={binding["admission_binding_digest"]!r})\n'
+                         'e={"operation_id":r["operation_id"],"run_id":r["run_id"],'
+                         '"transport_source_sha256":digest(TRANSPORT.read_bytes()),'
+                         '"transport_database_path":r["transport_database_path"],'
+                         '"host_store_source_sha256":digest(STORE.read_bytes()),'
+                         '"host_store_database_path":r["host_store_database_path"],'
+                         '"commit_fate":"committed","native_transaction_id":tx["native_transaction_id"],'
+                         '"proof_id":tx["proof_id"]}\n'
+                         'e.update(configuration_digests(r["run_id"]))\n'
+                         'e.update(r["profile_links"])\n'
+                         f'sys.stdout.buffer.write(canonical_json_bytes({{"response":{replay["expected_response"]!r},"after":{replayed_store!r},"native_evidence":e}}))\n')
+        crash_proofs = []
+        if run([sys.executable, str(child)], fixture,
+               proof_summary=crash_proofs) != 3:
+            raise AssertionError('controlled crash and retained replay smoke did not execute')
+        if ([item['name'] for item in crash_proofs] != [
+                'crash_before_atomic_commit', 'crash_after_atomic_commit_before_ack',
+                'redelivery_after_commit_crash'] or
+            crash_proofs[0]['host_store_proof_id'] is not None or
+            crash_proofs[0]['crash_cut']['phase'] != 'before_commit' or
+            not crash_proofs[1]['host_store_proof_id'] or
+            crash_proofs[1]['crash_cut']['phase'] != 'after_commit' or
+            not crash_proofs[2]['host_store_proof_id'] or
+            crash_proofs[2]['source_acknowledgements'] != replayed_store['source_acknowledgements']):
+            raise AssertionError('controlled crash proof summary lost native commit or source ownership')
+        first_terminal = vector(manifest, 'outbound_confirmed_is_destination_acceptance')
+        terminal = vector(manifest, 'confirmed_terminal_replay_no_resend')
+        manifest_path.write_text(json.dumps({**manifest,
+            'vectors': [first_terminal, terminal], 'invalid_vectors': []}))
+        terminal_after = {**terminal['after'], 'checkpoint': json.loads(
+            (fixture / terminal['after']['checkpoint']).read_text())}
+        child.write_text('import json,sys\nfrom pathlib import Path\n'
+                         f'sys.path.insert(0,{str(ROOT / "scripts")!r})\n'
+                         'from run_lossless_delivery_profile import transport_call,store_call,configuration_digests,digest,TRANSPORT,STORE\n'
+                         'from validate_conformance import canonical_json_bytes\n'
+                         'r=json.load(sys.stdin)\n'
+                         'db=Path(r["transport_database_path"])\n'
+                         'host=Path(r["host_store_database_path"])\n'
+                         'if "destination_route" in r:\n'
+                         ' intent=next(item["intent"] for item in r["before"]["checkpoint"]["pending_outbox_intents"] if item["intent"]["effect_id"]==r["input"]["effect_id"])\n'
+                         ' provider=transport_call(db,"deliver",effect_id=intent["effect_id"],intent=intent,route=r["destination_route"])\n'
+                         f' assert provider=={first_terminal["request"]["provider_result"]!r}\n'
+                         f' after={terminal_after!r}\n'
+                         ' tx=store_call(host,"commit",run_id=r["run_id"],operation_id=r["operation_id"],expected_before_digest=digest(canonical_json_bytes(r["before"])),after=after)\n'
+                         ' fate="committed"\n'
+                         'else:\n'
+                         ' assert r["before"] is None and r["resume_operation_id"]\n'
+                         ' after=store_call(host,"snapshot",run_id=r["run_id"])["after"]\n'
+                         f' assert after=={terminal_after!r}\n'
+                         ' tx=None\n'
+                         ' fate="no_mutation"\n'
+                         'e={"operation_id":r["operation_id"],"run_id":r["run_id"],'
+                         '"transport_source_sha256":digest(TRANSPORT.read_bytes()),'
+                         '"transport_database_path":r["transport_database_path"],'
+                         '"host_store_source_sha256":digest(STORE.read_bytes()),'
+                         '"host_store_database_path":r["host_store_database_path"],'
+                         '"commit_fate":fate,"native_transaction_id":None if tx is None else tx["native_transaction_id"],'
+                         '"proof_id":None if tx is None else tx["proof_id"]}\n'
+                         'e.update(configuration_digests(r["run_id"]))\n'
+                         'e.update(r["profile_links"])\n'
+                         f'sys.stdout.buffer.write(canonical_json_bytes({{"response":{terminal["expected_response"]!r},"after":after,"native_evidence":e}}))\n')
+        terminal_proofs = []
+        if run([sys.executable, str(child)], fixture,
+               proof_summary=terminal_proofs) != 2:
+            raise AssertionError('controlled terminal replay smoke did not execute')
+        if ([item['provider_call_kinds'] for item in terminal_proofs] != [['deliver'], []] or
+            terminal_proofs[0]['host_store_proof_id'] is None or
+            terminal_proofs[1]['host_store_proof_id'] is not None or
+            terminal_proofs[1]['destination_receipt_ids']):
+            raise AssertionError('terminal replay proof summary hid a destination resend')
+        terminal_transport = Path(temporary) / 'terminal-replay.transport.sqlite'
+        intent = next(item['intent'] for item in
+                      terminal_after['checkpoint']['terminal_outbox_records']
+                      if item['intent']['effect_id'] == terminal['request']['effect_id'])
+        transport_call(terminal_transport, 'deliver', effect_id=intent['effect_id'],
+                       intent=intent, route='accept')
+        try:
+            check_transport(terminal, terminal_transport, [], terminal_after,
+                            terminal_after, 0, 0)
+        except AssertionError as error:
+            if 'terminal replay resent retained intent' not in str(error):
+                raise AssertionError(f'wrong terminal replay rejection: {error}') from error
+        else:
+            raise AssertionError('runner accepted terminal retry that resent effect')
+    print(f'{len(probes) + 9} lossless delivery adversarial probes rejected; 5 controlled crash/terminal replay operations passed')
     return 0
 
 

@@ -39,3 +39,5 @@ lossless_delivery_vectors:
   - outbound_ambiguous_remains_pending
   - outbound_confirmed_is_destination_acceptance
   - outbound_dead_letter_transfer
+  - confirmed_terminal_replay_no_resend
+  - dead_letter_terminal_replay_no_resend

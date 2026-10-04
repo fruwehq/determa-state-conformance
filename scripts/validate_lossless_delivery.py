@@ -27,7 +27,9 @@ ADDITIONAL = ('source_owned_backpressure', 'removed_target_keeps_source',
               'structural_recall_reuses_acceptance',
               'outbound_ambiguous_remains_pending',
               'outbound_confirmed_is_destination_acceptance',
-              'outbound_dead_letter_transfer')
+              'outbound_dead_letter_transfer',
+              'confirmed_terminal_replay_no_resend',
+              'dead_letter_terminal_replay_no_resend')
 
 
 def fail(message: str) -> None:
@@ -410,6 +412,23 @@ def validate_profile(case: Path, test: dict, artifacts: set[Path], spec_root: Pa
                 before['bindings'] or after['bindings'] or
                 before['source_acknowledgements'] or after['source_acknowledgements']):
                 fail(f'{name}: placement changed source ownership or checkpoint')
+        elif name in ('confirmed_terminal_replay_no_resend',
+                      'dead_letter_terminal_replay_no_resend'):
+            original_name = ('outbound_confirmed_is_destination_acceptance'
+                             if name.startswith('confirmed_') else 'outbound_dead_letter_transfer')
+            original = by_name[original_name]
+            if (vector['operation'] != 'deliver_outbound' or
+                vector['request'] != {'effect_id': original['request']['effect_id']} or
+                vector['replay_of'] != original_name or before != original['after'] or
+                after != before or response != original['expected_response'] or
+                len(after.get('destination_receipts', [])) != 1):
+                fail(f'{name}: terminal replay resent or changed retained decision')
+            terminal = files[after['checkpoint']]['terminal_outbox_records']
+            if (len([row for row in terminal if row['intent']['effect_id'] ==
+                     vector['request']['effect_id']]) != 1 or
+                any(row['intent']['effect_id'] == vector['request']['effect_id']
+                    for row in files[after['checkpoint']]['pending_outbox_intents'])):
+                fail(f'{name}: terminal effect became pending again')
         else:
             if vector['operation'] != 'deliver_outbound':
                 fail(f'{name}: wrong outbound operation')

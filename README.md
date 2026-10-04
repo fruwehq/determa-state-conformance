@@ -59,7 +59,7 @@ capability, deferred-payload capacity, pending intents, declaration-change repla
 checkpoint-backed projection witnesses with unchanged selected row values on the
 fault path.
 
-The optional lossless-delivery profile adds fifty-eight version-1 vectors for source
+The optional lossless-delivery profile adds sixty version-1 vectors for source
 ownership, atomic admission and crash recovery, mailbox placement, terminal
 disposition, ingress dead letters, complete outbound intents, destination receipts,
 malformed inputs, invalid evidence links, six complete core result observations,
