@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/timer-delivery-v1.schema.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["fixture_format", "fixture_schema_version", "vectors", "invalid_vectors"],
+  "properties": {
+    "fixture_format": {"const": "determa.timer_helper.delivery_vectors"},
+    "fixture_schema_version": {"const": 1},
+    "invalid_vectors": {"const": []},
+    "vectors": {"type": "array", "minItems": 3, "maxItems": 3,
+      "items": {"$ref": "#/$defs/vector"}}
+  },
+  "$defs": {
+    "store": {
+      "type": "object", "additionalProperties": false,
+      "required": ["checkpoint", "bindings", "dead_letters", "source_acknowledgements", "provider_dispatches", "timer_artifact"],
+      "properties": {
+        "checkpoint": {"enum": ["before-timer-checkpoint-v1.json", "after-timer-checkpoint-v1.json"]},
+        "bindings": {"type": "array", "items": {"$ref": "https://determa.dev/state/schema/delivery-v1.schema.json#/$defs/admission_binding"}},
+        "dead_letters": {"const": []},
+        "source_acknowledgements": {"type": "array", "items": {"type": "object", "additionalProperties": false,
+          "required": ["source_scope", "source_delivery_id"],
+          "properties": {"source_scope": {"type": "string"}, "source_delivery_id": {"type": "string"}}}},
+        "provider_dispatches": {"const": 0},
+        "timer_artifact": {"$ref": "https://determa.dev/state/schema/timer-record-v1.schema.json"}
+      }
+    },
+    "vector": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "operation", "request", "timer_fire_context", "before", "after", "fault_injection", "replay_of", "expected_response"],
+      "properties": {
+        "name": {"type": "string", "minLength": 1},
+        "operation": {"const": "ingest"},
+        "request": {"$ref": "https://determa.dev/state/schema/delivery-v1.schema.json#/$defs/request"},
+        "timer_fire_context": {"type": "object", "additionalProperties": false,
+          "required": ["complete_request", "trusted_now", "expected_prior_fate", "helper_provider_interface"],
+          "properties": {
+            "complete_request": {"$ref": "https://determa.dev/state/schema/timer-helper-operation-v1.schema.json#/$defs/request"},
+            "trusted_now": {"const": "120"},
+            "expected_prior_fate": {"const": "claimed"},
+            "helper_provider_interface": {"const": "determa.timer_helper"}
+          }},
+        "before": {"$ref": "#/$defs/store"},
+        "after": {"$ref": "#/$defs/store"},
+        "fault_injection": {"enum": [null, "crash_after_commit_before_ack"]},
+        "replay_of": {"type": ["string", "null"]},
+        "expected_response": {"oneOf": [
+          {"$ref": "https://determa.dev/state/schema/delivery-v1.schema.json#/$defs/admitted"},
+          {"type": "object", "additionalProperties": false, "required": ["kind"],
+           "properties": {"kind": {"const": "no_response"}}}
+        ]}
+      }
+    }
+  }
+}

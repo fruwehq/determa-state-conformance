@@ -39,6 +39,9 @@ migrated suite.
   mailbox, dead-letter, and outbound responsibility profile.
 - `conformance/profiles/portable-archive/` — the optional SPEC §22 complete export
   and inert staging profile with declared participants.
+- `conformance/profiles/timer-helper/` — the optional SPEC §23 external timer helper
+  operations, signed-nanosecond clock boundaries, declared event admission,
+  and separate timer archive participant.
 - `conformance/profiles/recovery/` — the optional SPEC §24 strict quarantine,
   fresh-scope takeover, clone, and conditional same-authority transfer profile.
 - `conformance/closed-code-registry/registry.json` — the single machine-readable

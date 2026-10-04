@@ -25,7 +25,7 @@ def require_equal(actual, expected, label: str) -> None:
         raise ValueError(f'{label}: complete canonical response differs')
 
 
-def run_case(command: list[str], kind: str, case: dict) -> None:
+def run_case(command: list[str], kind: str, case: dict, extra_input: dict | None = None) -> dict:
     if kind == 'export':
         request = {'operation': 'export', 'request': case['input_request'],
                    'source_capture': case['source_capture']}
@@ -33,6 +33,10 @@ def run_case(command: list[str], kind: str, case: dict) -> None:
         request = {'operation': 'stage', 'request': case['input_request'],
                    'input_archive': case['input_archive'],
                    'configured_import': case['configured_import']}
+    if extra_input:
+        if set(extra_input) & set(request):
+            raise ValueError('archive driver input duplicates a closed operation member')
+        request.update(extra_input)
     completed = subprocess.run(command, input=canonical(request), capture_output=True,
                                check=False, timeout=120)
     if completed.returncode:
@@ -66,6 +70,7 @@ def run_case(command: list[str], kind: str, case: dict) -> None:
         require_equal(staged[-1], {'staging_identity': case['input_request']['staging_identity'],
                                    'archive': case['expected_staged_archive']},
                       case['case_id'] + ' staged bytes')
+    return response
 
 
 def main() -> int:
