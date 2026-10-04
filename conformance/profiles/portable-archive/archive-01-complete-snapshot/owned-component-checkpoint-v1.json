@@ -1,0 +1,328 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "archive-owned-1",
+  "revision": "4",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:b072688afb01bdab2d9fc0e943254e75c3558b02b240847e40ac27cc82f87a61",
+      "namespace": "conformance.case_29_owned_spawn",
+      "root_machine_id": "order",
+      "root_machine_version": "1",
+      "root_instance_id": "archive-owned-1",
+      "creation_id": "archive-owned-create",
+      "root_runtime_id": "sha256:1745c5b9244d34f6be280f20dddd310308f099df407748ee8103bc2418878904",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "3",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "2",
+      "next_queue_sequence": "3",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:1745c5b9244d34f6be280f20dddd310308f099df407748ee8103bc2418878904",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:b072688afb01bdab2d9fc0e943254e75c3558b02b240847e40ac27cc82f87a61",
+              "machine": {
+                "namespace": "conformance.case_29_owned_spawn",
+                "machine_id": "order",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "archive-owned-1"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "archive-owned-1",
+              "root_runtime_id": "sha256:1745c5b9244d34f6be280f20dddd310308f099df407748ee8103bc2418878904"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:b072688afb01bdab2d9fc0e943254e75c3558b02b240847e40ac27cc82f87a61",
+            "machine": {
+              "namespace": "conformance.case_29_owned_spawn",
+              "machine_id": "order",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root/states/checkout"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/0/root/states/checkout",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "map",
+                [
+                  [
+                    "instance_id",
+                    [
+                      "string",
+                      "sha256:49ed581820f7a916f9b00499e0a558e85d8dffb6269c1dc399dadd6c34d39c07"
+                    ]
+                  ],
+                  [
+                    "machine_id",
+                    [
+                      "string",
+                      "payment"
+                    ]
+                  ],
+                  [
+                    "machine_version",
+                    [
+                      "integer",
+                      "1"
+                    ]
+                  ],
+                  [
+                    "root_instance_id",
+                    [
+                      "string",
+                      "archive-owned-1"
+                    ]
+                  ]
+                ]
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/total",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "100"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "1",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/checkout",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/idle",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [],
+          "deferred_mailbox": []
+        },
+        {
+          "runtime_id": "sha256:49ed581820f7a916f9b00499e0a558e85d8dffb6269c1dc399dadd6c34d39c07",
+          "identity_origin": {
+            "kind": "owned_spawned_instance",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:b072688afb01bdab2d9fc0e943254e75c3558b02b240847e40ac27cc82f87a61",
+              "machine": {
+                "namespace": "conformance.case_29_owned_spawn",
+                "machine_id": "payment",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/1/root"
+              }
+            },
+            "owner_runtime_id": "sha256:1745c5b9244d34f6be280f20dddd310308f099df407748ee8103bc2418878904",
+            "spawn_action_pointer": "/machines/0/root/states/idle/on_events/start/action/0/spawn",
+            "spawn_sequence": "0"
+          },
+          "target_identity": {
+            "spawned_instance": {
+              "root_instance_id": "archive-owned-1",
+              "instance_id": "sha256:49ed581820f7a916f9b00499e0a558e85d8dffb6269c1dc399dadd6c34d39c07",
+              "machine_id": "payment",
+              "machine_version": "1"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:b072688afb01bdab2d9fc0e943254e75c3558b02b240847e40ac27cc82f87a61",
+            "machine": {
+              "namespace": "conformance.case_29_owned_spawn",
+              "machine_id": "payment",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/1/root"
+            }
+          },
+          "relation": {
+            "kind": "owned_spawned_instance",
+            "owner_runtime_id": "sha256:1745c5b9244d34f6be280f20dddd310308f099df407748ee8103bc2418878904",
+            "current_spawn_action_pointer": "/machines/0/root/states/idle/on_events/start/action/0/spawn",
+            "spawn_sequence": "0",
+            "lifetime_holder": {
+              "holder_runtime_id": "sha256:1745c5b9244d34f6be280f20dddd310308f099df407748ee8103bc2418878904",
+              "variable_declaration_pointer": "/machines/0/root/variables/payment_reference",
+              "holder_state_activation_sequence": "0"
+            }
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/1/root/states/awaiting"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/1/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/1/root/states/awaiting",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/1/root/variables/due",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "100"
+              ]
+            },
+            {
+              "variable_declaration_pointer": "/machines/1/root/variables/paid",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "0"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/1/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/1/root/states/awaiting",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [],
+          "deferred_mailbox": [
+            {
+              "envelope": {
+                "event": "hold",
+                "event_id": "archive-owned-hold",
+                "cause_id": "archive-owned-hold",
+                "source": {
+                  "host": true
+                },
+                "target": {
+                  "spawned_instance": {
+                    "root_instance_id": "archive-owned-1",
+                    "instance_id": "sha256:49ed581820f7a916f9b00499e0a558e85d8dffb6269c1dc399dadd6c34d39c07",
+                    "machine_id": "payment",
+                    "machine_version": "1"
+                  }
+                },
+                "payload": [
+                  "map",
+                  []
+                ]
+              },
+              "envelope_digest": "sha256:a092aa0e78bf286d6d6daf8b294163e39455bae28b772a97186c0201db852a07",
+              "delivery_mode": "input",
+              "acceptance_sequence": "1",
+              "queue_sequence": "2",
+              "deferral_count": "1"
+            }
+          ]
+        }
+      ],
+      "aggregate_state_digest": "sha256:2c8fa6bbd601c06d770acaf22fad9f285ae566b02cad2685fb218a5bd087e9b6"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "archive-owned-create",
+      "request_digest": "sha256:ddb5d6a8ab58693486fc36ed96bd5827c530b26676db13d7272cd809b9c21eb2",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:7ae3c4b6f16dce9006330d532d20e9ce7d553502215673b05307919bc713dd71",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "1",
+      "event_id": "archive-owned-start",
+      "request_digest": "sha256:c93a3b1ce1dfa6bb1330b35afbaa25cf4562534c93c25e1235d709cad2cc5e54",
+      "acceptance_sequence": "0",
+      "accepted_revision": "1",
+      "delivery_mode": "input"
+    },
+    {
+      "operation_kind": "event_terminal",
+      "receipt_sequence": "2",
+      "event_id": "archive-owned-start",
+      "request_digest": "sha256:c93a3b1ce1dfa6bb1330b35afbaa25cf4562534c93c25e1235d709cad2cc5e54",
+      "acceptance_sequence": "0",
+      "final_queue_sequence": "0",
+      "committed_revision": "2",
+      "resulting_aggregate_state_digest": "sha256:1fdee3241497ae7e1f587338fdf6ffd0f95702588e717731f46a6402daeb3e14",
+      "outcome": {
+        "disposition": "handled",
+        "status": "running",
+        "fault": null,
+        "rejection": null
+      },
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "3",
+      "event_id": "archive-owned-hold",
+      "request_digest": "sha256:a092aa0e78bf286d6d6daf8b294163e39455bae28b772a97186c0201db852a07",
+      "acceptance_sequence": "1",
+      "accepted_revision": "3",
+      "delivery_mode": "input"
+    }
+  ],
+  "next_operation_receipt_sequence": "4",
+  "replay_retention": {
+    "mode": "permanent",
+    "permanent_replay_eligible": true,
+    "pruned_through_receipt_sequence": null,
+    "policy_identifier": null
+  },
+  "event_identity_tombstones": [],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:8a9b98a6149c3cd37015d0c5c5ea13727e0c7ab575f43596e85e2343141511f7"
+}
