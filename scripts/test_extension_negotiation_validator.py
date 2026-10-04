@@ -12,7 +12,8 @@ import tempfile
 from pathlib import Path
 
 from validate_extension_negotiation import (
-    ExtensionValidationError, PROFILE, exact_json_equal, validate_document,
+    ExtensionValidationError, PROFILE, exact_json_equal, public_outcome,
+    validate_document, validators,
 )
 
 
@@ -21,6 +22,56 @@ def main() -> int:
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
     original = json.loads((PROFILE / "vectors.generated.json").read_text())
+    # The original drift was a descriptor-only transport capability. Exercise
+    # the cross-schema guard for every category and each of the three inputs.
+    schema_fields = (
+        ("extension-descriptor-v1.schema.json", "supported_capabilities", True),
+        ("extension-capability-report-v1.schema.json", "claims", True),
+        ("extension-capability-requirement-v1.schema.json", "capability", False),
+    )
+    with tempfile.TemporaryDirectory() as directory:
+        spec_copy = Path(directory)
+        (spec_copy / "schema").mkdir()
+        for filename, _, _ in schema_fields:
+            (spec_copy / "schema" / filename).write_bytes((args.spec_root / "schema" / filename).read_bytes())
+        (spec_copy / "schema/provider-reference-v1.schema.json").write_bytes(
+            (args.spec_root / "schema/provider-reference-v1.schema.json").read_bytes())
+        for filename, field, is_array in schema_fields:
+            path = spec_copy / "schema" / filename
+            pristine = json.loads(path.read_text())
+            for branch in pristine["allOf"]:
+                altered = copy.deepcopy(pristine)
+                category = branch["if"]["properties"]["category"]["const"]
+                target = next(part for part in altered["allOf"]
+                              if part["if"]["properties"]["category"]["const"] == category)
+                capability = target["then"]["properties"][field]
+                values = capability["items"]["enum"] if is_array else capability["enum"]
+                if values:
+                    values.pop()
+                else:
+                    values.append("invented_capability")
+                path.write_text(json.dumps(altered))
+                try:
+                    validators(spec_copy)
+                except ExtensionValidationError:
+                    pass
+                else:
+                    raise AssertionError(f"{filename}: missing {category} capability accepted")
+            path.write_text(json.dumps(pristine))
+    # A schema-valid transport claim on the inert public provider cannot use
+    # the common-rule hypothetical proof to satisfy a production requirement.
+    source_order = next(v for v in original["vectors"]
+                        if v["id"] == "configured_transport_source_order_satisfied")
+    descriptor = copy.deepcopy(source_order["registrations"][0])
+    descriptor["provider_reference"]["content_digest"] = original["provider_closure"]["content_digest"]
+    configured = {"instance_id": "primary", "health": "healthy", "claims": ["source_ordered"]}
+    requirement = {"category": "transport", "provider_reference": descriptor["provider_reference"],
+                   "instance_id": "primary", "capability": "source_ordered"}
+    public_probe = {"installation": "register", "registration": descriptor,
+                    "configuration": configured, "requirement": requirement}
+    if public_outcome(public_probe, validators(args.spec_root), original["provider_closure"]["content_digest"]) != \
+            {"status": "rejected", "code": "extension_capability_mismatch"}:
+        raise AssertionError("unproved public source-order claim accepted")
     provider_namespace = {}
     provider_source = PROFILE / "provider/test_provider.py"
     exec(compile(provider_source.read_bytes(), str(provider_source), "exec"), provider_namespace)
