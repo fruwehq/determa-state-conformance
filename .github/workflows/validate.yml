@@ -131,6 +131,16 @@ jobs:
           python scripts/generate_committed_native_effects_profile.py
           --spec-root .determa-state-spec --check
 
+      - name: Check generated external timer helper fixtures
+        run: >-
+          python scripts/generate_timer_helper_profile.py
+          --spec-root .determa-state-spec --check
+
+      - name: Test external timer helper fixture relations
+        run: >-
+          python scripts/test_timer_helper_validator.py
+          --spec-root .determa-state-spec
+
       - name: Test committed native effect relational and adapter gates
         run: >-
           python scripts/test_committed_native_effects_validator.py
