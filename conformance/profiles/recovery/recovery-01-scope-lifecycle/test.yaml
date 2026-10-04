@@ -54,6 +54,12 @@
       "owned_ambiguous_effect_dispatch_denied",
       "owned_old_worker_matching_effect_rejected",
       "owned_clone_scope"
+    ],
+    "namespace": [
+      "standalone_allocated_namespace_reuse",
+      "clone_allocated_namespace_reuse",
+      "standalone_terminated_namespace_reuse",
+      "clone_terminated_namespace_reuse"
     ]
   }
 }

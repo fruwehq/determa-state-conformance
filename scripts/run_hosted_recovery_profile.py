@@ -13,7 +13,7 @@ import tempfile
 
 from validate_portable_archive import canonical, digest, parse_json_bytes, read_json
 from validate_recovery_profile import CASE, validate_profile
-from run_recovery_profile import run_case
+from run_recovery_profile import run_case, trusted_bridge
 from run_lossless_delivery_profile import (verify_delivery_proof_summary,
     verify_configured_delivery_profile)
 
@@ -156,10 +156,16 @@ def main() -> int:
     parser.add_argument('--spec-root', required=True, type=Path)
     parser.add_argument('--adapter', required=True)
     parser.add_argument('--authority-adapter', required=True)
+    parser.add_argument('--recovery-bridge', required=True,
+                        help='reviewed §24 production invocation bridge')
+    parser.add_argument('--recovery-bridge-registration', required=True, type=Path,
+                        help='trusted runner-selected §24 bridge installation anchor')
     args = parser.parse_args()
     command, authority_command = shlex.split(args.adapter), shlex.split(args.authority_adapter)
-    if not command or not authority_command:
+    recovery_command = shlex.split(args.recovery_bridge)
+    if not command or not authority_command or not recovery_command:
         parser.error('configured host and authority adapter commands required')
+    trusted_bridge(recovery_command, args.recovery_bridge_registration)
     validate_profile(args.spec_root)
     hosted_runner = ROOT / 'scripts/run_lossless_delivery_profile.py'
     fixture = read_json(CASE / 'recovery-cases-v1.json')
@@ -175,17 +181,29 @@ def main() -> int:
                              completed.stderr.decode('utf-8', 'replace')[:1000])
         summary = parse_json_bytes(path.read_bytes(), 'same-run C/D/H proof summary')
     initial, binding = observed_binding(command, authority_command, summary, fixture)
+    registration = read_json(args.recovery_bridge_registration)
+    if registration['configured_provider_content_digest'] != \
+            initial['provider_reference']['content_digest'] or \
+            registration['effective_configuration_digest'] != initial['configuration_digest'] or \
+            registration['configured_authority_token_identity'] != \
+            initial['authority_token_identity'] or \
+            registration['configured_topology_identifier'] != \
+            initial['topology_identifier']:
+        raise ValueError('reviewed recovery bridge installation differs from same-run C/D/H host')
     owned = read_json(CASE / 'recovery-two-root-vectors-v1.json')
+    namespace = read_json(CASE / 'recovery-namespace-vectors-v1.json')
     fixture['cases'] += owned['cases']
+    fixture['cases'] += namespace['cases']
     fixture['owned_stage_request'] = owned['stage_request']
     fixture['owned_stage_configuration'] = owned['stage_configuration']
     fixture['owned_stage_result'] = owned['stage_result']
     for case in [*fixture['early_cases'], *fixture['cases']]:
-        run_case(command, case, fixture, hosted_binding_digest=binding,
-                 hosted_authority_token_identity=initial['authority_token_identity'])
+        run_case(recovery_command, case, fixture, hosted_binding_digest=binding,
+                 hosted_authority_token_identity=initial['authority_token_identity'],
+                 bridge_registration=args.recovery_bridge_registration)
     if observed_binding(command, authority_command, summary, fixture) != (initial, binding):
         raise ValueError('configured C/D/H/recovery installation changed during recovery proof')
-    print('48 recovery responses and observations passed under one configured local host')
+    print('52 recovery responses and native observations passed under one configured local host')
     return 0
 
 

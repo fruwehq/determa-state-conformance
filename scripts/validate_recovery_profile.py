@@ -50,7 +50,7 @@ def validate_profile(spec_root: Path) -> int:
     fixture = read_json(CASE / 'recovery-cases-v1.json')
     manifest = YAML(typ='safe').load((CASE / 'test.yaml').read_text())
     require(set(manifest) == {'title', 'recovery_vectors'} and
-            set(manifest['recovery_vectors']) == {'early', 'cases', 'owned'}, 'recovery manifest shape')
+            set(manifest['recovery_vectors']) == {'early', 'cases', 'owned', 'namespace'}, 'recovery manifest shape')
     early, cases = fixture['early_cases'], fixture['cases']
     ids = [c['case_id'] for c in [*early, *cases]]
     require(len(ids) == len(set(ids)) and len(ids) == 42, 'unique complete recovery cases')
@@ -207,4 +207,37 @@ def validate_profile(spec_root: Path) -> int:
                 case['expected_record']['work'][0]['work_identity'] ==
                 owned_checkpoint['pending_outbox_intents'][0]['intent']['effect_id'],
                 label + ': complete record and inherited ambiguous work')
-    return len(ids) + len(owned['cases'])
+    namespace = read_json(CASE / 'recovery-namespace-vectors-v1.json')
+    require(set(namespace) == {'fixture_format', 'fixture_schema_version', 'cases'} and
+            namespace['fixture_format'] == 'determa.recovery_namespace_reuse_vectors' and
+            namespace['fixture_schema_version'] == 1 and
+            len(namespace['cases']) == 4 and
+            manifest['recovery_vectors']['namespace'] ==
+            [item['case_id'] for item in namespace['cases']],
+            'namespace reuse fixture shape and coverage')
+    prior = next(item for item in cases if item['case_id'] == 'standalone_takeover')
+    consumed = prior['request']['arguments']['external_idempotency_namespace']
+    for item in namespace['cases']:
+        label = item['case_id']
+        require(set(item) == {'case_id', 'prior_record', 'terminated_setup_scope',
+                              'request', 'expected_result', 'expected_record'} and
+                item['prior_record'] == 'standalone_inactive' and
+                type(item['terminated_setup_scope']) is bool and
+                item['expected_record'] is None,
+                label + ': closed independent namespace case')
+        request, result = item['request'], item['expected_result']
+        validate('recovery-operation-v1', request, label + ': request')
+        validate('recovery-operation-v1', result, label + ': result')
+        require(request['request_digest'] == digest([
+                    'determa-recovery-request-1', without(request, 'request_digest')]) and
+                request['request_digest'] == result['request_digest'] and
+                request['arguments']['external_idempotency_namespace'] == consumed and
+                request['destination_scope_identity'] != prior['request']['destination_scope_identity'] and
+                result['destination_scope_identity'] == request['destination_scope_identity'] and
+                result['status'] == 'refused' and result['state'] == 'unchanged' and
+                result['record_digest'] is None and result['safe_relocation'] is False and
+                result['code'] == ('standalone_takeover_requires_fresh_scope' if
+                                   request['operation'] == 'standalone_takeover' else
+                                   'scope_destination_not_empty'),
+                label + ': preallocated namespace must refuse with exact closed code')
+    return len(ids) + len(owned['cases']) + len(namespace['cases'])

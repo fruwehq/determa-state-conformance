@@ -204,18 +204,62 @@ def build_owned_recovery_vectors(archive: dict, checkpoint: dict) -> dict:
             'stage_result': stage_result, 'cases': cases}
 
 
+def build_namespace_reuse_vectors() -> dict:
+    """Use one successful allocation before each independent identity probe."""
+    fixture = json.loads((CASE / 'recovery-cases-v1.json').read_bytes())
+    source = {item['case_id']: item for item in fixture['cases']}
+    reused_namespace = source['standalone_takeover']['request']['arguments'][
+        'external_idempotency_namespace']
+    result = []
+    for operation, terminated in (('standalone_takeover', False),
+                                  ('clone_scope', False),
+                                  ('standalone_takeover', True),
+                                  ('clone_scope', True)):
+        base = copy.deepcopy(source['standalone_duplicate_destination'] if
+                             operation == 'standalone_takeover' else source['clone_scope'])
+        name = ('standalone' if operation == 'standalone_takeover' else 'clone') + (
+            '_terminated_namespace_reuse' if terminated else '_allocated_namespace_reuse')
+        base['case_id'] = name
+        base['prior_record'] = 'standalone_inactive'
+        base['terminated_setup_scope'] = terminated
+        request = base['request']
+        request['operation_id'] = name
+        request['destination_scope_identity'] = 'scope-fresh-' + name
+        request['arguments']['external_idempotency_namespace'] = reused_namespace
+        request['request_digest'] = digest(['determa-recovery-request-1',
+                                            without(request, 'request_digest')])
+        expected = base['expected_result']
+        expected['operation_id'] = name
+        expected['request_digest'] = request['request_digest']
+        expected['destination_scope_identity'] = request['destination_scope_identity']
+        expected['status'] = 'refused'
+        expected['code'] = ('standalone_takeover_requires_fresh_scope' if
+                            operation == 'standalone_takeover' else
+                            'scope_destination_not_empty')
+        expected['state'] = 'unchanged'
+        expected['record_digest'] = None
+        expected['safe_relocation'] = False
+        expected['no_duplicate_external_work'] = False
+        base['expected_record'] = None
+        result.append(base)
+    return {'fixture_format': 'determa.recovery_namespace_reuse_vectors',
+            'fixture_schema_version': 1, 'cases': result}
+
+
 def generated(spec_root: Path) -> dict[str, bytes]:
     source = spec_root / 'examples/recovery'
     cases = (source / 'recovery-cases-v1.json').read_bytes()
     fixture = json.loads(cases)
     owned_files = build_owned_recovery()
     owned = json.loads(owned_files['recovery-two-root-vectors-v1.json'])
+    namespace = build_namespace_reuse_vectors()
     manifest = {
         'title': 'strict quarantine, fresh-scope takeover, clone, and conditional local transfer',
         'recovery_vectors': {
             'early': [case['case_id'] for case in fixture['early_cases']],
             'cases': [case['case_id'] for case in fixture['cases']],
             'owned': [case['case_id'] for case in owned['cases']],
+            'namespace': [case['case_id'] for case in namespace['cases']],
         },
     }
     result = {
@@ -223,6 +267,7 @@ def generated(spec_root: Path) -> dict[str, bytes]:
         'archive-local-transfer-v1.json': (source / 'archive-local-transfer-v1.json').read_bytes(),
         'test.yaml': (json.dumps(manifest, indent=2) + '\n').encode(),
         'recovery-owned-machine.yaml': owned_machine_source(),
+        'recovery-namespace-vectors-v1.json': (json.dumps(namespace, indent=2) + '\n').encode(),
     }
     result.update(owned_files)
     return result
@@ -241,7 +286,7 @@ def main() -> int:
                 raise SystemExit(f'{name}: differs from pinned specification')
         else:
             target.write_bytes(contents)
-    print('42 normative and 6 real two-root recovery cases checked')
+    print('42 normative, 6 real two-root, and 4 namespace reuse recovery cases checked')
     return 0
 
 

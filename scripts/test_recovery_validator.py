@@ -4,14 +4,19 @@ from __future__ import annotations
 
 import argparse
 import copy
+from hashlib import sha256
 import json
+import subprocess
+import sys
+import tempfile
+from types import SimpleNamespace
 from pathlib import Path
 from unittest.mock import patch
 
 from validate_portable_archive import (ArchiveValidationError, canonical, digest, read_json,
                                        validate_archive_integrity, validator_registry, without, ROOT)
 from validate_recovery_profile import CASE, validate_profile, validate_owned_definition_closure
-from run_recovery_profile import CALLS, STATE, input_for, run_case
+from run_recovery_profile import input_for, run_case, store_call, trusted_bridge
 from run_hosted_recovery_profile import observed_binding
 
 
@@ -27,7 +32,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--spec-root', required=True, type=Path)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root) == 48
+    assert validate_profile(args.spec_root) == 52
     fixture = read_json(CASE / 'recovery-cases-v1.json')
     case = next(c for c in fixture['cases'] if c['case_id'] == 'standalone_takeover')
     sent = input_for(case, fixture)
@@ -63,62 +68,185 @@ def main() -> int:
         missing_component, CASE / 'recovery-owned-machine.yaml',
         ROOT / 'conformance/profiles/portable-archive/archive-01-complete-snapshot/nested-component-machine.yaml',
         args.spec_root))
-    response = {'result': case['expected_result'], 'record': case['expected_record'],
-                'transfer_proof': None, 'before': {}, 'after': {}, 'calls': {},
-                'caller_response_kind': 'recovery_result',
-                'caller_response_body': case['expected_result'], 'mutation_paths': [],
-                'setup_responses': [], 'stage_setup_result': fixture['stage_receipt']}
-    class Completed:
-        returncode = 0
-        stderr = b''
-        stdout = canonical(response)
+    original_run = subprocess.run
     captured = []
-    def fake_run(command, *, input, **kwargs):
-        captured.append(json.loads(input))
-        return Completed()
-    with patch('run_recovery_profile.subprocess.run', fake_run):
-        rejected('incomplete actual observations', lambda: run_case(['adapter'], case, fixture))
-    assert captured == [sent]
-    response['caller_response_body'] = {'status': 'succeeded'}
-    with patch('run_recovery_profile.subprocess.run', return_value=Completed()):
-        rejected('partial literal caller body', lambda: run_case(['adapter'], case, fixture))
-    response['caller_response_body'] = case['expected_result']
-    response['result'] = {'status': 'succeeded'}
-    with patch('run_recovery_profile.subprocess.run', return_value=Completed()):
-        rejected('partial result', lambda: run_case(['adapter'], case, fixture))
-    response['result'] = case['expected_result']
-    response['before'] = {key: [] for key in STATE}
-    response['after'] = {key: [] for key in STATE}
-    response['calls'] = {key: 0 for key in CALLS}
-    with patch('run_recovery_profile.subprocess.run', return_value=Completed()):
-        rejected('missing durable record', lambda: run_case(['adapter'], case, fixture))
-    response['after']['recovery_records'] = [case['expected_record']]
-    with patch('run_recovery_profile.subprocess.run', return_value=Completed()):
-        rejected('false mutation footprint', lambda: run_case(['adapter'], case, fixture))
-    local = next(item for item in fixture['cases'] if item['case_id'] == 'local_prepare')
-    local_input = input_for(local, fixture)
-    stage = {'staging_identity': local_input['stage_request']['staging_identity'],
-             'archive': local_input['source_archive']}
-    before = {key: [] for key in STATE}
-    before['staged_archives'] = [stage]
-    after = copy.deepcopy(before)
-    after['transfer_proofs'] = [local['expected_transfer_proof']]
-    local_response = {
-        'result': local['expected_result'], 'record': None,
-        'transfer_proof': local['expected_transfer_proof'],
-        'before': before, 'after': after, 'calls': {key: 0 for key in CALLS},
-        'caller_response_kind': 'recovery_result',
-        'caller_response_body': local['expected_result'],
-        'mutation_paths': ['/transfer_proofs/0'], 'setup_responses': [],
-        'stage_setup_result': fixture['local_transfer_stage_result'],
-    }
-    class ForgedProof:
-        returncode = 0
-        stderr = b''
-        stdout = canonical(local_response)
-    with patch('run_recovery_profile.subprocess.run', return_value=ForgedProof()):
-        rejected('copied transfer proof without native frozen inventory',
-                 lambda: run_case(['adapter'], local, fixture))
+    rejected('unregistered self-reported production adapter',
+             lambda: trusted_bridge(['golden-echo']))
+    with tempfile.TemporaryDirectory(prefix='determa-recovery-bridge-contract-') as temporary:
+        directory = Path(temporary)
+        bridge = directory / 'bridge.py'
+        engine = directory / 'engine.py'
+        bridge.write_text('from engine import stage, recover\n')
+        engine.write_text('def stage(): pass\ndef recover(): pass\n')
+        sha = lambda path: 'sha256:' + sha256(path.read_bytes()).hexdigest()
+        installation = {
+            'format': 'determa.conformance.recovery.installation',
+            'schema_version': 1, 'language': 'python',
+            'production_factory': 'engine.RecoveryHost',
+            'public_stage_entrypoint': 'stage', 'public_recovery_entrypoint': 'recover',
+            'public_termination_entrypoint': 'terminate',
+            'native_observer_entrypoint': 'observe',
+            'source_closure': [{'path': 'engine.py', 'sha256': sha(engine)}],
+            'dependency_files': [], 'build_inputs': [], 'features': [],
+            'toolchain': 'python-source-test', 'effective_configuration': {},
+            'configured_provider_content_digest': sha(engine),
+            'configured_authority_token_identity': None,
+            'configured_topology_identifier': None,
+        }
+        installation['effective_configuration_digest'] = digest({})
+        installation['dependency_inventory_digest'] = digest([])
+        installation['build_anchor_digest'] = digest({
+            'build_inputs': [], 'features': [], 'toolchain': 'python-source-test'})
+        manifest = directory / 'installation.json'
+        manifest.write_bytes(canonical(installation))
+        registration = {key: installation[key] for key in (
+            'language', 'production_factory', 'public_stage_entrypoint',
+            'public_recovery_entrypoint', 'public_termination_entrypoint',
+            'native_observer_entrypoint', 'effective_configuration_digest',
+            'dependency_inventory_digest', 'build_anchor_digest',
+            'configured_provider_content_digest',
+            'configured_authority_token_identity',
+            'configured_topology_identifier')}
+        registration.update({
+            'format': 'determa.conformance.recovery.bridge_registration',
+            'schema_version': 1, 'command': [sys.executable, '-I', '-S', str(bridge)],
+            'bridge_root': str(directory), 'bridge_source_path': 'bridge.py',
+            'bridge_source_sha256': sha(bridge),
+            'installation_root': str(directory),
+            'installation_manifest_path': 'installation.json',
+            'installation_manifest_sha256': sha(manifest)})
+        registration_path = directory / 'registration.json'
+        registration_path.write_bytes(canonical(registration))
+        assert trusted_bridge(registration['command'], registration_path) == digest(registration)
+        rejected('decoy command with matching installation file',
+                 lambda: trusted_bridge(['golden-echo'], registration_path))
+        altered = copy.deepcopy(installation)
+        altered['effective_configuration'] = {'authority': 'changed'}
+        manifest.write_bytes(canonical(altered))
+        registration['installation_manifest_sha256'] = sha(manifest)
+        registration_path.write_bytes(canonical(registration))
+        rejected('changed effective configuration with resealed manifest file',
+                 lambda: trusted_bridge(registration['command'], registration_path))
+        altered = copy.deepcopy(installation)
+        altered['features'] = ['unreviewed-feature']
+        manifest.write_bytes(canonical(altered))
+        registration['installation_manifest_sha256'] = sha(manifest)
+        registration_path.write_bytes(canonical(registration))
+        rejected('changed build feature with resealed manifest file',
+                 lambda: trusted_bridge(registration['command'], registration_path))
+        manifest.write_bytes(canonical(installation))
+        registration['installation_manifest_sha256'] = sha(manifest)
+        registration_path.write_bytes(canonical(registration))
+        engine.write_text('def stage(): pass\ndef recover(): return "decoy"\n')
+        rejected('changed installed engine source',
+                 lambda: trusted_bridge(registration['command'], registration_path))
+        bridge.write_text('print("decoy")\n')
+        rejected('changed reviewed bridge source',
+                 lambda: trusted_bridge(registration['command'], registration_path))
+    def journal_start(sent):
+        database = Path(sent['store_database_path'])
+        store_call(database, sent['run_id'], 'invocation_start',
+                   operation_id=sent['operation_id'], phase=sent['kind'],
+                   request_digest=digest(sent['payload']),
+                   bridge_identity=sent['bridge_identity'])
+    def journal_return(sent, body):
+        database = Path(sent['store_database_path'])
+        store_call(database, sent['run_id'], 'invocation_return',
+                   operation_id=sent['operation_id'], response_digest=digest(body),
+                   outcome='returned')
+    def journal(sent, body):
+        journal_start(sent)
+        journal_return(sent, body)
+    def golden_echo(command, *, input, **kwargs):
+        if command != ['golden-echo']:
+            return original_run(command, input=input, **kwargs)
+        sent = json.loads(input)
+        captured.append(sent)
+        if sent['kind'] == 'archive_stage':
+            journal(sent, fixture['stage_receipt'])
+            return SimpleNamespace(returncode=0, stderr=b'', stdout=canonical({
+                'caller_response_kind': 'archive_result',
+                'caller_response_body': fixture['stage_receipt'],
+                'native_evidence': None}))
+        return SimpleNamespace(returncode=0, stderr=b'', stdout=canonical({
+            'caller_response_kind': 'recovery_result',
+            'caller_response_body': case['expected_result'],
+            'result': case['expected_result'], 'record': case['expected_record'],
+            'transfer_proof': None, 'native_evidence': None}))
+    with patch('run_recovery_profile.trusted_bridge', return_value='test-reviewed-bridge'), \
+         patch('run_recovery_profile.subprocess.run', side_effect=golden_echo):
+        rejected('complete golden echo without actual I1 stage',
+                 lambda: run_case(['golden-echo'], case, fixture))
+    assert len(captured) == 1 and captured[0]['kind'] == 'archive_stage'
+    assert not any((key.startswith('expected_') and key != 'expected_before_digest') or
+                   key == 'case_id' for key in captured[0])
+    captured.clear()
+    def staged_then_golden_echo(command, *, input, **kwargs):
+        if command != ['golden-echo']:
+            return original_run(command, input=input, **kwargs)
+        sent = json.loads(input)
+        captured.append(sent)
+        if sent['kind'] == 'archive_stage':
+            journal_start(sent)
+            database = Path(sent['store_database_path'])
+            before = store_call(database, sent['run_id'], 'snapshot')['state']
+            after = copy.deepcopy(before)
+            after['staged_archives'].append({
+                'staging_identity': sent['payload']['stage_request']['staging_identity'],
+                'archive': sent['payload']['stage_archive']})
+            transaction = store_call(database, sent['run_id'], 'commit',
+                operation_id=sent['operation_id'], phase='archive_stage',
+                request_digest=digest(sent['payload']),
+                response_digest=digest(fixture['stage_receipt']),
+                expected_before_digest=sent['expected_before_digest'], after=after)
+            journal_return(sent, fixture['stage_receipt'])
+            return SimpleNamespace(returncode=0, stderr=b'', stdout=canonical({
+                'caller_response_kind': 'archive_result',
+                'caller_response_body': fixture['stage_receipt'],
+                'native_evidence': {key: transaction[key] for key in
+                                    ('native_transaction_id', 'proof_id')}}))
+        journal(sent, case['expected_result'])
+        return SimpleNamespace(returncode=0, stderr=b'', stdout=canonical({
+            'caller_response_kind': 'recovery_result',
+            'caller_response_body': case['expected_result'],
+            'result': case['expected_result'], 'record': case['expected_record'],
+            'transfer_proof': None, 'native_evidence': None}))
+    with patch('run_recovery_profile.trusted_bridge', return_value='test-reviewed-bridge'), \
+         patch('run_recovery_profile.subprocess.run', side_effect=staged_then_golden_echo):
+        rejected('actual stage plus complete recovery golden echo without native recovery commit',
+                 lambda: run_case(['golden-echo'], case, fixture))
+    assert [item['kind'] for item in captured] == ['archive_stage', 'recovery']
+    assert not any((key.startswith('expected_') and key != 'expected_before_digest') or
+                   key == 'case_id' for key in captured[1])
+    with tempfile.TemporaryDirectory(prefix='determa-recovery-reseed-') as temporary:
+        database = Path(temporary) / 'single-run.sqlite'
+        initial = {'staged_archives': []}
+        store_call(database, 'same-run', 'init', initial=initial)
+        rejected('restart attempted to reseed the same native database',
+                 lambda: store_call(database, 'same-run', 'init', initial=initial))
+    with tempfile.TemporaryDirectory(prefix='determa-recovery-wrong-db-') as temporary:
+        other_database = Path(temporary) / 'other.sqlite'
+        def wrong_database_echo(command, *, input, **kwargs):
+            if command != ['golden-echo']:
+                return original_run(command, input=input, **kwargs)
+            sent = json.loads(input)
+            actual_database = Path(sent['store_database_path'])
+            initial = store_call(actual_database, sent['run_id'], 'snapshot')['state']
+            store_call(other_database, sent['run_id'], 'init', initial=initial)
+            sent['store_database_path'] = str(other_database)
+            return staged_then_golden_echo(command, input=canonical(sent), **kwargs)
+        with patch('run_recovery_profile.trusted_bridge', return_value='test-reviewed-bridge'), \
+             patch('run_recovery_profile.subprocess.run', side_effect=wrong_database_echo):
+            rejected('complete native stage proof from a different database',
+                     lambda: run_case(['golden-echo'], case, fixture))
+    namespace = read_json(CASE / 'recovery-namespace-vectors-v1.json')
+    assert len(namespace['cases']) == 4
+    assert all(item['request']['destination_scope_identity'] !=
+               fixture['records']['standalone_inactive']['record']['destination_scope_identity']
+               for item in namespace['cases'])
+    assert all(item['request']['arguments']['external_idempotency_namespace'] ==
+               fixture['records']['standalone_inactive']['record']['external_idempotency_namespace']
+               for item in namespace['cases'])
     with patch('run_hosted_recovery_profile.verify_delivery_proof_summary',
                side_effect=lambda summary, command: summary):
         rejected('base-only delivery proof used for safe relocation',
@@ -135,7 +263,7 @@ def main() -> int:
                      'authority_effect_summary': {
                          'parent_run_id': 'unrelated-effect-run', 'authority_summary': {}},
                  }, fixture))
-    print('42 normative and 6 real two-root recovery cases; 10 adversarial substitutions passed')
+    print('42 normative, 6 real two-root and 4 namespace recovery cases; native echo adversarials passed')
     return 0
 
 
