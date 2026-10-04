@@ -4,15 +4,19 @@
 from __future__ import annotations
 
 import copy
+import base64
+import hashlib
+import sys
 from pathlib import Path
 
 from validate_host_authority import AuthorityValidationError, PROFILE, compact, hash_value, load, validate_document
+from run_host_authority_profile import AdapterOutputError, adapter_call, verify_configured_profile
 
 
 def main() -> int:
     spec = Path(__file__).resolve().parents[2] / "determa-state-spec"
     baseline = load(PROFILE / "vectors.generated.json")
-    assert validate_document(baseline, spec) == (22, 6, 7)
+    assert validate_document(baseline, spec) == (22, 6, 7, 7, 9, 4)
     by_name = {row["id"]: index for index, row in enumerate(baseline["operations"])}
     attacks = []
     def attack(name, edit):
@@ -55,12 +59,78 @@ def main() -> int:
     attack("safe relocation false report", lambda d: d["profiles"][0]["expected_report"]["guarantees"].update(safe_relocation=True))
     attack("lost response commits twice", lambda d: d["native_traces"][1]["steps"][1]["expected_ledger_after"].update(scope_generation="6"))
     attack("scope identity reused", lambda d: d["allocation_checks"][0]["expected"].update(allocated=True))
+    def reseal_postfreeze_participant(document):
+        row = document["operations"][by_name["retirement_with_known_fate"]]["ledger_before"]
+        row["required_participant_records"] = ["journal:journal-1", "worker:other"]
+        row["inventory"] = [{**member, "identity": "worker:other"} if member ==
+                            {"kind": "participant", "identity": "worker:worker-1"} else member
+                            for member in row["inventory"]]
+        row["freeze"]["required_participants"] = row["required_participant_records"]
+        row["freeze"]["inventory_digest"] = hash_value(["determa-host-authority-frozen-inventory-1",
+            row["freeze"]["evidence_digest"], row["inventory"]])
+    attack("resealed post-freeze participant", reseal_postfreeze_participant)
+    attack("missing native barrier", lambda d: d["native_traces"][2]["control_plan"].pop(1))
+    attack("unknown fate accepted without resolution", lambda d: d["native_traces"][4]["control_plan"].pop(4))
+    attack("rejected worker mutates journal", lambda d: d["worker_checks"][1]["expected"]["ledger_after"]["journal_entries"].append({"bad": True}))
     for name, document in attacks:
         try:
             validate_document(document, spec)
         except AuthorityValidationError:
             continue
         raise AssertionError(f"validator accepted {name}")
+    for name, payload, expected in [
+        ("duplicate response member", b'{"accepted":false,"accepted":false}', {"accepted": False}),
+        ("nonfinite", b'{"accepted":NaN}', {"accepted": False}),
+        ("invalid UTF-8", b'{"accepted":"\xff"}', {"accepted": False}),
+        ("boolean as integer", b'{"accepted":0}', {"accepted": False}),
+        ("extra body member", b'{"accepted":false,"extra":null}', {"accepted": False}),
+        ("missing body member", b'{}', {"accepted": False}),
+        ("missing native event", b'{"events":[]}', {"events": [{"event": "storage"}]}),
+    ]:
+        child = [sys.executable, "-c", f"import sys; sys.stdout.buffer.write({payload!r})"]
+        try:
+            adapter_call(child, {}, expected, name)
+        except AdapterOutputError:
+            pass
+        else:
+            raise AssertionError(f"runner accepted {name}")
+    no_authority = next(row for row in baseline["profiles"] if row["id"] == "application_owned_transaction")
+    verify_configured_profile({"report_bytes": no_authority["expected_report_bytes"],
+                               "installation_evidence": None}, spec, set())
+    for name, profile_id, installation in [
+        ("fabricated safe relocation", "proved_same_authority_local_relocation_support", None),
+        ("healthy report without installed closure", "guarded_local_scope_without_relocation", None),
+        ("wrong installed closure", "guarded_local_scope_without_relocation",
+         {"closure_bytes_base64": "Yg==", "configuration_bytes_base64": "Yg==",
+          "observed_health": "healthy", "native_proof_ids": []}),
+    ]:
+        vector = next(row for row in baseline["profiles"] if row["id"] == profile_id)
+        try:
+            verify_configured_profile({"report_bytes": vector["expected_report_bytes"],
+                                       "installation_evidence": installation}, spec, set())
+        except AdapterOutputError:
+            pass
+        else:
+            raise AssertionError(f"public profile gate accepted {name}")
+    guarded = copy.deepcopy(next(row for row in baseline["profiles"] if row["id"] ==
+                            "guarded_local_scope_without_relocation")["expected_report"])
+    closure_bytes, configuration_bytes = b"installed authority closure", b"native authority configuration"
+    guarded["extension_report"]["provider_reference"]["content_digest"] = "sha256:" + hashlib.sha256(closure_bytes).hexdigest()
+    guarded["topology"]["configuration_digest"] = "sha256:" + hashlib.sha256(configuration_bytes).hexdigest()
+    needed_proofs = {"precommit_rollback", "postcommit_lost_response_replay", "race_second_writer",
+                     "freeze_waits_for_writer", "freeze_after_drain", "incomplete_frozen_inventory_refuses_freeze"}
+    installation = {"closure_bytes_base64": base64.b64encode(closure_bytes).decode(),
+                    "configuration_bytes_base64": base64.b64encode(configuration_bytes).decode(),
+                    "observed_health": "healthy", "native_proof_ids": sorted(needed_proofs)}
+    verify_configured_profile({"report_bytes": compact(guarded), "installation_evidence": installation},
+                              spec, needed_proofs)
+    try:
+        verify_configured_profile({"report_bytes": compact(guarded),
+            "installation_evidence": {**installation, "native_proof_ids": []}}, spec, needed_proofs)
+    except AdapterOutputError:
+        pass
+    else:
+        raise AssertionError("public profile gate accepted a native claim without passed proofs")
     print(f"rejected {len(attacks)} adversarial host authority substitutions")
     return 0
 

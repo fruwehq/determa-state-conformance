@@ -8267,7 +8267,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"({inspection_core_vectors} core, {inspection_provider_vectors} optional provider), "
         f"{extension_vectors} extension negotiation vectors; "
         f"{authority_counts[0]} host authority operations, "
-        f"{authority_counts[1]} profile reports, {authority_counts[2]} clock values"
+        f"{authority_counts[1]} profile reports, {authority_counts[2]} clock values, "
+        f"{authority_counts[3]} worker checks, {authority_counts[4]} native traces, "
+        f"{authority_counts[5]} base-core refusals"
     )
 
 

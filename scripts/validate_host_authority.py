@@ -11,7 +11,7 @@ import rfc8785
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from generate_host_authority_profile import PROFILE, SPEC_PIN, inventory_of, render
+from generate_host_authority_profile import PROFILE, SPEC_PIN, render
 
 
 class AuthorityValidationError(ValueError):
@@ -43,6 +43,25 @@ def hash_value(value: object) -> str:
     return "sha256:" + hashlib.sha256(rfc8785.dumps(value)).hexdigest()
 
 
+def inventory_of(snapshot: dict) -> list[dict]:
+    categories = (("roots", "root"), ("tombstones", "tombstone"),
+                  ("pending_intents", "pending_intent"), ("terminal_intents", "terminal_intent"),
+                  ("definition_references", "definition"), ("migration_references", "migration"))
+    members = [{"kind": kind, "identity": identity} for field, kind in categories
+               for identity in snapshot[field]]
+    members += [{"kind": "receipt", "identity": row["operation_id"]} for row in snapshot["receipts"]]
+    members += [{"kind": "checkpoint", "identity": str(index)}
+                for index in range(len(snapshot["checkpoint_bytes"]))]
+    members += [{"kind": "journal", "identity": row["work_identity"]} for row in snapshot["journal_entries"]]
+    members += [{"kind": "participant", "identity": identity}
+                for identity in snapshot["required_participant_records"]]
+    return sorted(members, key=lambda row: (row["kind"], row["identity"]))
+
+
+def frozen_inventory_digest(evidence: str, inventory: list[dict]) -> str:
+    return hash_value(["determa-host-authority-frozen-inventory-1", evidence, inventory])
+
+
 def schema_validators(spec_root: Path) -> tuple[Draft202012Validator, Draft202012Validator]:
     paths = [spec_root / "schema/host-authority-operation-v1.schema.json",
              spec_root / "schema/host-authority-profile-report-v1.schema.json",
@@ -54,25 +73,28 @@ def schema_validators(spec_root: Path) -> tuple[Draft202012Validator, Draft20201
             Draft202012Validator(schemas[1], registry=registry))
 
 
-def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
+def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, int, int, int]:
     request_schema, profile_schema = schema_validators(spec_root)
     source = load(spec_root / "examples/authority/host-authority-cases-v1.json")
     profile_source = load(spec_root / "examples/authority/host-authority-profile-cases-v1.json")
     clock_source = load(spec_root / "examples/authority/host-authority-clock-cases-v1.json")
-    require(set(document) == {"format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "runtime_probes"}, "manifest fields")
+    require(set(document) == {"format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "transfer_suite_obligation"}, "manifest fields")
     require(document["format"] == "determa.host-authority-driver-v1" and document["schema_version"] == 1
             and document["specification_commit"] == SPEC_PIN, "format or spec pin")
     expected_names = {row["name"]: (disposition, row) for disposition in ("valid", "rejected") for row in source[disposition]}
     require(len(expected_names) == 22 and len(document["operations"]) == 22, "operation coverage")
     operations = {}
     for vector in document["operations"]:
-        require(set(vector) == {"id", "source_disposition", "request", "request_bytes", "expected_response",
+        require(set(vector) == {"id", "source_disposition", "execution_tier", "request", "request_bytes", "expected_response",
                                 "expected_response_bytes", "invocation", "native_mutation_bytes", "ledger_before",
                                 "ledger_after", "fault", "replay_of", "configuration"}, "operation driver fields")
         name = vector["id"]
         require(name in expected_names and name not in operations, f"unknown or repeated operation {name}")
         disposition, example = expected_names[name]
         require(vector["source_disposition"] == disposition, f"{name}: disposition")
+        require(vector["execution_tier"] == ("i2_conditional" if name in {
+            "retirement_with_known_fate", "retirement_equal_replay", "copied_database_relocation"} else
+            "native_c"), f"{name}: operational tier")
         request, response = vector["request"], vector["expected_response"]
         require(vector["request_bytes"] == compact(request) and vector["expected_response_bytes"] == compact(response), f"{name}: raw bytes")
         require(not list(request_schema.iter_errors(response)), f"{name}: response schema")
@@ -143,7 +165,11 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
                     after["checkpoint_bytes"] == before["checkpoint_bytes"] + [mutation], "native mutation not atomic with receipt")
         if name == "freeze_after_drain":
             require(after["freeze"]["evidence_digest"] == response["evidence_digest"] and
-                    after["inventory"] == inventory_of(after), "complete freeze evidence and inventory")
+                    after["inventory"] == inventory_of(after) and
+                    after["freeze"]["inventory_digest"] == frozen_inventory_digest(
+                        response["evidence_digest"], after["inventory"]) and
+                    after["freeze"]["required_participants"] == after["required_participant_records"] ==
+                        before["required_participant_records"], "complete freeze evidence and inventory")
         if name == "fence_worker_allocates_new_claim":
             require(after["active_claims"] == [response["claim"]] and
                     response["claim"]["scope_authority_epoch"] == after["authority_epoch"] and
@@ -163,13 +189,23 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
             require(before["receipts"][0]["operation_id"] == request["operation_id"] and
                     before["receipts"][0]["request_digest"] != request["request_digest"], "conflicting operation key")
         if name == "retirement_with_known_fate":
+            require(before == operations["freeze_after_drain"]["ledger_after"],
+                    "retirement must resolve exact committed frozen storage record")
             require(vector["configuration"]["destination_binding_digest"] ==
                     profile_source["valid"][3]["report"]["destination_binding_digest"] and
                     "safe_relocation" in vector["configuration"]["extension_requirement"]["required_claims"],
                     "retirement topology and exact destination")
             require(before["inventory"] == inventory_of(before) and
-                    before["required_participant_records"] == ["journal:journal-1", "worker:worker-1"],
+                    before["required_participant_records"] == before["freeze"]["required_participants"] ==
+                    ["journal:journal-1", "worker:worker-1"] and
+                    before["freeze"]["inventory_digest"] == frozen_inventory_digest(
+                        before["freeze"]["evidence_digest"], before["inventory"]) and
+                    any(item["operation_id"] == "freeze-1" and item["evidence_digest"] ==
+                        before["freeze"]["evidence_digest"] for item in before["receipts"]),
                     "retirement participant closure")
+        if name == "retirement_equal_replay":
+            require(before == operations["retirement_with_known_fate"]["ledger_after"],
+                    "retirement replay storage record")
         operations[name] = vector
     for name, first_name in (("same_operation_replay", "guarded_native_commit"),
                              ("retirement_equal_replay", "retirement_with_known_fate")):
@@ -184,11 +220,14 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
     require(len(profile_names) == len(document["profiles"]) == 6, "profile coverage")
     seen = set()
     for vector in document["profiles"]:
-        require(set(vector) == {"id", "source_disposition", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"}, "profile fields")
+        require(set(vector) == {"id", "source_disposition", "fixture_layer", "hypothetical_verification", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"}, "profile fields")
         name = vector["id"]
         require(name in profile_names and name not in seen, f"profile name {name}")
         seen.add(name)
         disposition, example = profile_names[name]
+        require(vector["fixture_layer"] == "hypothetical_common_rule", f"{name}: profile source layer")
+        require(vector["hypothetical_verification"] == example.get("context"),
+                f"{name}: source-only hypothetical premises")
         report = vector["expected_report"]
         require(vector["source_disposition"] == disposition and report == example["report"] and
                 vector["expected_report_bytes"] == compact(report), f"{name}: source profile report")
@@ -220,8 +259,10 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
     for item in checks:
         require(set(item) == {"id", "input", "expected"} and
                 set(item["input"]) == {"phase", "claim", "authenticated_principal",
-                    "trusted_clock_now", "current_authority_epoch", "current_attempt_fence", "scope_state"} and
-                set(item["expected"]) == {"accepted"}, "closed worker check")
+                    "trusted_clock_now", "current_authority_epoch", "current_attempt_fence", "scope_state",
+                    "ledger_before"} and
+                set(item["expected"]) == {"accepted", "ledger_after", "host_mutation_count",
+                    "external_dispatch_count"}, "closed worker check")
         candidate = item["input"]["claim"]
         now = item["input"]["trusted_clock_now"]
         valid = (candidate["scope_authority_epoch"] == item["input"]["current_authority_epoch"] and
@@ -230,14 +271,20 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
                  item["input"]["scope_state"] == "active" and now is not None and
                  int(now) < int(candidate["expires_at"]))
         require(candidate["scope_identity"] == claim["scope_identity"] and
-                item["expected"]["accepted"] is valid, "worker expiry/fence expectation")
+                item["expected"]["accepted"] is valid and
+                item["input"]["ledger_before"] == item["expected"]["ledger_after"] ==
+                    operations["fence_worker_allocates_new_claim"]["ledger_after"] and
+                item["expected"]["host_mutation_count"] == 0 and
+                item["expected"]["external_dispatch_count"] ==
+                    (1 if valid and item["input"]["phase"] == "dispatch" else 0),
+                "worker expiry/fence and mutation expectation")
     traces = document["native_traces"]
     require([item["id"] for item in traces] == ["precommit_rollback", "postcommit_lost_response_replay",
             "race_second_writer", "freeze_waits_for_writer", "unknown_fate_blocks_freeze",
-            "incomplete_inventory_blocks_retirement", "copied_database_cannot_relocate",
-            "unsupported_relocation_inactive_destination"], "native trace coverage")
+            "incomplete_frozen_inventory_refuses_freeze", "copied_database_cannot_relocate",
+            "unsupported_relocation_inactive_destination", "copied_database_without_relocation_capability"], "native trace coverage")
     for trace in traces:
-        require(set(trace) == {"id", "required_guarantee", "setup", "schedule", "steps"}, "native trace fields")
+        require(set(trace) == {"id", "required_guarantee", "setup", "steps", "control_plan", "expected_events"}, "native trace fields")
         require(trace["setup"]["allocated_scope_identities"] == ["scope-42"] and trace["steps"], "native trace setup")
         for step in trace["steps"]:
             require(set(step) == {"call", "expected_response_bytes", "expected_ledger_after"} and
@@ -245,9 +292,73 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
                     "native trace step fields")
             require(step["expected_ledger_after"]["allocated_scope_identities"] == ["scope-42"],
                     "native trace scope allocation")
+        for control in trace["control_plan"]:
+            require(set(control) == {"action", "session", "step", "barrier"} and
+                    control["action"] in {"invoke", "start_call", "release_barrier", "observe_native_fate",
+                        "observe_storage", "restart_authority", "disconnect_session",
+                        "resolve_fate_from_storage", "fence_old_session"} and
+                    (control["step"] is None or type(control["step"]) is int and
+                     0 <= control["step"] < len(trace["steps"])), "closed native control")
+            if control["action"] in {"invoke", "start_call"}:
+                require(type(control["step"]) is int and type(control["session"]) is str,
+                        "native call must select an exact step and session")
+            else:
+                require(control["step"] is None, "non-call control cannot select a request")
+            if control["action"] in {"start_call", "release_barrier"}:
+                require(type(control["barrier"]) is str and control["barrier"], "native barrier identity")
+        require(sorted(item["step"] for item in trace["control_plan"] if item["action"] in
+                       {"invoke", "start_call"}) == list(range(len(trace["steps"]))),
+                "every native trace call must execute exactly once")
+        started = {(item["session"], item["barrier"]) for item in trace["control_plan"]
+                   if item["action"] == "start_call"}
+        require(all((item["session"], item["barrier"]) in started for item in trace["control_plan"]
+                    if item["action"] == "release_barrier"), "release of unstarted native barrier")
+        for observed_event in trace["expected_events"]:
+            require(set(observed_event) == {"event", "session", "response_bytes", "ledger", "fate",
+                                             "barrier", "old_session_fenced"}, "closed native event")
+        require({(item["session"], item["barrier"]) for item in trace["expected_events"]
+                 if item["event"] == "barrier_reached"} == started and
+                sum(item["event"] == "storage" for item in trace["expected_events"]) ==
+                sum(item["action"] == "observe_storage" for item in trace["control_plan"]) and
+                sum(item["event"] == "restarted" for item in trace["expected_events"]) ==
+                sum(item["action"] == "restart_authority" for item in trace["control_plan"]) and
+                sum(item["event"] == "native_fate" for item in trace["expected_events"]) ==
+                sum(item["action"] in {"observe_native_fate", "resolve_fate_from_storage"}
+                    for item in trace["control_plan"]),
+                "native control events must be observed")
+        responses = [item["response_bytes"] for item in trace["expected_events"] if item["event"] == "response"]
+        snapshots = [item["ledger"] for item in trace["expected_events"] if item["event"] == "storage"]
+        require(responses == [item["expected_response_bytes"] for item in trace["steps"]] and
+                snapshots[:len(trace["steps"])] == [item["expected_ledger_after"] for item in trace["steps"]],
+                f"{trace['id']}: native responses and storage events")
+    expected_controls = {
+        "precommit_rollback": ["invoke", "observe_native_fate", "observe_storage"],
+        "postcommit_lost_response_replay": ["invoke", "observe_native_fate", "observe_storage",
+            "restart_authority", "invoke", "observe_storage"],
+        "race_second_writer": ["start_call", "start_call", "release_barrier",
+            "observe_native_fate", "observe_storage", "release_barrier", "observe_storage"],
+        "freeze_waits_for_writer": ["start_call", "start_call", "release_barrier",
+            "observe_native_fate", "observe_storage", "release_barrier", "observe_storage"],
+        "unknown_fate_blocks_freeze": ["start_call", "disconnect_session", "observe_native_fate",
+            "observe_storage", "invoke", "observe_storage", "resolve_fate_from_storage",
+            "fence_old_session", "observe_storage"],
+        "incomplete_frozen_inventory_refuses_freeze": ["invoke", "observe_storage"],
+        "copied_database_cannot_relocate": ["invoke", "observe_storage"],
+        "unsupported_relocation_inactive_destination": ["invoke", "observe_storage"],
+        "copied_database_without_relocation_capability": ["invoke", "observe_storage"],
+    }
+    for trace in traces:
+        require([item["action"] for item in trace["control_plan"]] == expected_controls[trace["id"]],
+                f"{trace['id']}: native control sequence")
+        require([item["barrier"] for item in trace["control_plan"] if item["action"] == "start_call"] ==
+                (["guard_held_before_native_commit", "guard_waiting"] if trace["id"] == "race_second_writer" else
+                 ["guard_held_before_native_commit", "freeze_waiting_for_known_fate"] if
+                 trace["id"] == "freeze_waits_for_writer" else
+                 ["commit_outcome_unknown"] if trace["id"] == "unknown_fate_blocks_freeze" else []),
+                f"{trace['id']}: native barrier")
     commit = operations["guarded_native_commit"]
     freeze = operations["freeze_after_drain"]
-    precommit, lost, race, waiting, unknown, inventory, copied, unsupported = traces
+    precommit, lost, race, waiting, unknown, inventory, copied, unsupported, copied_unsupported = traces
     require(precommit["setup"] == commit["ledger_before"] and len(precommit["steps"]) == 1 and
             precommit["steps"][0]["expected_response_bytes"] is None and
             precommit["steps"][0]["expected_ledger_after"] == commit["ledger_before"],
@@ -267,20 +378,38 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
             waiting["steps"][1]["call"]["request_bytes"] == freeze["request_bytes"] and
             waiting["steps"][1]["expected_ledger_after"] == freeze["ledger_after"],
             "freeze waits for guarded writer trace")
-    for trace, row in ((unknown, operations["unknown_native_transaction_fate"]),
-                       (copied, operations["copied_database_relocation"]),
+    for trace, row in ((copied, operations["copied_database_relocation"]),
                        (unsupported, operations["unsupported_safe_relocation"])):
         require(trace["steps"][0]["call"]["request_bytes"] == row["request_bytes"] and
                 trace["steps"][0]["expected_response_bytes"] == row["expected_response_bytes"] and
                 trace["steps"][0]["expected_ledger_after"] == row["ledger_after"],
                 f"{trace['id']}: source binding")
+    require(unknown["steps"][0]["call"]["request_bytes"] == commit["request_bytes"] and
+            unknown["steps"][0]["call"]["native_mutation_bytes"] == commit["native_mutation_bytes"] and
+            unknown["steps"][1]["call"]["request_bytes"] ==
+                operations["unknown_native_transaction_fate"]["request_bytes"] and
+            unknown["steps"][1]["expected_response_bytes"] ==
+                operations["unknown_native_transaction_fate"]["expected_response_bytes"],
+            "unknown writer and blocked freeze exact calls")
     require(not copied["steps"][0]["expected_ledger_after"]["destination_activations"] and
-            not unsupported["steps"][0]["expected_ledger_after"]["destination_activations"],
+            not unsupported["steps"][0]["expected_ledger_after"]["destination_activations"] and
+            not copied_unsupported["steps"][0]["expected_ledger_after"]["destination_activations"] and
+            copied_unsupported["steps"][0]["call"]["request_bytes"] ==
+                operations["copied_database_relocation"]["request_bytes"] and
+            json.loads(copied_unsupported["steps"][0]["expected_response_bytes"])["error_code"] ==
+                "host_capability_mismatch",
             "refused relocation must leave destination inactive")
     require(inventory["steps"][0]["expected_ledger_after"] ==
-            operations["retirement_with_known_fate"]["ledger_before"] and
+            operations["freeze_after_drain"]["ledger_before"] and
+            inventory["steps"][0]["call"]["request_bytes"] == freeze["request_bytes"] and
             json.loads(inventory["steps"][0]["expected_response_bytes"])["error_code"] == "scope_fence_unproven",
             "incomplete frozen inventory trace")
+    require([item["fate"] for item in unknown["expected_events"] if item["event"] == "native_fate"] ==
+            ["unknown", "rolled_back"] and
+            unknown["expected_events"][-2]["event"] == "old_session_fenced" and
+            unknown["expected_events"][-2]["old_session_fenced"] is True and
+            unknown["expected_events"][-1]["ledger"] == unknown["setup"],
+            "unknown fate must resolve from storage and fence old session")
     allocation = document["allocation_checks"]
     require(len(allocation) == 1 and allocation[0]["id"] == "scope_id_permanent_after_checkpoint_deletion" and
             allocation[0]["input"] == {"ledger_before": commit["ledger_after"],
@@ -288,15 +417,30 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int]:
             allocation[0]["expected"] == {"allocated": False,
                 "ledger_after": {**commit["ledger_after"], "checkpoint_bytes": []}},
             "permanent scope identity allocation after checkpoint deletion")
-    required_probes = {"expiry_equal_rejected", "clock_unavailable_rejected", "race_second_writer_with_freeze",
-                       "precommit_rollback", "commit_unknown_restart", "postcommit_lost_response_replay",
-                       "stale_worker_dispatch_and_result", "incomplete_frozen_inventory",
-                       "unsupported_relocation_inactive_destination"}
-    require(set(document["runtime_probes"]) == required_probes and len(document["runtime_probes"]) == len(required_probes), "native proof probes")
-    return len(operations), len(seen), len(clock_rows)
+    base_names = {"no_authority_guarded_commit": "guarded_native_commit",
+                  "no_authority_freeze_scope": "freeze_after_drain",
+                  "no_authority_fence_worker": "fence_worker_allocates_new_claim",
+                  "no_authority_prove_retirement": "retirement_with_known_fate"}
+    require(len(document["base_core_checks"]) == len(base_names), "no-authority refusal coverage")
+    for row in document["base_core_checks"]:
+        require(set(row) == {"id", "input", "expected"} and row["id"] in base_names and
+                set(row["input"]) == {"request_bytes", "configured_authority", "core_checkpoint_bytes"} and
+                row["input"]["request_bytes"] == operations[base_names[row["id"]]]["request_bytes"] and
+                row["input"]["configured_authority"] is None and
+                row["expected"] == {"status": "rejected", "code": "host_capability_mismatch",
+                    "authority_result": None, "core_checkpoint_bytes": row["input"]["core_checkpoint_bytes"],
+                    "host_mutation_count": 0}, "base core must refuse hosted authority without mutation")
+    require(document["transfer_suite_obligation"] == {"profile": "safe_relocation",
+        "certified_by_this_profile": False, "required_suite": "I2 same-authority transfer operational suite",
+        "required_native_observations": ["committed_source_retirement", "known_native_fate",
+            "old_session_cannot_commit", "exact_destination_binding", "single_use_grant_consumption",
+            "complete_participant_import", "inactive_destination_on_refusal"]},
+        "safe relocation must remain conditional on I2 operational evidence")
+    return (len(operations), len(seen), len(clock_rows), len(checks), len(traces),
+            len(document["base_core_checks"]))
 
 
-def validate_profile(spec_root: Path, profile: Path = PROFILE) -> tuple[int, int, int]:
+def validate_profile(spec_root: Path, profile: Path = PROFILE) -> tuple[int, int, int, int, int, int]:
     document = load(profile / "vectors.generated.json")
     driver_schema = load(Path(__file__).resolve().parent / "schemas/host-authority-driver-v1.schema.json")
     require(not list(Draft202012Validator(driver_schema).iter_errors(document)), "closed driver schema")

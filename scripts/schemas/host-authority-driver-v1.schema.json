@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://determa.dev/state/conformance/host-authority-driver-v1.schema.json",
   "type": "object",
-  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "runtime_probes"],
+  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "base_core_checks", "transfer_suite_obligation"],
   "properties": {
     "format": {"const": "determa.host-authority-driver-v1"},
     "schema_version": {"const": 1},
@@ -11,9 +11,13 @@
     "profiles": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"$ref": "#/$defs/profile"}},
     "clocks": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/clock"}},
     "worker_checks": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/workerCheck"}},
-    "native_traces": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"$ref": "#/$defs/nativeTrace"}},
+    "native_traces": {"type": "array", "minItems": 9, "maxItems": 9, "items": {"$ref": "#/$defs/nativeTrace"}},
     "allocation_checks": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"$ref": "#/$defs/allocationCheck"}},
-    "runtime_probes": {"type": "array", "minItems": 9, "maxItems": 9, "uniqueItems": true, "items": {"type": "string"}}
+    "base_core_checks": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"$ref": "#/$defs/baseCoreCheck"}},
+    "transfer_suite_obligation": {"type": "object", "required": ["profile", "certified_by_this_profile", "required_suite", "required_native_observations"],
+      "properties": {"profile": {"const": "safe_relocation"}, "certified_by_this_profile": {"const": false},
+        "required_suite": {"type": "string"}, "required_native_observations": {"type": "array", "minItems": 7,
+          "maxItems": 7, "uniqueItems": true, "items": {"type": "string"}}}, "additionalProperties": false}
   },
   "additionalProperties": false,
   "$defs": {
@@ -55,20 +59,27 @@
     },
     "operation": {
       "type": "object",
-      "required": ["id", "source_disposition", "request", "request_bytes", "expected_response", "expected_response_bytes", "invocation", "native_mutation_bytes", "ledger_before", "ledger_after", "fault", "replay_of", "configuration"],
+      "required": ["id", "source_disposition", "execution_tier", "request", "request_bytes", "expected_response", "expected_response_bytes", "invocation", "native_mutation_bytes", "ledger_before", "ledger_after", "fault", "replay_of", "configuration"],
       "properties": {
         "id": {"type": "string"}, "source_disposition": {"enum": ["valid", "rejected"]},
+        "execution_tier": {"enum": ["native_c", "i2_conditional"]},
         "request": {"type": "object"}, "request_bytes": {"type": "string"},
         "expected_response": {"type": "object"}, "expected_response_bytes": {"type": "string"},
         "invocation": {"type": "object"}, "native_mutation_bytes": {"type": ["string", "null"]},
         "ledger_before": {"$ref": "#/$defs/ledger"}, "ledger_after": {"$ref": "#/$defs/ledger"},
-        "fault": {"type": "object"}, "replay_of": {"type": ["string", "null"]},
+        "fault": {"type": "object", "required": ["native_transaction_fate", "injection", "epoch_check_separate_from_commit"],
+          "properties": {"native_transaction_fate": {"enum": ["known", "committed", "unknown"]},
+            "injection": {"enum": ["none", "disconnect_before_fate_resolution"]},
+            "epoch_check_separate_from_commit": {"type": "boolean"}}, "additionalProperties": false},
+        "replay_of": {"type": ["string", "null"]},
         "configuration": {"type": "object"}
       }, "additionalProperties": false
     },
     "profile": {
-      "type": "object", "required": ["id", "source_disposition", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"],
+      "type": "object", "required": ["id", "source_disposition", "fixture_layer", "hypothetical_verification", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"],
       "properties": {"id": {"type": "string"}, "source_disposition": {"enum": ["valid", "invalid"]},
+        "fixture_layer": {"const": "hypothetical_common_rule"},
+        "hypothetical_verification": {"type": ["object", "null"]},
         "configured_facts": {"type": "object"}, "expected_report": {"type": "object"},
         "expected_report_bytes": {"type": "string"}, "expected_outcome": {"type": "object"},
         "expected_support": {"type": ["object", "null"]}},
@@ -82,28 +93,54 @@
     "workerCheck": {
       "type": "object", "required": ["id", "input", "expected"],
       "properties": {"id": {"type": "string"}, "input": {"type": "object"},
-        "expected": {"type": "object", "required": ["accepted"],
-          "properties": {"accepted": {"type": "boolean"}}, "additionalProperties": false}},
+        "expected": {"type": "object", "required": ["accepted", "ledger_after", "host_mutation_count", "external_dispatch_count"],
+          "properties": {"accepted": {"type": "boolean"}, "ledger_after": {"$ref": "#/$defs/ledger"},
+            "host_mutation_count": {"type": "integer", "minimum": 0},
+            "external_dispatch_count": {"type": "integer", "minimum": 0}}, "additionalProperties": false}},
       "additionalProperties": false
     },
     "nativeTrace": {
-      "type": "object", "required": ["id", "required_guarantee", "setup", "schedule", "steps"],
+      "type": "object", "required": ["id", "required_guarantee", "setup", "steps", "control_plan", "expected_events"],
       "properties": {"id": {"type": "string"}, "required_guarantee": {"type": "string"},
-        "setup": {"$ref": "#/$defs/ledger"}, "schedule": {"type": "string"},
-        "steps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nativeStep"}}},
+        "setup": {"$ref": "#/$defs/ledger"},
+        "steps": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/nativeStep"}},
+        "control_plan": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/nativeControl"}},
+        "expected_events": {"type": "array", "minItems": 2, "items": {"$ref": "#/$defs/nativeEvent"}}},
+      "additionalProperties": false
+    },
+    "nativeControl": {
+      "type": "object", "required": ["action", "session", "step", "barrier"],
+      "properties": {"action": {"enum": ["invoke", "start_call", "release_barrier", "observe_native_fate", "observe_storage", "restart_authority", "disconnect_session", "resolve_fate_from_storage", "fence_old_session"]},
+        "session": {"type": ["string", "null"]}, "step": {"type": ["integer", "null"]},
+        "barrier": {"type": ["string", "null"]}}, "additionalProperties": false
+    },
+    "nativeEvent": {
+      "type": "object", "required": ["event", "session", "response_bytes", "ledger", "fate", "barrier", "old_session_fenced"],
+      "properties": {"event": {"enum": ["response", "native_fate", "storage", "restarted", "barrier_reached", "old_session_fenced"]},
+        "session": {"type": ["string", "null"]}, "response_bytes": {"type": ["string", "null"]},
+        "ledger": {"anyOf": [{"$ref": "#/$defs/ledger"}, {"type": "null"}]},
+        "fate": {"enum": ["unknown", "committed", "rolled_back", null]},
+        "barrier": {"type": ["string", "null"]}, "old_session_fenced": {"type": ["boolean", "null"]}},
       "additionalProperties": false
     },
     "nativeStep": {
       "type": "object", "required": ["call", "expected_response_bytes", "expected_ledger_after"],
       "properties": {"call": {"type": "object", "required": ["request_bytes", "invocation", "native_mutation_bytes", "fault"],
           "properties": {"request_bytes": {"type": "string"}, "invocation": {"type": "object"},
-            "native_mutation_bytes": {"type": ["string", "null"]}, "fault": {"type": "string"}},
+            "native_mutation_bytes": {"type": ["string", "null"]},
+            "fault": {"enum": ["none", "precommit_abort", "drop_response_after_commit",
+                                "commit_unknown_disconnect", "omit_receipt_from_inventory"]}},
           "additionalProperties": false},
         "expected_response_bytes": {"type": ["string", "null"]},
         "expected_ledger_after": {"$ref": "#/$defs/ledger"}},
       "additionalProperties": false
     },
     "allocationCheck": {
+      "type": "object", "required": ["id", "input", "expected"],
+      "properties": {"id": {"type": "string"}, "input": {"type": "object"},
+        "expected": {"type": "object"}}, "additionalProperties": false
+    },
+    "baseCoreCheck": {
       "type": "object", "required": ["id", "input", "expected"],
       "properties": {"id": {"type": "string"}, "input": {"type": "object"},
         "expected": {"type": "object"}}, "additionalProperties": false

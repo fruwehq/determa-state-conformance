@@ -59,6 +59,11 @@ def inventory_of(snapshot: dict) -> list[dict]:
     return sorted(members, key=lambda item: (item["kind"], item["identity"]))
 
 
+def frozen_inventory_digest(evidence: str, inventory: list[dict]) -> str:
+    # Driver binding of the committed freeze receipt to its exact storage snapshot.
+    return digest(["determa-host-authority-frozen-inventory-1", evidence, inventory])
+
+
 def receipt(request: dict, result: dict) -> dict:
     return {"operation_id": request["operation_id"], "request_digest": request["request_digest"],
             "request_bytes": raw(request), "result_bytes": raw(result),
@@ -107,11 +112,9 @@ def render(spec_root: Path) -> bytes:
                 before["receipts"] = copy.deepcopy(first["guarded_native_commit"]["ledger_after"]["receipts"])
                 before["mutation_bytes"] = copy.deepcopy(first["guarded_native_commit"]["ledger_after"]["mutation_bytes"])
                 before["checkpoint_bytes"] = copy.deepcopy(first["guarded_native_commit"]["ledger_after"]["checkpoint_bytes"])
+                before["required_participant_records"] = ["journal:journal-1", "worker:worker-1"]
             elif name in {"retirement_with_known_fate", "retirement_equal_replay", "freeze_request_digest_is_not_committed_proof"}:
                 before = copy.deepcopy(first["freeze_after_drain"]["ledger_after"])
-                if name in {"retirement_with_known_fate", "retirement_equal_replay"}:
-                    before["required_participant_records"] = ["journal:journal-1", "worker:worker-1"]
-                    before["inventory"] = inventory_of(before)
                 if name == "retirement_equal_replay":
                     before = copy.deepcopy(first["retirement_with_known_fate"]["ledger_after"])
             elif name in {"conflicting_operation_reuse", "replay_evidence_expired"}:
@@ -148,8 +151,10 @@ def render(spec_root: Path) -> bytes:
                     after["journal_entries"] = [{"work_identity": "effect-17", "attempt_fence": "4"}]
                     after["active_claims"] = [result["claim"]]
                 elif name == "freeze_after_drain":
-                    after["freeze"] = {"evidence_digest": result["evidence_digest"], "generation": "6"}
                     after["inventory"] = inventory_of(after)
+                    after["freeze"] = {"evidence_digest": result["evidence_digest"], "generation": "6",
+                                       "inventory_digest": frozen_inventory_digest(result["evidence_digest"], after["inventory"]),
+                                       "required_participants": copy.deepcopy(after["required_participant_records"])}
                 elif name == "retirement_with_known_fate":
                     after["retirement_grants"] = [{"destination_binding_digest": request["arguments"]["destination_binding_digest"],
                                                    "consumed": False, "single_use": True}]
@@ -167,10 +172,12 @@ def render(spec_root: Path) -> bytes:
             fault = {"native_transaction_fate": context.get("native_transaction_fate", "known"),
                      "injection": "disconnect_before_fate_resolution" if name == "unknown_native_transaction_fate" else "none",
                      "epoch_check_separate_from_commit": name == "separate_epoch_check_and_root_cas"}
-            profile_report = profiles["valid"][3 if name in {"retirement_with_known_fate", "retirement_equal_replay", "copied_database_relocation"} else
+            profile_report = profiles["valid"][3 if name in {"freeze_after_drain", "retirement_with_known_fate", "retirement_equal_replay", "freeze_request_digest_is_not_committed_proof", "copied_database_relocation"} else
                                                 2 if request["operation"] == "fence_worker" else 0]["report"]
             extension = profile_report["extension_report"]
             vector = {"id": name, "source_disposition": disposition, "request": request,
+                      "execution_tier": "i2_conditional" if name in {"retirement_with_known_fate",
+                          "retirement_equal_replay", "copied_database_relocation"} else "native_c",
                       "request_bytes": raw(request), "expected_response": result,
                       "expected_response_bytes": raw(result), "invocation": invocation,
                       "native_mutation_bytes": proposed.decode() if proposed is not None else None,
@@ -188,6 +195,8 @@ def render(spec_root: Path) -> bytes:
             vectors.append(vector)
             first[name] = vector
     profile_vectors = [{"id": row["name"], "source_disposition": disposition,
+                        "fixture_layer": "hypothetical_common_rule",
+                        "hypothetical_verification": row.get("context"),
                         "configured_facts": {"topology": row["report"]["topology"],
                                              "extension_requirement": None if row["report"]["extension_report"] is None else
                                                 {"category": row["report"]["extension_report"]["category"],
@@ -209,12 +218,16 @@ def render(spec_root: Path) -> bytes:
                      for index, row in enumerate(rows)]
     claim = first["fence_worker_allocates_new_claim"]["expected_response"]["claim"]
     worker_checks = []
+    worker_ledger = copy.deepcopy(first["fence_worker_allocates_new_claim"]["ledger_after"])
     def check(name: str, phase: str, now: str | None, *, candidate: dict | None = None,
               principal: str = "worker-1", valid: bool = False):
         worker_checks.append({"id": name, "input": {"phase": phase, "claim": candidate or claim,
              "authenticated_principal": principal, "trusted_clock_now": now,
              "current_authority_epoch": "2", "current_attempt_fence": "4",
-             "scope_state": "active"}, "expected": {"accepted": valid}})
+             "scope_state": "active", "ledger_before": copy.deepcopy(worker_ledger)},
+             "expected": {"accepted": valid, "ledger_after": copy.deepcopy(worker_ledger),
+                          "host_mutation_count": 0,
+                          "external_dispatch_count": 1 if valid and phase == "dispatch" else 0}})
     check("dispatch_before_expiry", "dispatch", "1759999999999999999", valid=True)
     check("dispatch_at_expiry", "dispatch", claim["expires_at"])
     check("result_at_expiry", "result", claim["expires_at"])
@@ -261,39 +274,123 @@ def render(spec_root: Path) -> bytes:
         {"id": "unknown_fate_blocks_freeze", "required_guarantee": "guarded_local_writes",
          "setup": first["unknown_native_transaction_fate"]["ledger_before"],
          "schedule": "disconnect_writer_before_fate_proof_then_attempt_freeze",
-         "steps": [step(first["unknown_native_transaction_fate"], fault="commit_unknown_disconnect")]},
-        {"id": "incomplete_inventory_blocks_retirement", "required_guarantee": "complete_scope_inventory",
-         "setup": first["retirement_with_known_fate"]["ledger_before"],
+         "steps": [step(commit, fault="commit_unknown_disconnect", response=None,
+                        after=first["unknown_native_transaction_fate"]["ledger_after"]),
+                   step(first["unknown_native_transaction_fate"],
+                        after=first["unknown_native_transaction_fate"]["ledger_after"])]},
+        {"id": "incomplete_frozen_inventory_refuses_freeze", "required_guarantee": "complete_scope_inventory",
+         "setup": first["freeze_after_drain"]["ledger_before"],
          "schedule": "omit_authoritative_receipt_from_frozen_enumeration",
-         "steps": [{"call": {"request_bytes": first["retirement_with_known_fate"]["request_bytes"],
-                              "invocation": first["retirement_with_known_fate"]["invocation"],
+         "steps": [{"call": {"request_bytes": first["freeze_after_drain"]["request_bytes"],
+                              "invocation": first["freeze_after_drain"]["invocation"],
                               "native_mutation_bytes": None, "fault": "omit_receipt_from_inventory"},
-                    "expected_response_bytes": raw({**first["retirement_with_known_fate"]["expected_response"],
-                        "status": "rejected", "state": "frozen", "scope_generation": "6",
+                    "expected_response_bytes": raw({**first["freeze_after_drain"]["expected_response"],
+                        "status": "rejected", "state": "active", "scope_generation": "5",
                         "evidence_digest": None, "error_code": "scope_fence_unproven"}),
-                    "expected_ledger_after": copy.deepcopy(first["retirement_with_known_fate"]["ledger_before"])}]},
+                    "expected_ledger_after": copy.deepcopy(first["freeze_after_drain"]["ledger_before"])}]},
         {"id": "copied_database_cannot_relocate", "required_guarantee": "safe_relocation",
          "setup": first["copied_database_relocation"]["ledger_before"], "schedule": "one_attempt_then_observe",
          "steps": [step(first["copied_database_relocation"])]},
         {"id": "unsupported_relocation_inactive_destination", "required_guarantee": "none",
          "setup": first["unsupported_safe_relocation"]["ledger_before"], "schedule": "one_attempt_then_observe",
-        "steps": [step(first["unsupported_safe_relocation"])]}
+         "steps": [step(first["unsupported_safe_relocation"])]}
     ]
+    copied_without_capability = copy.deepcopy(first["copied_database_relocation"])
+    copied_without_capability["expected_response"]["error_code"] = "host_capability_mismatch"
+    copied_without_capability["expected_response_bytes"] = raw(copied_without_capability["expected_response"])
+    native_traces.append({"id": "copied_database_without_relocation_capability",
+        "required_guarantee": "none", "setup": copied_without_capability["ledger_before"],
+        "schedule": "one_attempt_then_observe", "steps": [step(copied_without_capability)]})
+    def control(action: str, session: str | None = None, step_index: int | None = None,
+                barrier: str | None = None) -> dict:
+        return {"action": action, "session": session, "step": step_index, "barrier": barrier}
+    def event(kind: str, session: str | None = None, response: str | None = None,
+              snapshot: dict | None = None, fate: str | None = None,
+              barrier: str | None = None, old_session_fenced: bool | None = None) -> dict:
+        return {"event": kind, "session": session, "response_bytes": response,
+                "ledger": copy.deepcopy(snapshot), "fate": fate, "barrier": barrier,
+                "old_session_fenced": old_session_fenced}
+    for trace in native_traces:
+        name, steps = trace["id"], trace["steps"]
+        trace.pop("schedule")
+        if name == "precommit_rollback":
+            controls = [control("invoke", "writer", 0, "before_native_commit"),
+                        control("observe_native_fate", "writer"), control("observe_storage")]
+            events = [event("response", "writer", None), event("native_fate", "writer", fate="rolled_back"),
+                      event("storage", snapshot=steps[0]["expected_ledger_after"])]
+        elif name == "postcommit_lost_response_replay":
+            controls = [control("invoke", "writer", 0), control("observe_native_fate", "writer"),
+                        control("observe_storage"), control("restart_authority"),
+                        control("invoke", "writer", 1), control("observe_storage")]
+            events = [event("response", "writer", None), event("native_fate", "writer", fate="committed"),
+                      event("storage", snapshot=steps[0]["expected_ledger_after"]),
+                      event("restarted", snapshot=steps[0]["expected_ledger_after"]),
+                      event("response", "writer", steps[1]["expected_response_bytes"]),
+                      event("storage", snapshot=steps[1]["expected_ledger_after"])]
+        elif name in {"race_second_writer", "freeze_waits_for_writer"}:
+            rival_barrier = "guard_waiting" if name == "race_second_writer" else "freeze_waiting_for_known_fate"
+            controls = [control("start_call", "writer", 0, "guard_held_before_native_commit"),
+                        control("start_call", "rival", 1, rival_barrier),
+                        control("release_barrier", "writer", barrier="guard_held_before_native_commit"),
+                        control("observe_native_fate", "writer"), control("observe_storage"),
+                        control("release_barrier", "rival", barrier=rival_barrier),
+                        control("observe_storage")]
+            events = [event("barrier_reached", "writer", barrier="guard_held_before_native_commit"),
+                      event("barrier_reached", "rival", barrier=rival_barrier),
+                      event("response", "writer", steps[0]["expected_response_bytes"]),
+                      event("native_fate", "writer", fate="committed"),
+                      event("storage", snapshot=steps[0]["expected_ledger_after"]),
+                      event("response", "rival", steps[1]["expected_response_bytes"]),
+                      event("storage", snapshot=steps[1]["expected_ledger_after"])]
+        elif name == "unknown_fate_blocks_freeze":
+            controls = [control("start_call", "writer", 0, "commit_outcome_unknown"),
+                        control("disconnect_session", "writer"),
+                        control("observe_native_fate", "writer"), control("observe_storage"),
+                        control("invoke", "freezer", 1), control("observe_storage"),
+                        control("resolve_fate_from_storage", "writer"),
+                        control("fence_old_session", "writer"), control("observe_storage")]
+            events = [event("barrier_reached", "writer", barrier="commit_outcome_unknown"),
+                      event("response", "writer", None),
+                      event("native_fate", "writer", fate="unknown"),
+                      event("storage", snapshot=steps[0]["expected_ledger_after"]),
+                      event("response", "freezer", steps[1]["expected_response_bytes"]),
+                      event("storage", snapshot=steps[1]["expected_ledger_after"]),
+                      event("native_fate", "writer", fate="rolled_back"),
+                      event("old_session_fenced", "writer", old_session_fenced=True),
+                      event("storage", snapshot=trace["setup"])]
+        else:
+            controls = [control("invoke", "writer", 0), control("observe_storage")]
+            events = [event("response", "writer", steps[0]["expected_response_bytes"]),
+                      event("storage", snapshot=steps[0]["expected_ledger_after"])]
+        trace["control_plan"] = controls
+        trace["expected_events"] = events
     deleted_checkpoint_ledger = copy.deepcopy(commit["ledger_after"])
     deleted_checkpoint_ledger["checkpoint_bytes"] = []
     allocation_checks = [{"id": "scope_id_permanent_after_checkpoint_deletion",
         "input": {"ledger_before": commit["ledger_after"], "delete_portable_checkpoint": True,
                   "requested_scope_identity": "scope-42"},
         "expected": {"allocated": False, "ledger_after": deleted_checkpoint_ledger}}]
+    base_core_checks = [{"id": "no_authority_" + operation,
+         "input": {"request_bytes": first[name]["request_bytes"],
+                   "configured_authority": None, "core_checkpoint_bytes": "portable-core-state"},
+         "expected": {"status": "rejected", "code": "host_capability_mismatch",
+                      "authority_result": None, "core_checkpoint_bytes": "portable-core-state",
+                      "host_mutation_count": 0}}
+        for operation, name in (("guarded_commit", "guarded_native_commit"),
+                                ("freeze_scope", "freeze_after_drain"),
+                                ("fence_worker", "fence_worker_allocates_new_claim"),
+                                ("prove_retirement", "retirement_with_known_fate"))]
     return (json.dumps({"format": "determa.host-authority-driver-v1", "schema_version": 1,
                        "specification_commit": SPEC_PIN, "operations": vectors,
                        "profiles": profile_vectors, "clocks": clock_vectors, "worker_checks": worker_checks,
                        "native_traces": native_traces, "allocation_checks": allocation_checks,
-                       "runtime_probes": ["expiry_equal_rejected", "clock_unavailable_rejected",
-                                          "race_second_writer_with_freeze", "precommit_rollback",
-                                          "commit_unknown_restart", "postcommit_lost_response_replay",
-                                          "stale_worker_dispatch_and_result", "incomplete_frozen_inventory",
-                                          "unsupported_relocation_inactive_destination"]}, indent=2) + "\n").encode()
+                       "base_core_checks": base_core_checks,
+                       "transfer_suite_obligation": {"profile": "safe_relocation", "certified_by_this_profile": False,
+                           "required_suite": "I2 same-authority transfer operational suite",
+                           "required_native_observations": ["committed_source_retirement", "known_native_fate",
+                               "old_session_cannot_commit", "exact_destination_binding", "single_use_grant_consumption",
+                               "complete_participant_import", "inactive_destination_on_refusal"]}},
+                       indent=2) + "\n").encode()
 
 
 def main() -> int:

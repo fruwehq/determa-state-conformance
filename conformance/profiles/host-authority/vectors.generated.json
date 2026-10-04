@@ -17,6 +17,7 @@
         "arguments": {},
         "request_digest": "sha256:02c2e86cd168c98e35d13eada78d0fba2b85de128755da1144b7479d90b328d9"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":null,\"expected_scope_generation\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"read_authority\",\"operation_id\":\"read-1\",\"request_digest\":\"sha256:02c2e86cd168c98e35d13eada78d0fba2b85de128755da1144b7479d90b328d9\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -159,6 +160,7 @@
         },
         "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -313,6 +315,7 @@
         },
         "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -477,6 +480,7 @@
         "arguments": {},
         "request_digest": "sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -547,7 +551,10 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": null,
         "inventory": [],
         "retirement_grants": [],
@@ -597,10 +604,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -610,6 +625,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -635,25 +658,45 @@
       "replay_of": null,
       "configuration": {
         "topology": {
-          "identifier": "single-sqlite-database",
-          "configuration_digest": "sha256:881eeb99b1bd7671d1922ea9f433b1972a017adced05b209225fc29a16901ecc",
-          "process_boundary": "one configured authority database",
-          "host_boundary": "one local host"
+          "identifier": "single-postgresql-authority-domain-local-transfer",
+          "configuration_digest": "sha256:f2797527a5bebe9bf7ef70c6800100136ac6fdb432f40697691da176474e9196",
+          "process_boundary": "two local host processes sharing one configured authoritative database",
+          "host_boundary": "one configured PostgreSQL authority database"
         },
         "source_binding_digest": "sha256:b557d393e87ce7d6160a323bba5978ea2347f264308eef8b03c12d38bac2d2cd",
         "destination_binding_digest": null,
-        "required_participants": [],
+        "required_participants": [
+          {
+            "role": "journal",
+            "provider_reference": {
+              "identifier": "reference.local-journal",
+              "version": "0.3.0",
+              "content_digest": "sha256:4fe7faea4e2ccb14584868aac57faa17924152aa64759a5bc3d315ad0cf79601"
+            },
+            "instance_id": "journal-1"
+          },
+          {
+            "role": "worker",
+            "provider_reference": {
+              "identifier": "reference.local-worker",
+              "version": "0.3.0",
+              "content_digest": "sha256:14d972487bb8d701e440a8e21fa39c65fe06d75e670f2fb19ed3378d961a005b"
+            },
+            "instance_id": "worker-1"
+          }
+        ],
         "extension_requirement": {
           "category": "authority",
           "provider_reference": {
-            "identifier": "reference.sqlite-authority",
+            "identifier": "example.postgresql-authority",
             "version": "0.3.0",
-            "content_digest": "sha256:5c4c1964340aca5b65393bbe9d3249cdd71be26665b3320ad694f034f2743283"
+            "content_digest": "sha256:639ea56966779d730c8556860b115c5bb9e6974bf045e28a3d3d4e5c223f2582"
           },
-          "instance_id": "local-authority",
+          "instance_id": "same-db-authority",
           "required_claims": [
             "authoritative_scope_fencing",
-            "consistent_scope_inventory"
+            "consistent_scope_inventory",
+            "safe_relocation"
           ]
         }
       }
@@ -679,6 +722,7 @@
         },
         "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -883,6 +927,7 @@
         },
         "request_digest": "sha256:75777b0f9c728f12948c61eef8b3df87179d8b880efe21adc60b641b8a52a59c"
       },
+      "execution_tier": "i2_conditional",
       "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:80e87bcfb0a487a65ceea01e87dca963eebadc24fb0eade9b6c40b011e0d9598\",\"freeze_evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-1\",\"request_digest\":\"sha256:75777b0f9c728f12948c61eef8b3df87179d8b880efe21adc60b641b8a52a59c\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -966,7 +1011,12 @@
         ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -1058,7 +1108,12 @@
         ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -1167,6 +1222,7 @@
         },
         "request_digest": "sha256:75777b0f9c728f12948c61eef8b3df87179d8b880efe21adc60b641b8a52a59c"
       },
+      "execution_tier": "i2_conditional",
       "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:80e87bcfb0a487a65ceea01e87dca963eebadc24fb0eade9b6c40b011e0d9598\",\"freeze_evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-1\",\"request_digest\":\"sha256:75777b0f9c728f12948c61eef8b3df87179d8b880efe21adc60b641b8a52a59c\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -1257,7 +1313,12 @@
         ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -1355,7 +1416,12 @@
         ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -1463,6 +1529,7 @@
         },
         "request_digest": "sha256:c221e5c3f69f24e8ca6c38e9c09e3f39ffe4d3884482020a43584a544346fb40"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:95d70132db2d4f4f56e5c375c5bc8fd66ed6909e86a07d7f21df2c985f93e30a\"},\"expected_authority_epoch\":\"1\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-stale\",\"request_digest\":\"sha256:c221e5c3f69f24e8ca6c38e9c09e3f39ffe4d3884482020a43584a544346fb40\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -1605,6 +1672,7 @@
         },
         "request_digest": "sha256:dc159835b86016dbddd34e09d3672d145b6f89f756ef299929ed0e4425fe53e2"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:bba45cfd2cf49a3ab3fd7c3dba676a4c010b805c073fefb5c36e0bfbb428b5a9\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-gen\",\"request_digest\":\"sha256:dc159835b86016dbddd34e09d3672d145b6f89f756ef299929ed0e4425fe53e2\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -1747,6 +1815,7 @@
         },
         "request_digest": "sha256:3536328b3e8f3c220c000602e6bffa047054bb508c18bb5ea97a40ba33662c7a"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:072d0fa0d398b9d2594f52c361086da8023521ff18ed5120648e332aded5d7cc\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-cas\",\"request_digest\":\"sha256:3536328b3e8f3c220c000602e6bffa047054bb508c18bb5ea97a40ba33662c7a\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -1887,6 +1956,7 @@
         "arguments": {},
         "request_digest": "sha256:2a2bcd2c9cb27aea71eb24685b7c0fcab35ce1b31994c46c93cfa78a66e90bbf"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-unknown\",\"request_digest\":\"sha256:2a2bcd2c9cb27aea71eb24685b7c0fcab35ce1b31994c46c93cfa78a66e90bbf\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -2034,6 +2104,7 @@
         },
         "request_digest": "sha256:712a1607ea27c08c39a7ed62aa52b6fe0a5abbbca5db73dedee9fa83f67094d3"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"worker-stale\",\"request_digest\":\"sha256:712a1607ea27c08c39a7ed62aa52b6fe0a5abbbca5db73dedee9fa83f67094d3\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -2210,6 +2281,7 @@
         },
         "request_digest": "sha256:1964cf71d15409d41407aff5043de5a42eb5ad24f09b8f22838df9e181b26304"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"worker-other\",\"request_digest\":\"sha256:1964cf71d15409d41407aff5043de5a42eb5ad24f09b8f22838df9e181b26304\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -2382,6 +2454,7 @@
         },
         "request_digest": "sha256:2febeba3332301e5f15e394183cfd563fc687dec608ac32011ff7897f462f5eb"
       },
+      "execution_tier": "i2_conditional",
       "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:2fdc8d6f002a705abde203762244caa7731535badc50502c92a0303f31f69fa8\",\"freeze_evidence_digest\":\"sha256:c9729e45ebc837d4d96812c0787148e94d8e98f3146053b0504f94f95331190f\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-copy\",\"request_digest\":\"sha256:2febeba3332301e5f15e394183cfd563fc687dec608ac32011ff7897f462f5eb\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -2459,10 +2532,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -2472,6 +2553,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -2533,10 +2622,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -2546,6 +2643,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -2631,6 +2736,7 @@
         },
         "request_digest": "sha256:a6ba7de1edc794e37caa2244b786d4a1b9e21184c1d2b57cd081dad29d18b384"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:2fdc8d6f002a705abde203762244caa7731535badc50502c92a0303f31f69fa8\",\"freeze_evidence_digest\":\"sha256:4bfce369404d74f12eb79e417c87ff7dc0208a5bc523655510be6a8cad5fb5f2\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-unsupported\",\"request_digest\":\"sha256:a6ba7de1edc794e37caa2244b786d4a1b9e21184c1d2b57cd081dad29d18b384\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -2708,10 +2814,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -2721,6 +2835,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -2782,10 +2904,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -2795,6 +2925,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -2857,6 +2995,7 @@
         "arguments": {},
         "request_digest": "sha256:e3dd5ee1368dc389e15fd550d49caa09426fde6f5b8f9be11fb5cc5bcbb37094"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":null,\"expected_scope_generation\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"read_authority\",\"operation_id\":\"read-other\",\"request_digest\":\"sha256:e3dd5ee1368dc389e15fd550d49caa09426fde6f5b8f9be11fb5cc5bcbb37094\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -2991,6 +3130,7 @@
         },
         "request_digest": "sha256:bf83e3937f91aa6d835202d0ff750174e82a8d1a92613dd3d98dc977151ad189"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:e5123854577bce5698e299bcd43679f8d64c3fe25d1fdefe837a7aae3ac6f293\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:bf83e3937f91aa6d835202d0ff750174e82a8d1a92613dd3d98dc977151ad189\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -3157,6 +3297,7 @@
         },
         "request_digest": "sha256:565ea4735cc97ea66d052836991aec45253522a81ca8b9e89764bd4c4a8272be"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:d7067761b09cfc378e4888f0615ac523acc573facc1a09706b1f3798a268c4ce\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-expired\",\"request_digest\":\"sha256:565ea4735cc97ea66d052836991aec45253522a81ca8b9e89764bd4c4a8272be\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -3324,6 +3465,7 @@
         "request_digest": "sha256:71eb29e67e6db2a3b5e7cb6401dbdf0a4480f0a8d45af3815fa0239b97e37f1d",
         "unexpected": true
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:c0db5c0edc49d45b7f1dcf5859a3968cfecf5e0313c7e39f3e66dc9021866403\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"malformed-1\",\"request_digest\":\"sha256:71eb29e67e6db2a3b5e7cb6401dbdf0a4480f0a8d45af3815fa0239b97e37f1d\",\"scope_identity\":\"scope-42\",\"unexpected\":true}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -3458,6 +3600,7 @@
         },
         "request_digest": "sha256:fa11b09ce60b731b3f97574fc958c8e851b536785f3b3c2df1e94b464bc95007"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:c0db5c0edc49d45b7f1dcf5859a3968cfecf5e0313c7e39f3e66dc9021866403\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"another.protocol\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"malformed-1\",\"request_digest\":\"sha256:fa11b09ce60b731b3f97574fc958c8e851b536785f3b3c2df1e94b464bc95007\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -3592,6 +3735,7 @@
         },
         "request_digest": "sha256:1f845a9b106b85ccc3f382821217908d4d0fe44700c1bd299ace8549e5893a85"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:c0db5c0edc49d45b7f1dcf5859a3968cfecf5e0313c7e39f3e66dc9021866403\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":2,\"operation\":\"guarded_commit\",\"operation_id\":\"malformed-1\",\"request_digest\":\"sha256:1f845a9b106b85ccc3f382821217908d4d0fe44700c1bd299ace8549e5893a85\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -3727,6 +3871,7 @@
         },
         "request_digest": "sha256:66bc0894f336d79fef57d2d154b23b30039070ba4eebbf95df44739e1d3ef20c"
       },
+      "execution_tier": "native_c",
       "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:5141cd2b3da81604aff6cd449b53b123ccba0c77ddea6c331971e933c63d3af5\",\"freeze_evidence_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-wrong-freeze-proof\",\"request_digest\":\"sha256:66bc0894f336d79fef57d2d154b23b30039070ba4eebbf95df44739e1d3ef20c\",\"scope_identity\":\"scope-42\"}",
       "expected_response": {
         "interface": "determa.host_authority",
@@ -3804,10 +3949,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -3817,6 +3970,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -3878,10 +4039,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -3891,6 +4060,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -3916,25 +4093,45 @@
       "replay_of": null,
       "configuration": {
         "topology": {
-          "identifier": "single-sqlite-database",
-          "configuration_digest": "sha256:881eeb99b1bd7671d1922ea9f433b1972a017adced05b209225fc29a16901ecc",
-          "process_boundary": "one configured authority database",
-          "host_boundary": "one local host"
+          "identifier": "single-postgresql-authority-domain-local-transfer",
+          "configuration_digest": "sha256:f2797527a5bebe9bf7ef70c6800100136ac6fdb432f40697691da176474e9196",
+          "process_boundary": "two local host processes sharing one configured authoritative database",
+          "host_boundary": "one configured PostgreSQL authority database"
         },
         "source_binding_digest": "sha256:b557d393e87ce7d6160a323bba5978ea2347f264308eef8b03c12d38bac2d2cd",
         "destination_binding_digest": "sha256:5141cd2b3da81604aff6cd449b53b123ccba0c77ddea6c331971e933c63d3af5",
-        "required_participants": [],
+        "required_participants": [
+          {
+            "role": "journal",
+            "provider_reference": {
+              "identifier": "reference.local-journal",
+              "version": "0.3.0",
+              "content_digest": "sha256:4fe7faea4e2ccb14584868aac57faa17924152aa64759a5bc3d315ad0cf79601"
+            },
+            "instance_id": "journal-1"
+          },
+          {
+            "role": "worker",
+            "provider_reference": {
+              "identifier": "reference.local-worker",
+              "version": "0.3.0",
+              "content_digest": "sha256:14d972487bb8d701e440a8e21fa39c65fe06d75e670f2fb19ed3378d961a005b"
+            },
+            "instance_id": "worker-1"
+          }
+        ],
         "extension_requirement": {
           "category": "authority",
           "provider_reference": {
-            "identifier": "reference.sqlite-authority",
+            "identifier": "example.postgresql-authority",
             "version": "0.3.0",
-            "content_digest": "sha256:5c4c1964340aca5b65393bbe9d3249cdd71be26665b3320ad694f034f2743283"
+            "content_digest": "sha256:639ea56966779d730c8556860b115c5bb9e6974bf045e28a3d3d4e5c223f2582"
           },
-          "instance_id": "local-authority",
+          "instance_id": "same-db-authority",
           "required_claims": [
             "authoritative_scope_fencing",
-            "consistent_scope_inventory"
+            "consistent_scope_inventory",
+            "safe_relocation"
           ]
         }
       }
@@ -3944,6 +4141,8 @@
     {
       "id": "guarded_local_scope_without_relocation",
       "source_disposition": "valid",
+      "fixture_layer": "hypothetical_common_rule",
+      "hypothetical_verification": null,
       "configured_facts": {
         "topology": {
           "identifier": "single-sqlite-database",
@@ -4026,6 +4225,8 @@
     {
       "id": "application_owned_transaction",
       "source_disposition": "valid",
+      "fixture_layer": "hypothetical_common_rule",
+      "hypothetical_verification": null,
       "configured_facts": {
         "topology": {
           "identifier": "application-owned-transaction",
@@ -4082,6 +4283,12 @@
     {
       "id": "guarded_local_worker_fencing",
       "source_disposition": "valid",
+      "fixture_layer": "hypothetical_common_rule",
+      "hypothetical_verification": {
+        "journal_claim_issuance_commits_with_guard": true,
+        "worker_principal_and_fence_checked_at_dispatch_and_result": true,
+        "tested_topology": "one configured local authority database"
+      },
       "configured_facts": {
         "topology": {
           "identifier": "single-sqlite-database",
@@ -4201,6 +4408,15 @@
     {
       "id": "proved_same_authority_local_relocation_support",
       "source_disposition": "valid",
+      "fixture_layer": "hypothetical_common_rule",
+      "hypothetical_verification": {
+        "source_and_destination_in_same_authority_domain": true,
+        "native_transaction_fate_and_old_session_fence_proved": true,
+        "single_use_destination_bound_grant_proved_by_same_database": true,
+        "independent_authority_grant_service": false,
+        "source_retirement_completed": false,
+        "activation_permitted_now": false
+      },
       "configured_facts": {
         "topology": {
           "identifier": "single-postgresql-authority-domain-local-transfer",
@@ -4322,6 +4538,8 @@
     {
       "id": "unproved_safe_relocation_claim",
       "source_disposition": "invalid",
+      "fixture_layer": "hypothetical_common_rule",
+      "hypothetical_verification": null,
       "configured_facts": {
         "topology": {
           "identifier": "single-sqlite-database",
@@ -4400,6 +4618,8 @@
     {
       "id": "missing_authority_cannot_claim_guarded_writes",
       "source_disposition": "invalid",
+      "fixture_layer": "hypothetical_common_rule",
+      "hypothetical_verification": null,
       "configured_facts": {
         "topology": {
           "identifier": "application-owned-transaction",
@@ -4509,10 +4729,126 @@
         "trusted_clock_now": "1759999999999999999",
         "current_authority_epoch": "2",
         "current_attempt_fence": "4",
-        "scope_state": "active"
+        "scope_state": "active",
+        "ledger_before": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        }
       },
       "expected": {
-        "accepted": true
+        "accepted": true,
+        "ledger_after": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        },
+        "host_mutation_count": 0,
+        "external_dispatch_count": 1
       }
     },
     {
@@ -4535,10 +4871,126 @@
         "trusted_clock_now": "1760000000000000000",
         "current_authority_epoch": "2",
         "current_attempt_fence": "4",
-        "scope_state": "active"
+        "scope_state": "active",
+        "ledger_before": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        }
       },
       "expected": {
-        "accepted": false
+        "accepted": false,
+        "ledger_after": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        },
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0
       }
     },
     {
@@ -4561,10 +5013,126 @@
         "trusted_clock_now": "1760000000000000000",
         "current_authority_epoch": "2",
         "current_attempt_fence": "4",
-        "scope_state": "active"
+        "scope_state": "active",
+        "ledger_before": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        }
       },
       "expected": {
-        "accepted": false
+        "accepted": false,
+        "ledger_after": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        },
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0
       }
     },
     {
@@ -4587,10 +5155,126 @@
         "trusted_clock_now": null,
         "current_authority_epoch": "2",
         "current_attempt_fence": "4",
-        "scope_state": "active"
+        "scope_state": "active",
+        "ledger_before": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        }
       },
       "expected": {
-        "accepted": false
+        "accepted": false,
+        "ledger_after": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        },
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0
       }
     },
     {
@@ -4613,10 +5297,126 @@
         "trusted_clock_now": "1759999999999999999",
         "current_authority_epoch": "2",
         "current_attempt_fence": "4",
-        "scope_state": "active"
+        "scope_state": "active",
+        "ledger_before": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        }
       },
       "expected": {
-        "accepted": false
+        "accepted": false,
+        "ledger_after": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        },
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0
       }
     },
     {
@@ -4639,10 +5439,126 @@
         "trusted_clock_now": "1759999999999999999",
         "current_authority_epoch": "2",
         "current_attempt_fence": "4",
-        "scope_state": "active"
+        "scope_state": "active",
+        "ledger_before": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        }
       },
       "expected": {
-        "accepted": false
+        "accepted": false,
+        "ledger_after": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        },
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0
       }
     },
     {
@@ -4665,10 +5581,126 @@
         "trusted_clock_now": "1759999999999999999",
         "current_authority_epoch": "2",
         "current_attempt_fence": "4",
-        "scope_state": "active"
+        "scope_state": "active",
+        "ledger_before": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        }
       },
       "expected": {
-        "accepted": false
+        "accepted": false,
+        "ledger_after": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "fence-1",
+              "request_digest": "sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72",
+              "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":{\"attempt_fence\":\"4\",\"expires_at\":\"1760000000000000000\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"scope_authority_epoch\":\"2\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\",\"worker_principal\":\"worker-1\"},\"error_code\":null,\"evidence_digest\":\"sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:a15b033510da3247fdf35f8e1dfc52141cee2e642a1284a1352bb37131fff9a8"
+            }
+          ],
+          "mutation_bytes": [],
+          "checkpoint_bytes": [],
+          "journal_entries": [
+            {
+              "work_identity": "effect-17",
+              "attempt_fence": "4"
+            }
+          ],
+          "ingress_acknowledgements": [],
+          "active_claims": [
+            {
+              "scope_identity": "scope-42",
+              "root_instance_id": "root-7",
+              "work_kind": "effect",
+              "work_identity": "effect-17",
+              "operation_token": "token-17",
+              "scope_authority_epoch": "2",
+              "attempt_fence": "4",
+              "worker_principal": "worker-1",
+              "expires_at": "1760000000000000000",
+              "state": "active"
+            }
+          ],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        },
+        "host_mutation_count": 0,
+        "external_dispatch_count": 0
       }
     }
   ],
@@ -4707,7 +5739,6 @@
         "retirement_grants": [],
         "destination_activations": []
       },
-      "schedule": "one_attempt_then_observe",
       "steps": [
         {
           "call": {
@@ -4764,6 +5795,85 @@
             "destination_activations": []
           }
         }
+      ],
+      "control_plan": [
+        {
+          "action": "invoke",
+          "session": "writer",
+          "step": 0,
+          "barrier": "before_native_commit"
+        },
+        {
+          "action": "observe_native_fate",
+          "session": "writer",
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "native_fate",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": "rolled_back",
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "4",
+            "state": "active",
+            "receipts": [],
+            "mutation_bytes": [],
+            "checkpoint_bytes": [],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        }
       ]
     },
     {
@@ -4800,7 +5910,6 @@
         "retirement_grants": [],
         "destination_activations": []
       },
-      "schedule": "restart_between_steps",
       "steps": [
         {
           "call": {
@@ -4936,6 +6045,226 @@
             "destination_activations": []
           }
         }
+      ],
+      "control_plan": [
+        {
+          "action": "invoke",
+          "session": "writer",
+          "step": 0,
+          "barrier": null
+        },
+        {
+          "action": "observe_native_fate",
+          "session": "writer",
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "restart_authority",
+          "session": null,
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "invoke",
+          "session": "writer",
+          "step": 1,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "native_fate",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": "committed",
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "5",
+            "state": "active",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "restarted",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "5",
+            "state": "active",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "5",
+            "state": "active",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        }
       ]
     },
     {
@@ -4972,7 +6301,6 @@
         "retirement_grants": [],
         "destination_activations": []
       },
-      "schedule": "pause_first_inside_native_guard_start_second_then_commit_first",
       "steps": [
         {
           "call": {
@@ -5108,6 +6436,199 @@
             "destination_activations": []
           }
         }
+      ],
+      "control_plan": [
+        {
+          "action": "start_call",
+          "session": "writer",
+          "step": 0,
+          "barrier": "guard_held_before_native_commit"
+        },
+        {
+          "action": "start_call",
+          "session": "rival",
+          "step": 1,
+          "barrier": "guard_waiting"
+        },
+        {
+          "action": "release_barrier",
+          "session": "writer",
+          "step": null,
+          "barrier": "guard_held_before_native_commit"
+        },
+        {
+          "action": "observe_native_fate",
+          "session": "writer",
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "release_barrier",
+          "session": "rival",
+          "step": null,
+          "barrier": "guard_waiting"
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "barrier_reached",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": "guard_held_before_native_commit",
+          "old_session_fenced": null
+        },
+        {
+          "event": "barrier_reached",
+          "session": "rival",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": "guard_waiting",
+          "old_session_fenced": null
+        },
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "native_fate",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": "committed",
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "5",
+            "state": "active",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "response",
+          "session": "rival",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"scope_generation_conflict\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-race-2\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"rejected\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "5",
+            "state": "active",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        }
       ]
     },
     {
@@ -5144,7 +6665,6 @@
         "retirement_grants": [],
         "destination_activations": []
       },
-      "schedule": "pause_commit_inside_native_guard_start_freeze_release_commit_then_freeze",
       "steps": [
         {
           "call": {
@@ -5280,10 +6800,18 @@
               "definition-7"
             ],
             "migration_references": [],
-            "required_participant_records": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
             "freeze": {
               "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-              "generation": "6"
+              "generation": "6",
+              "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+              "required_participants": [
+                "journal:journal-1",
+                "worker:worker-1"
+              ]
             },
             "inventory": [
               {
@@ -5293,6 +6821,14 @@
               {
                 "kind": "definition",
                 "identity": "definition-7"
+              },
+              {
+                "kind": "participant",
+                "identity": "journal:journal-1"
+              },
+              {
+                "kind": "participant",
+                "identity": "worker:worker-1"
               },
               {
                 "kind": "receipt",
@@ -5311,79 +6847,116 @@
             "destination_activations": []
           }
         }
-      ]
-    },
-    {
-      "id": "unknown_fate_blocks_freeze",
-      "required_guarantee": "guarded_local_writes",
-      "setup": {
-        "allocated_scope_identities": [
-          "scope-42"
-        ],
-        "scope_identity": "scope-42",
-        "owner_principal": "owner-1",
-        "authority_epoch": "2",
-        "scope_generation": "4",
-        "state": "active",
-        "receipts": [],
-        "mutation_bytes": [],
-        "checkpoint_bytes": [],
-        "journal_entries": [],
-        "ingress_acknowledgements": [],
-        "active_claims": [],
-        "roots": [
-          "root-7"
-        ],
-        "tombstones": [],
-        "pending_intents": [],
-        "terminal_intents": [],
-        "definition_references": [
-          "definition-7"
-        ],
-        "migration_references": [],
-        "required_participant_records": [],
-        "freeze": null,
-        "inventory": [],
-        "retirement_grants": [],
-        "destination_activations": []
-      },
-      "schedule": "disconnect_writer_before_fate_proof_then_attempt_freeze",
-      "steps": [
+      ],
+      "control_plan": [
         {
-          "call": {
-            "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-unknown\",\"request_digest\":\"sha256:2a2bcd2c9cb27aea71eb24685b7c0fcab35ce1b31994c46c93cfa78a66e90bbf\",\"scope_identity\":\"scope-42\"}",
-            "invocation": {
-              "authenticated_principal": "owner-1",
-              "authorized_scopes": [
-                "scope-42"
-              ],
-              "operation_rights": [
-                "read_authority",
-                "guarded_commit",
-                "freeze_scope",
-                "fence_worker",
-                "prove_retirement"
-              ],
-              "assigned_worker_principal": null,
-              "trusted_clock_now": "1759999999999999999",
-              "clock_available": true
-            },
-            "native_mutation_bytes": null,
-            "fault": "commit_unknown_disconnect"
-          },
-          "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"scope_transaction_in_doubt\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-unknown\",\"scope_generation\":\"4\",\"scope_identity\":\"scope-42\",\"state\":\"transaction_in_doubt\",\"status\":\"rejected\"}",
-          "expected_ledger_after": {
+          "action": "start_call",
+          "session": "writer",
+          "step": 0,
+          "barrier": "guard_held_before_native_commit"
+        },
+        {
+          "action": "start_call",
+          "session": "rival",
+          "step": 1,
+          "barrier": "freeze_waiting_for_known_fate"
+        },
+        {
+          "action": "release_barrier",
+          "session": "writer",
+          "step": null,
+          "barrier": "guard_held_before_native_commit"
+        },
+        {
+          "action": "observe_native_fate",
+          "session": "writer",
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "release_barrier",
+          "session": "rival",
+          "step": null,
+          "barrier": "freeze_waiting_for_known_fate"
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "barrier_reached",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": "guard_held_before_native_commit",
+          "old_session_fenced": null
+        },
+        {
+          "event": "barrier_reached",
+          "session": "rival",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": "freeze_waiting_for_known_fate",
+          "old_session_fenced": null
+        },
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "native_fate",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": "committed",
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
             "allocated_scope_identities": [
               "scope-42"
             ],
             "scope_identity": "scope-42",
             "owner_principal": "owner-1",
             "authority_epoch": "2",
-            "scope_generation": "4",
-            "state": "transaction_in_doubt",
-            "receipts": [],
-            "mutation_bytes": [],
-            "checkpoint_bytes": [],
+            "scope_generation": "5",
+            "state": "active",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
@@ -5402,124 +6975,25 @@
             "inventory": [],
             "retirement_grants": [],
             "destination_activations": []
-          }
-        }
-      ]
-    },
-    {
-      "id": "incomplete_inventory_blocks_retirement",
-      "required_guarantee": "complete_scope_inventory",
-      "setup": {
-        "allocated_scope_identities": [
-          "scope-42"
-        ],
-        "scope_identity": "scope-42",
-        "owner_principal": "owner-1",
-        "authority_epoch": "2",
-        "scope_generation": "6",
-        "state": "frozen",
-        "receipts": [
-          {
-            "operation_id": "commit-1",
-            "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
-            "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
-            "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
-            "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
           },
-          {
-            "operation_id": "freeze-1",
-            "request_digest": "sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e",
-            "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
-            "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"accepted\"}",
-            "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d"
-          }
-        ],
-        "mutation_bytes": [
-          "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
-        ],
-        "checkpoint_bytes": [
-          "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
-        ],
-        "journal_entries": [],
-        "ingress_acknowledgements": [],
-        "active_claims": [],
-        "roots": [
-          "root-7"
-        ],
-        "tombstones": [],
-        "pending_intents": [],
-        "terminal_intents": [],
-        "definition_references": [
-          "definition-7"
-        ],
-        "migration_references": [],
-        "required_participant_records": [
-          "journal:journal-1",
-          "worker:worker-1"
-        ],
-        "freeze": {
-          "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
         },
-        "inventory": [
-          {
-            "kind": "checkpoint",
-            "identity": "0"
-          },
-          {
-            "kind": "definition",
-            "identity": "definition-7"
-          },
-          {
-            "kind": "participant",
-            "identity": "journal:journal-1"
-          },
-          {
-            "kind": "participant",
-            "identity": "worker:worker-1"
-          },
-          {
-            "kind": "receipt",
-            "identity": "commit-1"
-          },
-          {
-            "kind": "receipt",
-            "identity": "freeze-1"
-          },
-          {
-            "kind": "root",
-            "identity": "root-7"
-          }
-        ],
-        "retirement_grants": [],
-        "destination_activations": []
-      },
-      "schedule": "omit_authoritative_receipt_from_frozen_enumeration",
-      "steps": [
         {
-          "call": {
-            "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:80e87bcfb0a487a65ceea01e87dca963eebadc24fb0eade9b6c40b011e0d9598\",\"freeze_evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-1\",\"request_digest\":\"sha256:75777b0f9c728f12948c61eef8b3df87179d8b880efe21adc60b641b8a52a59c\",\"scope_identity\":\"scope-42\"}",
-            "invocation": {
-              "authenticated_principal": "owner-1",
-              "authorized_scopes": [
-                "scope-42"
-              ],
-              "operation_rights": [
-                "read_authority",
-                "guarded_commit",
-                "freeze_scope",
-                "fence_worker",
-                "prove_retirement"
-              ],
-              "assigned_worker_principal": null,
-              "trusted_clock_now": "1759999999999999999",
-              "clock_available": true
-            },
-            "native_mutation_bytes": null,
-            "fault": "omit_receipt_from_inventory"
-          },
-          "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"scope_fence_unproven\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"rejected\"}",
-          "expected_ledger_after": {
+          "event": "response",
+          "session": "rival",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"accepted\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
             "allocated_scope_identities": [
               "scope-42"
             ],
@@ -5569,7 +7043,12 @@
             ],
             "freeze": {
               "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-              "generation": "6"
+              "generation": "6",
+              "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+              "required_participants": [
+                "journal:journal-1",
+                "worker:worker-1"
+              ]
             },
             "inventory": [
               {
@@ -5603,7 +7082,587 @@
             ],
             "retirement_grants": [],
             "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        }
+      ]
+    },
+    {
+      "id": "unknown_fate_blocks_freeze",
+      "required_guarantee": "guarded_local_writes",
+      "setup": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "4",
+        "state": "active",
+        "receipts": [],
+        "mutation_bytes": [],
+        "checkpoint_bytes": [],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "steps": [
+        {
+          "call": {
+            "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+            "invocation": {
+              "authenticated_principal": "owner-1",
+              "authorized_scopes": [
+                "scope-42"
+              ],
+              "operation_rights": [
+                "read_authority",
+                "guarded_commit",
+                "freeze_scope",
+                "fence_worker",
+                "prove_retirement"
+              ],
+              "assigned_worker_principal": null,
+              "trusted_clock_now": "1759999999999999999",
+              "clock_available": true
+            },
+            "native_mutation_bytes": "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}",
+            "fault": "commit_unknown_disconnect"
+          },
+          "expected_response_bytes": null,
+          "expected_ledger_after": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "4",
+            "state": "transaction_in_doubt",
+            "receipts": [],
+            "mutation_bytes": [],
+            "checkpoint_bytes": [],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
           }
+        },
+        {
+          "call": {
+            "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-unknown\",\"request_digest\":\"sha256:2a2bcd2c9cb27aea71eb24685b7c0fcab35ce1b31994c46c93cfa78a66e90bbf\",\"scope_identity\":\"scope-42\"}",
+            "invocation": {
+              "authenticated_principal": "owner-1",
+              "authorized_scopes": [
+                "scope-42"
+              ],
+              "operation_rights": [
+                "read_authority",
+                "guarded_commit",
+                "freeze_scope",
+                "fence_worker",
+                "prove_retirement"
+              ],
+              "assigned_worker_principal": null,
+              "trusted_clock_now": "1759999999999999999",
+              "clock_available": true
+            },
+            "native_mutation_bytes": null,
+            "fault": "none"
+          },
+          "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"scope_transaction_in_doubt\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-unknown\",\"scope_generation\":\"4\",\"scope_identity\":\"scope-42\",\"state\":\"transaction_in_doubt\",\"status\":\"rejected\"}",
+          "expected_ledger_after": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "4",
+            "state": "transaction_in_doubt",
+            "receipts": [],
+            "mutation_bytes": [],
+            "checkpoint_bytes": [],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          }
+        }
+      ],
+      "control_plan": [
+        {
+          "action": "start_call",
+          "session": "writer",
+          "step": 0,
+          "barrier": "commit_outcome_unknown"
+        },
+        {
+          "action": "disconnect_session",
+          "session": "writer",
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "observe_native_fate",
+          "session": "writer",
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "invoke",
+          "session": "freezer",
+          "step": 1,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "resolve_fate_from_storage",
+          "session": "writer",
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "fence_old_session",
+          "session": "writer",
+          "step": null,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "barrier_reached",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": "commit_outcome_unknown",
+          "old_session_fenced": null
+        },
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "native_fate",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": "unknown",
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "4",
+            "state": "transaction_in_doubt",
+            "receipts": [],
+            "mutation_bytes": [],
+            "checkpoint_bytes": [],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "response",
+          "session": "freezer",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"scope_transaction_in_doubt\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-unknown\",\"scope_generation\":\"4\",\"scope_identity\":\"scope-42\",\"state\":\"transaction_in_doubt\",\"status\":\"rejected\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "4",
+            "state": "transaction_in_doubt",
+            "receipts": [],
+            "mutation_bytes": [],
+            "checkpoint_bytes": [],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "native_fate",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": "rolled_back",
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "old_session_fenced",
+          "session": "writer",
+          "response_bytes": null,
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": true
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "4",
+            "state": "active",
+            "receipts": [],
+            "mutation_bytes": [],
+            "checkpoint_bytes": [],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        }
+      ]
+    },
+    {
+      "id": "incomplete_frozen_inventory_refuses_freeze",
+      "required_guarantee": "complete_scope_inventory",
+      "setup": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "5",
+        "state": "active",
+        "receipts": [
+          {
+            "operation_id": "commit-1",
+            "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+            "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+            "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+            "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+          }
+        ],
+        "mutation_bytes": [
+          "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+        ],
+        "checkpoint_bytes": [
+          "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+        ],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
+        "freeze": null,
+        "inventory": [],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "steps": [
+        {
+          "call": {
+            "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
+            "invocation": {
+              "authenticated_principal": "owner-1",
+              "authorized_scopes": [
+                "scope-42"
+              ],
+              "operation_rights": [
+                "read_authority",
+                "guarded_commit",
+                "freeze_scope",
+                "fence_worker",
+                "prove_retirement"
+              ],
+              "assigned_worker_principal": null,
+              "trusted_clock_now": "1759999999999999999",
+              "clock_available": true
+            },
+            "native_mutation_bytes": null,
+            "fault": "omit_receipt_from_inventory"
+          },
+          "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"scope_fence_unproven\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"rejected\"}",
+          "expected_ledger_after": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "5",
+            "state": "active",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          }
+        }
+      ],
+      "control_plan": [
+        {
+          "action": "invoke",
+          "session": "writer",
+          "step": 0,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"scope_fence_unproven\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"rejected\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "5",
+            "state": "active",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
+            "freeze": null,
+            "inventory": [],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
         }
       ]
     },
@@ -5654,10 +7713,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -5667,6 +7734,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -5684,7 +7759,6 @@
         "retirement_grants": [],
         "destination_activations": []
       },
-      "schedule": "one_attempt_then_observe",
       "steps": [
         {
           "call": {
@@ -5753,10 +7827,18 @@
               "definition-7"
             ],
             "migration_references": [],
-            "required_participant_records": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
             "freeze": {
               "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-              "generation": "6"
+              "generation": "6",
+              "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+              "required_participants": [
+                "journal:journal-1",
+                "worker:worker-1"
+              ]
             },
             "inventory": [
               {
@@ -5766,6 +7848,14 @@
               {
                 "kind": "definition",
                 "identity": "definition-7"
+              },
+              {
+                "kind": "participant",
+                "identity": "journal:journal-1"
+              },
+              {
+                "kind": "participant",
+                "identity": "worker:worker-1"
               },
               {
                 "kind": "receipt",
@@ -5783,6 +7873,129 @@
             "retirement_grants": [],
             "destination_activations": []
           }
+        }
+      ],
+      "control_plan": [
+        {
+          "action": "invoke",
+          "session": "writer",
+          "step": 0,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"scope_fence_unproven\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-copy\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"rejected\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "6",
+            "state": "frozen",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              },
+              {
+                "operation_id": "freeze-1",
+                "request_digest": "sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e",
+                "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
+            "freeze": {
+              "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
+              "generation": "6",
+              "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+              "required_participants": [
+                "journal:journal-1",
+                "worker:worker-1"
+              ]
+            },
+            "inventory": [
+              {
+                "kind": "checkpoint",
+                "identity": "0"
+              },
+              {
+                "kind": "definition",
+                "identity": "definition-7"
+              },
+              {
+                "kind": "participant",
+                "identity": "journal:journal-1"
+              },
+              {
+                "kind": "participant",
+                "identity": "worker:worker-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "commit-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "freeze-1"
+              },
+              {
+                "kind": "root",
+                "identity": "root-7"
+              }
+            ],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
         }
       ]
     },
@@ -5833,10 +8046,18 @@
           "definition-7"
         ],
         "migration_references": [],
-        "required_participant_records": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-          "generation": "6"
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
         },
         "inventory": [
           {
@@ -5846,6 +8067,14 @@
           {
             "kind": "definition",
             "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
@@ -5863,7 +8092,6 @@
         "retirement_grants": [],
         "destination_activations": []
       },
-      "schedule": "one_attempt_then_observe",
       "steps": [
         {
           "call": {
@@ -5932,10 +8160,18 @@
               "definition-7"
             ],
             "migration_references": [],
-            "required_participant_records": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
             "freeze": {
               "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
-              "generation": "6"
+              "generation": "6",
+              "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+              "required_participants": [
+                "journal:journal-1",
+                "worker:worker-1"
+              ]
             },
             "inventory": [
               {
@@ -5945,6 +8181,14 @@
               {
                 "kind": "definition",
                 "identity": "definition-7"
+              },
+              {
+                "kind": "participant",
+                "identity": "journal:journal-1"
+              },
+              {
+                "kind": "participant",
+                "identity": "worker:worker-1"
               },
               {
                 "kind": "receipt",
@@ -5962,6 +8206,462 @@
             "retirement_grants": [],
             "destination_activations": []
           }
+        }
+      ],
+      "control_plan": [
+        {
+          "action": "invoke",
+          "session": "writer",
+          "step": 0,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"host_capability_mismatch\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-unsupported\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"rejected\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "6",
+            "state": "frozen",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              },
+              {
+                "operation_id": "freeze-1",
+                "request_digest": "sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e",
+                "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
+            "freeze": {
+              "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
+              "generation": "6",
+              "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+              "required_participants": [
+                "journal:journal-1",
+                "worker:worker-1"
+              ]
+            },
+            "inventory": [
+              {
+                "kind": "checkpoint",
+                "identity": "0"
+              },
+              {
+                "kind": "definition",
+                "identity": "definition-7"
+              },
+              {
+                "kind": "participant",
+                "identity": "journal:journal-1"
+              },
+              {
+                "kind": "participant",
+                "identity": "worker:worker-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "commit-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "freeze-1"
+              },
+              {
+                "kind": "root",
+                "identity": "root-7"
+              }
+            ],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        }
+      ]
+    },
+    {
+      "id": "copied_database_without_relocation_capability",
+      "required_guarantee": "none",
+      "setup": {
+        "allocated_scope_identities": [
+          "scope-42"
+        ],
+        "scope_identity": "scope-42",
+        "owner_principal": "owner-1",
+        "authority_epoch": "2",
+        "scope_generation": "6",
+        "state": "frozen",
+        "receipts": [
+          {
+            "operation_id": "commit-1",
+            "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+            "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+            "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+            "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+          },
+          {
+            "operation_id": "freeze-1",
+            "request_digest": "sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e",
+            "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
+            "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"accepted\"}",
+            "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d"
+          }
+        ],
+        "mutation_bytes": [
+          "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+        ],
+        "checkpoint_bytes": [
+          "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+        ],
+        "journal_entries": [],
+        "ingress_acknowledgements": [],
+        "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
+        "freeze": {
+          "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
+          "generation": "6",
+          "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+          "required_participants": [
+            "journal:journal-1",
+            "worker:worker-1"
+          ]
+        },
+        "inventory": [
+          {
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
+          }
+        ],
+        "retirement_grants": [],
+        "destination_activations": []
+      },
+      "steps": [
+        {
+          "call": {
+            "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:2fdc8d6f002a705abde203762244caa7731535badc50502c92a0303f31f69fa8\",\"freeze_evidence_digest\":\"sha256:c9729e45ebc837d4d96812c0787148e94d8e98f3146053b0504f94f95331190f\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-copy\",\"request_digest\":\"sha256:2febeba3332301e5f15e394183cfd563fc687dec608ac32011ff7897f462f5eb\",\"scope_identity\":\"scope-42\"}",
+            "invocation": {
+              "authenticated_principal": "owner-1",
+              "authorized_scopes": [
+                "scope-42"
+              ],
+              "operation_rights": [
+                "read_authority",
+                "guarded_commit",
+                "freeze_scope",
+                "fence_worker",
+                "prove_retirement"
+              ],
+              "assigned_worker_principal": null,
+              "trusted_clock_now": "1759999999999999999",
+              "clock_available": true
+            },
+            "native_mutation_bytes": null,
+            "fault": "none"
+          },
+          "expected_response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"host_capability_mismatch\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-copy\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"rejected\"}",
+          "expected_ledger_after": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "6",
+            "state": "frozen",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              },
+              {
+                "operation_id": "freeze-1",
+                "request_digest": "sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e",
+                "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
+            "freeze": {
+              "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
+              "generation": "6",
+              "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+              "required_participants": [
+                "journal:journal-1",
+                "worker:worker-1"
+              ]
+            },
+            "inventory": [
+              {
+                "kind": "checkpoint",
+                "identity": "0"
+              },
+              {
+                "kind": "definition",
+                "identity": "definition-7"
+              },
+              {
+                "kind": "participant",
+                "identity": "journal:journal-1"
+              },
+              {
+                "kind": "participant",
+                "identity": "worker:worker-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "commit-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "freeze-1"
+              },
+              {
+                "kind": "root",
+                "identity": "root-7"
+              }
+            ],
+            "retirement_grants": [],
+            "destination_activations": []
+          }
+        }
+      ],
+      "control_plan": [
+        {
+          "action": "invoke",
+          "session": "writer",
+          "step": 0,
+          "barrier": null
+        },
+        {
+          "action": "observe_storage",
+          "session": null,
+          "step": null,
+          "barrier": null
+        }
+      ],
+      "expected_events": [
+        {
+          "event": "response",
+          "session": "writer",
+          "response_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":\"host_capability_mismatch\",\"evidence_digest\":null,\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-copy\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"rejected\"}",
+          "ledger": null,
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
+        },
+        {
+          "event": "storage",
+          "session": null,
+          "response_bytes": null,
+          "ledger": {
+            "allocated_scope_identities": [
+              "scope-42"
+            ],
+            "scope_identity": "scope-42",
+            "owner_principal": "owner-1",
+            "authority_epoch": "2",
+            "scope_generation": "6",
+            "state": "frozen",
+            "receipts": [
+              {
+                "operation_id": "commit-1",
+                "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+                "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+              },
+              {
+                "operation_id": "freeze-1",
+                "request_digest": "sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e",
+                "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
+                "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"scope_generation\":\"6\",\"scope_identity\":\"scope-42\",\"state\":\"frozen\",\"status\":\"accepted\"}",
+                "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d"
+              }
+            ],
+            "mutation_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "checkpoint_bytes": [
+              "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+            ],
+            "journal_entries": [],
+            "ingress_acknowledgements": [],
+            "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
+            "freeze": {
+              "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
+              "generation": "6",
+              "inventory_digest": "sha256:bc7f95215dd49fb1e56cbbea797643ee4761a67cf9bd49e885eb9b45fa147aef",
+              "required_participants": [
+                "journal:journal-1",
+                "worker:worker-1"
+              ]
+            },
+            "inventory": [
+              {
+                "kind": "checkpoint",
+                "identity": "0"
+              },
+              {
+                "kind": "definition",
+                "identity": "definition-7"
+              },
+              {
+                "kind": "participant",
+                "identity": "journal:journal-1"
+              },
+              {
+                "kind": "participant",
+                "identity": "worker:worker-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "commit-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "freeze-1"
+              },
+              {
+                "kind": "root",
+                "identity": "root-7"
+              }
+            ],
+            "retirement_grants": [],
+            "destination_activations": []
+          },
+          "fate": null,
+          "barrier": null,
+          "old_session_fenced": null
         }
       ]
     }
@@ -6062,15 +8762,80 @@
       }
     }
   ],
-  "runtime_probes": [
-    "expiry_equal_rejected",
-    "clock_unavailable_rejected",
-    "race_second_writer_with_freeze",
-    "precommit_rollback",
-    "commit_unknown_restart",
-    "postcommit_lost_response_replay",
-    "stale_worker_dispatch_and_result",
-    "incomplete_frozen_inventory",
-    "unsupported_relocation_inactive_destination"
-  ]
+  "base_core_checks": [
+    {
+      "id": "no_authority_guarded_commit",
+      "input": {
+        "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+        "configured_authority": null,
+        "core_checkpoint_bytes": "portable-core-state"
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "host_capability_mismatch",
+        "authority_result": null,
+        "core_checkpoint_bytes": "portable-core-state",
+        "host_mutation_count": 0
+      }
+    },
+    {
+      "id": "no_authority_freeze_scope",
+      "input": {
+        "request_bytes": "{\"arguments\":{},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"5\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"freeze_scope\",\"operation_id\":\"freeze-1\",\"request_digest\":\"sha256:d822a5de52ebad90e7d658aaad37c166f650fab890aaf41264dd200b73c07f0e\",\"scope_identity\":\"scope-42\"}",
+        "configured_authority": null,
+        "core_checkpoint_bytes": "portable-core-state"
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "host_capability_mismatch",
+        "authority_result": null,
+        "core_checkpoint_bytes": "portable-core-state",
+        "host_mutation_count": 0
+      }
+    },
+    {
+      "id": "no_authority_fence_worker",
+      "input": {
+        "request_bytes": "{\"arguments\":{\"expected_attempt_fence\":\"3\",\"expected_worker_principal\":\"worker-1\",\"operation_token\":\"token-17\",\"root_instance_id\":\"root-7\",\"work_identity\":\"effect-17\",\"work_kind\":\"effect\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"fence_worker\",\"operation_id\":\"fence-1\",\"request_digest\":\"sha256:fe90fe547cd99be6648402be1b3b186e6ff63352a3a7593d7978f6390abb2a72\",\"scope_identity\":\"scope-42\"}",
+        "configured_authority": null,
+        "core_checkpoint_bytes": "portable-core-state"
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "host_capability_mismatch",
+        "authority_result": null,
+        "core_checkpoint_bytes": "portable-core-state",
+        "host_mutation_count": 0
+      }
+    },
+    {
+      "id": "no_authority_prove_retirement",
+      "input": {
+        "request_bytes": "{\"arguments\":{\"destination_binding_digest\":\"sha256:80e87bcfb0a487a65ceea01e87dca963eebadc24fb0eade9b6c40b011e0d9598\",\"freeze_evidence_digest\":\"sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"prove_retirement\",\"operation_id\":\"retire-1\",\"request_digest\":\"sha256:75777b0f9c728f12948c61eef8b3df87179d8b880efe21adc60b641b8a52a59c\",\"scope_identity\":\"scope-42\"}",
+        "configured_authority": null,
+        "core_checkpoint_bytes": "portable-core-state"
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "host_capability_mismatch",
+        "authority_result": null,
+        "core_checkpoint_bytes": "portable-core-state",
+        "host_mutation_count": 0
+      }
+    }
+  ],
+  "transfer_suite_obligation": {
+    "profile": "safe_relocation",
+    "certified_by_this_profile": false,
+    "required_suite": "I2 same-authority transfer operational suite",
+    "required_native_observations": [
+      "committed_source_retirement",
+      "known_native_fate",
+      "old_session_cannot_commit",
+      "exact_destination_binding",
+      "single_use_grant_consumption",
+      "complete_participant_import",
+      "inactive_destination_on_refusal"
+    ]
+  }
 }
