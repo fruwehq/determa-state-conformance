@@ -72,6 +72,10 @@ def main() -> int:
     captured = []
     rejected('unregistered self-reported production adapter',
              lambda: trusted_bridge(['golden-echo']))
+    with patch('run_recovery_profile.trusted_bridge', return_value='changed-installation'):
+        rejected('reviewed bridge drift between recovery cases',
+                 lambda: run_case(['golden-echo'], case, fixture,
+                                  expected_bridge_identity='original-installation'))
     with tempfile.TemporaryDirectory(prefix='determa-recovery-bridge-contract-') as temporary:
         directory = Path(temporary)
         bridge = directory / 'bridge.py'

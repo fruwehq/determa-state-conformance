@@ -165,7 +165,7 @@ def main() -> int:
     recovery_command = shlex.split(args.recovery_bridge)
     if not command or not authority_command or not recovery_command:
         parser.error('configured host and authority adapter commands required')
-    trusted_bridge(recovery_command, args.recovery_bridge_registration)
+    installed_bridge = trusted_bridge(recovery_command, args.recovery_bridge_registration)
     validate_profile(args.spec_root)
     hosted_runner = ROOT / 'scripts/run_lossless_delivery_profile.py'
     fixture = read_json(CASE / 'recovery-cases-v1.json')
@@ -200,7 +200,10 @@ def main() -> int:
     for case in [*fixture['early_cases'], *fixture['cases']]:
         run_case(recovery_command, case, fixture, hosted_binding_digest=binding,
                  hosted_authority_token_identity=initial['authority_token_identity'],
-                 bridge_registration=args.recovery_bridge_registration)
+                 bridge_registration=args.recovery_bridge_registration,
+                 expected_bridge_identity=installed_bridge)
+    if trusted_bridge(recovery_command, args.recovery_bridge_registration) != installed_bridge:
+        raise ValueError('reviewed recovery bridge changed during hosted proof')
     if observed_binding(command, authority_command, summary, fixture) != (initial, binding):
         raise ValueError('configured C/D/H/recovery installation changed during recovery proof')
     print('52 recovery responses and native observations passed under one configured local host')

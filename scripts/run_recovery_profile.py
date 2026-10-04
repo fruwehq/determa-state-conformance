@@ -279,9 +279,12 @@ def input_for(case: dict, fixture: dict) -> dict:
 def run_case(command: list[str], case: dict, fixture: dict,
              *, hosted_binding_digest: str | None = None,
              hosted_authority_token_identity: str | None = None,
-             bridge_registration: Path | None = None) -> None:
+             bridge_registration: Path | None = None,
+             expected_bridge_identity: str | None = None) -> None:
     label = case['case_id']
     bridge_identity = trusted_bridge(command, bridge_registration)
+    if expected_bridge_identity is not None and bridge_identity != expected_bridge_identity:
+        raise ValueError(label + ': reviewed bridge installation changed during profile')
     request = input_for(case, fixture)
     stage_fixture = read_json(ROOT /
         'conformance/profiles/portable-archive/archive-01-complete-snapshot/stage-cases-v1.json')
@@ -469,10 +472,14 @@ def main() -> int:
     fixture['owned_stage_request'] = owned['stage_request']
     fixture['owned_stage_configuration'] = owned['stage_configuration']
     fixture['owned_stage_result'] = owned['stage_result']
+    installed_bridge = trusted_bridge(command, args.bridge_registration)
     standalone = [case for case in fixture['cases']
                   if case.get('configured_profile') != 'proved_local_same_authority']
     for case in [*fixture['early_cases'], *standalone]:
-        run_case(command, case, fixture, bridge_registration=args.bridge_registration)
+        run_case(command, case, fixture, bridge_registration=args.bridge_registration,
+                 expected_bridge_identity=installed_bridge)
+    if trusted_bridge(command, args.bridge_registration) != installed_bridge:
+        raise ValueError('reviewed bridge installation changed after recovery profile')
     print(f'{len(standalone) + len(fixture["early_cases"])} standalone production recovery '
           'responses and native observations passed; 10 local transfer cases remain conditional')
     return 0
