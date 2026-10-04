@@ -90,6 +90,8 @@ live source epoch and generation must match the transfer proof before freeze.
 The complete frozen source inventory must remain byte-identical through archive
 staging, preparation, transfer staging, retirement and activation; retirement
 may change only its proved authority fields and append its native ledger entry. A
+runner-private inventory snapshot supplies these comparisons. The bridge receives
+only source and proof identities, never that comparison snapshot. A
 guarded freeze must revoke the actual worker and retain a native transaction
 and complete inventory proof before `prepare_transfer`. A production §22 export
 must read that frozen source and return the exact local archive; the export is

@@ -16,8 +16,9 @@ from unittest.mock import patch
 from validate_portable_archive import (ArchiveValidationError, canonical, digest, read_json,
                                        validate_archive_integrity, validator_registry, without, ROOT)
 from validate_recovery_profile import CASE, validate_profile, validate_owned_definition_closure
-from run_recovery_profile import (CALLS, STATE, input_for, run_case, run_hosted_source,
-                                  source_fault_cut, store_call, trusted_bridge,
+from run_recovery_profile import (CALLS, STATE, input_for, public_source_reference,
+                                  run_case, run_hosted_source, source_fault_cut,
+                                  store_call, trusted_bridge,
                                   validate_source_plan, verify_local_source_step,
                                   verify_source_integrity)
 from run_hosted_recovery_profile import observed_binding
@@ -351,6 +352,11 @@ def main() -> int:
         'freeze_native_transaction_id': 'native-freeze',
         'freeze_native_proof_id': 'proof-freeze',
         'source_fault_cut': None}
+    assert set(public_source_reference({**frozen_reference,
+            'export_observation_id': 'export-1'})) == {
+        'scope_identity', 'native_instance_identity', 'storage_identity',
+        'freeze_native_transaction_id', 'freeze_native_proof_id',
+        'export_observation_id', 'source_fault_cut'}
     stage_case = next(item for item in fixture['cases'] if item['case_id'] == 'local_stage')
     verify_local_source_step(stage_case, frozen_state, frozen_state, None,
                              copy.deepcopy(frozen_reference), fixture)

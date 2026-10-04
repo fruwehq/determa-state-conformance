@@ -568,6 +568,14 @@ def verify_source_integrity(before: dict, after: dict, source_reference: dict,
     source_reference['source_authority_ledger'] = after['source_authority_ledger']
 
 
+def public_source_reference(source_reference: dict) -> dict:
+    """Expose source proof identities, never the runner's comparison snapshots."""
+    return {key: source_reference[key] for key in (
+        'scope_identity', 'native_instance_identity', 'storage_identity',
+        'freeze_native_transaction_id', 'freeze_native_proof_id',
+        'export_observation_id', 'source_fault_cut')}
+
+
 def verify_local_source_step(case: dict, before: dict, after: dict,
                              transaction: dict | None, source_reference: dict,
                              fixture: dict) -> None:
@@ -701,10 +709,11 @@ def run_case(command: list[str], case: dict, fixture: dict,
             hosted_source_binding['required_participants'],
             request['source_archive'], fixture, hosted_source_plan,
             in_doubt=label == 'local_in_doubt_source') if local else None)
+        source_request_reference = public_source_reference(source_reference) if local else None
         stage_payload = {key: request[key] for key in
                          ('source_archive', 'stage_archive', 'stage_request', 'stage_configuration')}
         if local:
-            stage_payload['source_reference'] = source_reference
+            stage_payload['source_reference'] = source_request_reference
         stage_response, stage_before, stage_after, _ = native_call(
             command, database, run_id, str(uuid.uuid4()), 'archive_stage',
             stage_payload, stage_expected, hosted_binding_digest, bridge_identity)
@@ -729,7 +738,7 @@ def run_case(command: list[str], case: dict, fixture: dict,
             setup_payload = {'request': setup_request,
                              'source_archive': request['source_archive']}
             if local:
-                setup_payload['source_reference'] = source_reference
+                setup_payload['source_reference'] = source_request_reference
             setup_observed, setup_before, setup_after, setup_tx = native_call(
                 command, database, run_id, str(uuid.uuid4()), 'recovery',
                 setup_payload,
@@ -760,7 +769,7 @@ def run_case(command: list[str], case: dict, fixture: dict,
         tested_payload = {'request': request['request'],
                           'source_archive': request['source_archive']}
         if local:
-            tested_payload['source_reference'] = source_reference
+            tested_payload['source_reference'] = source_request_reference
         response, before, after, recovery_transaction = native_call(
             command, database, run_id, str(uuid.uuid4()), 'recovery',
             tested_payload,
