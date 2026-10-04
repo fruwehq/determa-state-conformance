@@ -97,3 +97,19 @@ jobs:
         run: >-
           python scripts/generate_runtime_provider_profile.py
           --spec-root .determa-state-spec --check
+
+      - name: Check generated committed native effect fixtures
+        run: >-
+          python scripts/generate_committed_native_effects_profile.py
+          --spec-root .determa-state-spec --check
+
+      - name: Test committed native effect relational and adapter gates
+        run: >-
+          python scripts/test_committed_native_effects_validator.py
+          --spec-root .determa-state-spec
+
+      - name: Test Rust native effect handler source
+        run: >-
+          rustc --test
+          conformance/profiles/committed-native-effects/effect-01-result/handler/test_handler.rs
+          -o /tmp/determa-effect-handler-test && /tmp/determa-effect-handler-test

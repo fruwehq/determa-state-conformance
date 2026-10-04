@@ -1,0 +1,10 @@
+{
+  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+  "operation_token": "business-order-42",
+  "attempt_fence": "1",
+  "outcome_kind": "retryable_failure",
+  "payload": [
+    "map",
+    []
+  ]
+}

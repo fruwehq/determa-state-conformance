@@ -8250,6 +8250,9 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
             f"missing={sorted(REQUIRED_INSPECTION_PROVIDER_COVERAGE-inspection_provider_coverage)}, "
             f"unexpected={sorted(inspection_provider_coverage-REQUIRED_INSPECTION_PROVIDER_COVERAGE)}")
 
+    from committed_native_effects_validator import validate_profile as validate_committed_effects
+    committed_effect_vectors = validate_committed_effects(spec_root)
+
     return (
         f"validated {registry_entries} closed-code entries across "
         f"{registry_categories} categories; "
@@ -8264,7 +8267,8 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
         f"{inspection_vectors} inspection vectors "
         f"({inspection_core_vectors} core, {inspection_provider_vectors} optional provider), "
         f"and {extension_vectors} extension negotiation vectors, "
-        f"{runtime_provider_vectors} runtime provider vectors"
+        f"{runtime_provider_vectors} runtime provider vectors, "
+        f"and {committed_effect_vectors} committed native effect vectors"
     )
 
 

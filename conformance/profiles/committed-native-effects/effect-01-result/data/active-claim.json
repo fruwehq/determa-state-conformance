@@ -1,0 +1,12 @@
+{
+  "scope_identity": "effect-scope-1",
+  "root_instance_id": "effect-root-1",
+  "work_kind": "effect",
+  "work_identity": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+  "operation_token": "business-order-42",
+  "scope_authority_epoch": "3",
+  "attempt_fence": "1",
+  "worker_principal": "worker-a",
+  "expires_at": "1893456000000000000",
+  "state": "active"
+}
