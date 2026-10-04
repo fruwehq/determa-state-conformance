@@ -14,8 +14,8 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from inspection_validator import validate_inspection_vectors, validate_root_only_bindings, snapshot_value_units, typed_value_units
-from validate_conformance import ValidationFailure, load_fixture_document, hash_value, encode_typed_value, validated_bundle_fingerprint
+from inspection_validator import validate_inspection_vectors, validate_root_only_bindings, validate_snapshot_variables, snapshot_value_units, typed_value_units
+from validate_conformance import ValidationFailure, load_fixture_document, hash_value, encode_typed_value, normalized_bundle_value, validated_bundle_fingerprint
 from generate_version1_vectors import seal_aggregate
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -236,6 +236,34 @@ class InspectionValidatorTests(unittest.TestCase):
         before=seal_aggregate(before)
         with self.assertRaisesRegex(ValidationFailure,'outcome differs'):
             validate({'aggregate-before.json':before,'aggregate-after.json':before})
+
+    def test_completed_snapshot_cannot_retain_variables(self) -> None:
+        inactive=load('inactive-before.json')
+        self.assertEqual(inactive['runtimes'][0]['variables'],[])
+        inactive['runtimes'][0]['variables']=copy.deepcopy(load('aggregate-before.json')['runtimes'][0]['variables'])
+        inactive=seal_aggregate(inactive)
+        with self.assertRaisesRegex(ValidationFailure,'completed runtime retains'):
+            validate({'inactive-before.json':inactive,'inactive-after.json':inactive})
+
+    def test_resealed_variable_activations_and_duplicates(self) -> None:
+        bundle=normalized_bundle_value(CASE/'machine.yaml')
+        for name in ('inactive_activation','wrong_sequence','duplicate'):
+            aggregate=load('aggregate-before.json')
+            runtime=aggregate['runtimes'][0]
+            variable=next(item for item in runtime['variables']
+                          if item['variable_declaration_pointer'].endswith('/memo'))
+            if name=='inactive_activation':
+                runtime['active_state_activations']=[item for item in runtime['active_state_activations']
+                    if item['state_definition_pointer']!=variable['variable_declaration_pointer'].rsplit('/variables/',1)[0]]
+            elif name=='wrong_sequence':
+                variable['declaring_state_activation_sequence']='1'
+            else:
+                runtime['variables'].append(copy.deepcopy(variable))
+            aggregate=seal_aggregate(aggregate)
+            with self.subTest(name=name), self.assertRaises(ValidationFailure):
+                validate_snapshot_variables(aggregate,bundle)
+            with self.subTest(name=name+'_integrated'), self.assertRaises(ValidationFailure):
+                validate({'aggregate-before.json':aggregate,'aggregate-after.json':aggregate})
 
 
 # Optional provider checks deliberately exercise the shipped fixture code. A host

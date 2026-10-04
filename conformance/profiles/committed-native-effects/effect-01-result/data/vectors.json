@@ -1,0 +1,2409 @@
+{
+  "handler_sources": {
+    "handler/test_handler.py": "sha256:52cef142c4465254b54d7d03473cea7cc72ee7a4496f62552712aa13df7dc959",
+    "handler/test_handler.rs": "sha256:aab9c97a235d6fca6dccd4f770ce3965f24d89420e6eba118523b52e78a66663"
+  },
+  "format": "determa.committed_native_effects.vectors",
+  "schema_version": 1,
+  "spec_commit": "6bd25e3fcdf068af861aa289903a8489bd8f0139",
+  "normative_examples": {
+    "examples/effects/active-effect-claim-v1.json": "sha256:55df5a9104e559994ce49364d64c2b68618a199f31918c3a49542b17a4eeb00c",
+    "examples/effects/cancel-after-possible-call-journal-v1.json": "sha256:94f7530172371306d674c8b753334ea186ddd97ab403d729daa81016e08f5137",
+    "examples/effects/cancel-before-claim-journal-v1.json": "sha256:4d7a34c8ec2e5ead7497145a89fa78d7e5ee19dfe73e9ad70d9e2e6f250c53ae",
+    "examples/effects/committed-effect-checkpoint-v1.json": "sha256:d4c4909b45f1fd0711f2dd4d8ce9cafc4f2207ce51670472705f45cfe37f2e94",
+    "examples/effects/effect-ambiguous-report-response-v1.json": "sha256:456598ff291b1e21fdcfd696c49b061a75d1d20b248330ff98d64084588436f9",
+    "examples/effects/effect-cancellation-after-call-request-v1.json": "sha256:d39f76b789e8dee3f6c0d4d27250f10f366013b537f7d0fd62491f943a47de79",
+    "examples/effects/effect-cancellation-cases-v1.json": "sha256:91ee81affbc63ae3fbfc4e7410b344e499c02a9c89ae10175b0a397046ded7b4",
+    "examples/effects/effect-cancellation-committed-response-v1.json": "sha256:6d876212efc531cfa4dac0caaeb7d66b5b240d57913fde69cb64ff2fe13ee8e4",
+    "examples/effects/effect-cancellation-reconciliation-response-v1.json": "sha256:14cad58f8815271c9aca368c4662ecc4e085e034d9e7d2eda72d8f02ad93ec2d",
+    "examples/effects/effect-cancellation-rejected-response-v1.json": "sha256:32cf2f8e395666cda4fd1ee1cce150e228b1a7946150e6fdb16d7542d627876d",
+    "examples/effects/effect-cancellation-request-v1.json": "sha256:33c9e083b1adaa4aa245a08f982639562afde87cfefafcfbbc74f3ffa8e14a6b",
+    "examples/effects/effect-cancelled-envelope-v1.json": "sha256:c2fc12b4b24099a8c41465edd706e62a3fdf9a470c99ad5d4ee864f633f35691",
+    "examples/effects/effect-result-committed-response-v1.json": "sha256:1d743b779902e228d9de77ae24dcbe6b8843bc37d7ffdc841ed9777c7f9841e0",
+    "examples/effects/effect-result-conflict-response-v1.json": "sha256:4d01c87cd15b691608db22395321e4c78841183329fab09993b31029deed5d11",
+    "examples/effects/effect-result-envelope-v1.json": "sha256:92e55ca8d19800566cc6f4dc422380efa1fef49089b214faffc178aac049451b",
+    "examples/effects/effect-result-request-v1.json": "sha256:c6f16704fc6c8b19fe4a36a7e4bcd97a8e6e5ce26993a50bff0490c4da44573c",
+    "examples/effects/empty-host-effect-journal-v1.json": "sha256:f53cc88c481a733479688374047292069e0a436ddf9bc009fd50ec60af3a2a2b",
+    "examples/effects/expired-effect-claim-v1.json": "sha256:c7b86d540f76089d8b31e7df777d6488aecd48d8f719123d1e3f88cad0a5efc8",
+    "examples/effects/host-native-effect-cases-v1.json": "sha256:2d02e3da254e753e81abdf8a44e9b32433a9e38c02c5de18df6d26f482370e4a",
+    "examples/effects/leased-host-effect-journal-v1.json": "sha256:3cf7c32dcf34406bac7d0d7e66d7a96b22bcccdb919f8c7787b59b5847256e43",
+    "examples/effects/outcome-recorded-journal-v1.json": "sha256:26b63c099c2691bcdd584fbc4373d7b33148af830f738636f6d528e5a4b1f19f",
+    "examples/effects/recovery-after-claim-expiry-v1.json": "sha256:0c6dcc56203ca62147eb3bdde04a4209b8c56710b373a0c4034896ec9689650f",
+    "examples/effects/result-admission-cases-v1.json": "sha256:83b522f62e232008706f663bd37eee51aadfe87d4fd7088a4dff4a71e157753b",
+    "examples/effects/result-identity-cases-v1.json": "sha256:c7470d45c8aeb49303b87a7514865364cc9f3c7bdd03406b88220dffd3263f36"
+  },
+  "normative_case_coverage": {
+    "host-native-effect-cases-v1.json": {
+      "committed_selected_intent": [
+        "committed_selected_intent"
+      ],
+      "uncommitted_intent": [
+        "uncommitted_intent"
+      ],
+      "route_generation_changed": [
+        "route_generation_changed"
+      ],
+      "equal_request_after_route_change": [
+        "equal_request_after_route_change"
+      ],
+      "revoked_dispatch": [
+        "revoked_dispatch"
+      ],
+      "accepted_outbox_pending_business": [
+        "accepted_outbox_pending_business"
+      ],
+      "wrong_token": [
+        "wrong_token"
+      ],
+      "wrong_scope_or_principal": [
+        "wrong_scope",
+        "wrong_principal"
+      ],
+      "old_epoch_or_fence": [
+        "claim_expired_at_exact_boundary",
+        "stale_fence"
+      ],
+      "equal_and_conflicting_result": [
+        "equal_result_replay",
+        "unequal_result_conflict"
+      ],
+      "crash_after_provider_acceptance": [
+        "crash_after_provider_acceptance"
+      ],
+      "crash_after_outcome_commit": [
+        "crash_after_outcome_commit"
+      ],
+      "cancellation_before_claim": [
+        "cancel_before_claim",
+        "claim_after_preclaim_cancel_refused"
+      ],
+      "cancellation_after_possible_call": [
+        "cancel_after_possible_call"
+      ]
+    },
+    "result-admission-cases-v1.json": {
+      "first_terminal_result": [
+        "first_terminal_result"
+      ],
+      "equal_replay": [
+        "equal_result_replay"
+      ],
+      "wrong_business_token": [
+        "wrong_token"
+      ],
+      "stale_attempt_fence": [
+        "stale_fence"
+      ],
+      "unequal_result_after_commit": [
+        "unequal_result_conflict"
+      ],
+      "wrong_worker_principal": [
+        "wrong_principal"
+      ],
+      "stale_scope_epoch": [
+        "stale_epoch"
+      ],
+      "wrong_scope": [
+        "wrong_scope"
+      ],
+      "claim_expired_at_exact_boundary": [
+        "claim_expired_at_exact_boundary"
+      ],
+      "expired_worker_after_outcome_commit": [
+        "expired_worker_after_outcome_commit"
+      ],
+      "old_epoch_equal_replay_after_recovery": [
+        "old_epoch_equal_replay_after_recovery"
+      ],
+      "authorized_equal_replay_after_recovery": [
+        "authorized_equal_replay_after_recovery"
+      ]
+    },
+    "effect-cancellation-cases-v1.json": {
+      "first_preclaim_cancel": [
+        "cancel_before_claim"
+      ],
+      "equal_cancel_replay": [
+        "cancel_before_claim_replay"
+      ],
+      "missing_cancelled_mapping": [
+        "missing_cancel_mapping_refusal"
+      ],
+      "after_possible_provider_call": [
+        "cancel_after_possible_call"
+      ]
+    }
+  },
+  "vectors": [
+    {
+      "name": "first_producing_commit",
+      "covers": [
+        "19.2:original_operation_evidence"
+      ],
+      "request": {
+        "operation": "produce",
+        "checkpoint_before": "accepted-checkpoint.json",
+        "journal_before": "data/empty-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "original_request": {
+            "operation": "checkpoint_step_v1",
+            "request_id": "produce-1",
+            "scope": {
+              "scope_id": "primary",
+              "ownership_binding": "owner:primary",
+              "principal": "conformance-host",
+              "authorization": "authorized"
+            },
+            "expected_checkpoint": {
+              "root_instance_id": "effect-root-1",
+              "revision": "1",
+              "digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135"
+            },
+            "event_id": "invoke-1",
+            "envelope_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+            "target": {
+              "root": {
+                "root_instance_id": "effect-root-1",
+                "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+              }
+            },
+            "processing_mode": "delayed",
+            "acceptance_sequence": "0",
+            "queue_sequence": "0"
+          }
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/producer-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/unclaimed-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "committed_selected_intent",
+      "covers": [
+        "19.1:committed_selected_intent"
+      ],
+      "request": {
+        "operation": "claim",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/unclaimed-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 1
+        }
+      }
+    },
+    {
+      "name": "uncommitted_intent",
+      "covers": [
+        "19.1:uncommitted_intent"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "accepted-checkpoint.json",
+        "journal_before": "data/empty-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": "before_intent_commit",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
+        "checkpoint_after": "accepted-checkpoint.json",
+        "journal_after": "data/empty-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "route_generation_changed",
+      "covers": [
+        "19.2:route_generation_changed"
+      ],
+      "request": {
+        "operation": "produce",
+        "checkpoint_before": "accepted-checkpoint.json",
+        "journal_before": "data/empty-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "original_request": {
+            "operation": "checkpoint_step_v1",
+            "request_id": "produce-1",
+            "scope": {
+              "scope_id": "primary",
+              "ownership_binding": "owner:primary",
+              "principal": "conformance-host",
+              "authorization": "authorized"
+            },
+            "expected_checkpoint": {
+              "root_instance_id": "effect-root-1",
+              "revision": "1",
+              "digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135"
+            },
+            "event_id": "invoke-1",
+            "envelope_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+            "target": {
+              "root": {
+                "root_instance_id": "effect-root-1",
+                "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+              }
+            },
+            "processing_mode": "delayed",
+            "acceptance_sequence": "0",
+            "queue_sequence": "0"
+          }
+        },
+        "fault": "route_generation_changed_at_commit_guard",
+        "control_plan": [
+          {
+            "action": "start_call",
+            "barrier": null,
+            "route_generation": null
+          },
+          {
+            "action": "await_barrier",
+            "barrier": "route_resolved",
+            "route_generation": null
+          },
+          {
+            "action": "release_barrier",
+            "barrier": "route_resolved",
+            "route_generation": null
+          },
+          {
+            "action": "await_barrier",
+            "barrier": "before_commit_guard",
+            "route_generation": null
+          },
+          {
+            "action": "set_route_generation",
+            "barrier": null,
+            "route_generation": "8"
+          },
+          {
+            "action": "release_barrier",
+            "barrier": "before_commit_guard",
+            "route_generation": null
+          },
+          {
+            "action": "observe_native_fate",
+            "barrier": null,
+            "route_generation": null
+          }
+        ]
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "aborted",
+        "control_events": [
+          {
+            "event": "started"
+          },
+          {
+            "event": "barrier_reached",
+            "barrier": "route_resolved",
+            "resolved_route_generation": "7",
+            "handler_reference": {
+              "identifier": "conformance.native-effect-handler",
+              "version": "1.0.0",
+              "content_digest": "sha256:30f18b545dbe03e7444a2418e2e1db7bbbf1c5ad84a6995124497d4d52ad63a3"
+            },
+            "destination_binding_digest": "sha256:fad60c61f958845155df3f48b26f39cd945522a1f8579de4c55cbe5fb469fce4"
+          },
+          {
+            "event": "released",
+            "barrier": "route_resolved"
+          },
+          {
+            "event": "barrier_reached",
+            "barrier": "before_commit_guard",
+            "core_event_id": "invoke-1",
+            "proposed_checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
+            "proposed_journal_digest": "sha256:539909be26674ea846282d73c549aec3fbf93f15f2265b95a46da3bc9fccd823"
+          },
+          {
+            "event": "configuration_changed",
+            "route_generation": "8"
+          },
+          {
+            "event": "released",
+            "barrier": "before_commit_guard"
+          },
+          {
+            "event": "native_fate",
+            "guard_result": "scope_generation_conflict",
+            "transaction_fate": "rolled_back",
+            "checkpoint_digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135",
+            "journal_digest": "sha256:e9527630bc363a8d690485fd0498dc2ad2661dde32638552cccc3a280e1a23c6"
+          }
+        ],
+        "checkpoint_after": "accepted-checkpoint.json",
+        "journal_after": "data/empty-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "equal_request_after_route_change",
+      "covers": [
+        "19.2:equal_request_after_route_change"
+      ],
+      "request": {
+        "operation": "produce_replay",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/unclaimed-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "8",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "2"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "original_request": {
+            "operation": "checkpoint_step_v1",
+            "request_id": "produce-1",
+            "scope": {
+              "scope_id": "primary",
+              "ownership_binding": "owner:primary",
+              "principal": "conformance-host",
+              "authorization": "authorized"
+            },
+            "expected_checkpoint": {
+              "root_instance_id": "effect-root-1",
+              "revision": "1",
+              "digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135"
+            },
+            "event_id": "invoke-1",
+            "envelope_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+            "target": {
+              "root": {
+                "root_instance_id": "effect-root-1",
+                "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+              }
+            },
+            "processing_mode": "delayed",
+            "acceptance_sequence": "0",
+            "queue_sequence": "0"
+          }
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/producer-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/unclaimed-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "revoked_dispatch",
+      "covers": [
+        "19.2:revoked_dispatch"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "8",
+          "route_authorized": false,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "2"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "current_credential_revoked_dispatch",
+      "covers": [
+        "19.2:credential_revocation"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "8",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": false,
+          "credential_generation": "2"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "changed_alias_keeps_pinned_destination",
+      "covers": [
+        "19.2:immutable_route_after_alias_change"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "8",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "2"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 1,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "accepted_outbox_pending_business",
+      "covers": [
+        "19.3:accepted_outbox_pending_business"
+      ],
+      "request": {
+        "operation": "terminalize_outbox",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/unclaimed-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "status": "confirmed"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "confirmed-checkpoint.json",
+        "journal_after": "data/confirmed-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "sdk_native_objects_inside_handler",
+      "covers": [
+        "19.3:sdk_native_objects"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 1,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "wrong_token",
+      "covers": [
+        "19.4:wrong_business_token"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "wrong-token",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-effect_not_outstanding.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "wrong_scope",
+      "covers": [
+        "19.4:wrong_scope"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "other-scope",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-unauthorized_scope.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "wrong_principal",
+      "covers": [
+        "19.4:wrong_principal"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-b",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-unauthorized_scope.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "stale_epoch",
+      "covers": [
+        "19.4:stale_epoch"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "4",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-stale_scope_authority.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "stale_fence",
+      "covers": [
+        "19.4:stale_fence"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "0",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-stale_attempt_fence_zero.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "claim_expired_at_exact_boundary",
+      "covers": [
+        "19.4:claim_expiry_boundary"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893456000000000000"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-stale_attempt_fence.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "expired_worker_after_outcome_commit",
+      "covers": [
+        "19.4:expired_worker_after_outcome"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/outcome-recorded-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893456000000000000"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-stale_attempt_fence.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/outcome-recorded-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "first_terminal_result",
+      "covers": [
+        "19.4:first_terminal_result"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/committed-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "equal_result_replay",
+      "covers": [
+        "19.4:equal_replay"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "admitted-checkpoint.json",
+        "journal_before": "data/result-admitted-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/committed-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "old_epoch_equal_replay_after_recovery",
+      "covers": [
+        "19.4:old_epoch_replay_refusal"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "admitted-checkpoint.json",
+        "journal_before": "data/result-admitted-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "2",
+          "trusted_host_now": "1893456000000000000"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-stale_scope_authority.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "authorized_equal_replay_after_recovery",
+      "covers": [
+        "19.4:authorized_replay_after_expiry"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "admitted-checkpoint.json",
+        "journal_before": "data/result-admitted-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893456000000000000"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/committed-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "unequal_result_conflict",
+      "covers": [
+        "19.4:unequal_conflict"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "admitted-checkpoint.json",
+        "journal_before": "data/result-admitted-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "different"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-effect_result_conflict.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "intent_commit_lost_response",
+      "covers": [
+        "19.5:intent_commit_lost_response"
+      ],
+      "request": {
+        "operation": "produce",
+        "checkpoint_before": "accepted-checkpoint.json",
+        "journal_before": "data/empty-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "original_request": {
+            "operation": "checkpoint_step_v1",
+            "request_id": "produce-1",
+            "scope": {
+              "scope_id": "primary",
+              "ownership_binding": "owner:primary",
+              "principal": "conformance-host",
+              "authorization": "authorized"
+            },
+            "expected_checkpoint": {
+              "root_instance_id": "effect-root-1",
+              "revision": "1",
+              "digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135"
+            },
+            "event_id": "invoke-1",
+            "envelope_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+            "target": {
+              "root": {
+                "root_instance_id": "effect-root-1",
+                "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+              }
+            },
+            "processing_mode": "delayed",
+            "acceptance_sequence": "0",
+            "queue_sequence": "0"
+          }
+        },
+        "fault": "after_intent_commit_before_response",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "no_response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/unclaimed-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "provider_acceptance_lost_before_outcome",
+      "covers": [
+        "19.5:provider_acceptance_lost_before_outcome"
+      ],
+      "request": {
+        "operation": "dispatch",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": "after_provider_acceptance_before_outcome",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "no_response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/leased-journal.json",
+        "counts": {
+          "provider_calls": 1,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "outcome_commit_lost_before_admission",
+      "covers": [
+        "19.5:outcome_commit_lost_before_admission"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "succeeded",
+          "payload": [
+            "map",
+            [
+              [
+                "provider_reference",
+                [
+                  "string",
+                  "accepted-42"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": "after_outcome_before_admission",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "no_response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/outcome-recorded-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "admission_commit_lost_response",
+      "covers": [
+        "19.5:admission_commit_lost_response"
+      ],
+      "request": {
+        "operation": "recover",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/outcome-recorded-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {},
+        "fault": "after_admission_before_response",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "no_response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "crash_after_intent_commit",
+      "covers": [
+        "19.5:crash_after_intent_commit"
+      ],
+      "request": {
+        "operation": "recover",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/unclaimed-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {},
+        "fault": "after_intent_commit_before_dispatch",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/unclaimed-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "crash_after_provider_acceptance",
+      "covers": [
+        "19.5:provider_acceptance_before_outcome"
+      ],
+      "request": {
+        "operation": "recover",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {},
+        "fault": "after_provider_acceptance_before_outcome",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/ambiguous-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "crash_after_outcome_commit",
+      "covers": [
+        "19.5:outcome_before_admission"
+      ],
+      "request": {
+        "operation": "recover",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/outcome-recorded-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {},
+        "fault": "after_outcome_before_admission",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "crash_after_admission_commit",
+      "covers": [
+        "19.5:admission_before_response"
+      ],
+      "request": {
+        "operation": "recover",
+        "checkpoint_before": "admitted-checkpoint.json",
+        "journal_before": "data/result-admitted-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {},
+        "fault": "after_admission_before_response",
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/committed-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "safe_retry_report",
+      "covers": [
+        "19.3:retryable_report"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/leased-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "retryable_failure",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/retryable-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/retryable-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "duplicate_equal_retry_report",
+      "covers": [
+        "19.3:equal_retry_report"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/retryable-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "retryable_failure",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/retryable-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/retryable-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "duplicate_unequal_retry_report",
+      "covers": [
+        "19.3:conflicting_retry_report"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/retryable-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "retryable_failure",
+          "payload": [
+            "map",
+            [
+              [
+                "unexpected",
+                [
+                  "string",
+                  "changed"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/rejected-effect_result_conflict.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/retryable-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "safe_retry_new_fence",
+      "covers": [
+        "19.3:safe_retry_new_fence"
+      ],
+      "request": {
+        "operation": "claim",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/retryable-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/retry-claim-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 1
+        }
+      }
+    },
+    {
+      "name": "duplicate_ambiguous_report",
+      "covers": [
+        "19.3:equal_ambiguous_report"
+      ],
+      "request": {
+        "operation": "submit_result",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/ambiguous-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "operation_token": "business-order-42",
+          "attempt_fence": "1",
+          "outcome_kind": "ambiguous",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/ambiguous-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/ambiguous-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "cancel_before_claim",
+      "covers": [
+        "19.3:cancel_before_claim"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/unclaimed-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-1",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/cancel-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/preclaim-cancelled-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "cancel_admission_recovery",
+      "covers": [
+        "19.3:cancel_admission_recovery"
+      ],
+      "request": {
+        "operation": "recover",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/preclaim-cancelled-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {},
+        "fault": "after_cancel_outcome_before_admission",
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "cancelled-admitted-checkpoint.json",
+        "journal_after": "data/cancelled-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 1,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "claim_after_preclaim_cancel_refused",
+      "covers": [
+        "19.3:preclaim_cancel_blocks_dispatch"
+      ],
+      "request": {
+        "operation": "claim",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/preclaim-cancelled-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/preclaim-cancelled-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "cancel_before_claim_replay",
+      "covers": [
+        "19.3:cancel_equal_replay"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/preclaim-cancelled-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-1",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/cancel-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/preclaim-cancelled-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "cancel_after_possible_call",
+      "covers": [
+        "19.3:cancel_after_possible_call"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/ambiguous-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-after-call",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/postcall-cancel-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/postcall-cancelled-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "ambiguous_retry_with_proven_deduplication",
+      "covers": [
+        "19.3:ambiguous_retry_with_proof"
+      ],
+      "request": {
+        "operation": "claim",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/ambiguous-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "completed",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/ambiguous-retry-claim-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 1
+        }
+      }
+    },
+    {
+      "name": "ambiguous_retry_requires_proof",
+      "covers": [
+        "19.3:ambiguous_retry_proof"
+      ],
+      "request": {
+        "operation": "claim",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/ambiguous-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": false,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6"
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": null,
+        "caller_kind": "aborted",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/ambiguous-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "missing_cancel_mapping_refusal",
+      "covers": [
+        "19.3:missing_cancelled_mapping"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/no-cancel-mapping-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-1",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/cancel-rejected-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/no-cancel-mapping-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    }
+  ]
+}

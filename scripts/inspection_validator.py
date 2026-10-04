@@ -60,6 +60,47 @@ def validate_root_only_bindings(bundle: dict) -> None:
         visit(machine['root'], f'/machines/{index}/root', True)
 
 
+def validate_snapshot_variables(aggregate: dict, bundle: dict) -> None:
+    """Bind every retained variable to its active declaring state and sequence."""
+    from validate_conformance import ValidationFailure
+
+    def resolve(pointer: str) -> Any:
+        value: Any = bundle
+        try:
+            for segment in pointer.split('/')[1:]:
+                key = segment.replace('~1', '/').replace('~0', '~')
+                value = value[int(key)] if isinstance(value, list) else value[key]
+        except (IndexError, KeyError, TypeError, ValueError) as error:
+            raise ValidationFailure(f'inspection variable has unresolved declaration {pointer}') from error
+        return value
+
+    for runtime in aggregate['runtimes']:
+        active = {(item['state_definition_pointer'], item['activation_sequence'])
+                  for item in runtime['active_state_activations']}
+        if runtime['status'] == 'completed' and (
+            active or runtime['active_leaf_state_definition_pointers'] or runtime['variables']
+        ):
+            raise ValidationFailure('inspection completed runtime retains configuration or variables')
+        seen: set[tuple[str, str]] = set()
+        for variable in runtime['variables']:
+            declaration = variable['variable_declaration_pointer']
+            state_pointer, separator, name = declaration.rpartition('/variables/')
+            if not separator or not name:
+                raise ValidationFailure(f'inspection variable has invalid declaration {declaration}')
+            state = resolve(state_pointer)
+            if (not isinstance(state, dict) or
+                not isinstance(state.get('variables'), dict) or
+                name not in state['variables'] or
+                resolve(declaration) is not state['variables'][name]):
+                raise ValidationFailure(f'inspection variable has invalid declaring state {declaration}')
+            key = (declaration, variable['declaring_state_activation_sequence'])
+            if key in seen:
+                raise ValidationFailure(f'inspection duplicate variable {declaration}')
+            seen.add(key)
+            if (state_pointer, key[1]) not in active:
+                raise ValidationFailure(f'inspection variable has inactive declaring state or sequence {declaration}')
+
+
 def validate_inspection_vectors(case: Path, test: dict, bundle_paths: set[Path],
                                 artifact_paths: set[Path], spec_root: Path,
                                 overrides: dict[str, Any] | None = None) -> set[str]:
@@ -199,6 +240,7 @@ def validate_inspection_vectors(case: Path, test: dict, bundle_paths: set[Path],
         if not checked(out,'outcome',location):raise ValidationFailure(f'{location}: invalid outcome schema')
         fingerprint=validated_bundle_fingerprint(bundle_path)
         bundle=normalized_bundle_value(bundle_path)
+        validate_snapshot_variables(before,bundle)
         try:
             validate_root_only_bindings(bundle)
         except ValueError as error:

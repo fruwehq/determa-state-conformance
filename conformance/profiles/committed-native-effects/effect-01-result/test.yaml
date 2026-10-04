@@ -1,0 +1,12 @@
+title: committed native effect result from a selected core emission
+static:
+  documents:
+    - { file: machine.yaml, valid: true }
+artifacts:
+  documents:
+    - { file: created-checkpoint.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: accepted-checkpoint.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: pending-checkpoint.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: admitted-checkpoint.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: confirmed-checkpoint.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: cancelled-admitted-checkpoint.json, kind: execution_checkpoint_v1, valid: true }

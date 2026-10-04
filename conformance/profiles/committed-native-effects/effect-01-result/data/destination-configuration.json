@@ -1,0 +1,8 @@
+{
+  "format": "determa.effect_destination_binding",
+  "schema_version": 1,
+  "scope_identity": "effect-scope-1",
+  "destination": "conformance.fake-native-destination",
+  "idempotency_namespace": "effect-scope-1",
+  "connector_version": "1"
+}
