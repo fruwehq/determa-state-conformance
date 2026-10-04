@@ -15,10 +15,15 @@ from validate_portable_archive import (ROOT, canonical, digest, read_json, requi
 CASE = ROOT / 'conformance/profiles/recovery/recovery-01-scope-lifecycle'
 
 
-def validate_owned_definition_closure(archive: dict, machine: Path, nested_machine: Path) -> None:
+def validate_owned_definition_closure(archive: dict, machine: Path, nested_machine: Path,
+                                      spec_root: Path) -> None:
     from validate_conformance import validated_bundle_fingerprint, validate_aggregate_against_bundle
     from generate_version1_vectors import normalized_bundle, typed_value
+    from jsonschema import Draft202012Validator
     sources = (nested_machine, machine)
+    machine_schema = Draft202012Validator(read_json(spec_root / 'schema/machine.schema.json'))
+    for path in sources:
+        schema_valid(machine_schema, YAML(typ='safe').load(path.read_text()), str(path))
     expected = {validated_bundle_fingerprint(path): typed_value(normalized_bundle(path))
                 for path in sources}
     attached = {item['validated_bundle_fingerprint']: item['normalized_bundle']
@@ -176,7 +181,7 @@ def validate_profile(spec_root: Path) -> int:
             'real two-root owned, deferred, nested component and ambiguous effect lifecycle')
     machine = CASE / 'recovery-owned-machine.yaml'
     nested_machine = ROOT / 'conformance/profiles/portable-archive/archive-01-complete-snapshot/nested-component-machine.yaml'
-    validate_owned_definition_closure(owned_archive, machine, nested_machine)
+    validate_owned_definition_closure(owned_archive, machine, nested_machine, spec_root)
     validate('archive-import-request-v1', owned['stage_request'], 'owned stage request')
     validate('archive-result-v1', owned['stage_result'], 'owned stage result')
     require(owned['stage_request']['archive_digest'] == owned_archive['archive_digest'] and

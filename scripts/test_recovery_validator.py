@@ -52,14 +52,16 @@ def main() -> int:
     validate_archive_integrity(broken, validators)
     rejected('resealed missing real definition', lambda: validate_owned_definition_closure(
         broken, CASE / 'recovery-owned-machine.yaml',
-        ROOT / 'conformance/profiles/portable-archive/archive-01-complete-snapshot/nested-component-machine.yaml'))
+        ROOT / 'conformance/profiles/portable-archive/archive-01-complete-snapshot/nested-component-machine.yaml',
+        args.spec_root))
     missing_component = copy.deepcopy(owned)
     nested = missing_component['checkpoints'][0]['root_record']['aggregate_state']
     nested['runtimes'] = [runtime for runtime in nested['runtimes']
                           if runtime['relation']['kind'] != 'component']
     rejected('removed nested component runtime', lambda: validate_owned_definition_closure(
         missing_component, CASE / 'recovery-owned-machine.yaml',
-        ROOT / 'conformance/profiles/portable-archive/archive-01-complete-snapshot/nested-component-machine.yaml'))
+        ROOT / 'conformance/profiles/portable-archive/archive-01-complete-snapshot/nested-component-machine.yaml',
+        args.spec_root))
     response = {'result': case['expected_result'], 'record': case['expected_record'],
                 'transfer_proof': None, 'before': {}, 'after': {}, 'calls': {},
                 'caller_response_kind': 'recovery_result',
