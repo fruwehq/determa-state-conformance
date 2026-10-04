@@ -14,7 +14,7 @@ from pathlib import Path
 from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
-from inspection_validator import validate_inspection_vectors, snapshot_value_units, typed_value_units
+from inspection_validator import validate_inspection_vectors, validate_root_only_bindings, snapshot_value_units, typed_value_units
 from validate_conformance import ValidationFailure, load_fixture_document, hash_value, encode_typed_value, validated_bundle_fingerprint
 from generate_version1_vectors import seal_aggregate
 
@@ -62,6 +62,20 @@ def independent_snapshot_units(request: dict, aggregate: dict) -> int:
 class InspectionValidatorTests(unittest.TestCase):
     def test_baseline(self) -> None:
         validate()
+
+    def test_input_and_external_bindings_are_machine_root_only(self) -> None:
+        bundle=load_fixture_document(CASE/'machine.yaml')
+        validate_root_only_bindings(bundle)
+        child=bundle['machines'][0]['root']['states']['parent']['states']['child']
+        for flag in ('input', 'external'):
+            with self.subTest(flag=flag):
+                changed=copy.deepcopy(bundle)
+                nested=changed['machines'][0]['root']['states']['parent']['states']['child']
+                nested['variables']['memo'][flag]=True
+                with self.assertRaisesRegex(ValueError,'outside machine root'):
+                    validate_root_only_bindings(changed)
+        self.assertNotIn('external_memo',child['variables'])
+        self.assertTrue(bundle['machines'][0]['root']['variables']['external_memo']['external'])
 
     def test_recursive_unicode_value_units(self) -> None:
         nested=['map',[['é',['list',[['string','😀'],['boolean',True]]]]]]

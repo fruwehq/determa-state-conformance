@@ -43,6 +43,23 @@ def snapshot_value_units(envelope: dict, runtime: dict) -> int:
     return envelope_value_units(envelope)+visible
 
 
+def validate_root_only_bindings(bundle: dict) -> None:
+    """Enforce the §4.5 machine rule beyond the YAML schema's state shape."""
+    def visit(state: dict, pointer: str, root: bool) -> None:
+        if not root:
+            for name, declaration in state.get('variables', {}).items():
+                if declaration.get('input') or declaration.get('external'):
+                    raise ValueError(f'{pointer}/variables/{name}: input/external binding outside machine root')
+        for name, child in state.get('states', {}).items():
+            visit(child, f'{pointer}/states/{name}', False)
+        for index, component in enumerate(state.get('components', [])):
+            if 'root' in component:
+                visit(component['root'], f'{pointer}/components/{index}/root', True)
+
+    for index, machine in enumerate(bundle['machines']):
+        visit(machine['root'], f'/machines/{index}/root', True)
+
+
 def validate_inspection_vectors(case: Path, test: dict, bundle_paths: set[Path],
                                 artifact_paths: set[Path], spec_root: Path,
                                 overrides: dict[str, Any] | None = None) -> set[str]:
@@ -182,6 +199,10 @@ def validate_inspection_vectors(case: Path, test: dict, bundle_paths: set[Path],
         if not checked(out,'outcome',location):raise ValidationFailure(f'{location}: invalid outcome schema')
         fingerprint=validated_bundle_fingerprint(bundle_path)
         bundle=normalized_bundle_value(bundle_path)
+        try:
+            validate_root_only_bindings(bundle)
+        except ValueError as error:
+            raise ValidationFailure(f'{location}: {error}') from error
         root=next(item for item in before['runtimes'] if item['relation']['kind']=='root')
         if not checked(req,'request',location) or req.get('aggregate_state_digest')!=before['aggregate_state_digest']:
             expected=failure('invalid_inspection_request')
