@@ -257,6 +257,29 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
             terminal["resulting_aggregate_state_digest"] != lifecycle["expected_after_step_checkpoint"]["root_record"]["aggregate_state"]["aggregate_state_digest"] or \
             terminal["outcome"]["disposition"] != "unhandled":
         raise TimerHelperValidationError("step did not dispose of the fired event")
+    installed_lifecycle = json.loads(expected_files["configured-lifecycle.generated.json"])
+    installed_errors = list(Draft202012Validator(lifecycle_schema, registry=registry).iter_errors(installed_lifecycle))
+    if installed_errors:
+        raise TimerHelperValidationError(f"configured timer lifecycle schema: {installed_errors[0].message}")
+    installed_schedule = installed_lifecycle["schedule_request"]
+    installed_envelope = installed_lifecycle["expected_fire_envelope"]
+    installed_checkpoint = installed_lifecycle["expected_admitted_checkpoint"]
+    installed_receipt = installed_checkpoint["operation_receipts"][-1]
+    installed_fire_id = digest(["determa-timer-fire-event-1", "1",
+        installed_schedule["scope_identity"], installed_schedule["root_instance_id"],
+        installed_schedule["root_runtime_id"], installed_schedule["timer_id"]])
+    if installed_schedule["scope_identity"] != "effect-scope-1" or \
+            installed_envelope["event_id"] != installed_fire_id or \
+            installed_envelope["cause_id"] != installed_fire_id or \
+            installed_receipt["request_digest"] != digest(["determa-inbox-envelope-digest-1", "1",
+                installed_checkpoint["root_instance_id"], "input", installed_envelope]) or \
+            installed_checkpoint["execution_checkpoint_digest"] != digest([
+                "determa-execution-checkpoint-digest-1",
+                {key: part for key, part in installed_checkpoint.items()
+                 if key != "execution_checkpoint_digest"}]) or \
+            installed_lifecycle["expected_helper_after_fire"]["records"][0]["admission_receipt_digest"] != \
+                digest(["determa-timer-admission-receipt-1", installed_receipt]):
+        raise TimerHelperValidationError("installed timer scope or ordinary admission changed")
     ownership = json.loads(expected_files["source-ownership.generated.json"])
     source_schema = json.loads((repository_root / "scripts/schemas/timer-source-ownership-v1.schema.json").read_text())
     Draft202012Validator.check_schema(source_schema)
@@ -266,12 +289,11 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
     request = ownership["request"]
     source = request["source"]
     expected_source_id = digest(["determa-timer-source-delivery-1",
-        lifecycle["schedule_request"]["root_instance_id"],
-        lifecycle["schedule_request"]["root_runtime_id"],
-        lifecycle["schedule_request"]["timer_id"]])
-    if source["source_scope"] != lifecycle["schedule_request"]["scope_identity"] or \
+        installed_schedule["root_instance_id"], installed_schedule["root_runtime_id"],
+        installed_schedule["timer_id"]])
+    if source["source_scope"] != installed_schedule["scope_identity"] or \
             source["source_delivery_id"] != expected_source_id or \
-            source["content"]["content_value"] != typed_value(envelope) or \
+            source["content"]["content_value"] != typed_value(installed_envelope) or \
             source["source_content_digest"] != digest(["determa-delivery-source-content-digest-1",
                 "1", source["source_scope"], source["source_delivery_id"],
                 source["content"]["content_kind"], source["content"]["content_value"]]):
@@ -282,14 +304,42 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
             binding["source_scope"] != source["source_scope"] or \
             binding["source_delivery_id"] != source["source_delivery_id"] or \
             binding["source_content_digest"] != source["source_content_digest"] or \
-            binding["event_id"] != envelope["event_id"] or \
-            binding["envelope_digest"] != receipt["request_digest"] or \
+            binding["event_id"] != installed_envelope["event_id"] or \
+            binding["envelope_digest"] != installed_receipt["request_digest"] or \
             binding["evidence"]["checkpoint"]["execution_checkpoint_digest"] != \
-                lifecycle["expected_admitted_checkpoint"]["execution_checkpoint_digest"] or \
-            ownership["before_checkpoint"] != lifecycle["expected_create_checkpoint"] or \
-            ownership["after_checkpoint"] != lifecycle["expected_admitted_checkpoint"] or \
-            ownership["acceptance_receipt"] != receipt or \
+                installed_checkpoint["execution_checkpoint_digest"] or \
+            ownership["before_checkpoint"] != installed_lifecycle["expected_create_checkpoint"] or \
+            ownership["after_checkpoint"] != installed_checkpoint or \
+            ownership["acceptance_receipt"] != installed_receipt or \
             ownership["acknowledge_after_commit"] != {
                 "source_scope": source["source_scope"], "source_delivery_id": source["source_delivery_id"]}:
         raise TimerHelperValidationError("timer ingress binding or checkpoint ownership changed")
+    delivery_vectors = json.loads(expected_files["timer-delivery.generated.json"])
+    delivery_schema = json.loads((repository_root / "scripts/schemas/timer-delivery-v1.schema.json").read_text())
+    Draft202012Validator.check_schema(delivery_schema)
+    delivery_errors = list(Draft202012Validator(delivery_schema, registry=registry).iter_errors(delivery_vectors))
+    if delivery_errors:
+        raise TimerHelperValidationError(f"timer delivery driver schema: {delivery_errors[0].message}")
+    first_ingest, crashed_ingest, replay_ingest = delivery_vectors["vectors"]
+    for vector in delivery_vectors["vectors"]:
+        if vector["request"] != request or vector["after"]["bindings"] != [binding] or \
+                vector["after"]["checkpoint"] != "after-timer-checkpoint-v1.json":
+            raise TimerHelperValidationError("timer delivery source or committed store changed")
+    if first_ingest["before"]["bindings"] or first_ingest["before"]["source_acknowledgements"] or \
+            crashed_ingest["before"] != first_ingest["before"] or \
+            crashed_ingest["after"]["source_acknowledgements"] or \
+            replay_ingest["before"] != crashed_ingest["after"] or \
+            replay_ingest["after"] != first_ingest["after"] or \
+            first_ingest["after"]["source_acknowledgements"] != [ownership["acknowledge_after_commit"]] or \
+            crashed_ingest["expected_response"] != {"kind": "no_response"} or \
+            crashed_ingest["fault_injection"] != "crash_after_commit_before_ack" or \
+            replay_ingest["replay_of"] != crashed_ingest["name"]:
+        raise TimerHelperValidationError("timer crash and retained replay trajectory changed")
+    admitted = first_ingest["expected_response"]
+    if replay_ingest["expected_response"] != admitted or \
+            admitted["evidence"] != binding["evidence"] or \
+            admitted["admission_binding_digest"] != binding["admission_binding_digest"] or \
+            admitted["source_delivery_id"] != source["source_delivery_id"] or \
+            admitted["source_content_digest"] != source["source_content_digest"]:
+        raise TimerHelperValidationError("timer admitted response differs from source and checkpoint receipt")
     return len(document["cases"]), len(document["clock_vectors"]), len(document["fence_vectors"]), 3, 1

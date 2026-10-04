@@ -13,7 +13,7 @@ from pathlib import Path
 
 from timer_helper_validator import TimerHelperValidationError, validate_profile
 from run_timer_helper_profile import (loaded_closure_digest, operation_input,
-                                      strict_json, verify_configured)
+                                      strict_json, verify_configured, verify_native_composition)
 
 
 def main():
@@ -33,7 +33,8 @@ def main():
         case.mkdir(parents=True)
         original = root / "conformance/profiles/timer-helper/timer-01-external-helper"
         for name in ("vectors.generated.json", "lifecycle.generated.json",
-                     "source-ownership.generated.json",
+                     "configured-lifecycle.generated.json",
+                     "source-ownership.generated.json", "timer-delivery.generated.json",
                      "archive-export.generated.json", "archive-stage.generated.json",
                      "target-machine.yaml", "machine.yaml", "test.yaml"):
             shutil.copyfile(original / name, case / name)
@@ -57,9 +58,11 @@ def main():
         shutil.copyfile(original / "vectors.generated.json", case / "vectors.generated.json")
         for file_name, edit in (
             ("lifecycle.generated.json", lambda d: d["expected_fire_envelope"].update(event_id="wrong")),
+            ("configured-lifecycle.generated.json", lambda d: d["schedule_request"].update(scope_identity="wrong")),
             ("archive-export.generated.json", lambda d: d["input_request"].update(required_participant_ids=[])),
             ("archive-stage.generated.json", lambda d: d["cases"][0].update(expected_staged_archive=None)),
             ("source-ownership.generated.json", lambda d: d["request"]["source"].update(source_delivery_id="other")),
+            ("timer-delivery.generated.json", lambda d: d["vectors"][1]["after"].update(bindings=[])),
         ):
             changed = json.loads((original / file_name).read_text())
             edit(changed)
@@ -124,6 +127,41 @@ def main():
                 pass
             else:
                 raise AssertionError(f"accepted {name}")
+        ownership = json.loads((root / "conformance/profiles/timer-helper/timer-01-external-helper/source-ownership.generated.json").read_text())
+        scope = ownership["request"]["source"]["source_scope"]
+        native_id = "sha256:" + "1" * 64
+        other_id = "sha256:" + "2" * 64
+        third_id = "sha256:" + "3" * 64
+        installation["scope_identity"] = scope
+        installation["topology_identity"] = "native-topology"
+        installation["storage_binding"] = "native-store-config"
+        for category in ("authority", "delivery", "effects"):
+            proof[category]["scope_identity"] = scope
+            proof[category]["topology_identity"] = "native-topology"
+            proof[category]["storage_binding"] = "native-store-config"
+        proof["scope_identity"] = scope
+        proof["topology_identity"] = "native-topology"
+        proof["storage_binding"] = "native-store-config"
+        proof["authority"]["receipt_digests"] = [native_id]
+        proof["effects"]["receipt_digests"] = [other_id]
+        proof["delivery"]["receipt_digests"] = [third_id]
+        summary = {"configured_delivery_profile": {
+            "host_scope_identity": scope, "host_topology_identifier": "native-topology",
+            "host_storage_configuration_digest": "native-store-config"},
+            "authority_effect_summary": {"scope_identity": scope,
+                "topology_identifier": "native-topology", "native_proof_ids": [other_id],
+                "authority_summary": {"scope_identity": scope, "native_proof_ids": [native_id]}},
+            "delivery_operations": [{"host_store_proof_id": third_id}],
+            "effect_integrations": []}
+        timer_ops = [{"host_store_proof_id": None}]
+        verify_native_composition(observed, summary, timer_ops, ownership)
+        proof["delivery"]["receipt_digests"] = [native_id]
+        try:
+            verify_native_composition(observed, summary, timer_ops, ownership)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("accepted copied delivery proof identity")
     print("timer helper substitution and strict child JSON checks passed")
 
 

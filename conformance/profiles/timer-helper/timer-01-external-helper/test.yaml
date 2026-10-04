@@ -13,7 +13,13 @@ artifacts:
     - file: lifecycle.generated.json
       kind: json_value
       valid: true
+    - file: configured-lifecycle.generated.json
+      kind: json_value
+      valid: true
     - file: source-ownership.generated.json
+      kind: json_value
+      valid: true
+    - file: timer-delivery.generated.json
       kind: json_value
       valid: true
 static:

@@ -11,7 +11,10 @@ import base64
 import binascii
 import hashlib
 import json
+import shlex
 import subprocess
+import sys
+import tempfile
 from pathlib import Path
 
 import rfc8785
@@ -19,6 +22,11 @@ from jsonschema import Draft202012Validator
 from validate_extension_negotiation import exact_json_equal
 from timer_helper_validator import validate_profile
 from run_portable_archive_profile import run_case as run_archive_case
+from run_lossless_delivery_profile import (
+    CASE as DELIVERY_CASE,
+    run as run_delivery_case, verify_configured_delivery_profile,
+    verify_delivery_proof_summary,
+)
 
 
 def strict_json(payload: bytes):
@@ -147,10 +155,121 @@ def verify_configured(observed, spec_root, completed_request_digests):
     return report
 
 
+def run_native_delivery_proof(command, authority_command, spec_root, case_dir, ownership):
+    """Execute the full C/D/H chain, then timer ingress under that installation."""
+    with tempfile.TemporaryDirectory(prefix="determa-timer-delivery-") as temporary:
+        root = Path(temporary)
+        summary_path = root / "delivery-proof.json"
+        completed = subprocess.run([
+            sys.executable, str(Path(__file__).with_name("run_lossless_delivery_profile.py")),
+            "--spec-root", str(spec_root), "--adapter", shlex.join(command),
+            "--authority-adapter", shlex.join(authority_command),
+            "--proof-summary-output", str(summary_path)],
+            capture_output=True, check=False, timeout=1800)
+        if completed.returncode:
+            raise ValueError("timer requires complete same-installation C/D/H native proof: " +
+                             completed.stderr.decode(errors="replace")[-1000:])
+        summary = strict_json(summary_path.read_bytes())
+        verify_delivery_proof_summary(summary, command)
+        report = summary["configured_delivery_profile"]
+        if summary["authority_effect_summary"] is None or len(summary["effect_integrations"]) != 5:
+            raise ValueError("timer coordinated claim lacks complete C/D/H proof")
+        links = {name: report[name] for name in (
+            "authority_report_digest", "effect_report_digest",
+            "host_scope_identity", "host_topology_identifier")}
+        if verify_configured_delivery_profile(command, summary["parent_run_id"], links) != report:
+            raise ValueError("delivery installation changed before timer source run")
+        timer_case = root / "timer-case"
+        timer_case.mkdir()
+        (timer_case / "delivery-vectors-v1.json").write_bytes(
+            (case_dir / "timer-delivery.generated.json").read_bytes())
+        (timer_case / "before-timer-checkpoint-v1.json").write_bytes(
+            rfc8785.dumps(ownership["before_checkpoint"]))
+        (timer_case / "after-timer-checkpoint-v1.json").write_bytes(
+            rfc8785.dumps(ownership["after_checkpoint"]))
+        (timer_case / "machine.yaml").write_bytes((case_dir / "target-machine.yaml").read_bytes())
+        (timer_case / "outbox-machine.yaml").write_bytes((DELIVERY_CASE / "outbox-machine.yaml").read_bytes())
+        native_operations = []
+        if run_delivery_case(command, case=timer_case, run_id=summary["parent_run_id"],
+                             profile_links=links, proof_summary=native_operations) != 3:
+            raise ValueError("timer ingress native operations incomplete")
+        if verify_configured_delivery_profile(command, summary["parent_run_id"], links) != report:
+            raise ValueError("delivery installation changed after timer source run")
+        if [item["name"] for item in native_operations] != [
+                "timer_first_committed_admission", "timer_crash_after_commit_before_ack",
+                "timer_replay_after_commit_crash"] or \
+                [item["fate"] for item in native_operations] != ["committed", "committed", "committed"] or \
+                native_operations[1]["crash_cut"] != {
+                    "operation_id": native_operations[1]["operation_id"], "phase": "after_commit"} or \
+                not all(item["host_store_proof_id"] for item in native_operations) or \
+                native_operations[2]["source_acknowledgements"] != [ownership["acknowledge_after_commit"]]:
+            raise ValueError("timer source native commit, crash, or replay proof differs")
+        return summary, native_operations
+
+
+def verify_native_composition(configured, delivery_summary, timer_operations, ownership):
+    installation = configured["installation"]
+    proof = configured["operational_proof"]
+    delivery_report = delivery_summary["configured_delivery_profile"]
+    effect = delivery_summary["authority_effect_summary"]
+    authority = effect["authority_summary"]
+    expected = {
+        "authority": set(authority["native_proof_ids"]),
+        "effects": set(effect["native_proof_ids"]),
+        "delivery": {item["host_store_proof_id"] for item in
+                     [*delivery_summary["delivery_operations"], *timer_operations]
+                     if item["host_store_proof_id"] is not None} |
+                    {item["host_store_proof_id"] for item in delivery_summary["effect_integrations"]},
+    }
+    if installation["scope_identity"] != ownership["request"]["source"]["source_scope"] or \
+            installation["scope_identity"] != delivery_report["host_scope_identity"] or \
+            installation["topology_identity"] != delivery_report["host_topology_identifier"] or \
+            installation["storage_binding"] != delivery_report["host_storage_configuration_digest"] or \
+            authority["scope_identity"] != installation["scope_identity"] or \
+            effect["scope_identity"] != installation["scope_identity"] or \
+            effect["topology_identifier"] != installation["topology_identity"] or \
+            proof["scope_identity"] != installation["scope_identity"] or \
+            proof["topology_identity"] != installation["topology_identity"] or \
+            proof["storage_binding"] != installation["storage_binding"] or \
+            any(set(proof[name]["receipt_digests"]) != ids or
+                len(proof[name]["receipt_digests"]) != len(ids)
+                for name, ids in expected.items()):
+        raise ValueError("timer configured claim is not bound to actual same-run C/D/H proof")
+
+
+def lifecycle_call(command, lifecycle, machine, target_machine, label):
+    body = {"kind": "timer_lifecycle", "intent_machine_source": machine,
+            "target_machine_source": target_machine}
+    body.update({name: lifecycle[name] for name in (
+        "intent_inputs", "cancel_intent_inputs", "create_request",
+        "intent_create_request", "cancel_intent_create_request", "schedule_request",
+        "cancel_request", "claim_request", "complete_request", "step_request",
+        "trusted_clock_sequence")})
+    observed = call(command, body, label)
+    expected = {"create_checkpoint": lifecycle["expected_create_checkpoint"],
+                "intent_emissions": lifecycle["expected_intent_emissions"],
+                "cancel_intent_emissions": lifecycle["expected_cancel_intent_emissions"],
+                "helper_after_schedule": lifecycle["expected_helper_after_schedule"],
+                "helper_after_cancel": lifecycle["expected_helper_after_cancel"],
+                "helper_after_claim": lifecycle["expected_helper_after_claim"],
+                "helper_after_fire": lifecycle["expected_helper_after_fire"],
+                "admitted_checkpoint": lifecycle["expected_admitted_checkpoint"],
+                "after_step_checkpoint": lifecycle["expected_after_step_checkpoint"],
+                "results": lifecycle["expected_results"],
+                "fire_envelope": lifecycle["expected_fire_envelope"],
+                "calls": {"intent_create": 2, "intent_admission": 3,
+                          "intent_step": 3, "target_create": 1, "schedule": 2,
+                          "clock": 4, "cancel": 1, "claim": 1, "complete": 1,
+                          "target_admission": 1, "target_step": 1}}
+    if not exact_json_equal(observed, expected):
+        raise ValueError(f"{label}: create/intent/schedule/claim/admit/step or complete state differs")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, required=True)
     parser.add_argument("--adapter", nargs="+", required=True)
+    parser.add_argument("--authority-adapter", nargs="+", required=True)
     args = parser.parse_args()
     repository = Path(__file__).resolve().parents[1]
     validate_profile(args.spec_root, repository)
@@ -159,36 +278,10 @@ def main():
     machine = (repository / "conformance/profiles/timer-helper/timer-01-external-helper/machine.yaml").read_text()
     target_machine = (case_dir / "target-machine.yaml").read_text()
     lifecycle = strict_json((case_dir / "lifecycle.generated.json").read_bytes())
-    lifecycle_input = {"kind": "timer_lifecycle", "intent_machine_source": machine,
-                       "target_machine_source": target_machine,
-                       "intent_inputs": lifecycle["intent_inputs"],
-                       "cancel_intent_inputs": lifecycle["cancel_intent_inputs"],
-                       "create_request": lifecycle["create_request"],
-                       "intent_create_request": lifecycle["intent_create_request"],
-                       "cancel_intent_create_request": lifecycle["cancel_intent_create_request"],
-                       "schedule_request": lifecycle["schedule_request"],
-                       "cancel_request": lifecycle["cancel_request"],
-                       "claim_request": lifecycle["claim_request"],
-                       "complete_request": lifecycle["complete_request"],
-                       "step_request": lifecycle["step_request"],
-                       "trusted_clock_sequence": lifecycle["trusted_clock_sequence"]}
-    lifecycle_expected = {"create_checkpoint": lifecycle["expected_create_checkpoint"],
-                          "intent_emissions": lifecycle["expected_intent_emissions"],
-                          "cancel_intent_emissions": lifecycle["expected_cancel_intent_emissions"],
-                          "helper_after_schedule": lifecycle["expected_helper_after_schedule"],
-                          "helper_after_cancel": lifecycle["expected_helper_after_cancel"],
-                          "helper_after_claim": lifecycle["expected_helper_after_claim"],
-                          "helper_after_fire": lifecycle["expected_helper_after_fire"],
-                          "admitted_checkpoint": lifecycle["expected_admitted_checkpoint"],
-                          "after_step_checkpoint": lifecycle["expected_after_step_checkpoint"],
-                          "results": lifecycle["expected_results"],
-                          "fire_envelope": lifecycle["expected_fire_envelope"],
-                          "calls": {"intent_create": 2, "intent_admission": 3,
-                                    "intent_step": 3, "target_create": 1, "schedule": 2,
-                                    "clock": 4, "cancel": 1, "claim": 1, "complete": 1,
-                                    "target_admission": 1, "target_step": 1}}
-    if not exact_json_equal(call(args.adapter, lifecycle_input, "timer_lifecycle"), lifecycle_expected):
-        raise ValueError("timer_lifecycle: create/intent/schedule/claim/admit/step or complete state differs")
+    installed_lifecycle = strict_json((case_dir / "configured-lifecycle.generated.json").read_bytes())
+    lifecycle_call(args.adapter, lifecycle, machine, target_machine, "timer_lifecycle_normative")
+    lifecycle_call(args.adapter, installed_lifecycle, machine, target_machine,
+                   "timer_lifecycle_installed_scope")
     for row in [*document["cases"], *document["clock_vectors"], *document["fence_vectors"]]:
         body = operation_input(row, target_machine)
         observed = call(args.adapter, body, row["id"])
@@ -208,11 +301,16 @@ def main():
     completed_request_digests = {row["request"]["request_digest"]
         for row in [*document["cases"], *document["clock_vectors"], *document["fence_vectors"]]
         if "request_digest" in row["request"]}
-    completed_request_digests.update(lifecycle[name]["request_digest"] for name in (
-        "schedule_request", "cancel_request", "claim_request", "complete_request"))
-    verify_configured(call(args.adapter, {"kind": "configured_timer_helper"}, "configured_timer_helper"),
-                      args.spec_root, completed_request_digests)
-    print(f"{len(document['cases'])} normative timer operations, {len(document['clock_vectors'])} clock boundaries, {len(document['fence_vectors'])} claim fences, one lifecycle and 3 archive participant cases passed with configured proof")
+    completed_request_digests.update(source[name]["request_digest"]
+        for source in (lifecycle, installed_lifecycle)
+        for name in ("schedule_request", "cancel_request", "claim_request", "complete_request"))
+    ownership = strict_json((case_dir / "source-ownership.generated.json").read_bytes())
+    delivery_summary, timer_operations = run_native_delivery_proof(
+        args.adapter, args.authority_adapter, args.spec_root, case_dir, ownership)
+    configured = call(args.adapter, {"kind": "configured_timer_helper"}, "configured_timer_helper")
+    verify_configured(configured, args.spec_root, completed_request_digests)
+    verify_native_composition(configured, delivery_summary, timer_operations, ownership)
+    print(f"{len(document['cases'])} normative timer operations, {len(document['clock_vectors'])} clock boundaries, {len(document['fence_vectors'])} claim fences, two lifecycles, 3 archive participant and 3 native source ownership cases passed under one configured C/D/H installation")
 
 
 if __name__ == "__main__":

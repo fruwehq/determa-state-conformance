@@ -10,7 +10,8 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 from generate_version1_vectors import (canonical, digest, typed_value,
-                                       bundle_fingerprint_document, seal_checkpoint)
+                                       bundle_fingerprint_document, seal_aggregate,
+                                       seal_checkpoint)
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / "conformance/profiles/timer-helper/timer-01-external-helper"
@@ -46,6 +47,69 @@ def record_from(request, prior, first):
             "worker_principal": ("worker-B" if fence == "2" else "worker-A") if state == "claimed" else None,
             "expires_at": prior.get("claim_expires_at", "130") if state == "claimed" else None,
             "admission_receipt_digest": None}
+
+
+def configured_lifecycle(original, scope):
+    """Reseal an executable timer lifecycle for the installed C/D/H host scope."""
+    value = copy.deepcopy(original)
+    requests = {}
+    for name in ("schedule", "cancel", "claim", "complete"):
+        request = value[name + "_request"]
+        request["scope_identity"] = scope
+        request["request_digest"] = digest(["determa-timer-request-1",
+            {key: item for key, item in request.items() if key != "request_digest"}])
+        requests[request["operation_id"]] = request
+    schedule = value["schedule_request"]
+    fire_id = digest(["determa-timer-fire-event-1", "1", scope,
+        schedule["root_instance_id"], schedule["root_runtime_id"], schedule["timer_id"]])
+    checkpoint = value["expected_admitted_checkpoint"]
+    aggregate = checkpoint["root_record"]["aggregate_state"]
+    entry = aggregate["runtimes"][0]["ready_mailbox"][0]
+    envelope = entry["envelope"]
+    envelope["event_id"] = fire_id
+    envelope["cause_id"] = fire_id
+    envelope_digest = digest(["determa-inbox-envelope-digest-1", "1",
+                              checkpoint["root_instance_id"], "input", envelope])
+    entry["envelope_digest"] = envelope_digest
+    receipt = checkpoint["operation_receipts"][-1]
+    receipt["event_id"] = fire_id
+    receipt["request_digest"] = envelope_digest
+    checkpoint["root_record"]["aggregate_state"] = seal_aggregate(aggregate)
+    checkpoint = seal_checkpoint(checkpoint)
+    value["expected_admitted_checkpoint"] = checkpoint
+    value["expected_fire_envelope"] = envelope
+    admission_digest = digest(["determa-timer-admission-receipt-1", receipt])
+    complete = value["complete_request"]
+    complete["arguments"]["event_id"] = fire_id
+    complete["arguments"]["admission_receipt_digest"] = admission_digest
+    complete["request_digest"] = digest(["determa-timer-request-1",
+        {key: item for key, item in complete.items() if key != "request_digest"}])
+    after_step = value["expected_after_step_checkpoint"]
+    for terminal in after_step["operation_receipts"]:
+        if terminal.get("operation_kind") in ("acceptance", "event_terminal"):
+            terminal["event_id"] = fire_id
+            terminal["request_digest"] = envelope_digest
+    value["expected_after_step_checkpoint"] = seal_checkpoint(after_step)
+    for field in ("expected_helper_after_schedule", "expected_helper_after_cancel",
+                  "expected_helper_after_claim", "expected_helper_after_fire"):
+        helper = value[field]
+        record = helper["records"][0]
+        record.update(scope_identity=scope, schedule_request_digest=schedule["request_digest"],
+                      event_id=fire_id)
+        if record["state"] == "fired":
+            record["admission_receipt_digest"] = admission_digest
+        for item in helper["operation_receipts"]:
+            request = requests[item["operation_id"]]
+            result = item["result"]
+            result["event_id"] = fire_id
+            result["result_digest"] = digest(["determa-timer-result-1", request["request_digest"],
+                {key: part for key, part in result.items() if key != "result_digest"}])
+            item["request_digest"] = request["request_digest"]
+        value[field] = artifact(helper["records"], helper["operation_receipts"])
+    value["expected_results"] = [value["expected_helper_after_schedule"]["operation_receipts"][-1]["result"],
+        value["expected_helper_after_claim"]["operation_receipts"][-1]["result"],
+        value["expected_helper_after_fire"]["operation_receipts"][-1]["result"]]
+    return value
 
 
 def render(spec_root: Path):
@@ -257,11 +321,13 @@ def render(spec_root: Path):
                  "expected_after_step_checkpoint": after_step,
                  "expected_results": [first_row["expected_result"], claim_row["expected_result"], fire_row["expected_result"]],
                  "expected_fire_envelope": admission["committed_checkpoint"]["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"][0]["envelope"]}
-    envelope = lifecycle["expected_fire_envelope"]
-    source_scope = first_row["request"]["scope_identity"]
+    installed_lifecycle = configured_lifecycle(lifecycle, "effect-scope-1")
+    envelope = installed_lifecycle["expected_fire_envelope"]
+    source_scope = installed_lifecycle["schedule_request"]["scope_identity"]
     source_delivery_id = digest(["determa-timer-source-delivery-1",
-        first_row["request"]["root_instance_id"], first_row["request"]["root_runtime_id"],
-        first_row["request"]["timer_id"]])
+        installed_lifecycle["schedule_request"]["root_instance_id"],
+        installed_lifecycle["schedule_request"]["root_runtime_id"],
+        installed_lifecycle["schedule_request"]["timer_id"]])
     content = {"content_kind": "canonical_transport_value", "content_value": typed_value(envelope)}
     source_content_digest = digest(["determa-delivery-source-content-digest-1", "1",
         source_scope, source_delivery_id, content["content_kind"], content["content_value"]])
@@ -269,7 +335,7 @@ def render(spec_root: Path):
         "source_scope": source_scope, "source_delivery_id": source_delivery_id,
         "source_content_digest": source_content_digest, "content": content},
         "envelope": envelope, "delivery_mode": "input"}
-    checkpoint = lifecycle["expected_admitted_checkpoint"]
+    checkpoint = installed_lifecycle["expected_admitted_checkpoint"]
     acceptance = checkpoint["operation_receipts"][-1]
     evidence = {"operation_kind": "acceptance", "checkpoint": {
         "root_instance_id": checkpoint["root_instance_id"], "checkpoint_revision": checkpoint["revision"],
@@ -284,14 +350,39 @@ def render(spec_root: Path):
     binding["admission_binding_digest"] = digest(["determa-admission-binding-digest-1", "1", binding])
     ownership = {"fixture_format": "determa.timer_helper.source_ownership",
         "fixture_schema_version": 1, "request": ingress_request,
-        "before_checkpoint": lifecycle["expected_create_checkpoint"],
+        "before_checkpoint": installed_lifecycle["expected_create_checkpoint"],
         "after_checkpoint": checkpoint, "admission_binding": binding,
         "acceptance_receipt": acceptance,
         "acknowledge_after_commit": {"source_scope": source_scope,
                                      "source_delivery_id": source_delivery_id}}
+    admitted = {"delivery_message_kind": "admitted", "source_scope": source_scope,
+        "source_delivery_id": source_delivery_id, "source_content_digest": source_content_digest,
+        "event_id": envelope["event_id"], "evidence": evidence,
+        "retention": {"profile": "permanent", "minimum_replay_until": None},
+        "decision_authority": {"kind": "host_profile", "identifier": "orders-host"},
+        "acknowledge_source": True,
+        "admission_binding_digest": binding["admission_binding_digest"]}
+    empty = {"checkpoint": "before-timer-checkpoint-v1.json", "bindings": [],
+             "dead_letters": [], "source_acknowledgements": [], "provider_dispatches": 0}
+    committed = {**empty, "checkpoint": "after-timer-checkpoint-v1.json",
+        "bindings": [binding], "source_acknowledgements": [ownership["acknowledge_after_commit"]]}
+    committed_unacknowledged = {**committed, "source_acknowledgements": []}
+    def ingress_vector(name, before, after, expected, fault=None, replay_of=None):
+        return {"name": name, "operation": "ingest", "request": ingress_request,
+                "before": before, "after": after, "fault_injection": fault,
+                "replay_of": replay_of, "expected_response": expected}
+    delivery_vectors = {"fixture_format": "determa.timer_helper.delivery_vectors",
+        "fixture_schema_version": 1, "invalid_vectors": [], "vectors": [
+            ingress_vector("timer_first_committed_admission", empty, committed, admitted),
+            ingress_vector("timer_crash_after_commit_before_ack", empty, committed_unacknowledged,
+                           {"kind": "no_response"}, "crash_after_commit_before_ack"),
+            ingress_vector("timer_replay_after_commit_crash", committed_unacknowledged, committed, admitted,
+                           replay_of="timer_crash_after_commit_before_ack")]}
     outputs = {"vectors.generated.json": canonical(value) + b"\n",
                "lifecycle.generated.json": canonical(lifecycle) + b"\n",
+               "configured-lifecycle.generated.json": canonical(installed_lifecycle) + b"\n",
                "source-ownership.generated.json": canonical(ownership) + b"\n",
+               "timer-delivery.generated.json": canonical(delivery_vectors) + b"\n",
                "archive-export.generated.json": canonical(json.loads((spec_root / NORM / "timer-archive-export-v1.json").read_text())) + b"\n",
                "archive-stage.generated.json": canonical(json.loads((spec_root / NORM / "timer-archive-stage-v1.json").read_text())) + b"\n",
                "target-machine.yaml": target_source,
