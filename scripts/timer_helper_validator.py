@@ -19,7 +19,7 @@ class TimerHelperValidationError(ValueError):
     pass
 
 
-def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, int, int]:
+def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, int, int, int]:
     case = repository_root / "conformance/profiles/timer-helper/timer-01-external-helper"
     expected_files = render(spec_root)
     for name, expected in expected_files.items():
@@ -292,4 +292,4 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
             ownership["acknowledge_after_commit"] != {
                 "source_scope": source["source_scope"], "source_delivery_id": source["source_delivery_id"]}:
         raise TimerHelperValidationError("timer ingress binding or checkpoint ownership changed")
-    return len(document["cases"]), len(document["clock_vectors"]), len(document["fence_vectors"]), 3
+    return len(document["cases"]), len(document["clock_vectors"]), len(document["fence_vectors"]), 3, 1
