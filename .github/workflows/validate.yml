@@ -22,7 +22,7 @@ jobs:
         uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
         with:
           repository: fruwehq/determa-state-spec
-          ref: 6796b554b976627c68fc746ec5629629aaf2b38e
+          ref: e3167ca96c8296bd2609da17a09c60c2938ea273
           path: .determa-state-spec
           persist-credentials: false
 
@@ -41,20 +41,25 @@ jobs:
           python scripts/validate_conformance.py
           --spec-root .determa-state-spec
 
+      - name: Check merged specification goldens
+        run: >-
+          python scripts/test_spec_goldens.py
+          --spec-root .determa-state-spec
+
       - name: Test closed-code registry validation
         run: python scripts/test_closed_code_registry.py
 
       - name: Test durable-host relational validation
         run: python scripts/test_durable_host_validator.py
 
-      - name: Test version-2 substitution-free validation
-        run: python scripts/test_version2_validator.py
+      - name: Test version-1 substitution-free validation
+        run: python scripts/test_version1_validator.py
 
       - name: Check generated closed-code vectors
         run: python scripts/closed_code_registry.py --check
 
-      - name: Check generated version-2 fixtures
-        run: python scripts/generate_version2_vectors.py --check
+      - name: Check generated version-1 fixtures
+        run: python scripts/generate_version1_vectors.py --check
 
       - name: Check generated durable-host fixtures
         run: python scripts/generate_execution_checkpoint_profile.py --check

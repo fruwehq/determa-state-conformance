@@ -1,0 +1,131 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "complete-host-root",
+  "revision": "3",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+      "namespace": "conformance.execution_checkpoint_complete_host_contract",
+      "root_machine_id": "counter",
+      "root_machine_version": "1",
+      "root_instance_id": "complete-host-root",
+      "creation_id": "complete-host-create",
+      "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "2",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "1",
+      "next_queue_sequence": "1",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_complete_host_contract",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "complete-host-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "complete-host-root",
+              "root_runtime_id": "sha256:6360e56cf0cc015f376a6141031ea64056b829d41f487f5e9ed5cd595a33864a"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:664663d46419e3f189761a7d470f4ba51087b4d2be80d5ba76226f4071c5475d",
+            "machine": {
+              "namespace": "conformance.execution_checkpoint_complete_host_contract",
+              "machine_id": "counter",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/count",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "1"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:caaef4b16fb6fd67fa78bebdaeb11c554046aef5e583f2e29006887886c4d511"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "complete-host-create",
+      "request_digest": "sha256:388e40a2d259d7dc897d16bbe910290786b2e77dea299386d3e234d90d4d3b40",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:63c5a178d608504baf5a37e8380cf286f0b15f3d0588ebf5dc70488de7907e77",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    }
+  ],
+  "next_operation_receipt_sequence": "3",
+  "replay_retention": {
+    "mode": "bounded",
+    "permanent_replay_eligible": false,
+    "pruned_through_receipt_sequence": "2",
+    "policy_identifier": "bounded-native-v1"
+  },
+  "event_identity_tombstones": [
+    {
+      "event_id": "complete-increment",
+      "request_digest": "sha256:81a43a790b929ba5246d924ed52f1cee08e31bad156a21d8e3519597d8805ebf",
+      "request_digest_domain": "determa-inbox-envelope-digest-1",
+      "acceptance_sequence": "0",
+      "terminal_receipt_sequence": "2",
+      "terminal_disposition": "handled"
+    }
+  ],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:2fe6b23655b527106abf76b3b8e5311a7c1a40910d1415558e2b66b48123d17a"
+}

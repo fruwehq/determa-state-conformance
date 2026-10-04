@@ -1,0 +1,243 @@
+{
+  "durable_host_responses_format": "determa.durable_host.responses",
+  "durable_host_responses_schema_version": 1,
+  "responses": {
+    "create": {
+      "kind": "creation",
+      "body": {
+        "result": "committed",
+        "receipt": {
+          "operation_kind": "creation",
+          "receipt_sequence": "0",
+          "creation_id": "checkpoint-lifecycle-create",
+          "request_digest": "sha256:554fc2ea66d3ba8a09cc58aad508b416eda840086f8b0cbb78aaee06f012c688",
+          "committed_revision": "0",
+          "resulting_aggregate_state_digest": "sha256:693b96a21eed89ead021812406fe6c60ddc8b2df3df6790a1f1dd2c4f0e3d043",
+          "status": "running",
+          "fault": null,
+          "emission_references": []
+        }
+      }
+    },
+    "create_replay": {
+      "kind": "creation",
+      "body": {
+        "result": "committed",
+        "receipt": {
+          "operation_kind": "creation",
+          "receipt_sequence": "0",
+          "creation_id": "checkpoint-lifecycle-create",
+          "request_digest": "sha256:554fc2ea66d3ba8a09cc58aad508b416eda840086f8b0cbb78aaee06f012c688",
+          "committed_revision": "0",
+          "resulting_aggregate_state_digest": "sha256:693b96a21eed89ead021812406fe6c60ddc8b2df3df6790a1f1dd2c4f0e3d043",
+          "status": "running",
+          "fault": null,
+          "emission_references": []
+        }
+      }
+    },
+    "create_conflict": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "creation_id_conflict"
+      }
+    },
+    "accept": {
+      "kind": "admission",
+      "body": {
+        "evidence": [
+          {
+            "operation_kind": "acceptance",
+            "receipt_sequence": "1",
+            "event_id": "delivery-increment",
+            "request_digest": "sha256:8422c8a572a52b2c01ac7abbf545789407b8b8ea14fa27517b18ba2597c45e6e",
+            "acceptance_sequence": "0",
+            "accepted_revision": "1",
+            "delivery_mode": "input"
+          }
+        ]
+      }
+    },
+    "process": {
+      "kind": "processing",
+      "body": {
+        "core_result": {
+          "core_step_result_format": "determa.core_step_result",
+          "core_step_result_schema_version": 1,
+          "status": "running",
+          "disposition": "handled",
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:231aa75d35d3eb51638dc72dd6d1817cb36b23076c99f7ca495925c8f9885bf2",
+            "namespace": "conformance.execution_checkpoint_native_lifecycle",
+            "root_machine_id": "counter",
+            "root_machine_version": "1",
+            "root_instance_id": "checkpoint-lifecycle-root",
+            "creation_id": "checkpoint-lifecycle-create",
+            "root_runtime_id": "sha256:07bf436dde8a4445ed660818952cc8471a2232a33a951a24de66c3bfd28f3fef",
+            "migration_sequence": "0",
+            "next_logical_step_sequence": "2",
+            "next_output_sequence": "0",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:07bf436dde8a4445ed660818952cc8471a2232a33a951a24de66c3bfd28f3fef",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:231aa75d35d3eb51638dc72dd6d1817cb36b23076c99f7ca495925c8f9885bf2",
+                    "machine": {
+                      "namespace": "conformance.execution_checkpoint_native_lifecycle",
+                      "machine_id": "counter",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "checkpoint-lifecycle-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "checkpoint-lifecycle-root",
+                    "root_runtime_id": "sha256:07bf436dde8a4445ed660818952cc8471a2232a33a951a24de66c3bfd28f3fef"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:231aa75d35d3eb51638dc72dd6d1817cb36b23076c99f7ca495925c8f9885bf2",
+                  "machine": {
+                    "namespace": "conformance.execution_checkpoint_native_lifecycle",
+                    "machine_id": "counter",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/0/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/0/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/count",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "integer",
+                      "2"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/0/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:2151f66a7408bc40f4ed99cd5c2588db36e9882420957f1dedda2451a55f3b67"
+          },
+          "emissions": [],
+          "lifecycle_dispositions": [],
+          "fault": null,
+          "rejection": null
+        },
+        "receipt": {
+          "operation_kind": "event_terminal",
+          "receipt_sequence": "2",
+          "event_id": "delivery-increment",
+          "request_digest": "sha256:8422c8a572a52b2c01ac7abbf545789407b8b8ea14fa27517b18ba2597c45e6e",
+          "acceptance_sequence": "0",
+          "final_queue_sequence": "0",
+          "committed_revision": "2",
+          "resulting_aggregate_state_digest": "sha256:2151f66a7408bc40f4ed99cd5c2588db36e9882420957f1dedda2451a55f3b67",
+          "outcome": {
+            "disposition": "handled",
+            "status": "running",
+            "fault": null,
+            "rejection": null
+          },
+          "emission_references": []
+        }
+      }
+    },
+    "process_replay": {
+      "kind": "retained_receipt",
+      "body": {
+        "operation_kind": "event_terminal",
+        "receipt_sequence": "2",
+        "event_id": "delivery-increment",
+        "request_digest": "sha256:8422c8a572a52b2c01ac7abbf545789407b8b8ea14fa27517b18ba2597c45e6e",
+        "acceptance_sequence": "0",
+        "final_queue_sequence": "0",
+        "committed_revision": "2",
+        "resulting_aggregate_state_digest": "sha256:2151f66a7408bc40f4ed99cd5c2588db36e9882420957f1dedda2451a55f3b67",
+        "outcome": {
+          "disposition": "handled",
+          "status": "running",
+          "fault": null,
+          "rejection": null
+        },
+        "emission_references": []
+      }
+    },
+    "accept_replay": {
+      "kind": "admission",
+      "body": {
+        "evidence": [
+          {
+            "operation_kind": "acceptance",
+            "receipt_sequence": "1",
+            "event_id": "delivery-increment",
+            "request_digest": "sha256:8422c8a572a52b2c01ac7abbf545789407b8b8ea14fa27517b18ba2597c45e6e",
+            "acceptance_sequence": "0",
+            "accepted_revision": "1",
+            "delivery_mode": "input"
+          }
+        ]
+      }
+    },
+    "process_crash": {
+      "kind": "no_response"
+    },
+    "stale_process": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "checkpoint_revision_conflict"
+      }
+    },
+    "checkpoint_malformed_admission": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "malformed_delivery"
+      }
+    },
+    "wrong_root": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "wrong_root"
+      }
+    },
+    "event_conflict": {
+      "kind": "typed_failure",
+      "body": {
+        "code": "event_id_conflict"
+      }
+    }
+  }
+}

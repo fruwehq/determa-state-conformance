@@ -1,5 +1,5 @@
 format: 1
-namespace: conformance.persistence_native_v2
+namespace: conformance.persistence_native_v1
 events:
   increment:
     direction: input

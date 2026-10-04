@@ -10,13 +10,13 @@ Layout:
 - `conformance/core/01`–`NN` — **core engine** cases: each `<case>/` has
   `machine.yaml` (the format-1 bundle) and `test.yaml` (a scenario or static
   validation assertion).
-- Core portable-state cases use a closed `version2_vectors` driver mode plus strict
-  schema-version-2 JSON artifact manifests. Exact canonical results are compared
+- Core portable-state cases use a closed `version1_vectors` driver mode plus strict
+  schema-version-1 JSON artifact manifests. Exact canonical results are compared
   byte-for-byte.
 - `conformance/profiles/<profile>/` — optional non-core host surfaces. They
   bind only implementations that declare the profile and never override core prose.
 - The execution-checkpoint and persistence profiles use a closed durable-host vector
-  driver. They fix schema-version-2 checkpoint/store results and before/after bytes
+  driver. They fix schema-version-1 checkpoint/store results and before/after bytes
   without defining a language API, production store schema, worker, daemon, or socket
   protocol.
 - Durable-host requests are a closed operation-tagged union with complete executable
@@ -64,13 +64,15 @@ without standardizing a queue plugin or requiring equivalent public engine APIs.
 Assertions in `expect`, including `caller_still_owns_input`, are normative. There is no
 standalone core runtime runner in this repository.
 
-Version-2 vectors exercise the pure aggregate creation, admission, stepping, migration,
+Version-1 vectors exercise the pure aggregate creation, admission, stepping, migration,
 and checkpoint maintenance-migration boundaries from SPEC §§16–17. Their operation
 names are driver-only adapters. Named artifacts, canonical result bytes, audit records,
 dispositions, exact failures, checkpoint revisions, retained receipts, and request
 digests are normative. Existing-checkpoint writers name the exact revision and digest
-they read; replay repeats the original operation and input rather than using a synthetic
-replay or compare-and-swap operation.
+they read; replay repeats the original operation and exact caller input, including its original
+checkpoint identity. The current host checkpoint or store is a separate driver
+observation; `replay_of` binds every retry to its first atomic operation. A crash
+injection is a one-attempt vector boundary, not a caller transaction policy.
 
 The durable source/schema validator uses YAML 1.2 and the specification's Draft
 2020-12 schema:
@@ -81,7 +83,7 @@ python scripts/validate_conformance.py --spec-root ../determa-state-spec
 ```
 
 The workflow uses the same command against an explicitly pinned specification commit.
-The version-2 generators and durable-host profiles are documented in their READMEs.
+The version-1 generators and durable-host profiles are documented in their READMEs.
 Durable validation proves fixture construction, schema dispositions, and cross-artifact
 semantics; it does not replace each implementation's runtime harness.
 

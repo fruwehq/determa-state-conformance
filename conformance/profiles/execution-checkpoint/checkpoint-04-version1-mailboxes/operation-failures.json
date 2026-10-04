@@ -1,0 +1,1 @@
+{"portable_failure_responses_format":"determa.conformance.portable_failure_responses","portable_failure_responses_schema_version":1,"responses":{"native_v1_maintenance_operation_conflict":{"code":"operation_id_conflict","result":"failure"},"native_v1_maintenance_stale_writer":{"code":"checkpoint_revision_conflict","result":"failure"}}}

@@ -1,0 +1,166 @@
+{
+  "durable_host_responses_format": "determa.durable_host.responses",
+  "durable_host_responses_schema_version": 1,
+  "responses": {
+    "process_precommit_failure": {
+      "kind": "no_response"
+    },
+    "process": {
+      "kind": "persistence_commit",
+      "body": {
+        "core_result": {
+          "core_step_result_format": "determa.core_step_result",
+          "core_step_result_schema_version": 1,
+          "status": "running",
+          "disposition": "handled",
+          "state": {
+            "aggregate_state_format": "determa.aggregate_state",
+            "aggregate_state_schema_version": 1,
+            "machine_format": 1,
+            "validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+            "namespace": "conformance.persistence_atomic_v1",
+            "root_machine_id": "counter",
+            "root_machine_version": "1",
+            "root_instance_id": "persistence-2-root",
+            "creation_id": "persistence-2-create",
+            "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069",
+            "migration_sequence": "1",
+            "next_logical_step_sequence": "2",
+            "next_output_sequence": "1",
+            "next_acceptance_sequence": "1",
+            "next_queue_sequence": "1",
+            "runtimes": [
+              {
+                "runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069",
+                "identity_origin": {
+                  "kind": "root",
+                  "definition": {
+                    "validated_bundle_fingerprint": "sha256:a0d76df77f63ded6e0a83cede76cbacf5f1c4216b3ab13fe35381378997b5c09",
+                    "machine": {
+                      "namespace": "conformance.persistence_atomic_v1",
+                      "machine_id": "counter",
+                      "machine_version": "1",
+                      "root_definition_pointer": "/machines/0/root"
+                    }
+                  },
+                  "root_instance_id": "persistence-2-root"
+                },
+                "target_identity": {
+                  "root": {
+                    "root_instance_id": "persistence-2-root",
+                    "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069"
+                  }
+                },
+                "current_definition": {
+                  "validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+                  "machine": {
+                    "namespace": "conformance.persistence_atomic_v1",
+                    "machine_id": "counter",
+                    "machine_version": "1",
+                    "root_definition_pointer": "/machines/0/root"
+                  }
+                },
+                "relation": {
+                  "kind": "root"
+                },
+                "status": "running",
+                "active_leaf_state_definition_pointers": [
+                  "/machines/0/root"
+                ],
+                "active_state_activations": [
+                  {
+                    "state_definition_pointer": "/machines/0/root",
+                    "activation_sequence": "0"
+                  }
+                ],
+                "variables": [
+                  {
+                    "variable_declaration_pointer": "/machines/0/root/variables/count",
+                    "declaring_state_activation_sequence": "0",
+                    "value": [
+                      "integer",
+                      "0"
+                    ]
+                  }
+                ],
+                "history": [],
+                "next_spawn_sequence": "0",
+                "next_state_activation_sequences": [
+                  {
+                    "definition_pointer": "/machines/0/root",
+                    "next_sequence": "1"
+                  }
+                ],
+                "next_component_activation_sequences": [],
+                "fault": null,
+                "ready_mailbox": [],
+                "deferred_mailbox": []
+              }
+            ],
+            "aggregate_state_digest": "sha256:aaef64d1c9382264258d3983ac27dcad4bc49f4ff3b2febcd3d4760247b2be07"
+          },
+          "emissions": [
+            {
+              "effect_id": "sha256:ab46f215c95b2dcc56115ef6e7ae8ec4f925cb6dee35617ceae24ce51d9b3678",
+              "sequence": "0",
+              "event": "output_record",
+              "payload": [
+                "map",
+                [
+                  [
+                    "aggregate_version",
+                    [
+                      "integer",
+                      "1"
+                    ]
+                  ]
+                ]
+              ],
+              "correlation_id": "persistence-2-event"
+            }
+          ],
+          "lifecycle_dispositions": [],
+          "fault": null,
+          "rejection": null
+        },
+        "receipt": {
+          "operation_kind": "event_terminal",
+          "receipt_sequence": "2",
+          "event_id": "persistence-2-event",
+          "request_digest": "sha256:80a23d6906302790c8c7ebde596a33da5c7b5c5428f6471e664db38fba7ca42d",
+          "acceptance_sequence": "0",
+          "final_queue_sequence": "0",
+          "committed_revision": "1",
+          "resulting_aggregate_state_digest": "sha256:aaef64d1c9382264258d3983ac27dcad4bc49f4ff3b2febcd3d4760247b2be07",
+          "outcome": {
+            "disposition": "handled",
+            "status": "running",
+            "fault": null,
+            "rejection": null
+          },
+          "emission_references": [
+            {
+              "kind": "external_outbox",
+              "emission_index": "0",
+              "effect_id": "sha256:ab46f215c95b2dcc56115ef6e7ae8ec4f925cb6dee35617ceae24ce51d9b3678"
+            }
+          ]
+        },
+        "migration_audit_records": [
+          {
+            "migration_audit_record_schema_version": 1,
+            "root_instance_id": "persistence-2-root",
+            "root_runtime_id": "sha256:8b5857acc56a83daef173a866786dbd15e92522d22add60c0b38e0fed099d069",
+            "migration_sequence": "1",
+            "source_validated_bundle_fingerprint": "sha256:a0d76df77f63ded6e0a83cede76cbacf5f1c4216b3ab13fe35381378997b5c09",
+            "target_validated_bundle_fingerprint": "sha256:7b34c6e5af871061dd87a363e13609a4a2da5b92663153b81ef3eea2d86aaf5b",
+            "migration_descriptor_digest": "sha256:19e485f578aa7063d34769e43073ecbab0ff8deed0862eca23eebdacb91800ec",
+            "source_aggregate_state_digest": "sha256:eb318b37113e7ed045f340d7c485c04ff5e3d2e69ad1e1636c89b736fa8cfa1b",
+            "target_aggregate_state_digest": "sha256:bd01e8aea4e522c862e4020b0aeb588b57a3c71efd178a92f168702ce9f6ba6b",
+            "result_code": "migration_applied"
+          }
+        ]
+      }
+    }
+  }
+}

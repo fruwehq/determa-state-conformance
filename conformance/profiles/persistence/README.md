@@ -1,7 +1,7 @@
 # Persistence durable host profile
 
 This profile fixes the transaction trace required by SPEC sections 16.12 and 17.9.
-Each case names exact schema-version-2 store snapshots, operation inputs, outcomes, and
+Each case names exact schema-version-1 store snapshots, operation inputs, outcomes, and
 ordered host calls. Broker acknowledgement is an operation/call-trace observation after
 commit, never a member of the durable store snapshot or portable checkpoint bytes.
 
@@ -37,3 +37,15 @@ regardless of how many aggregate, inbox, outbox, audit, and application records 
 commits.
 Quarantine release requests name the retained event, digest, reason, scope, and release
 authorization.
+
+Every vector names a closed exact operation response separately from its durable
+store snapshot and call trace. The first committed processing call returns the
+complete core step result, retained terminal receipt, and migration audit records.
+Equal redelivery returns the retained terminal receipt without another core call.
+The `replay_of` relation requires the exact original caller request, including its
+stale checkpoint identity and `transaction_inputs`; `store_before` supplies current
+host state separately. A crash `failure_boundary` applies once to that attempt.
+Quarantine returns the typed code and quarantine record; release returns its direct
+acknowledgement. A crash has an explicit no-response
+expectation. The runner records those values directly from the production call or
+typed error, never by rereading the store or consulting expected fixtures.

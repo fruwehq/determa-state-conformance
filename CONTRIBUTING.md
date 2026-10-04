@@ -12,7 +12,7 @@ Add one narrowly focused core directory under `conformance/core/`:
 - additional bundle documents are allowed only when `test.yaml` names them explicitly.
 
 Portable-state cases add JSON artifacts through the closed `artifacts.documents`
-manifest and use `version2_vectors` instead of ordinary runtime `steps`. Every JSON
+manifest and use `version1_vectors` instead of ordinary runtime `steps`. Every JSON
 file must be named exactly once. `canonical_of` files are exact RFC 8785 byte
 expectations. Semantic-negative artifacts must be resealed with their canonical outer
 digest so the validator proves the intended defect rather than a digest mismatch.

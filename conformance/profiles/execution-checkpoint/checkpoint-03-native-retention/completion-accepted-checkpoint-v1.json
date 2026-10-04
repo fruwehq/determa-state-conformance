@@ -1,0 +1,174 @@
+{
+  "execution_checkpoint_format": "determa.execution_checkpoint",
+  "execution_checkpoint_schema_version": 1,
+  "root_instance_id": "checkpoint-retention-root",
+  "revision": "4",
+  "root_record": {
+    "status": "retained",
+    "aggregate_state": {
+      "aggregate_state_format": "determa.aggregate_state",
+      "aggregate_state_schema_version": 1,
+      "machine_format": 1,
+      "validated_bundle_fingerprint": "sha256:dd1beacb40c82fe15cecec782145ef3ea85d0b1b8e3bf003803ab5f989769b58",
+      "namespace": "conformance.execution_checkpoint_native_retention",
+      "root_machine_id": "counter",
+      "root_machine_version": "1",
+      "root_instance_id": "checkpoint-retention-root",
+      "creation_id": "checkpoint-retention-create",
+      "root_runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df",
+      "migration_sequence": "0",
+      "next_logical_step_sequence": "2",
+      "next_output_sequence": "0",
+      "next_acceptance_sequence": "2",
+      "next_queue_sequence": "2",
+      "runtimes": [
+        {
+          "runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df",
+          "identity_origin": {
+            "kind": "root",
+            "definition": {
+              "validated_bundle_fingerprint": "sha256:dd1beacb40c82fe15cecec782145ef3ea85d0b1b8e3bf003803ab5f989769b58",
+              "machine": {
+                "namespace": "conformance.execution_checkpoint_native_retention",
+                "machine_id": "counter",
+                "machine_version": "1",
+                "root_definition_pointer": "/machines/0/root"
+              }
+            },
+            "root_instance_id": "checkpoint-retention-root"
+          },
+          "target_identity": {
+            "root": {
+              "root_instance_id": "checkpoint-retention-root",
+              "root_runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df"
+            }
+          },
+          "current_definition": {
+            "validated_bundle_fingerprint": "sha256:dd1beacb40c82fe15cecec782145ef3ea85d0b1b8e3bf003803ab5f989769b58",
+            "machine": {
+              "namespace": "conformance.execution_checkpoint_native_retention",
+              "machine_id": "counter",
+              "machine_version": "1",
+              "root_definition_pointer": "/machines/0/root"
+            }
+          },
+          "relation": {
+            "kind": "root"
+          },
+          "status": "running",
+          "active_leaf_state_definition_pointers": [
+            "/machines/0/root/states/active"
+          ],
+          "active_state_activations": [
+            {
+              "state_definition_pointer": "/machines/0/root",
+              "activation_sequence": "0"
+            },
+            {
+              "state_definition_pointer": "/machines/0/root/states/active",
+              "activation_sequence": "0"
+            }
+          ],
+          "variables": [
+            {
+              "variable_declaration_pointer": "/machines/0/root/variables/count",
+              "declaring_state_activation_sequence": "0",
+              "value": [
+                "integer",
+                "1"
+              ]
+            }
+          ],
+          "history": [],
+          "next_spawn_sequence": "0",
+          "next_state_activation_sequences": [
+            {
+              "definition_pointer": "/machines/0/root",
+              "next_sequence": "1"
+            },
+            {
+              "definition_pointer": "/machines/0/root/states/active",
+              "next_sequence": "1"
+            }
+          ],
+          "next_component_activation_sequences": [],
+          "fault": null,
+          "ready_mailbox": [
+            {
+              "envelope": {
+                "event": "complete",
+                "event_id": "retention-complete",
+                "cause_id": "retention-complete",
+                "source": {
+                  "host": true
+                },
+                "target": {
+                  "root": {
+                    "root_instance_id": "checkpoint-retention-root",
+                    "root_runtime_id": "sha256:999051af097c6ea2c1d6cc64203cd14ee10042f0528c794f75a4e799b4a841df"
+                  }
+                },
+                "payload": [
+                  "map",
+                  []
+                ]
+              },
+              "envelope_digest": "sha256:5a80eaf529dc83adee795a67634b6f89b5b6dcae1b50adc8728609afd8140df4",
+              "delivery_mode": "input",
+              "acceptance_sequence": "1",
+              "queue_sequence": "1",
+              "deferral_count": "0"
+            }
+          ],
+          "deferred_mailbox": []
+        }
+      ],
+      "aggregate_state_digest": "sha256:d56432b10a217d56f2bad340afed2e37416b7ad1c209c40e2fad5f3eb0c63ac3"
+    }
+  },
+  "operation_receipts": [
+    {
+      "operation_kind": "creation",
+      "receipt_sequence": "0",
+      "creation_id": "checkpoint-retention-create",
+      "request_digest": "sha256:1a3d5af0740b6da1cdd393a3de7cd6270459e45d2ccf39c2d1832e87eb3bda2d",
+      "committed_revision": "0",
+      "resulting_aggregate_state_digest": "sha256:55d913f6b1ca620334ab80c1947da8949d3e8798c01c66ccacf926cc526cf763",
+      "status": "running",
+      "fault": null,
+      "emission_references": []
+    },
+    {
+      "operation_kind": "acceptance",
+      "receipt_sequence": "3",
+      "event_id": "retention-complete",
+      "request_digest": "sha256:5a80eaf529dc83adee795a67634b6f89b5b6dcae1b50adc8728609afd8140df4",
+      "acceptance_sequence": "1",
+      "accepted_revision": "4",
+      "delivery_mode": "input"
+    }
+  ],
+  "next_operation_receipt_sequence": "4",
+  "replay_retention": {
+    "mode": "bounded",
+    "permanent_replay_eligible": false,
+    "pruned_through_receipt_sequence": "2",
+    "policy_identifier": "bounded-native-v1"
+  },
+  "event_identity_tombstones": [
+    {
+      "event_id": "retention-event",
+      "request_digest": "sha256:1f56aeca32d5eb22aa382b08effd234d64caf5fe0ea11a948f56290cde8dcd56",
+      "request_digest_domain": "determa-inbox-envelope-digest-1",
+      "acceptance_sequence": "0",
+      "terminal_receipt_sequence": "2",
+      "terminal_disposition": "handled"
+    }
+  ],
+  "pending_outbox_intents": [],
+  "next_outbox_terminal_sequence": "0",
+  "terminal_outbox_records": [],
+  "outbox_effect_tombstones": [],
+  "migration_audit_records": [],
+  "execution_checkpoint_digest": "sha256:9cbbd49a19fd3a1c05a95d5e8fa839a54f8a1fb7b48268dcdca78ba12c188b1e"
+}

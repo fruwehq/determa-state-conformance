@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/version1-vectors.schema.json",
+  "title": "Determa State version-1 conformance vectors",
+  "type": "object",
+  "required": ["title", "artifacts", "version1_vectors"],
+  "additionalProperties": false,
+  "properties": {
+    "title": { "type": "string", "minLength": 1 },
+    "static": { "type": "object" },
+    "artifacts": { "type": "object" },
+    "version1_vectors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/vector" }
+    }
+  },
+  "$defs": {
+    "name": { "type": "string", "pattern": "^[a-z][a-z0-9_]*$" },
+    "jsonFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.json$" },
+    "yamlFile": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.yaml$" },
+    "artifactPointer": {
+      "type": "object",
+      "required": ["file", "pointer"],
+      "additionalProperties": false,
+      "properties": {
+        "file": { "$ref": "#/$defs/jsonFile" },
+        "pointer": { "type": "string", "pattern": "^(?:/(?:[^~/]|~[01])*)+$" }
+      }
+    },
+    "success": {
+      "type": "object",
+      "required": ["result", "exact_result_file"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "success" },
+        "exact_result_file": { "$ref": "#/$defs/jsonFile" }
+      }
+    },
+    "failure": {
+      "type": "object",
+      "required": ["result", "code", "unchanged_file", "exact_failure_response"],
+      "additionalProperties": false,
+      "properties": {
+        "result": { "const": "failure" },
+        "code": { "type": "string", "minLength": 1 },
+        "unchanged_file": { "$ref": "#/$defs/jsonFile" },
+        "exact_failure_response": { "$ref": "#/$defs/artifactPointer" },
+        "caller_still_owns_input": { "const": true }
+      }
+    },
+    "vector": {
+      "type": "object",
+      "required": ["name", "covers", "operation", "request_file", "request_pointer", "expect"],
+      "additionalProperties": false,
+      "properties": {
+        "name": { "$ref": "#/$defs/name" },
+        "covers": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/name" }
+        },
+        "operation": {
+          "enum": [
+            "create_v1",
+            "round_trip_aggregate_v1",
+            "restore_package_v1",
+            "admit_v1",
+            "step_v1",
+            "migrate_aggregate_v1",
+            "migrate_then_process_v1",
+            "checkpoint_migrate_v1"
+          ]
+        },
+        "bundle": { "$ref": "#/$defs/yamlFile" },
+        "state_before": { "$ref": "#/$defs/jsonFile" },
+        "package_file": { "$ref": "#/$defs/jsonFile" },
+        "checkpoint_before": {
+          "oneOf": [{ "$ref": "#/$defs/jsonFile" }, { "type": "null" }]
+        },
+        "checkpoint_after": { "$ref": "#/$defs/jsonFile" },
+        "migration_state_after": { "$ref": "#/$defs/jsonFile" },
+        "request_file": { "$ref": "#/$defs/jsonFile" },
+        "request_pointer": {
+          "type": "string",
+          "pattern": "^(?:/(?:[^~/]|~[01])*)*$"
+        },
+        "descriptor_file": { "$ref": "#/$defs/jsonFile" },
+        "descriptor_files": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/jsonFile" }
+        },
+        "expect": { "oneOf": [{ "$ref": "#/$defs/success" }, { "$ref": "#/$defs/failure" }] }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "operation": { "const": "checkpoint_migrate_v1" },
+              "expect": {
+                "properties": { "result": { "const": "success" } },
+                "required": ["result"]
+              }
+            },
+            "required": ["operation", "expect"]
+          },
+          "then": { "required": ["checkpoint_after"] }
+        },
+        {
+          "if": {
+            "properties": {
+              "operation": { "const": "migrate_then_process_v1" },
+              "expect": {
+                "properties": { "result": { "const": "success" } },
+                "required": ["result"]
+              }
+            },
+            "required": ["operation", "expect"]
+          },
+          "then": { "required": ["migration_state_after"] }
+        }
+      ]
+    }
+  }
+}
