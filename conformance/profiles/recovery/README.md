@@ -40,8 +40,8 @@ advertised only after the same configured host independently passes the §18
 authority, §19 effect, and §21 delivery production profiles for its exact
 installation, topology, provider closure, authority token, and required
 participants. The timer profile applies only when a timer participant is
-declared. Issue #80's delivery implementation is still a dependency for the
-hosted claim. Cross-authority safe relocation is unavailable without separately
+declared. The merged §21 delivery runner supplies the hosted proof gate.
+Cross-authority safe relocation is unavailable without separately
 proved continuity. Static fixture success is never a production certificate.
 
 For an advertised local single-authority topology, the host runs
