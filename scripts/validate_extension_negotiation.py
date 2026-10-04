@@ -77,6 +77,29 @@ def validators(spec_root: Path) -> dict[str, Draft202012Validator]:
         Draft202012Validator.check_schema(schema)
         schemas[kind] = schema
         resources.extend([(name, Resource.from_contents(schema)), (schema["$id"], Resource.from_contents(schema))])
+    # Each category has one closed capability vocabulary. Comparing the three
+    # independently authored schemas catches a descriptor-only addition such as
+    # source_ordered, as well as future drift in reports or requirements.
+    def capability_sets(kind: str, field: str, *, array: bool) -> dict[str, set[str]]:
+        schema = schemas[kind]
+        categories = schema["properties"]["category"]["enum"]
+        by_category = {}
+        for branch in schema["allOf"]:
+            category = branch["if"]["properties"]["category"]["const"]
+            require(category in categories and category not in by_category,
+                    f"{kind}: duplicate or unknown category {category}")
+            capability = branch["then"]["properties"][field]
+            values = capability["items"]["enum"] if array else capability["enum"]
+            require(len(values) == len(set(values)), f"{kind}: duplicate {category} capability")
+            by_category[category] = set(values)
+        require(set(by_category) == set(categories) and len(categories) == 11,
+                f"{kind}: category coverage mismatch")
+        return by_category
+
+    descriptor_capabilities = capability_sets("descriptor", "supported_capabilities", array=True)
+    for kind, field, array in (("report", "claims", True), ("requirement", "capability", False)):
+        require(capability_sets(kind, field, array=array) == descriptor_capabilities,
+                f"{kind}: capability vocabulary differs from descriptor")
     registry = Registry().with_resources(resources)
     return {kind: Draft202012Validator(schema, registry=registry) for kind, schema in schemas.items()}
 
@@ -313,7 +336,7 @@ def validate_document(document: dict, spec_root: Path, profile: Path = PROFILE, 
     require(document["driver_operations"] == ["register", "validate_configuration", "capabilities", "health", "negotiate"], "driver operations mismatch")
     source = json.loads((spec_root / SPEC_CASES).read_text())
     required = {case["name"] for case in source["cases"]}
-    require(len(required) == 13, "normative source coverage changed")
+    require(len(required) == 15, "normative source coverage changed")
     seen = set()
     covered = set()
     checks = validators(spec_root)
@@ -347,7 +370,7 @@ def validate_document(document: dict, spec_root: Path, profile: Path = PROFILE, 
         computed = outcome(vector, checks, digest)
         require(exact_json_equal(computed, vector["expected"]), f"{name}: expected {vector['expected']!r}, computed {computed!r}")
     require(covered == required, f"normative coverage mismatch: {sorted(required - covered)}")
-    require(len(seen) == 24, "extension vector coverage mismatch")
+    require(len(seen) == 26, "extension vector coverage mismatch")
     public_seen = set()
     for vector in document["public_vectors"]:
         strict_keys(vector, {"id", "installation", "registration", "registration_bytes", "configuration", "requirement", "untrusted_candidate_report", "lookup_uri", "expected", "expected_stages", "expected_core_mutations"}, "public vector")

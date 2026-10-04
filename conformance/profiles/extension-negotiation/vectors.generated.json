@@ -1,7 +1,7 @@
 {
   "format": "determa.extension-negotiation-v1",
   "schema_version": 1,
-  "specification_commit": "6bd25e3fcdf068af861aa289903a8489bd8f0139",
+  "specification_commit": "6207362e879ccca70f709e1eb4cc90448d910c0b",
   "provider_closure": {
     "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6",
     "closure_files": [
@@ -1027,6 +1027,193 @@
       "expected": {
         "status": "rejected",
         "code": "extension_capability_mismatch"
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "configured_transport_source_order_satisfied",
+      "source_case": "configured_transport_source_order_satisfied",
+      "registrations": [
+        {
+          "category": "transport",
+          "provider_reference": {
+            "identifier": "sample.ordered-transport",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "source_ordered"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"transport\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.ordered-transport\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"source_ordered\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "transport",
+          "provider_reference": {
+            "identifier": "sample.ordered-transport",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "source_ordered"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "transport",
+          "provider_reference": {
+            "identifier": "sample.ordered-transport",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "source_ordered"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "transport",
+            "provider_reference": {
+              "identifier": "sample.ordered-transport",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:86fdf5adf6985f16ce5c39fb1d59ef59e972b9a3c0c0c4f30b3b5ab4adbccc83",
+            "claims": [
+              "source_ordered"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "accepted",
+        "reports": [
+          {
+            "category": "transport",
+            "provider_reference": {
+              "identifier": "sample.ordered-transport",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "health": "healthy",
+            "claims": [
+              "source_ordered"
+            ]
+          }
+        ],
+        "effective": {}
+      },
+      "expected_core_mutations": 0
+    },
+    {
+      "id": "unknown_transport_capability",
+      "source_case": "unknown_transport_capability",
+      "registrations": [
+        {
+          "category": "transport",
+          "provider_reference": {
+            "identifier": "sample.ordered-transport",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "interface_version": 1,
+          "supported_capabilities": [
+            "invented_source_order"
+          ]
+        }
+      ],
+      "registration_bytes": [
+        "{\"category\":\"transport\",\"interface_version\":1,\"provider_reference\":{\"content_digest\":\"sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6\",\"identifier\":\"sample.ordered-transport\",\"version\":\"1.2.3\"},\"supported_capabilities\":[\"invented_source_order\"]}"
+      ],
+      "configurations": [
+        {
+          "category": "transport",
+          "provider_reference": {
+            "identifier": "sample.ordered-transport",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "configuration": {
+            "instance_id": "primary",
+            "claims": [
+              "source_ordered"
+            ],
+            "health": "healthy"
+          }
+        }
+      ],
+      "requirements": [
+        {
+          "category": "transport",
+          "provider_reference": {
+            "identifier": "sample.ordered-transport",
+            "version": "1.2.3",
+            "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+          },
+          "instance_id": "primary",
+          "capability": "source_ordered"
+        }
+      ],
+      "lookup_uri": null,
+      "operation": {
+        "kind": "negotiate",
+        "requested_profile": null,
+        "projection": []
+      },
+      "hypothetical_verification": {
+        "proofs": [
+          {
+            "category": "transport",
+            "provider_reference": {
+              "identifier": "sample.ordered-transport",
+              "version": "1.2.3",
+              "content_digest": "sha256:b529448c40efbedfeb7a726f59c45d88848234547f10488764c285247e9a08f6"
+            },
+            "instance_id": "primary",
+            "configuration_digest": "sha256:86fdf5adf6985f16ce5c39fb1d59ef59e972b9a3c0c0c4f30b3b5ab4adbccc83",
+            "claims": [
+              "source_ordered"
+            ]
+          }
+        ],
+        "host_guarantees": {
+          "deterministic": true,
+          "pure": true,
+          "portable": true,
+          "semantically_introspectable": true,
+          "process_contained": true
+        },
+        "weak_profile_opt_in": false
+      },
+      "expected": {
+        "status": "rejected",
+        "code": "invalid_extension_descriptor"
       },
       "expected_core_mutations": 0
     },
