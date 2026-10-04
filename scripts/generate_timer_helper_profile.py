@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 from pathlib import Path
 
-from generate_version1_vectors import canonical, digest
+from ruamel.yaml import YAML
+from generate_version1_vectors import canonical, digest, bundle_fingerprint_document, seal_checkpoint
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / "conformance/profiles/timer-helper/timer-01-external-helper"
@@ -50,7 +52,9 @@ def render(spec_root: Path):
     clock = json.loads((spec_root / NORM / "timer-clock-cases-v1.json").read_text())
     admission = json.loads((spec_root / NORM / "timer-committed-admission-v1.json").read_text())
     delivery = json.loads((spec_root / "examples/delivery/execution-checkpoint-transfer-v1.json").read_text())
+    target_source = (spec_root / "examples/portable-event-deferral.yaml").read_bytes()
     first = source["cases"][0]
+    intent_test = YAML(typ="safe").load((CASE / "test.yaml").read_text())
     rows = []
     for sample in [*source["cases"], *source["early_errors"]]:
         name = sample["name"]
@@ -113,13 +117,107 @@ def render(spec_root: Path):
                      "before": {"helper_artifact": before, "checkpoint": checkpoint_before},
                      "expected_result": expected,
                      "after": {"helper_artifact": after, "checkpoint": checkpoint_after},
-                     "expected_calls": {"clock": int(name in ("schedule_first", "duration_overflow", "clock_unavailable", "claim_at_deadline", "claim_before_deadline", "uncommitted_fire_recovery", "ambiguous_fire_fate")),
+                     "expected_calls": {"clock": int(name in ("schedule_first", "duration_overflow", "clock_unavailable", "claim_at_deadline", "claim_before_deadline", "uncommitted_fire_recovery", "ambiguous_fire_fate", "coordinated_fire_commits", "admission_rejected_before_commit")),
                                         "admission": int(name == "coordinated_fire_commits")}})
+    clock_vectors = []
+    def add_clock(label, field, value, now, deadline=None, error=None):
+        request = copy.deepcopy(first["request"])
+        request["operation_id"] = "clock-" + label
+        request["arguments"].pop("delay_nanoseconds", None)
+        request["arguments"][field] = value
+        request["request_digest"] = digest(["determa-timer-request-1",
+            {key: item for key, item in request.items() if key != "request_digest"}])
+        result = copy.deepcopy(first["expected"])
+        result["operation_id"] = request["operation_id"]
+        if error is not None:
+            result.update(status="rejected", record_revision=None, event_id=None,
+                          error_code=error, result_digest=None)
+            after = artifact()
+        else:
+            result["result_digest"] = digest(["determa-timer-result-1", request["request_digest"],
+                {key: item for key, item in result.items() if key != "result_digest"}])
+            record = record_from(request, {"record_state": "pending"}, first)
+            record.update(schedule_request_digest=request["request_digest"], deadline_at=deadline)
+            after = artifact([record], [{"operation_id": request["operation_id"],
+                "request_digest": request["request_digest"], "result": result}])
+        clock_vectors.append({"id": label, "request": request, "trusted_now": now,
+            "claim_expires_at": None, "previous_attempt_fate": None,
+            "admission_disposition": None,
+            "before": {"helper_artifact": artifact(), "checkpoint": None},
+            "expected_result": result,
+            "after": {"helper_artifact": after, "checkpoint": None},
+            "expected_calls": {"clock": int(field == "delay_nanoseconds" and
+                                    error != "invalid_timer_time"), "admission": 0}})
+    for index, value_ in enumerate(clock["valid_absolute"]):
+        add_clock(f"valid_absolute_{index}", "deadline_at", value_, "0", deadline=value_)
+    for index, value_ in enumerate(clock["valid_duration"]):
+        add_clock(f"valid_duration_{index}", "delay_nanoseconds", value_, "0", deadline=value_)
+    for index, value_ in enumerate(clock["invalid_absolute"]):
+        add_clock(f"invalid_absolute_{index}", "deadline_at", value_, "0", error="invalid_timer_time")
+    for index, value_ in enumerate(clock["invalid_duration"]):
+        add_clock(f"invalid_duration_{index}", "delay_nanoseconds", value_, "0", error="invalid_timer_time")
+    for sample in clock["cases"]:
+        name = sample["name"]
+        deadline = sample.get("expected_deadline")
+        add_clock(name, "delay_nanoseconds", sample["duration"], sample["now"],
+                  deadline=deadline, error=sample.get("expected_error"))
     value = {"fixture_format": "determa.timer_helper.conformance", "fixture_schema_version": 1,
              "specification_commit": "6207362e879ccca70f709e1eb4cc90448d910c0b",
              "machine_file": "machine.yaml", "setup_test_file": "test.yaml",
-             "clock_cases": clock, "cases": rows}
+             "clock_cases": clock, "clock_vectors": clock_vectors, "cases": rows}
+    fire_id = admission["fire_event_id"]
+    envelope_digest = admission["envelope_digest"]
+    after_step = copy.deepcopy(delivery["after_unhandled"])
+    for receipt in after_step["operation_receipts"]:
+        if receipt.get("event_id") == "received-1":
+            receipt["event_id"] = fire_id
+            receipt["request_digest"] = envelope_digest
+    after_step = seal_checkpoint(after_step)
+    first_row = rows[0]
+    claim_row = next(row for row in rows if row["id"] == "claim_at_deadline")
+    fire_row = next(row for row in rows if row["id"] == "coordinated_fire_commits")
+    cancel_row = next(row for row in rows if row["id"] == "cancel_pending")
+    helper_after_fire = copy.deepcopy(claim_row["after"]["helper_artifact"])
+    helper_after_fire["records"][0].update(state="fired", revision="3",
+        worker_principal=None, expires_at=None,
+        admission_receipt_digest=admission["admission_receipt_digest"])
+    helper_after_fire["operation_receipts"].append({"operation_id": fire_row["request"]["operation_id"],
+        "request_digest": fire_row["request"]["request_digest"], "result": fire_row["expected_result"]})
+    helper_after_fire = artifact(helper_after_fire["records"], helper_after_fire["operation_receipts"])
+    create = {"operation": "create_v1", "bundle": {"bundle_file": "target-machine.yaml",
+              "bundle_source_digest": "sha256:" + hashlib.sha256(target_source).hexdigest(),
+              "validated_bundle_fingerprint": bundle_fingerprint_document(YAML(typ="safe").load(target_source))},
+              "machine_id": "transaction_server", "machine_version": "1",
+              "root_instance_id": "server-1", "creation_id": "create-server-1",
+              "bindings": {"input": {}, "external": {}}}
+    lifecycle = {"fixture_format": "determa.timer_helper.lifecycle", "fixture_schema_version": 1,
+                 "create_request": create,
+                 "intent_inputs": [intent_test["steps"][0]["send"]],
+                 "cancel_intent_inputs": [intent_test["steps"][0]["send"], intent_test["steps"][1]["send"]],
+                 "expected_intent_emissions": intent_test["steps"][0]["expect"]["emissions"],
+                 "expected_cancel_intent_emissions": [*intent_test["steps"][0]["expect"]["emissions"],
+                                                       *intent_test["steps"][1]["expect"]["emissions"]],
+                 "schedule_request": first_row["request"],
+                 "cancel_request": cancel_row["request"],
+                 "claim_request": claim_row["request"],
+                 "complete_request": fire_row["request"],
+                 "step_request": {"operation": "step_v1", "target_runtime_id":
+                                  first_row["request"]["root_runtime_id"]},
+                 "trusted_clock_sequence": ["100", "100", "110", "120"],
+                 "expected_create_checkpoint": delivery["before_admission"],
+                 "expected_helper_after_schedule": first_row["after"]["helper_artifact"],
+                 "expected_helper_after_cancel": cancel_row["after"]["helper_artifact"],
+                 "expected_helper_after_claim": claim_row["after"]["helper_artifact"],
+                 "expected_helper_after_fire": helper_after_fire,
+                 "expected_admitted_checkpoint": admission["committed_checkpoint"],
+                 "expected_after_step_checkpoint": after_step,
+                 "expected_results": [first_row["expected_result"], claim_row["expected_result"], fire_row["expected_result"]],
+                 "expected_fire_envelope": admission["committed_checkpoint"]["root_record"]["aggregate_state"]["runtimes"][0]["ready_mailbox"][0]["envelope"]}
     outputs = {"vectors.generated.json": canonical(value) + b"\n",
+               "lifecycle.generated.json": canonical(lifecycle) + b"\n",
+               "archive-export.generated.json": canonical(json.loads((spec_root / NORM / "timer-archive-export-v1.json").read_text())) + b"\n",
+               "archive-stage.generated.json": canonical(json.loads((spec_root / NORM / "timer-archive-stage-v1.json").read_text())) + b"\n",
+               "target-machine.yaml": target_source,
                "machine.yaml": (CASE / "machine.yaml").read_bytes(),
                "test.yaml": (CASE / "test.yaml").read_bytes()}
     return outputs

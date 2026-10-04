@@ -9,9 +9,10 @@
     "machine_file": {"const": "machine.yaml"},
     "setup_test_file": {"const": "test.yaml"},
     "clock_cases": {"type": "object"},
+    "clock_vectors": {"type": "array", "minItems": 25, "maxItems": 25, "items": {"$ref": "#/$defs/case"}},
     "cases": {"type": "array", "minItems": 24, "items": {"$ref": "#/$defs/case"}}
   },
-  "required": ["fixture_format", "fixture_schema_version", "specification_commit", "machine_file", "setup_test_file", "clock_cases", "cases"],
+  "required": ["fixture_format", "fixture_schema_version", "specification_commit", "machine_file", "setup_test_file", "clock_cases", "clock_vectors", "cases"],
   "additionalProperties": false,
   "$defs": {
     "snapshot": {"type": "object", "properties": {

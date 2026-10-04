@@ -4,6 +4,19 @@ artifacts:
     - file: vectors.generated.json
       kind: json_value
       valid: true
+    - file: archive-export.generated.json
+      kind: json_value
+      valid: true
+    - file: archive-stage.generated.json
+      kind: json_value
+      valid: true
+    - file: lifecycle.generated.json
+      kind: json_value
+      valid: true
+static:
+  documents:
+    - file: target-machine.yaml
+      valid: true
 steps:
   - send: { event: begin }
     expect:

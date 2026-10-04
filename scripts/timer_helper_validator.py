@@ -9,7 +9,9 @@ from referencing import Registry, Resource
 from ruamel.yaml import YAML
 
 from generate_timer_helper_profile import CASE, render, artifact
-from generate_version1_vectors import canonical, digest
+from generate_version1_vectors import canonical, digest, typed_value
+from validate_portable_archive import (ArchiveValidationError, validate_archive_integrity,
+                                       validator_registry, schema_valid)
 
 
 class TimerHelperValidationError(ValueError):
@@ -41,6 +43,14 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
     samples = [*source["cases"], *source["early_errors"]]
     if [row["id"] for row in document["cases"]] != [row["name"] for row in samples]:
         raise TimerHelperValidationError("normative coverage changed")
+    clocks = document["clock_cases"]
+    expected_clock_names = ([f"valid_absolute_{index}" for index in range(len(clocks["valid_absolute"]))] +
+                            [f"valid_duration_{index}" for index in range(len(clocks["valid_duration"]))] +
+                            [f"invalid_absolute_{index}" for index in range(len(clocks["invalid_absolute"]))] +
+                            [f"invalid_duration_{index}" for index in range(len(clocks["invalid_duration"]))] +
+                            [item["name"] for item in clocks["cases"]])
+    if [row["id"] for row in document["clock_vectors"]] != expected_clock_names:
+        raise TimerHelperValidationError("clock boundary coverage changed")
     machine = YAML(typ="safe").load((case / "machine.yaml").read_text())
     setup = YAML(typ="safe").load((case / "test.yaml").read_text())
     if list(Draft202012Validator(spec_schemas["machine.schema.json"], registry=registry).iter_errors(machine)):
@@ -74,4 +84,112 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
                 raise TimerHelperValidationError("coordinated fire did not admit atomically")
         elif before["checkpoint"] != after["checkpoint"]:
             raise TimerHelperValidationError(f"{name}: unexpected checkpoint mutation")
+    for row in document["clock_vectors"]:
+        request, result = row["request"], row["expected_result"]
+        if request["request_digest"] != digest(["determa-timer-request-1",
+                {key: value for key, value in request.items() if key != "request_digest"}]):
+            raise TimerHelperValidationError(f"{row['id']}: clock request digest changed")
+        before, after = row["before"]["helper_artifact"], row["after"]["helper_artifact"]
+        if before != artifact() or after != artifact(after["records"], after["operation_receipts"]):
+            raise TimerHelperValidationError(f"{row['id']}: clock artifact changed")
+        if result["status"] == "accepted":
+            if len(after["records"]) != 1 or result["result_digest"] != digest([
+                    "determa-timer-result-1", request["request_digest"],
+                    {key: value for key, value in result.items() if key != "result_digest"}]):
+                raise TimerHelperValidationError(f"{row['id']}: accepted clock outcome changed")
+        elif after != before or result["error_code"] not in (
+                "invalid_timer_time", "timer_deadline_overflow", "timer_clock_unavailable"):
+            raise TimerHelperValidationError(f"{row['id']}: failed clock outcome changed state")
+    export = json.loads(expected_files["archive-export.generated.json"])
+    stage = json.loads(expected_files["archive-stage.generated.json"])
+    archive_schemas = validator_registry(spec_root)
+    try:
+        schema_valid(archive_schemas["archive-export-request-v1"], export["input_request"],
+                     "timer archive export request")
+        validate_archive_integrity(export["expected_archive"], archive_schemas)
+        for stage_case in stage["cases"]:
+            schema_valid(archive_schemas["archive-import-request-v1"], stage_case["input_request"],
+                         stage_case["case_id"] + " import request")
+            if stage_case["expected_result"]["status"] == "staged":
+                validate_archive_integrity(stage_case["input_archive"], archive_schemas)
+            else:
+                candidate = stage_case["input_archive"]
+                schema_valid(archive_schemas["archive-v1"], candidate,
+                             stage_case["case_id"] + " resealed archive")
+                if candidate["archive_digest"] != digest(["determa-archive-digest-1",
+                        {key: value for key, value in candidate.items() if key != "archive_digest"}]):
+                    raise TimerHelperValidationError("missing timer refusal is not correctly resealed")
+    except (ArchiveValidationError, KeyError) as error:
+        raise TimerHelperValidationError(f"timer archive integrity: {error}") from error
+    participant = next((part for part in export["expected_archive"]["participants"]
+                        if part["participant_id"] == "timer-state"), None)
+    timer_record = json.loads((spec_root / "examples/timers/timer-records-v1.json").read_text())
+    timer_schema = json.loads((spec_root / "schema/timer-record-v1.schema.json").read_text())
+    if participant is None or not participant["required"] or \
+            participant["payload"] != typed_value(timer_record) or \
+            export["timer_artifact_digest"] != timer_record["timer_artifact_digest"] or \
+            participant["participant_schema_digest"] != digest(timer_schema) or \
+            export["timer_schema_digest"] != digest(timer_schema) or \
+            export["input_request"]["required_participant_ids"] != ["timer-state"]:
+        raise TimerHelperValidationError("required timer archive participant is not bound to exact timer artifact")
+    if [row["case_id"] for row in stage["cases"]] != ["timer_required_stage", "resealed_missing_required_timer"] or \
+            stage["cases"][0]["expected_result"]["status"] != "staged" or \
+            stage["cases"][1]["expected_result"]["status"] != "refused" or \
+            any(any(value for value in row["expected_host_effects"].values()) for row in stage["cases"]):
+        raise TimerHelperValidationError("timer import must stage inertly and refuse omitted required participant")
+    lifecycle = json.loads(expected_files["lifecycle.generated.json"])
+    lifecycle_schema = json.loads((repository_root / "scripts/schemas/timer-helper-lifecycle-v1.schema.json").read_text())
+    Draft202012Validator.check_schema(lifecycle_schema)
+    lifecycle_errors = list(Draft202012Validator(lifecycle_schema, registry=registry).iter_errors(lifecycle))
+    if lifecycle_errors:
+        raise TimerHelperValidationError(f"lifecycle driver schema: {lifecycle_errors[0].message}")
+    schedule_payload = lifecycle["expected_intent_emissions"][0]["payload"]
+    cancel_payload = lifecycle["expected_cancel_intent_emissions"][-1]["payload"]
+    schedule_request = lifecycle["schedule_request"]
+    if schedule_payload != {"timer_id": schedule_request["timer_id"],
+                            "event_name": schedule_request["arguments"]["event_name"],
+                            "delay_nanoseconds": schedule_request["arguments"]["delay_nanoseconds"]} or \
+            cancel_payload != {"timer_id": schedule_request["timer_id"]}:
+        raise TimerHelperValidationError("declared machine intent does not map to helper commands")
+    if lifecycle["cancel_request"]["timer_id"] != schedule_request["timer_id"] or \
+            lifecycle["expected_helper_after_cancel"]["records"][0]["state"] != "cancelled" or \
+            lifecycle["expected_helper_after_cancel"]["records"][0]["attempt_fence"] != "0":
+        raise TimerHelperValidationError("declared cancellation is not bound to preclaim helper state")
+    target = YAML(typ="safe").load(expected_files["target-machine.yaml"])
+    if list(Draft202012Validator(spec_schemas["machine.schema.json"], registry=registry).iter_errors(target)):
+        raise TimerHelperValidationError("timer target machine invalid")
+    fingerprint = lifecycle["create_request"]["bundle"]["validated_bundle_fingerprint"]
+    if fingerprint != lifecycle["expected_create_checkpoint"]["root_record"]["aggregate_state"]["validated_bundle_fingerprint"]:
+        raise TimerHelperValidationError("create request does not identify target definition")
+    for label in ("expected_create_checkpoint", "expected_admitted_checkpoint", "expected_after_step_checkpoint"):
+        checkpoint = lifecycle[label]
+        errors = list(Draft202012Validator(spec_schemas["execution-checkpoint-v1.schema.json"],
+                                             registry=registry).iter_errors(checkpoint))
+        if errors:
+            raise TimerHelperValidationError(f"{label}: {errors[0].message}")
+        unsigned = {key: value for key, value in checkpoint.items() if key != "execution_checkpoint_digest"}
+        if checkpoint["execution_checkpoint_digest"] != digest(["determa-execution-checkpoint-digest-1", unsigned]):
+            raise TimerHelperValidationError(f"{label}: checkpoint digest changed")
+        aggregate = checkpoint["root_record"]["aggregate_state"]
+        unsigned_aggregate = {key: value for key, value in aggregate.items() if key != "aggregate_state_digest"}
+        if aggregate["aggregate_state_digest"] != digest(["determa-aggregate-state-digest-1", unsigned_aggregate]) or \
+                "timer_records" in aggregate:
+            raise TimerHelperValidationError(f"{label}: aggregate digest or timer boundary changed")
+    envelope = lifecycle["expected_fire_envelope"]
+    receipt = lifecycle["expected_admitted_checkpoint"]["operation_receipts"][-1]
+    if envelope["event_id"] != lifecycle["expected_results"][-1]["event_id"] or \
+            receipt["event_id"] != envelope["event_id"] or \
+            receipt["request_digest"] != digest(["determa-inbox-envelope-digest-1", "1",
+                                                  envelope["target"]["root"]["root_instance_id"],
+                                                  "input", envelope]):
+        raise TimerHelperValidationError("ordinary event envelope and admission receipt diverge")
+    if lifecycle["expected_helper_after_fire"]["records"][0]["admission_receipt_digest"] != \
+            digest(["determa-timer-admission-receipt-1", receipt]):
+        raise TimerHelperValidationError("timer completion is not bound to committed admission")
+    terminal = lifecycle["expected_after_step_checkpoint"]["operation_receipts"][-1]
+    if terminal["event_id"] != envelope["event_id"] or \
+            terminal["request_digest"] != receipt["request_digest"] or \
+            terminal["resulting_aggregate_state_digest"] != lifecycle["expected_after_step_checkpoint"]["root_record"]["aggregate_state"]["aggregate_state_digest"] or \
+            terminal["outcome"]["disposition"] != "unhandled":
+        raise TimerHelperValidationError("step did not dispose of the fired event")
     return len(document["cases"])
