@@ -462,7 +462,9 @@ def render(spec_root: Path) -> bytes:
             scenario_allocation["expected"]["ledger_after"])
         production_scenarios.append({"id": scenario_name,
             "applicability": {"topology_identifier": configured["topology"]["identifier"],
-                              "required_participants": configured["required_participants"]},
+                              "required_participants": [
+                                  {"role": item["role"], "instance_id": item["instance_id"]}
+                                  for item in configured["required_participants"]]},
             "operations": scenario_operations, "worker_checks": scenario_checks,
             "native_traces": scenario_traces, "allocation_check": scenario_allocation})
     return (json.dumps({"format": "determa.host-authority-driver-v1", "schema_version": 1,

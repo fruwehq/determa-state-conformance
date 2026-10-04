@@ -14700,20 +14700,10 @@
         "required_participants": [
           {
             "role": "journal",
-            "provider_reference": {
-              "identifier": "reference.local-journal",
-              "version": "0.3.0",
-              "content_digest": "sha256:4fe7faea4e2ccb14584868aac57faa17924152aa64759a5bc3d315ad0cf79601"
-            },
             "instance_id": "journal-1"
           },
           {
             "role": "worker",
-            "provider_reference": {
-              "identifier": "reference.local-worker",
-              "version": "0.3.0",
-              "content_digest": "sha256:14d972487bb8d701e440a8e21fa39c65fe06d75e670f2fb19ed3378d961a005b"
-            },
             "instance_id": "worker-1"
           }
         ]
