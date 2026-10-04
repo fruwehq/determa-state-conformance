@@ -44,7 +44,8 @@ class Provider:
         return {"actions": [
             {"assign": {"variable": "accepted", "value": ["boolean", True]}},
             {"send": {"event": "accepted", "to": {"external": True},
-                      "payload": ["map", []]}},
+                      "payload": ["map", []],
+                      "correlation_id": ["string", "provider-correlation"]}},
         ]}
 
     def inspect_guard(self, snapshot, maximum_guard_evaluations, maximum_evaluation_steps):

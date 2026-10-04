@@ -9,7 +9,7 @@
     "version": {"const": 1},
     "source_files": {"const": ["provider/test_provider.py", "provider/test_provider.rs"]},
     "source_closure_file": {"const": "provider-closure.json"},
-    "normative_examples": {"type": "array", "minItems": 9, "maxItems": 9, "uniqueItems": true, "items": {"type": "string"}},
+    "normative_examples": {"type": "array", "minItems": 10, "maxItems": 10, "uniqueItems": true, "items": {"type": "string"}},
     "vectors": {"type": "array", "minItems": 30, "maxItems": 30, "items": {"$ref": "#/$defs/vector"}}
   },
   "$defs": {

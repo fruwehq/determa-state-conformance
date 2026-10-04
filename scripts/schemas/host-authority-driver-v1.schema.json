@@ -6,7 +6,7 @@
   "properties": {
     "format": {"const": "determa.host-authority-driver-v1"},
     "schema_version": {"const": 1},
-    "specification_commit": {"const": "6207362e879ccca70f709e1eb4cc90448d910c0b"},
+    "specification_commit": {"const": "86bb88dd21cb1f799eefe5020b6e49dabf6e7225"},
     "operations": {"type": "array", "minItems": 22, "maxItems": 22, "items": {"$ref": "#/$defs/operation"}},
     "profiles": {"type": "array", "minItems": 6, "maxItems": 6, "items": {"$ref": "#/$defs/profile"}},
     "clocks": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/clock"}},
