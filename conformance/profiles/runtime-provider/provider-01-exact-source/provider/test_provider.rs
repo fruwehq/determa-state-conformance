@@ -24,7 +24,7 @@ impl Provider {
         if external_io { self.external_calls += 1; self.irreversible_effects += 1; self.external_effect_log.push("fixture-io-1:external_write:before_commit"); }
         if fail { return Err("action_fault"); }
         if invalid { return Ok("{\"actions\":[{\"assign\":{\"variable\":\"accepted\",\"value\":[\"boolean\",true]}},{\"stop\":{}}]}".into()); }
-        Ok("{\"actions\":[{\"assign\":{\"variable\":\"accepted\",\"value\":[\"boolean\",true]}},{\"send\":{\"event\":\"accepted\",\"to\":{\"external\":true},\"payload\":[\"map\",[]]}}]}".into())
+        Ok("{\"actions\":[{\"assign\":{\"variable\":\"accepted\",\"value\":[\"boolean\",true]}},{\"send\":{\"event\":\"accepted\",\"to\":{\"external\":true},\"payload\":[\"map\",[]],\"correlation_id\":[\"string\",\"provider-correlation\"]}}]}".into())
     }
     pub fn inspect_guard(&self, approved: bool, guards: u64, steps: u64)
         -> Result<(bool,u64,u64), &'static str> {

@@ -15,7 +15,8 @@ CASE_REL = Path("conformance/profiles/runtime-provider/provider-01-exact-source"
 EXAMPLES = (
     "action-output.json", "compilation-manifest-v1.json", "compiled-machine.json",
     "guard-descriptor-v1.json", "invalid-action-output.json",
-    "invalid-guard-output-type.json", "invalid-provider-digest.json",
+    "invalid-guard-output-type.json", "invalid-missing-correlation-action-output.json",
+    "invalid-provider-digest.json",
     "language-source-v1.json", "mixed-cel-native.yaml",
 )
 SOURCES = ("provider/test_provider.py", "provider/test_provider.rs")
@@ -66,6 +67,34 @@ def _schemas(spec_root: Path, root: Path) -> tuple[dict, Registry]:
     schema = json.loads((root / "scripts/schemas/runtime-provider-vectors.schema.json").read_text())
     Draft202012Validator.check_schema(schema)
     return {**schemas, "vectors": schema}, Registry().with_resources(resources)
+
+
+def validate_positive_semantics(machine: dict, output: dict) -> None:
+    """Check the format-1 rules that the structural schemas cannot express."""
+    root = machine["machines"][0]["root"]
+    states = root["states"]
+    reachable = {root["initial"]["transition_to"]}
+    frontier = list(reachable)
+    while frontier:
+        state = states[frontier.pop()]
+        for branches in state.get("on_events", {}).values():
+            for branch in branches if isinstance(branches, list) else [branches]:
+                target = branch.get("transition_to")
+                if target and target not in reachable:
+                    reachable.add(target)
+                    frontier.append(target)
+    _require(set(states) == reachable, "positive machine has an unreachable state")
+    for state in states.values():
+        for branches in state.get("on_events", {}).values():
+            for branch in branches if isinstance(branches, list) else [branches]:
+                for action in branch.get("action", []):
+                    if "send" in action and action["send"].get("to") == {"external": True}:
+                        _require(action["send"].get("correlation_id") == "'provider-correlation'",
+                                 "external machine send lacks a nonempty CEL correlation")
+    for action in output["actions"]:
+        if "send" in action and action["send"].get("to") == {"external": True}:
+            _require(action["send"].get("correlation_id") == ["string", "provider-correlation"],
+                     "external provider proposal lacks a nonempty typed correlation")
 
 
 def validate_profile(spec_root: Path, repository_root: Path) -> int:
@@ -190,6 +219,17 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
     valid_output = json.loads((case / "norm-action-output.json").read_text())
     invalid_output = json.loads((case / "norm-invalid-action-output.json").read_text())
     _validate(schemas["runtime-action-output-v1.schema.json"], valid_output, registry, "action output")
+    validate_positive_semantics(machine, valid_output)
+    validate_positive_semantics(safe_machine, valid_output)
+    missing_correlation = json.loads((case / "norm-invalid-missing-correlation-action-output.json").read_text())
+    _validate(schemas["runtime-action-output-v1.schema.json"], missing_correlation,
+              registry, "semantic negative action output")
+    try:
+        validate_positive_semantics(machine, missing_correlation)
+    except RuntimeProviderValidationError:
+        pass
+    else:
+        raise RuntimeProviderValidationError("missing-correlation normative negative became valid")
     _require(bool(list(Draft202012Validator(schemas["runtime-action-output-v1.schema.json"],
                                          registry=registry).iter_errors(invalid_output))),
              "invalid action example became valid")

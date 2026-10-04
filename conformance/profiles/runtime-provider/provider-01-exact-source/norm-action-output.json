@@ -1,1 +1,1 @@
-{"actions":[{"assign":{"variable":"accepted","value":["boolean",true]}},{"send":{"event":"accepted","to":{"external":true},"payload":["map",[]]}}]}
+{"actions":[{"assign":{"variable":"accepted","value":["boolean",true]}},{"send":{"event":"accepted","to":{"external":true},"payload":["map",[]],"correlation_id":["string","provider-correlation"]}}]}

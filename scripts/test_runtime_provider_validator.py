@@ -12,7 +12,9 @@ import sys
 import tempfile
 from pathlib import Path
 
-from runtime_provider_validator import CASE_REL, RuntimeProviderValidationError, validate_profile
+from runtime_provider_validator import (CASE_REL, RuntimeProviderValidationError,
+                                        validate_positive_semantics, validate_profile)
+from ruamel.yaml import YAML
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -53,6 +55,26 @@ def main() -> None:
         probe("source-manifest.json", lambda body: body.replace(b"source_artifact_digest", b"wrong_source_digest"))
         probe("vectors.generated.json", lambda body: body.replace(b"compare_and_swap_conflict", b"retry"))
         probe("norm-invalid-action-output.json", lambda body: b'{"actions":[]}')
+        probe("norm-invalid-missing-correlation-action-output.json", lambda body: b'{"actions":[]}')
+
+    machine = YAML(typ="safe").load((case / "machine.yaml").read_text())
+    output = json.loads((case / "norm-action-output.json").read_text())
+    validate_positive_semantics(machine, output)
+    missing_cel = copy.deepcopy(machine)
+    del missing_cel["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"][1]["action"][1]["send"]["correlation_id"]
+    missing_typed = copy.deepcopy(output)
+    del missing_typed["actions"][1]["send"]["correlation_id"]
+    unreachable = copy.deepcopy(machine)
+    unreachable["machines"][0]["root"]["states"]["complete"] = {"type": "final"}
+    for changed_machine, changed_output in (
+        (missing_cel, output), (machine, missing_typed), (unreachable, output)
+    ):
+        try:
+            validate_positive_semantics(changed_machine, changed_output)
+        except RuntimeProviderValidationError:
+            pass
+        else:
+            raise AssertionError("invalid positive provider semantics accepted")
 
     source = case / "provider/test_provider.py"
     spec = importlib.util.spec_from_file_location("runtime_profile_test_provider", source)

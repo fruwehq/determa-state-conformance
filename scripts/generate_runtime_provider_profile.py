@@ -19,7 +19,8 @@ SOURCES = ("provider/test_provider.py", "provider/test_provider.rs")
 NORMATIVE = (
     "action-output.json", "compilation-manifest-v1.json", "compiled-machine.json",
     "guard-descriptor-v1.json", "invalid-action-output.json",
-    "invalid-guard-output-type.json", "invalid-provider-digest.json",
+    "invalid-guard-output-type.json", "invalid-missing-correlation-action-output.json",
+    "invalid-provider-digest.json",
     "language-source-v1.json", "mixed-cel-native.yaml",
 )
 DOMAIN = b"determa-test-runtime-provider-closure-1\0"
@@ -77,8 +78,9 @@ def machine(guard: dict, actions: dict) -> dict:
                     {"assign": {"accepted": "true"}}]},
                 {"guard": {"provider": copy.deepcopy(guard)}, "action": [
                     {"provider_actions": copy.deepcopy(actions)},
-                    {"send": {"event": "accepted", "to": {"external": True}}}]},
-            ]}}, "complete": {"type": "final"}},
+                    {"send": {"event": "accepted", "to": {"external": True},
+                              "correlation_id": "'provider-correlation'"}}]},
+            ]}}},
         }}],
     }
 

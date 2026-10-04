@@ -31,6 +31,9 @@ artifacts:
     - file: norm-invalid-guard-output-type.json
       kind: json_value
       valid: true
+    - file: norm-invalid-missing-correlation-action-output.json
+      kind: json_value
+      valid: true
     - file: norm-invalid-provider-digest.json
       kind: json_value
       valid: true
