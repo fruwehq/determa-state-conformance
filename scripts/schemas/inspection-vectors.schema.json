@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/schemas/conformance/inspection-vectors.schema.json",
+  "type": "object",
+  "required": ["title", "static", "artifacts", "inspection_vectors"],
+  "additionalProperties": false,
+  "properties": {
+    "title": {"type": "string", "minLength": 1},
+    "static": {"type": "object"},
+    "artifacts": {"type": "object"},
+    "inspection_vectors": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/vector"}}
+  },
+  "$defs": {
+    "file": {"type":"string","pattern":"^[A-Za-z0-9][A-Za-z0-9._-]*\\.(json|yaml)$"},
+    "pointer": {"type":"string","pattern":"^/(?:[^~/]|~[01])+(?:/(?:[^~/]|~[01])*)*$"},
+    "vector": {
+      "type":"object",
+      "required":["name","covers","profile","bundle","aggregate_before","aggregate_after","request_file","request_pointer","outcome_file","outcome_pointer","expect"],
+      "additionalProperties":false,
+      "properties": {
+        "name":{"type":"string","pattern":"^[a-z][a-z0-9_]*$"},
+        "covers":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","pattern":"^[a-z][a-z0-9_]*$"}},
+        "profile":{"enum":["core","safe_semantic","without_safe_semantic","unsafe_provider","safe_provider"]},
+        "bundle":{"$ref":"#/$defs/file"},
+        "aggregate_before":{"$ref":"#/$defs/file"},
+        "aggregate_after":{"$ref":"#/$defs/file"},
+        "request_file":{"$ref":"#/$defs/file"},
+        "request_pointer":{"$ref":"#/$defs/pointer"},
+        "outcome_file":{"$ref":"#/$defs/file"},
+        "outcome_pointer":{"$ref":"#/$defs/pointer"},
+        "provider_closure_file":{"$ref":"#/$defs/file"},
+        "provider_sources":{"type":"array","minItems":1,"uniqueItems":true,"items":{"type":"string","pattern":"^provider/[A-Za-z0-9._-]+\\.(py|rs)$"}},
+        "expect":{"type":"object","required":["guard_evaluations","action_invocations","external_calls","emissions"],"additionalProperties":false,
+          "properties":{"guard_evaluations":{"type":"integer","minimum":0},"provider_inspections":{"type":"integer","minimum":0},"ordinary_provider_evaluations":{"const":0},"provider_state_unchanged":{"const":true},"action_invocations":{"const":0},"external_calls":{"const":0},"emissions":{"const":0}}}
+      }
+    }
+  }
+}

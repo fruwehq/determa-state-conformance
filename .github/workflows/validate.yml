@@ -78,3 +78,12 @@ jobs:
 
       - name: Check generated durable-host fixtures
         run: python scripts/generate_execution_checkpoint_profile.py --check
+
+      - name: Test inspection relational validation
+        run: python scripts/test_inspection_validator.py
+
+      - name: Check generated inspection fixtures
+        run: python scripts/generate_inspection_vectors.py --check
+
+      - name: Check generated optional inspection provider fixtures
+        run: python scripts/generate_inspection_provider_profile.py --check
