@@ -554,3 +554,5 @@ declare them and do not standardize storage or a public API. See the profile REA
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+- Committed native effects profile: `conformance/profiles/committed-native-effects/README.md`.

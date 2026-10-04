@@ -1,0 +1,26 @@
+{
+  "operation": "checkpoint_step_v1",
+  "request_id": "produce-1",
+  "scope": {
+    "scope_id": "primary",
+    "ownership_binding": "owner:primary",
+    "principal": "conformance-host",
+    "authorization": "authorized"
+  },
+  "expected_checkpoint": {
+    "root_instance_id": "effect-root-1",
+    "revision": "1",
+    "digest": "sha256:525213b2f8e589d8cfec804631ea79b2b375045bbf48b684bf83733ee2498135"
+  },
+  "event_id": "invoke-1",
+  "envelope_digest": "sha256:2cac60da52f51510e834010ba7955ef7582f9dc7cbf1dfbb5923bf2397ca1bea",
+  "target": {
+    "root": {
+      "root_instance_id": "effect-root-1",
+      "root_runtime_id": "sha256:00a16dcf80af38e602fa3d1e2dfa7733a8255dfa02b25f48275ab8614775c457"
+    }
+  },
+  "processing_mode": "delayed",
+  "acceptance_sequence": "0",
+  "queue_sequence": "0"
+}

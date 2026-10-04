@@ -1,0 +1,17 @@
+{
+  "status": "report_recorded",
+  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+  "attempt_fence": "1",
+  "attempt_report": {
+    "attempt_fence": "1",
+    "report_kind": "ambiguous",
+    "report_digest": "sha256:fd925a31e97df7bbdc5ac65d17757c347bc2094702b631934b1fdc13a3b5c758",
+    "reason": "provider_acceptance_unknown"
+  },
+  "outcome": null,
+  "result_event_id": null,
+  "admission_receipt": null,
+  "checkpoint_revision": "2",
+  "journal_revision": "3",
+  "error_code": null
+}
