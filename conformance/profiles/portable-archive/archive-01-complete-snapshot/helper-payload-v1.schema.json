@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://determa.dev/state/examples/archives/helper-payload-v1.schema.json",
+  "type": "array",
+  "prefixItems": [
+    {
+      "const": "map"
+    },
+    {
+      "type": "array",
+      "prefixItems": [
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "cursor"
+            },
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "const": "integer"
+                },
+                {
+                  "const": "7"
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        },
+        {
+          "type": "array",
+          "prefixItems": [
+            {
+              "const": "note"
+            },
+            {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "const": "string"
+                },
+                {
+                  "const": "captured"
+                }
+              ],
+              "minItems": 2,
+              "maxItems": 2
+            }
+          ],
+          "minItems": 2,
+          "maxItems": 2
+        }
+      ],
+      "minItems": 2,
+      "maxItems": 2
+    }
+  ],
+  "minItems": 2,
+  "maxItems": 2
+}

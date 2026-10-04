@@ -1,0 +1,56 @@
+{
+  "manifest_member_count": 11,
+  "manifest_required_capabilities": [
+    "archive_participant",
+    "migration_descriptor",
+    "normalized_definition",
+    "portable_archive",
+    "portable_checkpoint"
+  ],
+  "archive_schema_digest": "sha256:270650eaa3669c5aef0e6bc27587c0a920acaaec16df02589292c1c5d7b30504",
+  "participant_schema_digest": "sha256:629a0772e49440d4c5c4c2130ecd7f366817a0a48a1ee2ab0575bb4d9423e73c",
+  "result_schema_digest": "sha256:257b0a37ae711dc2ab48cd2f44bfa6dcb5cd8d54d03af4ec8865e948f9cc0d80",
+  "export_request_schema_digest": "sha256:5d3f363b1503db853f0a237823f670546316aeb2d5e82966b5b96f012e0580ea",
+  "import_request_schema_digest": "sha256:a602e33fe97320183e3fe3a9aea8dd8829929f01a04cb88e1b7f2682a3061a98",
+  "export_source_schema_digest": "sha256:a7de07d7e548d89ef1fce1d12cdc747985b290d52f9b9db700beddd1948e8f65",
+  "stage_configuration_schema_digest": "sha256:7aaa0a625c2cee18981fc52ca0e297054ee70bb406d2f049cacc63f0320b2011",
+  "helper_payload_schema_digest": "sha256:bdf0bc0a1ad1991fbc78dd7ba91c0dc9c9c44297fa419d9ef7333b6679040850",
+  "provider_closure_digest": "sha256:db53fa5c8190bb2c847324efb8bd4d8c3de6490f834ab4d8e1a1252eed727e8a",
+  "normalized_definition_fingerprint": "sha256:a4458940ab5bc76a120889379294fa4df840465f8e05b97fa368587e3167cb86",
+  "checkpoint_digest": "sha256:9aab07243e93507e23e99e2a7c9c3001a14335a280022199c6bcb2a686fe273b",
+  "checkpoint_digests": {
+    "effect-1": "sha256:5667b9609eaf93f15abbd803110b46fb291f2e1b842f35ab2541387213fc1f8b",
+    "fault-1": "sha256:858ee24a45897e02b481bf4b4155f3d95eb3a8eafb5b81d45b95bc4a0088ec49",
+    "job-42": "sha256:f1f157b29245d86bfab1c06a7f2a14a54180fb2503d55b82a7f05190f3999a79",
+    "server-1": "sha256:9aab07243e93507e23e99e2a7c9c3001a14335a280022199c6bcb2a686fe273b"
+  },
+  "definition_fingerprints": [
+    "sha256:69614f5c10828364f93960fa5347d212750e67f0c37b8056d8fd0966e334c74f",
+    "sha256:a4458940ab5bc76a120889379294fa4df840465f8e05b97fa368587e3167cb86",
+    "sha256:cf1429c9cc0ecfb62e406bff29c9b537d668fad6601e30f0da0210986b7f6413",
+    "sha256:d9c63e89dac38aedbd3d439a9049158d39e8f3791dd55f7856540f684d16ffcc",
+    "sha256:eeec154ca64b619fe802af811b942073a2bc988b669429d7d08748dd72ab6cfc"
+  ],
+  "migration_descriptor_digest": "sha256:9e0ca69f03366de7c5cb92dea67d8b7bd7979c117a22ea9de37e6c6f73a8e7d9",
+  "source_profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+  "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+  "standalone_source_profile_digest": "sha256:5d7fe23b366221700c0b4de856177c8b66509851b3ab484d154e56fa12852e1c",
+  "archive_digest": "sha256:69fd70da2e0223005f51aa29d7e48fc2a59bf4b00ccdf4a92208b3dda1250d9d",
+  "core_archive_digest": "sha256:3b7ae772a591446910eaf1304c98e22325696216eb85cedf26bb201405e1fb5c",
+  "journal_archive_digest": "sha256:0f4394ed61adda2719264a7dbbcd01f528169a69577ba646d616b8189c5bab7a",
+  "host_journal_inventory_schema_digest": "sha256:5f93c410f2faffbcb90e718b5345b484f247df4fa3c6f1ee255ddd4f59230413",
+  "host_journal_inventory_digest": "sha256:46dc5b3a63e4a3837c26d3f87859c9d67390eaca97d5ac1e2f50d70097153eaf",
+  "native_definition_fingerprint": "sha256:86878abacbd44c4ac383d8752cb9e37359bb105f916b9b9e2a628cd1c07e358f",
+  "native_effect_id": "sha256:2ea51c6d2a2e386798cd51fc3aa7b06a30d0796efa86be4bf8266a2f4c76b88b",
+  "native_outcome_digest": "sha256:2aed210bddef44ef8259f33f0745cfdc0587e073708a219fa239545ec046eae5",
+  "native_attempt_report_digest": "sha256:7f7fcd999a04a845067ca5f257ecbc6b1ab26909e9722caa6d44ae801ee2c5b9",
+  "native_response_digest": "sha256:fa2ffdf1995cef1053bf0d61f665e164cb7617ce6073e44b9822d1a0969172fe",
+  "host_journal_payload_schema_digest": "sha256:43ecf84b213d746222b1a8dd290dc03cc9cc8ca288fa20d567715d42041a042e",
+  "host_journal_provider_closure_digest": "sha256:f833f7543be1ed828662470aab938aa1468d727ddb8bf1a98f49ca95658ec1f0",
+  "host_journal_digests": {
+    "effect-1": "sha256:90f0a8681805462ba68a661fb7da047334ed2d771ab8269053060bb67d91515b",
+    "fault-1": "sha256:f4cc50fc1dd4ee7f31f53032b824aad666f7c5e7966cbfa8293d03357da5160b",
+    "job-42": "sha256:4028d0b2bb18355db993ae8c0698e8e35ffbb3dcd734631f6c3a6352d9e640d3",
+    "server-1": "sha256:d917f1f48f2a9eec8f337ae3c207014f568d00cbab048b743a05a75d9ed1797c"
+  }
+}
