@@ -63,6 +63,9 @@ def main() -> int:
     attack("extra claim field", lambda d: d["operations"][by_name["fence_worker_allocates_new_claim"]]["expected_response"]["claim"].update(clock_basis="unix_nanoseconds"))
     attack("invalid clock classification", lambda d: d["clocks"][0].update(source_disposition="invalid"))
     attack("safe relocation false report", lambda d: d["profiles"][0]["expected_report"]["guarantees"].update(safe_relocation=True))
+    attack("missing submitted report", lambda d: d["profiles"][0].pop("submitted_report"))
+    attack("unproved submitted relocation", lambda d: d["profiles"][0]["submitted_report"]["guarantees"].update(safe_relocation=True))
+    attack("submitted guarantee type substitution", lambda d: d["profiles"][0]["submitted_report"]["guarantees"].update(guarded_local_writes=1))
     attack("lost response commits twice", lambda d: d["native_traces"][1]["steps"][1]["expected_ledger_after"].update(scope_generation="6"))
     attack("scope identity reused", lambda d: d["allocation_checks"][0]["expected"].update(allocated=True))
     def reseal_postfreeze_participant(document):
@@ -107,11 +110,15 @@ def main() -> int:
     verify_configured_profile({"report_bytes": no_authority["expected_report_bytes"],
                                "installation_evidence": None}, spec, set())
     assert len(baseline["profiles"]) == 6
+    calls = {}
     for row in baseline["profiles"]:
         call = common_rule_input(row)
-        assert set(call) == {"kind", "configured_facts", "hypothetical_verification"}
+        assert set(call) == {"kind", "submitted_report", "configured_facts", "hypothetical_verification"}
+        assert compact(call["submitted_report"]) == row["expected_report_bytes"]
         assert "requested_guarantees" not in call["configured_facts"]
         assert "expected" not in call and "report_bytes" not in call
+        assert "id" not in call and "expected_outcome" not in call
+        calls[row["id"]] = compact(call)
         wrong = b'{"status":"accepted","report_bytes":"{}"}' if row["source_disposition"] == "invalid" else \
                 b'{"status":"rejected","code":"host_capability_mismatch"}'
         child = [sys.executable, "-c", f"import sys; sys.stdout.buffer.write({wrong!r})"]
@@ -121,6 +128,8 @@ def main() -> int:
             pass
         else:
             raise AssertionError(f"common-rule seam accepted wrong outcome for {row['id']}")
+    assert calls["guarded_local_scope_without_relocation"] != calls["unproved_safe_relocation_claim"]
+    assert calls["application_owned_transaction"] != calls["missing_authority_cannot_claim_guarded_writes"]
     guarded_report = next(row for row in baseline["profiles"] if row["id"] ==
                           "guarded_local_scope_without_relocation")["expected_report"]
     assert select_production_scenario(baseline, guarded_report)["id"] == "guarded_sqlite"
