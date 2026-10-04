@@ -1,0 +1,531 @@
+{
+  "fixture_format": "determa.recovery_two_root_vectors",
+  "fixture_schema_version": 1,
+  "source_archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905",
+  "stage_request": {
+    "request_format": "determa.archive_import_request",
+    "request_schema_version": 1,
+    "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905",
+    "trusted_source_profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+    "trusted_participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+    "expected_source": {
+      "profile_kind": "checkpoint_host",
+      "profile_claims": [
+        "durable_embedded_processing"
+      ],
+      "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+      "logical_scope_identity": "scope-archive-example",
+      "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+      "scope_generation": "7"
+    },
+    "allow_optional_omission": false,
+    "requested_optional_participant_ids": [],
+    "staging_identity": "recovery-owned-stage-1"
+  },
+  "stage_configuration": {
+    "available_provider_references": [
+      {
+        "identifier": "example.helper-state",
+        "version": "1.0.0",
+        "content_digest": "sha256:db53fa5c8190bb2c847324efb8bd4d8c3de6490f834ab4d8e1a1252eed727e8a"
+      }
+    ],
+    "supported_participant_schema_digests": [
+      "sha256:bdf0bc0a1ad1991fbc78dd7ba91c0dc9c9c44297fa419d9ef7333b6679040850"
+    ],
+    "capability_reports": [
+      {
+        "category": "archive_participant",
+        "provider_reference": {
+          "identifier": "example.helper-state",
+          "version": "1.0.0",
+          "content_digest": "sha256:db53fa5c8190bb2c847324efb8bd4d8c3de6490f834ab4d8e1a1252eed727e8a"
+        },
+        "instance_id": "helper-instance",
+        "health": "healthy",
+        "claims": [
+          "portable_import",
+          "exact_reconstruction"
+        ]
+      }
+    ],
+    "trusted_source_profiles": [
+      {
+        "profile_kind": "checkpoint_host",
+        "profile_claims": [
+          "durable_embedded_processing"
+        ],
+        "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+        "logical_scope_identity": "scope-archive-example",
+        "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+        "scope_generation": "7"
+      }
+    ],
+    "trusted_participant_contracts": [
+      {
+        "required_participant_ids": [
+          "helper-state"
+        ],
+        "optional_participant_ids": [],
+        "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448"
+      }
+    ],
+    "trusted_host_journal_inventories": [],
+    "supported_determa_capabilities": [
+      "portable_archive",
+      "portable_checkpoint",
+      "normalized_definition",
+      "migration_descriptor",
+      "archive_participant",
+      "host_effect_journal"
+    ],
+    "trusted_optional_participant_references": []
+  },
+  "stage_result": {
+    "result_format": "determa.archive_result",
+    "result_schema_version": 1,
+    "status": "staged",
+    "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905",
+    "staged": true,
+    "included_participant_ids": [
+      "helper-state"
+    ],
+    "absent_optional_participants": [],
+    "unsupported_optional_participants": []
+  },
+  "cases": [
+    {
+      "case_id": "owned_strict_quarantine",
+      "prior_record": null,
+      "request": {
+        "operation_format": "determa.recovery_operation",
+        "operation_schema_version": 1,
+        "operation": "strict_restore",
+        "operation_id": "owned_strict_quarantine",
+        "destination_scope_identity": "recovery-owned-scope-quarantine-1",
+        "expected_destination_generation": null,
+        "arguments": {
+          "staging_identity": "recovery-owned-stage-1",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905",
+          "source": {
+            "logical_scope_identity": "scope-archive-example",
+            "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+            "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+            "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+            "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+          },
+          "activate": false
+        },
+        "request_digest": "sha256:77c3d2a500ac8f6abfa10aabdf95a606541784761af87abb4efd2e3acb0422de"
+      },
+      "expected_result": {
+        "result_format": "determa.recovery_result",
+        "result_schema_version": 1,
+        "operation": "strict_restore",
+        "operation_id": "owned_strict_quarantine",
+        "request_digest": "sha256:77c3d2a500ac8f6abfa10aabdf95a606541784761af87abb4efd2e3acb0422de",
+        "status": "succeeded",
+        "code": null,
+        "destination_scope_identity": "recovery-owned-scope-quarantine-1",
+        "state": "quarantined",
+        "record_digest": "sha256:8c6c4f371b39f21f19fb9d47ace4fc993bf4905048e1ec6b5779317916592380",
+        "safe_relocation": false,
+        "no_duplicate_external_work": false,
+        "warning": "unproved_old_owner_retirement",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "authority_epoch": null,
+        "scope_generation": null,
+        "transfer_proof_digest": null
+      },
+      "expected_record": {
+        "record_format": "determa.recovery_record",
+        "record_schema_version": 1,
+        "destination_scope_identity": "recovery-owned-scope-quarantine-1",
+        "external_idempotency_namespace": null,
+        "destination_binding_digest": "sha256:5fd77798c746f4ba8ecc5d4d9f75483dce69e020f7d0991ba8ea7ccb09887f2c",
+        "authority_epoch": null,
+        "operation_ledger_identity": null,
+        "active_claims": [],
+        "mode": "strict",
+        "state": "quarantined",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "work": [
+          {
+            "work_kind": "effect",
+            "work_identity": "sha256:964d7f41fc59363fdb4ff1748cb6782a84f994cdf637bce27a334a73500bdb8c",
+            "source_attempt": "unknown",
+            "disposition": "ambiguous",
+            "evidence_digest": "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166"
+          }
+        ],
+        "retained_checkpoint_digests": [
+          "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166",
+          "sha256:c55258b1e1c3a53d5b65fa1b437487867a15e11133fce111084f9126ba47154a"
+        ],
+        "risk_acknowledged": false,
+        "isolation_evidence_digest": null,
+        "decisions": []
+      },
+      "archive_kind": "owned"
+    },
+    {
+      "case_id": "owned_standalone_takeover",
+      "prior_record": null,
+      "request": {
+        "operation_format": "determa.recovery_operation",
+        "operation_schema_version": 1,
+        "operation": "standalone_takeover",
+        "operation_id": "owned_standalone_takeover",
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "expected_destination_generation": null,
+        "arguments": {
+          "staging_identity": "recovery-owned-stage-1",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905",
+          "source": {
+            "logical_scope_identity": "scope-archive-example",
+            "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+            "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+            "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+            "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+          },
+          "external_idempotency_namespace": "recovery-owned-namespace-takeover-1",
+          "acknowledge_old_owner_risk": true
+        },
+        "request_digest": "sha256:f104f74c1970a0430f246a10bbf99c9036f00a2f356322468d04eac116af4c60"
+      },
+      "expected_result": {
+        "result_format": "determa.recovery_result",
+        "result_schema_version": 1,
+        "operation": "standalone_takeover",
+        "operation_id": "owned_standalone_takeover",
+        "request_digest": "sha256:f104f74c1970a0430f246a10bbf99c9036f00a2f356322468d04eac116af4c60",
+        "status": "succeeded",
+        "code": null,
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "state": "inactive",
+        "record_digest": "sha256:36ff63d9bb62f2b4869567d69461e522319fb2b6bdca2c3594b6863311dfb75a",
+        "safe_relocation": false,
+        "no_duplicate_external_work": false,
+        "warning": "old_owner_may_still_act",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "authority_epoch": null,
+        "scope_generation": null,
+        "transfer_proof_digest": null
+      },
+      "expected_record": {
+        "record_format": "determa.recovery_record",
+        "record_schema_version": 1,
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "external_idempotency_namespace": "recovery-owned-namespace-takeover-1",
+        "destination_binding_digest": "sha256:c67efeef13feb5bd2566a1a64be3a03b8644564db63ddd654bdbe2e914d60cda",
+        "authority_epoch": null,
+        "operation_ledger_identity": "recovery-owned-ledger-scope-takeover-1",
+        "active_claims": [],
+        "mode": "standalone",
+        "state": "inactive",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "work": [
+          {
+            "work_kind": "effect",
+            "work_identity": "sha256:964d7f41fc59363fdb4ff1748cb6782a84f994cdf637bce27a334a73500bdb8c",
+            "source_attempt": "unknown",
+            "disposition": "ambiguous",
+            "evidence_digest": "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166"
+          }
+        ],
+        "retained_checkpoint_digests": [
+          "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166",
+          "sha256:c55258b1e1c3a53d5b65fa1b437487867a15e11133fce111084f9126ba47154a"
+        ],
+        "risk_acknowledged": true,
+        "isolation_evidence_digest": null,
+        "decisions": []
+      },
+      "archive_kind": "owned"
+    },
+    {
+      "case_id": "owned_standalone_resume",
+      "prior_record": "owned_standalone_takeover",
+      "request": {
+        "operation_format": "determa.recovery_operation",
+        "operation_schema_version": 1,
+        "operation": "resume_takeover",
+        "operation_id": "owned_standalone_resume",
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "expected_destination_generation": null,
+        "arguments": {
+          "acknowledge_old_owner_risk": true,
+          "record_digest": "sha256:36ff63d9bb62f2b4869567d69461e522319fb2b6bdca2c3594b6863311dfb75a"
+        },
+        "request_digest": "sha256:61c5777609a2e8bff20cfbb947c94bd687215bcdcde32af2df4d17811d8617f1"
+      },
+      "expected_result": {
+        "result_format": "determa.recovery_result",
+        "result_schema_version": 1,
+        "operation": "resume_takeover",
+        "operation_id": "owned_standalone_resume",
+        "request_digest": "sha256:61c5777609a2e8bff20cfbb947c94bd687215bcdcde32af2df4d17811d8617f1",
+        "status": "succeeded",
+        "code": null,
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "state": "active",
+        "record_digest": "sha256:d1e5b8c7eb31afbdaf208fb8133bea6b3ab8bfac3972767808e8b05301de3367",
+        "safe_relocation": false,
+        "no_duplicate_external_work": false,
+        "warning": "old_owner_may_still_act",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "authority_epoch": null,
+        "scope_generation": null,
+        "transfer_proof_digest": null
+      },
+      "expected_record": {
+        "record_format": "determa.recovery_record",
+        "record_schema_version": 1,
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "external_idempotency_namespace": "recovery-owned-namespace-takeover-1",
+        "destination_binding_digest": "sha256:c67efeef13feb5bd2566a1a64be3a03b8644564db63ddd654bdbe2e914d60cda",
+        "authority_epoch": null,
+        "operation_ledger_identity": "recovery-owned-ledger-scope-takeover-1",
+        "active_claims": [],
+        "mode": "standalone",
+        "state": "active",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "work": [
+          {
+            "work_kind": "effect",
+            "work_identity": "sha256:964d7f41fc59363fdb4ff1748cb6782a84f994cdf637bce27a334a73500bdb8c",
+            "source_attempt": "unknown",
+            "disposition": "ambiguous",
+            "evidence_digest": "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166"
+          }
+        ],
+        "retained_checkpoint_digests": [
+          "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166",
+          "sha256:c55258b1e1c3a53d5b65fa1b437487867a15e11133fce111084f9126ba47154a"
+        ],
+        "risk_acknowledged": true,
+        "isolation_evidence_digest": null,
+        "decisions": []
+      },
+      "archive_kind": "owned"
+    },
+    {
+      "case_id": "owned_ambiguous_effect_dispatch_denied",
+      "prior_record": "owned_standalone_resume",
+      "request": {
+        "operation_format": "determa.recovery_operation",
+        "operation_schema_version": 1,
+        "operation": "guarded_action",
+        "operation_id": "owned_ambiguous_effect_dispatch_denied",
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "expected_destination_generation": null,
+        "arguments": {
+          "action": "dispatch_effect",
+          "work_kind": "effect",
+          "work_identity": "sha256:964d7f41fc59363fdb4ff1748cb6782a84f994cdf637bce27a334a73500bdb8c",
+          "worker_scope_identity": "scope-takeover-1",
+          "worker_authority_epoch": null,
+          "attempt_fence": null
+        },
+        "request_digest": "sha256:df2881c1d297cf59318c031efc7886a77dd3ae67d5ee7de9eeaff3cbfd6967bb"
+      },
+      "expected_result": {
+        "result_format": "determa.recovery_result",
+        "result_schema_version": 1,
+        "operation": "guarded_action",
+        "operation_id": "owned_ambiguous_effect_dispatch_denied",
+        "request_digest": "sha256:df2881c1d297cf59318c031efc7886a77dd3ae67d5ee7de9eeaff3cbfd6967bb",
+        "status": "refused",
+        "code": "standalone_takeover_ambiguous_work",
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "state": "unchanged",
+        "record_digest": null,
+        "safe_relocation": false,
+        "no_duplicate_external_work": false,
+        "warning": "external_outcome_requires_reconciliation",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "authority_epoch": null,
+        "scope_generation": null,
+        "transfer_proof_digest": null
+      },
+      "expected_record": null,
+      "archive_kind": "owned"
+    },
+    {
+      "case_id": "owned_old_worker_matching_effect_rejected",
+      "prior_record": "owned_standalone_resume",
+      "request": {
+        "operation_format": "determa.recovery_operation",
+        "operation_schema_version": 1,
+        "operation": "guarded_action",
+        "operation_id": "owned_old_worker_matching_effect_rejected",
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "expected_destination_generation": null,
+        "arguments": {
+          "action": "submit_effect_result",
+          "work_kind": "effect",
+          "work_identity": "sha256:964d7f41fc59363fdb4ff1748cb6782a84f994cdf637bce27a334a73500bdb8c",
+          "worker_scope_identity": "scope-archive-example",
+          "worker_authority_epoch": "0",
+          "attempt_fence": "0"
+        },
+        "request_digest": "sha256:8ac90e26a85d79faa062fa15cde81e2d3ad61f51e35d5b7375f02f5de70a0785"
+      },
+      "expected_result": {
+        "result_format": "determa.recovery_result",
+        "result_schema_version": 1,
+        "operation": "guarded_action",
+        "operation_id": "owned_old_worker_matching_effect_rejected",
+        "request_digest": "sha256:8ac90e26a85d79faa062fa15cde81e2d3ad61f51e35d5b7375f02f5de70a0785",
+        "status": "refused",
+        "code": "stale_scope_authority",
+        "destination_scope_identity": "recovery-owned-scope-takeover-1",
+        "state": "unchanged",
+        "record_digest": null,
+        "safe_relocation": false,
+        "no_duplicate_external_work": false,
+        "warning": null,
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "authority_epoch": null,
+        "scope_generation": null,
+        "transfer_proof_digest": null
+      },
+      "expected_record": null,
+      "archive_kind": "owned"
+    },
+    {
+      "case_id": "owned_clone_scope",
+      "prior_record": null,
+      "request": {
+        "operation_format": "determa.recovery_operation",
+        "operation_schema_version": 1,
+        "operation": "clone_scope",
+        "operation_id": "owned_clone_scope",
+        "destination_scope_identity": "recovery-owned-scope-clone-1",
+        "expected_destination_generation": null,
+        "arguments": {
+          "staging_identity": "recovery-owned-stage-1",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905",
+          "source": {
+            "logical_scope_identity": "scope-archive-example",
+            "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+            "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+            "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+            "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+          },
+          "external_idempotency_namespace": "recovery-owned-namespace-clone-1"
+        },
+        "request_digest": "sha256:2460ac04899d8dd0a282470da1faff899153d184a0406e388c25f17ed85503a1"
+      },
+      "expected_result": {
+        "result_format": "determa.recovery_result",
+        "result_schema_version": 1,
+        "operation": "clone_scope",
+        "operation_id": "owned_clone_scope",
+        "request_digest": "sha256:2460ac04899d8dd0a282470da1faff899153d184a0406e388c25f17ed85503a1",
+        "status": "succeeded",
+        "code": null,
+        "destination_scope_identity": "recovery-owned-scope-clone-1",
+        "state": "inactive",
+        "record_digest": "sha256:04d305759a68945de9ba2cf3cee16babbff9ec67e8f4e53416a216015ec554b7",
+        "safe_relocation": false,
+        "no_duplicate_external_work": false,
+        "warning": "independent_business_execution",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "authority_epoch": null,
+        "scope_generation": null,
+        "transfer_proof_digest": null
+      },
+      "expected_record": {
+        "record_format": "determa.recovery_record",
+        "record_schema_version": 1,
+        "destination_scope_identity": "recovery-owned-scope-clone-1",
+        "external_idempotency_namespace": "recovery-owned-namespace-clone-1",
+        "destination_binding_digest": "sha256:fad91b20615ddc6fa2b6b71152c96e36cdcb796803f75eac4c95775072a1b98e",
+        "authority_epoch": null,
+        "operation_ledger_identity": "recovery-owned-ledger-scope-clone-1",
+        "active_claims": [],
+        "mode": "clone",
+        "state": "inactive",
+        "source": {
+          "logical_scope_identity": "scope-archive-example",
+          "ownership_binding_digest": "sha256:300dbfa84132cddc3451fd5ef8fb5f64ce0b5853991df41461f9bad9b73e56a1",
+          "profile_digest": "sha256:5fe87d8725e1b78ab7790c88ef109228e58e980871cad215aa4203bc618b32d2",
+          "participant_contract_digest": "sha256:f3e008d3109ef93b57d004ae616027a669e56e600b90e31fee830bbe43599448",
+          "archive_digest": "sha256:1a69b1fc1f51d077511713d64ffbdda13ed930cf18361f825673d5105aac3905"
+        },
+        "work": [
+          {
+            "work_kind": "effect",
+            "work_identity": "sha256:964d7f41fc59363fdb4ff1748cb6782a84f994cdf637bce27a334a73500bdb8c",
+            "source_attempt": "unknown",
+            "disposition": "ambiguous",
+            "evidence_digest": "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166"
+          }
+        ],
+        "retained_checkpoint_digests": [
+          "sha256:89d1198c803e3e8303f8484097d369919fe58e4760e3b754d92073e66462c166",
+          "sha256:c55258b1e1c3a53d5b65fa1b437487867a15e11133fce111084f9126ba47154a"
+        ],
+        "risk_acknowledged": false,
+        "isolation_evidence_digest": null,
+        "decisions": []
+      },
+      "archive_kind": "owned"
+    }
+  ]
+}

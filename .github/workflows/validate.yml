@@ -107,6 +107,10 @@ jobs:
         run: |
           python scripts/generate_portable_archive_profile.py --spec-root .determa-state-spec --check
           python scripts/test_portable_archive_validator.py --spec-root .determa-state-spec
+      - name: Check recovery profile and adversarial validation
+        run: |
+          python scripts/generate_recovery_profile.py --spec-root .determa-state-spec --check
+          python scripts/test_recovery_validator.py --spec-root .determa-state-spec
       - name: Test inspection relational validation
         run: python scripts/test_inspection_validator.py
 
