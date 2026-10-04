@@ -386,9 +386,10 @@ def source_fault_cut(command: list[str], database: Path, run_id: str,
 
 
 def run_hosted_source(command: list[str], database: Path, run_id: str,
-                      bridge_identity: str, binding: str, token: str,
-                      topology: str, provider_digest: str, config_digest: str,
-                      archive: dict, fixture: dict, plan: dict,
+                     bridge_identity: str, binding: str, token: str,
+                     topology: str, provider_digest: str, config_digest: str,
+                     required_participants: list[dict], archive: dict,
+                     fixture: dict, plan: dict,
                       *, in_doubt: bool) -> dict:
     validate_source_plan(plan, archive)
     source_identity = archive['source']['logical_scope_identity']
@@ -413,6 +414,7 @@ def run_hosted_source(command: list[str], database: Path, run_id: str,
                 'topology_identifier': topology,
                 'provider_content_digest': provider_digest,
                 'configuration_digest': config_digest,
+                'required_participants': required_participants,
                 'storage_identity': str(database)}
     source_inventory_digest = digest({
         'checkpoints': before_freeze['source_checkpoints'],
@@ -449,6 +451,10 @@ def run_hosted_source(command: list[str], database: Path, run_id: str,
             digest(freeze_response['caller_response_body']) != \
             archive['source_fence_reference']['response_digest'] or \
             frozen_scope.get('state') != 'frozen' or \
+            any(frozen_scope.get(key) != value for key, value in required.items()
+                if key != 'state') or \
+            frozen_scope.get('complete_scope_inventory') is not True or \
+            frozen_scope.get('inventory_digest') != source_inventory_digest or \
             frozen_scope.get('authority_epoch') != proof['source_authority_epoch'] or \
             frozen_scope.get('scope_generation') != proof['source_scope_generation'] or \
             frozen['source_checkpoints'] != before_freeze['source_checkpoints'] or \
@@ -631,6 +637,7 @@ def run_case(command: list[str], case: dict, fixture: dict,
             hosted_source_binding['topology_identifier'],
             hosted_source_binding['provider_content_digest'],
             hosted_source_binding['configuration_digest'],
+            hosted_source_binding['required_participants'],
             request['source_archive'], fixture, hosted_source_plan,
             in_doubt=label == 'local_in_doubt_source') if local else None)
         stage_payload = {key: request[key] for key in

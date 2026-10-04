@@ -295,7 +295,8 @@ def main() -> int:
                      hosted_source_binding={
                          'topology_identifier': 'local',
                          'provider_content_digest': 'sha256:provider',
-                         'configuration_digest': 'sha256:configuration'}))
+                         'configuration_digest': 'sha256:configuration',
+                         'required_participants': []}))
     malformed = copy.deepcopy(plan)
     malformed['operations'][2]['arguments']['checkpoint'] = local_archive['checkpoints'][0]
     rejected('source lifecycle plan seeds a golden checkpoint',

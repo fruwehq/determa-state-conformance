@@ -43,7 +43,7 @@ def report_bytes(response: dict, label: str) -> tuple[dict, bytes]:
 
 
 def observed_binding(command: list[str], authority_command: list[str],
-                     summary: dict, fixture: dict) -> tuple[dict, str]:
+                     summary: dict, fixture: dict) -> tuple[dict, str, list[dict]]:
     verified = verify_delivery_proof_summary(summary, command)
     if verified is not summary or summary['proved_claims'] != [
             'lossless_delivery_controlled_store',
@@ -148,7 +148,7 @@ def observed_binding(command: list[str], authority_command: list[str],
     }
     if any(report[key] != value for key, value in expected.items()):
         raise ValueError('§24 actual configured binding differs from local transfer source or C/D/H')
-    return report, 'sha256:' + sha256(raw).hexdigest()
+    return report, 'sha256:' + sha256(raw).hexdigest(), authority['required_participants']
 
 
 def main() -> int:
@@ -182,7 +182,8 @@ def main() -> int:
             raise ValueError('§18/§19/§21 same-run native proof failed: ' +
                              completed.stderr.decode('utf-8', 'replace')[:1000])
         summary = parse_json_bytes(path.read_bytes(), 'same-run C/D/H proof summary')
-    initial, binding = observed_binding(command, authority_command, summary, fixture)
+    initial, binding, required_participants = observed_binding(
+        command, authority_command, summary, fixture)
     registration = read_json(args.recovery_bridge_registration)
     source_plan_raw = args.source_lifecycle_plan.read_bytes()
     source_plan = parse_json_bytes(source_plan_raw, 'trusted local source lifecycle plan')
@@ -213,12 +214,14 @@ def main() -> int:
                  hosted_source_binding={
                      'topology_identifier': initial['topology_identifier'],
                      'provider_content_digest': initial['provider_reference']['content_digest'],
-                     'configuration_digest': initial['configuration_digest']})
+                     'configuration_digest': initial['configuration_digest'],
+                     'required_participants': required_participants})
     if trusted_bridge(recovery_command, args.recovery_bridge_registration) != installed_bridge:
         raise ValueError('reviewed recovery bridge changed during hosted proof')
     if args.source_lifecycle_plan.read_bytes() != source_plan_raw:
         raise ValueError('trusted source lifecycle plan changed during hosted proof')
-    if observed_binding(command, authority_command, summary, fixture) != (initial, binding):
+    if observed_binding(command, authority_command, summary, fixture) != \
+            (initial, binding, required_participants):
         raise ValueError('configured C/D/H/recovery installation changed during recovery proof')
     print('52 recovery responses and native observations passed under one configured local host')
     return 0
