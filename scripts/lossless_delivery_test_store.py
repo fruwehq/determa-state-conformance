@@ -42,11 +42,17 @@ def handle(request: dict) -> dict:
                 run_id TEXT NOT NULL, operation_id TEXT NOT NULL UNIQUE,
                 native_transaction_id TEXT NOT NULL UNIQUE,
                 before_digest TEXT NOT NULL, after_digest TEXT NOT NULL,
-                proof_id TEXT NOT NULL UNIQUE);
+                proof_id TEXT NOT NULL UNIQUE, after_json BLOB NOT NULL);
             CREATE TABLE IF NOT EXISTS crash_cuts (
                 sequence INTEGER PRIMARY KEY AUTOINCREMENT,
                 run_id TEXT NOT NULL, operation_id TEXT NOT NULL UNIQUE,
                 phase TEXT NOT NULL);
+            CREATE TABLE IF NOT EXISTS timer_invocations (
+                sequence INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id TEXT NOT NULL, invocation_id TEXT NOT NULL UNIQUE,
+                request_digest TEXT NOT NULL, factory_identity TEXT NOT NULL,
+                start_state_digest TEXT NOT NULL, return_digest TEXT,
+                return_state_digest TEXT);
         ''')
         kind = request['kind']
         if kind == 'seed':
@@ -63,6 +69,30 @@ def handle(request: dict) -> dict:
             connection.commit()
             os.kill(os.getppid(), signal.SIGKILL)
             return {'cut': 'before_commit'}
+        if kind == 'timer_invocation_start':
+            connection.execute('INSERT INTO timer_invocations('
+                               'run_id,invocation_id,request_digest,factory_identity,start_state_digest) '
+                               'VALUES(?,?,?,?,?)',
+                               (row[0], request['invocation_id'], request['request_digest'],
+                                request['factory_identity'], digest(row[1])))
+            return {'start_state_digest': digest(row[1])}
+        if kind == 'timer_invocation_return':
+            result_digest = digest(canonical_json_bytes(request['raw_return']))
+            changed = connection.execute('UPDATE timer_invocations SET return_digest=?,return_state_digest=? '
+                                         'WHERE run_id=? AND invocation_id=? AND return_digest IS NULL',
+                                         (result_digest, digest(row[1]), row[0], request['invocation_id']))
+            if changed.rowcount != 1:
+                raise ValueError('timer invocation start absent or return duplicated')
+            return {'return_digest': result_digest, 'return_state_digest': digest(row[1])}
+        if kind == 'timer_invocation_snapshot':
+            return {'invocations': [
+                {'invocation_id': invocation_id, 'request_digest': request_digest,
+                 'factory_identity': factory_identity, 'start_state_digest': start_digest,
+                 'return_digest': return_digest, 'return_state_digest': return_state_digest}
+                for invocation_id, request_digest, factory_identity, start_digest,
+                    return_digest, return_state_digest in connection.execute(
+                    'SELECT invocation_id,request_digest,factory_identity,start_state_digest,'
+                    'return_digest,return_state_digest FROM timer_invocations ORDER BY sequence')]}
         if kind == 'commit':
             before_digest = digest(row[1])
             if request['expected_before_digest'] != before_digest:
@@ -75,10 +105,10 @@ def handle(request: dict) -> dict:
                 transaction_id, before_digest, after_digest]))
             connection.execute('UPDATE host_state SET state_json=? WHERE singleton=1', (after,))
             connection.execute('INSERT INTO native_transactions('
-                               'run_id,operation_id,native_transaction_id,before_digest,after_digest,proof_id) '
-                               'VALUES(?,?,?,?,?,?)',
+                               'run_id,operation_id,native_transaction_id,before_digest,after_digest,proof_id,after_json) '
+                               'VALUES(?,?,?,?,?,?,?)',
                                (row[0], request['operation_id'], transaction_id,
-                                before_digest, after_digest, proof_id))
+                                before_digest, after_digest, proof_id, after))
             if request.get('crash_after_commit') is True:
                 connection.execute('INSERT INTO crash_cuts(run_id,operation_id,phase) VALUES(?,?,?)',
                                    (row[0], request['operation_id'], 'after_commit'))
@@ -100,6 +130,15 @@ def handle(request: dict) -> dict:
                               'SELECT operation_id,phase FROM crash_cuts ORDER BY sequence')]
             return {'after': document(row[1]), 'transactions': transactions,
                     'crash_cuts': crash_cuts}
+        if kind == 'capture_at':
+            captured = connection.execute(
+                'SELECT after_json,after_digest,proof_id FROM native_transactions '
+                'WHERE run_id=? AND operation_id=?',
+                (row[0], request['operation_id'])).fetchone()
+            if captured is None or digest(captured[0]) != captured[1]:
+                raise ValueError('native captured state absent or corrupted')
+            return {'captured_state': document(captured[0]), 'after_digest': captured[1],
+                    'proof_id': captured[2]}
         raise ValueError('unknown host store operation')
 
 

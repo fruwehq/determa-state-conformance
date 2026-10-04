@@ -302,6 +302,8 @@ def run(command: list[str], case: Path = CASE, run_id: str | None = None,
                 request['authority_context'] = vector['authority_context']
             if 'ordering_context' in vector:
                 request['ordering_context'] = vector['ordering_context']
+            if 'timer_fire_context' in vector:
+                request['timer_fire_context'] = vector['timer_fire_context']
             completed = subprocess.run(command, input=canonical_json_bytes(request),
                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
             expected_response = ({'kind': 'typed_failure',

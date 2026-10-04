@@ -160,12 +160,16 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
                     if item["id"] == "coordinated_fire_commits")["before"]["checkpoint"]:
             raise TimerHelperValidationError("expired, wrong-worker or conflicting fire altered state")
     export = json.loads(expected_files["archive-export.generated.json"])
+    live_export = json.loads(expected_files["archive-operational.generated.json"])
     stage = json.loads(expected_files["archive-stage.generated.json"])
     archive_schemas = validator_registry(spec_root)
     try:
         schema_valid(archive_schemas["archive-export-request-v1"], export["input_request"],
                      "timer archive export request")
         validate_archive_integrity(export["expected_archive"], archive_schemas)
+        schema_valid(archive_schemas["archive-export-source-v1"], live_export["source_capture"],
+                     "live timer archive source capture")
+        validate_archive_integrity(live_export["expected_archive"], archive_schemas)
         for stage_case in stage["cases"]:
             schema_valid(archive_schemas["archive-import-request-v1"], stage_case["input_request"],
                          stage_case["case_id"] + " import request")
@@ -191,6 +195,18 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
             export["timer_schema_digest"] != digest(timer_schema) or \
             export["input_request"]["required_participant_ids"] != ["timer-state"]:
         raise TimerHelperValidationError("required timer archive participant is not bound to exact timer artifact")
+    live_checkpoint = live_export["source_capture"]["checkpoints"][0]
+    live_participant = next((part for part in live_export["expected_archive"]["participants"]
+                             if part["participant_id"] == "timer-state"), None)
+    if live_checkpoint != json.loads(expected_files["lifecycle.generated.json"])["expected_create_checkpoint"] or \
+            live_checkpoint["root_record"]["aggregate_state"]["root_runtime_id"] != \
+                timer_record["records"][0]["root_runtime_id"] or \
+            live_export["source_capture"]["inventory_evidence"]["selected_checkpoint_digests"] != [
+                live_checkpoint["execution_checkpoint_digest"]] or \
+            live_participant is None or live_participant["payload"] != typed_value(timer_record) or \
+            live_export["expected_result"]["archive_digest"] != \
+                live_export["expected_archive"]["archive_digest"]:
+        raise TimerHelperValidationError("live timer archive inventory is not bound to selected root")
     if [row["case_id"] for row in stage["cases"]] != ["timer_required_stage", "resealed_missing_required_timer"] or \
             stage["cases"][0]["expected_result"]["status"] != "staged" or \
             stage["cases"][1]["expected_result"]["status"] != "refused" or \
@@ -354,7 +370,12 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
     first_ingest, crashed_ingest, replay_ingest = delivery_vectors["vectors"]
     for vector in delivery_vectors["vectors"]:
         if vector["request"] != request or vector["after"]["bindings"] != [binding] or \
-                vector["after"]["checkpoint"] != "after-timer-checkpoint-v1.json":
+                vector["after"]["checkpoint"] != "after-timer-checkpoint-v1.json" or \
+                vector["timer_fire_context"]["complete_request"] != installed_lifecycle["complete_request"] or \
+                vector["before"]["timer_artifact"] != (
+                    installed_lifecycle["expected_helper_after_fire"] if vector["replay_of"] else
+                    installed_lifecycle["expected_helper_after_claim"]) or \
+                vector["after"]["timer_artifact"] != installed_lifecycle["expected_helper_after_fire"]:
             raise TimerHelperValidationError("timer delivery source or committed store changed")
     if first_ingest["before"]["bindings"] or first_ingest["before"]["source_acknowledgements"] or \
             crashed_ingest["before"] != first_ingest["before"] or \
@@ -373,4 +394,4 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
             admitted["source_delivery_id"] != source["source_delivery_id"] or \
             admitted["source_content_digest"] != source["source_content_digest"]:
         raise TimerHelperValidationError("timer admitted response differs from source and checkpoint receipt")
-    return len(document["cases"]), len(document["clock_vectors"]), len(document["fence_vectors"]), 3, 2, 3
+    return len(document["cases"]), len(document["clock_vectors"]), len(document["fence_vectors"]), 4, 2, 3

@@ -15,18 +15,122 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import uuid
 from pathlib import Path
 
 import rfc8785
 from jsonschema import Draft202012Validator
 from validate_extension_negotiation import exact_json_equal
 from timer_helper_validator import validate_profile
+from generate_timer_helper_profile import artifact as timer_artifact
+from generate_version1_vectors import typed_value
 from run_portable_archive_profile import run_case as run_archive_case
 from run_lossless_delivery_profile import (
-    CASE as DELIVERY_CASE,
+    CASE as DELIVERY_CASE, STORE as DELIVERY_STORE,
     run as run_delivery_case, verify_configured_delivery_profile,
-    verify_delivery_proof_summary,
+    verify_delivery_proof_summary, store_call as delivery_store_call,
+    digest as delivery_digest, configuration_digests as delivery_configuration_digests,
 )
+
+
+def trusted_bridge_registration(command, registration):
+    """Verify runner-selected reviewed source/build/install facts outside the child."""
+    try:
+        entry = strict_json(registration.read_bytes())
+    except (OSError, UnicodeError) as error:
+        raise ValueError("production timer execution unverified: bridge registration unavailable") from error
+    required = {"format", "schema_version", "command", "language", "bridge_root",
+        "bridge_source_path", "bridge_source_sha256", "installation_root",
+        "installation_manifest_path", "installation_manifest_sha256",
+        "production_factory", "public_timer_entrypoint", "public_archive_entrypoint",
+        "native_observer_entrypoint", "effective_configuration_digest",
+        "dependency_inventory_digest", "build_anchor_digest",
+        "configured_provider_content_digest", "configured_scope_identity",
+        "configured_topology_identifier", "configured_storage_binding"}
+    if type(entry) is not dict or set(entry) != required or \
+            entry["format"] != "determa.conformance.timer_helper.bridge_registration" or \
+            type(entry["schema_version"]) is not int or entry["schema_version"] != 1 or \
+            entry["language"] not in ("python", "rust") or \
+            type(entry["command"]) is not list or entry["command"] != command or \
+            any(type(part) is not str or not part for part in command) or \
+            any(type(entry[key]) is not str or not entry[key]
+                for key in required - {"format", "schema_version", "command", "language"}):
+        raise ValueError("production timer execution unverified: closed bridge registration differs")
+    def anchored(root_key, path_key, hash_key):
+        root = Path(entry[root_key])
+        relative = Path(entry[path_key])
+        if not root.is_absolute() or not root.is_dir() or relative.is_absolute() or \
+                ".." in relative.parts:
+            raise ValueError("production timer execution unverified: source anchor invalid")
+        source = (root.resolve() / relative).resolve()
+        if not source.is_relative_to(root.resolve()) or not source.is_file() or \
+                "sha256:" + hashlib.sha256(source.read_bytes()).hexdigest() != entry[hash_key]:
+            raise ValueError("production timer execution unverified: source/build drift")
+        return source
+    bridge = anchored("bridge_root", "bridge_source_path", "bridge_source_sha256")
+    manifest = anchored("installation_root", "installation_manifest_path",
+                        "installation_manifest_sha256")
+    if (entry["language"] == "python" and
+            (len(command) != 4 or command[1:3] != ["-I", "-S"] or
+             Path(command[0]).resolve() != Path(sys.executable).resolve() or
+             Path(command[3]).resolve() != bridge)) or \
+            (entry["language"] == "rust" and
+             (len(command) != 1 or Path(command[0]).resolve() != bridge)):
+        raise ValueError("production timer execution unverified: command is not reviewed bridge")
+    installed = strict_json(manifest.read_bytes())
+    manifest_keys = {"format", "schema_version", "language", "production_factory",
+        "public_timer_entrypoint", "public_archive_entrypoint", "native_observer_entrypoint",
+        "effective_configuration_digest", "dependency_inventory_digest", "build_anchor_digest",
+        "source_closure", "dependency_files", "build_inputs", "features", "toolchain",
+        "effective_configuration", "configured_provider_content_digest",
+        "configured_scope_identity", "configured_topology_identifier",
+        "configured_storage_binding"}
+    shared = manifest_keys - {"format", "schema_version", "source_closure", "dependency_files",
+                              "build_inputs", "features", "toolchain", "effective_configuration"}
+    if type(installed) is not dict or set(installed) != manifest_keys or \
+            installed["format"] != "determa.conformance.timer_helper.installation" or \
+            type(installed["schema_version"]) is not int or installed["schema_version"] != 1 or \
+            any(installed[key] != entry[key] for key in shared) or \
+            type(installed["source_closure"]) is not list or not installed["source_closure"] or \
+            type(installed["dependency_files"]) is not list or \
+            type(installed["build_inputs"]) is not list or \
+            type(installed["features"]) is not list or \
+            any(type(feature) is not str or not feature for feature in installed["features"]) or \
+            installed["features"] != sorted(set(installed["features"])) or \
+            type(installed["toolchain"]) is not str or not installed["toolchain"] or \
+            type(installed["effective_configuration"]) is not dict or \
+            delivery_digest(rfc8785.dumps(installed["effective_configuration"])) != entry[
+                "effective_configuration_digest"] or \
+            delivery_digest(rfc8785.dumps(installed["dependency_files"])) != entry[
+                "dependency_inventory_digest"] or \
+            delivery_digest(rfc8785.dumps({key: installed[key] for key in (
+                "build_inputs", "features", "toolchain")})) != entry["build_anchor_digest"]:
+        raise ValueError("production timer execution unverified: installation manifest differs")
+    files = []
+    seen = set()
+    for category in ("source_closure", "dependency_files", "build_inputs"):
+        for item in installed[category]:
+            if type(item) is not dict or set(item) != {"path", "sha256"} or \
+                    type(item["path"]) is not str or type(item["sha256"]) is not str or \
+                    not item["path"] or item["path"] in seen or Path(item["path"]).is_absolute() or \
+                    ".." in Path(item["path"]).parts:
+                raise ValueError("production timer execution unverified: source closure incomplete")
+            seen.add(item["path"])
+            source = (Path(entry["installation_root"]).resolve() / item["path"]).resolve()
+            if not source.is_relative_to(Path(entry["installation_root"]).resolve()) or \
+                    not source.is_file() or \
+                    "sha256:" + hashlib.sha256(source.read_bytes()).hexdigest() != item["sha256"]:
+                raise ValueError("production timer execution unverified: installed source drift")
+            if category != "build_inputs":
+                files.append(item)
+    anchor = {"factory_identity": entry["production_factory"], "installed_files": files,
+              "installation_root": entry["installation_root"],
+              "provider_digest": entry["configured_provider_content_digest"],
+              "scope_identity": entry["configured_scope_identity"],
+              "topology_identity": entry["configured_topology_identifier"],
+              "storage_binding": entry["configured_storage_binding"],
+              "bridge_identity": delivery_digest(rfc8785.dumps(entry))}
+    return anchor
 
 
 def strict_json(payload: bytes):
@@ -51,12 +155,168 @@ def call(command, body, label):
     return strict_json(completed.stdout)
 
 
+def attach_invocation(body, database, run_id, factory_identity):
+    """Give the reviewed bridge an observer journal owned by the test driver."""
+    invocation_id = str(uuid.uuid4())
+    request_digest = delivery_digest(rfc8785.dumps(body))
+    body["trusted_timer_invocation"] = {
+        "command": [sys.executable, str(DELIVERY_STORE)], "database_path": str(database),
+        "run_id": run_id, "invocation_id": invocation_id,
+        "request_digest": request_digest, "factory_identity": factory_identity}
+    return invocation_id, request_digest
+
+
+def verify_invocation(database, run_id, invocation_id, request_digest, factory_identity,
+                      raw_response, before, after):
+    journal = delivery_store_call(database, "timer_invocation_snapshot", run_id=run_id)["invocations"]
+    if journal != [{"invocation_id": invocation_id, "request_digest": request_digest,
+                    "factory_identity": factory_identity,
+                    "start_state_digest": delivery_digest(rfc8785.dumps(before)),
+                    "return_digest": delivery_digest(rfc8785.dumps(raw_response)),
+                    "return_state_digest": delivery_digest(rfc8785.dumps(after))}]:
+        raise ValueError("reviewed timer bridge invocation/raw return was not independently journaled")
+
+
 def operation_input(row, target_machine):
     return {"kind": "timer_operation", "machine_source": target_machine,
             "before": row["before"], "request": row["request"],
             "trusted_now": row["trusted_now"], "claim_expires_at": row["claim_expires_at"],
             "previous_attempt_fate": row["previous_attempt_fate"],
             "admission_disposition": row["admission_disposition"]}
+
+
+def run_timer_operation(command, row, target_machine, factory_identity="test-unverified"):
+    """Read helper and checkpoint fate from the driver-owned public store."""
+    with tempfile.TemporaryDirectory(prefix="determa-timer-operation-") as temporary:
+        database = Path(temporary) / "host.sqlite"
+        run_id, operation_id = str(uuid.uuid4()), str(uuid.uuid4())
+        before = {"timer_artifact": row["before"]["helper_artifact"],
+                  "checkpoint": row["before"]["checkpoint"]}
+        expected_after = {"timer_artifact": row["after"]["helper_artifact"],
+                          "checkpoint": row["after"]["checkpoint"]}
+        delivery_store_call(database, "seed", run_id=run_id, before=before)
+        prior = delivery_store_call(database, "snapshot", run_id=run_id)
+        if not exact_json_equal(prior["after"], before) or prior["transactions"]:
+            raise ValueError("timer operation test store did not start from the exact prior state")
+        body = operation_input(row, target_machine)
+        body["host_store_provider"] = {
+            "command": [sys.executable, str(DELIVERY_STORE)],
+            "database_path": str(database), "run_id": run_id, "operation_id": operation_id,
+            "source_sha256": delivery_digest(DELIVERY_STORE.read_bytes()),
+            "configuration_digest": delivery_configuration_digests(run_id)[
+                "host_storage_configuration_digest"]}
+        invocation_id, request_digest = attach_invocation(body, database, run_id, factory_identity)
+        observed = call(command, body, row["id"])
+        if type(observed) is not dict or set(observed) != {"result", "calls"} or \
+                not exact_json_equal(observed["result"], row["expected_result"]) or \
+                not exact_json_equal(observed["calls"], row["expected_calls"]):
+            raise ValueError(f"{row['id']}: live helper result or call counts differ")
+        persistent = delivery_store_call(database, "snapshot", run_id=run_id)
+        verify_invocation(database, run_id, invocation_id, request_digest, factory_identity,
+                          observed, before, persistent["after"])
+        if not exact_json_equal(persistent["after"], expected_after):
+            raise ValueError(f"{row['id']}: trusted helper/checkpoint store differs")
+        changed = not exact_json_equal(before, expected_after)
+        transactions = persistent["transactions"]
+        if len(transactions) != int(changed) or persistent["crash_cuts"]:
+            raise ValueError(f"{row['id']}: native timer transaction fate differs")
+        if changed:
+            transaction = transactions[0]
+            if transaction["operation_id"] != operation_id or \
+                    transaction["before_digest"] != delivery_digest(rfc8785.dumps(before)) or \
+                    transaction["after_digest"] != delivery_digest(rfc8785.dumps(expected_after)):
+                raise ValueError(f"{row['id']}: native timer commit did not bind full prior and after state")
+            return transaction["native_transaction_id"]
+        return None
+
+
+def verify_archive_capture(captured_state, export, archive):
+    """Compare every selected root and retained timer byte with the native capture."""
+    helper = captured_state["timer_artifact"]
+    checkpoint = captured_state["checkpoint"]
+    if helper != timer_artifact(helper["records"], helper["operation_receipts"]) or \
+            checkpoint not in export["source_capture"]["checkpoints"] or \
+            export["source_capture"]["inventory_evidence"]["selected_checkpoint_digests"] != [
+                checkpoint["execution_checkpoint_digest"]] or \
+            archive["checkpoints"] != [checkpoint]:
+        raise ValueError("archive selected checkpoint or live helper inventory differs")
+    capture = next((item for item in export["source_capture"]["participant_captures"]
+                    if item["participant_id"] == "timer-state"), None)
+    participant = next((item for item in archive["participants"]
+                        if item["participant_id"] == "timer-state"), None)
+    if capture is None or participant is None or not participant["required"] or \
+            capture["payload"] != typed_value(helper) or \
+            participant["payload"] != typed_value(helper) or \
+            participant["payload_digest"] != capture["payload_digest"] or \
+            export["input_request"]["required_participant_ids"] != ["timer-state"]:
+        raise ValueError("archive omitted a live pending/terminal timer or retained replay receipt")
+
+
+def run_live_timer_archive(command, schedule_row, target_machine, export,
+                           factory_identity="test-unverified"):
+    """Capture the complete participant from a separately observed schedule commit."""
+    with tempfile.TemporaryDirectory(prefix="determa-timer-archive-") as temporary:
+        database = Path(temporary) / "host.sqlite"
+        run_id, operation_id = str(uuid.uuid4()), str(uuid.uuid4())
+        checkpoint = export["source_capture"]["checkpoints"][0]
+        before = {"timer_artifact": timer_artifact(), "checkpoint": checkpoint}
+        delivery_store_call(database, "seed", run_id=run_id, before=before)
+        body = operation_input(schedule_row, target_machine)
+        body["before"] = {"helper_artifact": timer_artifact(), "checkpoint": checkpoint}
+        body["host_store_provider"] = {
+            "command": [sys.executable, str(DELIVERY_STORE)],
+            "database_path": str(database), "run_id": run_id, "operation_id": operation_id,
+            "source_sha256": delivery_digest(DELIVERY_STORE.read_bytes()),
+            "configuration_digest": delivery_configuration_digests(run_id)[
+                "host_storage_configuration_digest"]}
+        invocation_id, request_digest = attach_invocation(body, database, run_id, factory_identity)
+        observed = call(command, body, "timer_archive_schedule")
+        if type(observed) is not dict or set(observed) != {"result", "calls"} or \
+                not exact_json_equal(observed["result"], schedule_row["expected_result"]) or \
+                not exact_json_equal(observed["calls"], schedule_row["expected_calls"]):
+            raise ValueError("timer archive schedule did not invoke the installed helper")
+        snapshot = delivery_store_call(database, "snapshot", run_id=run_id)
+        verify_invocation(database, run_id, invocation_id, request_digest, factory_identity,
+                          observed, before, snapshot["after"])
+        if len(snapshot["transactions"]) != 1 or \
+                snapshot["transactions"][0]["operation_id"] != operation_id or \
+                snapshot["crash_cuts"]:
+            raise ValueError("timer archive capture lacks a single native helper commit")
+        captured = delivery_store_call(database, "capture_at", run_id=run_id,
+                                       operation_id=operation_id)
+        if not exact_json_equal(snapshot["after"], captured["captured_state"]):
+            raise ValueError("timer archive consistency point changed after capture")
+        verify_archive_capture(captured["captured_state"], export, export["expected_archive"])
+        capture_provider = {
+            "command": [sys.executable, str(DELIVERY_STORE)],
+            "database_path": str(database), "run_id": run_id,
+            "operation_id": operation_id, "proof_id": captured["proof_id"],
+            "source_sha256": delivery_digest(DELIVERY_STORE.read_bytes())}
+        archive_body = {"operation": "export", "request": export["input_request"],
+                        "source_capture": export["source_capture"],
+                        "timer_capture_provider": capture_provider}
+        export_invocation, export_request_digest = attach_invocation(
+            archive_body, database, run_id, factory_identity)
+        response = run_archive_case(command, "export", {
+            "case_id": "timer_live_archive_export", "input_request": export["input_request"],
+            "source_capture": export["source_capture"],
+            "expected_result": export["expected_result"],
+            "expected_archive": export["expected_archive"]},
+            extra_input={"timer_capture_provider": capture_provider,
+                         "trusted_timer_invocation": archive_body["trusted_timer_invocation"]})
+        journal = delivery_store_call(database, "timer_invocation_snapshot", run_id=run_id)["invocations"]
+        if len(journal) != 2 or journal[1] != {
+                "invocation_id": export_invocation, "request_digest": export_request_digest,
+                "factory_identity": factory_identity,
+                "start_state_digest": delivery_digest(rfc8785.dumps(snapshot["after"])),
+                "return_digest": delivery_digest(rfc8785.dumps(response)),
+                "return_state_digest": delivery_digest(rfc8785.dumps(snapshot["after"]))}:
+            raise ValueError("live timer archive export lacks actual reviewed bridge invocation")
+        verify_archive_capture(captured["captured_state"], export, response["archive"])
+        after = delivery_store_call(database, "snapshot", run_id=run_id)
+        if not exact_json_equal(after, snapshot):
+            raise ValueError("archive export mutated active timer helper or checkpoint storage")
+        return snapshot["transactions"][0]["native_transaction_id"]
 
 
 def loaded_closure_digest(files, module_paths):
@@ -91,7 +351,10 @@ def loaded_closure_digest(files, module_paths):
         "determa-test-timer-provider-closure-1", inventory])).hexdigest()
 
 
-def verify_configured(observed, spec_root, completed_request_digests):
+def verify_configured(observed, spec_root, completed_request_digests, bridge_attestation=None,
+                      bridge_anchor=None, installed_root=None, timer_transactions=()):
+    if bridge_attestation is None or bridge_anchor is None or installed_root is None:
+        raise ValueError("configured timer claim requires a reviewed live provider bridge")
     if type(observed) is not dict or set(observed) != {"report", "installation", "operational_proof"}:
         raise ValueError("configured helper omitted public report, installed closure or operational proof")
     report = observed["report"]
@@ -120,7 +383,11 @@ def verify_configured(observed, spec_root, completed_request_digests):
     hash_bytes = lambda value: "sha256:" + hashlib.sha256(value).hexdigest()
     if loaded_closure_digest(installation["loaded_closure_files"],
                              installation["loaded_module_paths"]) != report["provider_reference"]["content_digest"] or \
+            report["provider_reference"]["content_digest"] != bridge_anchor["provider_digest"] or \
             hash_bytes(config) != installation["configuration_digest"] or \
+            installation["scope_identity"] != bridge_anchor["scope_identity"] or \
+            installation["topology_identity"] != bridge_anchor["topology_identity"] or \
+            installation["storage_binding"] != bridge_anchor["storage_binding"] or \
             not all(type(installation[key]) is str and installation[key] for key in (
                 "scope_identity", "topology_identity", "storage_binding")):
         raise ValueError("configured timer provider or topology binding differs")
@@ -152,6 +419,31 @@ def verify_configured(observed, spec_root, completed_request_digests):
                     not all(type(item) is str and item.startswith("sha256:") and len(item) == 71
                             for item in evidence["receipt_digests"]):
                 raise ValueError(f"coordinated timer lacks configured {category} operational proof")
+    expected_paths = {(installed_root / item["path"]).resolve(): item["sha256"]
+                      for item in bridge_anchor["installed_files"]}
+    if type(bridge_attestation) is not dict or set(bridge_attestation) != {
+            "factory_identity", "factory_path", "callable_path", "loaded_files",
+            "observed_request_digests", "native_transaction_ids", "configuration_digest",
+            "scope_identity", "topology_identity", "storage_binding", "provider_reference"} or \
+            bridge_attestation["factory_identity"] != bridge_anchor["factory_identity"] or \
+            {Path(path).resolve() for path in installation["loaded_module_paths"]} != set(expected_paths) or \
+            type(bridge_attestation["loaded_files"]) is not list or \
+            {Path(item["absolute_path"]).resolve(): item["sha256"]
+             for item in bridge_attestation["loaded_files"]} != expected_paths or \
+            Path(bridge_attestation["factory_path"]).resolve() not in expected_paths or \
+            Path(bridge_attestation["callable_path"]).resolve() not in expected_paths or \
+            not all(path.is_file() and "sha256:" + hashlib.sha256(path.read_bytes()).hexdigest() == sha
+                    for path, sha in expected_paths.items()) or \
+            type(bridge_attestation["observed_request_digests"]) is not list or \
+            not completed_request_digests <= set(bridge_attestation["observed_request_digests"]) or \
+            type(bridge_attestation["native_transaction_ids"]) is not list or \
+            not set(timer_transactions) <= set(bridge_attestation["native_transaction_ids"]) or \
+            bridge_attestation["configuration_digest"] != installation["configuration_digest"] or \
+            bridge_attestation["scope_identity"] != installation["scope_identity"] or \
+            bridge_attestation["topology_identity"] != installation["topology_identity"] or \
+            bridge_attestation["storage_binding"] != installation["storage_binding"] or \
+            not exact_json_equal(bridge_attestation["provider_reference"], report["provider_reference"]):
+        raise ValueError("live reviewed timer factory/callable or native invocation proof differs")
     return report
 
 
@@ -237,7 +529,8 @@ def verify_native_composition(configured, delivery_summary, timer_operations, ow
         raise ValueError("timer configured claim is not bound to actual same-run C/D/H proof")
 
 
-def lifecycle_call(command, lifecycle, machine, target_machine, label):
+def lifecycle_call(command, lifecycle, machine, target_machine, label,
+                   factory_identity="test-unverified"):
     body = {"kind": "timer_lifecycle", "intent_machine_source": machine,
             "target_machine_source": target_machine}
     body.update({name: lifecycle[name] for name in (
@@ -245,7 +538,63 @@ def lifecycle_call(command, lifecycle, machine, target_machine, label):
         "intent_create_request", "cancel_intent_create_request", "schedule_request",
         "cancel_request", "claim_request", "complete_request", "step_request",
         "trusted_clock_sequence")})
-    observed = call(command, body, label)
+    stages = {
+        "main": ["target_create", "schedule", "claim", "fire_and_admit", "target_step"],
+        "cancel": ["schedule", "cancel"]}
+    with tempfile.TemporaryDirectory(prefix="determa-timer-lifecycle-") as temporary:
+        providers = {}
+        stage_ids = {}
+        for branch, names in stages.items():
+            run_id = str(uuid.uuid4())
+            database = Path(temporary) / (branch + ".sqlite")
+            delivery_store_call(database, "seed", run_id=run_id,
+                                before={"timer_artifact": timer_artifact(), "checkpoint": None})
+            providers[branch] = {"command": [sys.executable, str(DELIVERY_STORE)],
+                                 "database_path": str(database), "run_id": run_id,
+                                 "source_sha256": delivery_digest(DELIVERY_STORE.read_bytes()),
+                                 "configuration_digest": delivery_configuration_digests(run_id)[
+                                     "host_storage_configuration_digest"]}
+            stage_ids[branch] = {name: str(uuid.uuid4()) for name in names}
+        body["host_store_providers"] = providers
+        body["stage_operation_ids"] = stage_ids
+        main_provider = providers["main"]
+        invocation_id, request_digest = attach_invocation(
+            body, Path(main_provider["database_path"]), main_provider["run_id"],
+            factory_identity)
+        observed = call(command, body, label)
+        expected_states = {
+            "main": [
+                {"timer_artifact": timer_artifact(), "checkpoint": lifecycle["expected_create_checkpoint"]},
+                {"timer_artifact": lifecycle["expected_helper_after_schedule"],
+                 "checkpoint": lifecycle["expected_create_checkpoint"]},
+                {"timer_artifact": lifecycle["expected_helper_after_claim"],
+                 "checkpoint": lifecycle["expected_create_checkpoint"]},
+                {"timer_artifact": lifecycle["expected_helper_after_fire"],
+                 "checkpoint": lifecycle["expected_admitted_checkpoint"]},
+                {"timer_artifact": lifecycle["expected_helper_after_fire"],
+                 "checkpoint": lifecycle["expected_after_step_checkpoint"]}],
+            "cancel": [
+                {"timer_artifact": lifecycle["expected_helper_after_schedule"], "checkpoint": None},
+                {"timer_artifact": lifecycle["expected_helper_after_cancel"], "checkpoint": None}]}
+        for branch, names in stages.items():
+            provider = providers[branch]
+            database = Path(provider["database_path"])
+            snapshot = delivery_store_call(database, "snapshot", run_id=provider["run_id"])
+            expected_ids = [stage_ids[branch][name] for name in names]
+            if [item["operation_id"] for item in snapshot["transactions"]] != expected_ids or \
+                    snapshot["crash_cuts"] or \
+                    not exact_json_equal(snapshot["after"], expected_states[branch][-1]):
+                raise ValueError(f"{label}: {branch} durable lifecycle stages differ")
+            for operation_id, state in zip(expected_ids, expected_states[branch]):
+                captured = delivery_store_call(database, "capture_at",
+                                               run_id=provider["run_id"], operation_id=operation_id)
+                if not exact_json_equal(captured["captured_state"], state) or \
+                        captured["after_digest"] != delivery_digest(rfc8785.dumps(state)):
+                    raise ValueError(f"{label}: {branch} captured helper/checkpoint stage differs")
+        verify_invocation(Path(main_provider["database_path"]), main_provider["run_id"],
+                          invocation_id, request_digest, factory_identity, observed,
+                          {"timer_artifact": timer_artifact(), "checkpoint": None},
+                          expected_states["main"][-1])
     expected = {"create_checkpoint": lifecycle["expected_create_checkpoint"],
                 "intent_emissions": lifecycle["expected_intent_emissions"],
                 "cancel_intent_emissions": lifecycle["expected_cancel_intent_emissions"],
@@ -270,34 +619,36 @@ def main():
     parser.add_argument("--spec-root", type=Path, required=True)
     parser.add_argument("--adapter", nargs="+", required=True)
     parser.add_argument("--authority-adapter", nargs="+", required=True)
+    parser.add_argument("--bridge-registration", type=Path, required=True)
     args = parser.parse_args()
     repository = Path(__file__).resolve().parents[1]
     validate_profile(args.spec_root, repository)
+    bridge = args.adapter
+    bridge_anchor = trusted_bridge_registration(bridge, args.bridge_registration)
     document = strict_json((repository / "conformance/profiles/timer-helper/timer-01-external-helper/vectors.generated.json").read_bytes())
     case_dir = repository / "conformance/profiles/timer-helper/timer-01-external-helper"
     machine = (repository / "conformance/profiles/timer-helper/timer-01-external-helper/machine.yaml").read_text()
     target_machine = (case_dir / "target-machine.yaml").read_text()
     lifecycle = strict_json((case_dir / "lifecycle.generated.json").read_bytes())
     installed_lifecycle = strict_json((case_dir / "configured-lifecycle.generated.json").read_bytes())
-    lifecycle_call(args.adapter, lifecycle, machine, target_machine, "timer_lifecycle_normative")
-    lifecycle_call(args.adapter, installed_lifecycle, machine, target_machine,
-                   "timer_lifecycle_installed_scope")
+    lifecycle_call(bridge, lifecycle, machine, target_machine, "timer_lifecycle_normative",
+                   bridge_anchor["factory_identity"])
+    lifecycle_call(bridge, installed_lifecycle, machine, target_machine,
+                   "timer_lifecycle_installed_scope", bridge_anchor["factory_identity"])
+    timer_transactions = []
     for row in [*document["cases"], *document["clock_vectors"], *document["fence_vectors"]]:
-        body = operation_input(row, target_machine)
-        observed = call(args.adapter, body, row["id"])
-        expected = {"result": row["expected_result"], "after": row["after"],
-                    "calls": row["expected_calls"]}
-        if not exact_json_equal(observed, expected):
-            raise ValueError(f"{row['id']}: result, full storage or call counts differ")
-    export = strict_json((case_dir / "archive-export.generated.json").read_bytes())
-    run_archive_case(args.adapter, "export", {"case_id": "timer_archive_export",
-                     "input_request": export["input_request"],
-                     "source_capture": export["source_capture"],
-                     "expected_result": export["expected_result"],
-                     "expected_archive": export["expected_archive"]})
+        transaction = run_timer_operation(bridge, row, target_machine,
+                                          bridge_anchor["factory_identity"])
+        if transaction is not None:
+            timer_transactions.append(transaction)
+    export = strict_json((case_dir / "archive-operational.generated.json").read_bytes())
+    archive_transaction = run_live_timer_archive(bridge, document["cases"][0],
+                                                 target_machine, export,
+                                                 bridge_anchor["factory_identity"])
+    timer_transactions.append(archive_transaction)
     stage = strict_json((case_dir / "archive-stage.generated.json").read_bytes())
     for row in stage["cases"]:
-        run_archive_case(args.adapter, "stage", row)
+        run_archive_case(bridge, "stage", row)
     completed_request_digests = {row["request"]["request_digest"]
         for row in [*document["cases"], *document["clock_vectors"], *document["fence_vectors"]]
         if "request_digest" in row["request"]}
@@ -306,11 +657,16 @@ def main():
         for name in ("schedule_request", "cancel_request", "claim_request", "complete_request"))
     ownership = strict_json((case_dir / "source-ownership.generated.json").read_bytes())
     delivery_summary, timer_operations = run_native_delivery_proof(
-        args.adapter, args.authority_adapter, args.spec_root, case_dir, ownership)
-    configured = call(args.adapter, {"kind": "configured_timer_helper"}, "configured_timer_helper")
-    verify_configured(configured, args.spec_root, completed_request_digests)
+        bridge, args.authority_adapter, args.spec_root, case_dir, ownership)
+    configured = call(bridge, {"kind": "configured_timer_helper"}, "configured_timer_helper")
+    attestation = call(bridge, {"kind": "trusted_timer_bridge_attestation"},
+                       "trusted_timer_bridge_attestation")
+    verify_configured(configured, args.spec_root, completed_request_digests,
+                      attestation, bridge_anchor, Path(bridge_anchor["installation_root"]),
+                      timer_transactions + [item["native_transaction_id"] for item in timer_operations
+                                            if item["native_transaction_id"] is not None])
     verify_native_composition(configured, delivery_summary, timer_operations, ownership)
-    print(f"{len(document['cases'])} normative timer operations, {len(document['clock_vectors'])} clock boundaries, {len(document['fence_vectors'])} claim fences, two lifecycles, 3 archive participant and 3 native source ownership cases passed under one configured C/D/H installation")
+    print(f"{len(document['cases'])} normative timer operations, {len(document['clock_vectors'])} clock boundaries, {len(document['fence_vectors'])} claim fences, two lifecycles, 4 archive participant and 3 native source ownership cases passed under one configured C/D/H installation")
 
 
 if __name__ == "__main__":

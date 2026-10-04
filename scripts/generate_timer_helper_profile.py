@@ -10,7 +10,7 @@ from pathlib import Path
 
 from ruamel.yaml import YAML
 from generate_version1_vectors import (canonical, digest, typed_value,
-                                       bundle_fingerprint_document, seal_aggregate,
+                                       bundle_fingerprint_document, normalized_bundle, seal_aggregate,
                                        seal_checkpoint)
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -362,13 +362,21 @@ def render(spec_root: Path):
         "decision_authority": {"kind": "host_profile", "identifier": "orders-host"},
         "acknowledge_source": True,
         "admission_binding_digest": binding["admission_binding_digest"]}
+    claimed_timer = installed_lifecycle["expected_helper_after_claim"]
+    fired_timer = installed_lifecycle["expected_helper_after_fire"]
     empty = {"checkpoint": "before-timer-checkpoint-v1.json", "bindings": [],
-             "dead_letters": [], "source_acknowledgements": [], "provider_dispatches": 0}
+             "dead_letters": [], "source_acknowledgements": [], "provider_dispatches": 0,
+             "timer_artifact": claimed_timer}
     committed = {**empty, "checkpoint": "after-timer-checkpoint-v1.json",
-        "bindings": [binding], "source_acknowledgements": [ownership["acknowledge_after_commit"]]}
+        "bindings": [binding], "source_acknowledgements": [ownership["acknowledge_after_commit"]],
+        "timer_artifact": fired_timer}
     committed_unacknowledged = {**committed, "source_acknowledgements": []}
+    fire_context = {"complete_request": installed_lifecycle["complete_request"],
+                    "trusted_now": "120", "expected_prior_fate": "claimed",
+                    "helper_provider_interface": "determa.timer_helper"}
     def ingress_vector(name, before, after, expected, fault=None, replay_of=None):
         return {"name": name, "operation": "ingest", "request": ingress_request,
+                "timer_fire_context": fire_context,
                 "before": before, "after": after, "fault_injection": fault,
                 "replay_of": replay_of, "expected_response": expected}
     delivery_vectors = {"fixture_format": "determa.timer_helper.delivery_vectors",
@@ -378,12 +386,35 @@ def render(spec_root: Path):
                            {"kind": "no_response"}, "crash_after_commit_before_ack"),
             ingress_vector("timer_replay_after_commit_crash", committed_unacknowledged, committed, admitted,
                            replay_of="timer_crash_after_commit_before_ack")]}
+    raw_export = json.loads((spec_root / NORM / "timer-archive-export-v1.json").read_text())
+    live_export = copy.deepcopy(raw_export)
+    source_checkpoint = lifecycle["expected_create_checkpoint"]
+    source_definition = {"validated_bundle_fingerprint": source_checkpoint["root_record"][
+        "aggregate_state"]["validated_bundle_fingerprint"],
+        "normalized_bundle": typed_value(normalized_bundle(CASE / "target-machine.yaml"))}
+    live_export["source_capture"]["checkpoints"] = [source_checkpoint]
+    live_export["source_capture"]["normalized_definitions"] = [source_definition]
+    live_export["source_capture"]["inventory_evidence"]["selected_checkpoint_digests"] = [
+        source_checkpoint["execution_checkpoint_digest"]]
+    archive = live_export["expected_archive"]
+    archive["checkpoints"] = [source_checkpoint]
+    archive["normalized_definitions"] = [source_definition]
+    archive["members"] = [
+        {"identity": "checkpoint:" + source_checkpoint["root_instance_id"],
+         "digest": digest(source_checkpoint), "byte_length": str(len(canonical(source_checkpoint)))},
+        {"identity": "definition:" + source_definition["validated_bundle_fingerprint"],
+         "digest": digest(source_definition), "byte_length": str(len(canonical(source_definition)))},
+        *[member for member in archive["members"] if member["identity"].startswith("participant:")]]
+    archive["archive_digest"] = digest(["determa-archive-digest-1",
+        {key: part for key, part in archive.items() if key != "archive_digest"}])
+    live_export["expected_result"]["archive_digest"] = archive["archive_digest"]
     outputs = {"vectors.generated.json": canonical(value) + b"\n",
                "lifecycle.generated.json": canonical(lifecycle) + b"\n",
                "configured-lifecycle.generated.json": canonical(installed_lifecycle) + b"\n",
                "source-ownership.generated.json": canonical(ownership) + b"\n",
                "timer-delivery.generated.json": canonical(delivery_vectors) + b"\n",
                "archive-export.generated.json": canonical(json.loads((spec_root / NORM / "timer-archive-export-v1.json").read_text())) + b"\n",
+               "archive-operational.generated.json": canonical(live_export) + b"\n",
                "archive-stage.generated.json": canonical(json.loads((spec_root / NORM / "timer-archive-stage-v1.json").read_text())) + b"\n",
                "target-machine.yaml": target_source,
                "machine.yaml": (CASE / "machine.yaml").read_bytes(),
