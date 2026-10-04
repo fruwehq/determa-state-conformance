@@ -13,7 +13,7 @@ import rfc8785
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance/profiles/host-authority"
-SPEC_PIN = "6bd25e3fcdf068af861aa289903a8489bd8f0139"
+SPEC_PIN = "6207362e879ccca70f709e1eb4cc90448d910c0b"
 
 
 def raw(value: object) -> str:
