@@ -124,7 +124,18 @@ def main() -> int:
         rejected('base-only delivery proof used for safe relocation',
                  lambda: observed_binding(['adapter'], ['authority'],
                      {'proved_claims': ['lossless_delivery_controlled_store']}, fixture))
-    print('42 normative and 6 real two-root recovery cases; 9 adversarial substitutions passed')
+        rejected('effect proof from a different parent run',
+                 lambda: observed_binding(['adapter'], ['authority'], {
+                     'proved_claims': [
+                         'lossless_delivery_controlled_store',
+                         'host_authority_worker_sqlite_independent',
+                         'five_native_effect_integrations_controlled_store'],
+                     'parent_run_id': 'delivery-run',
+                     'configured_delivery_profile': {'run_id': 'delivery-run'},
+                     'authority_effect_summary': {
+                         'parent_run_id': 'unrelated-effect-run', 'authority_summary': {}},
+                 }, fixture))
+    print('42 normative and 6 real two-root recovery cases; 10 adversarial substitutions passed')
     return 0
 
 
