@@ -46,12 +46,15 @@ def main() -> int:
     attack("freeze request is proof", lambda d: d["operations"][by_name["freeze_request_digest_is_not_committed_proof"]]["request"]["arguments"].update(freeze_evidence_digest=d["operations"][by_name["freeze_after_drain"]]["expected_response"]["evidence_digest"]))
     attack("copied database grants retirement", lambda d: d["operations"][by_name["copied_database_relocation"]]["ledger_after"]["retirement_grants"].append({"copied": True}))
     attack("omitted inventory", lambda d: d["operations"][by_name["freeze_after_drain"]]["ledger_after"].update(inventory=[]))
+    attack("omitted participant", lambda d: d["operations"][by_name["retirement_with_known_fate"]]["ledger_before"].update(required_participant_records=[]))
     attack("stale claim", lambda d: d["operations"][by_name["fence_worker_allocates_new_claim"]]["ledger_after"]["active_claims"][0].update(scope_authority_epoch="1"))
     attack("unauthorized leak", lambda d: d["operations"][by_name["unauthorized_scope"]]["expected_response"].update(scope_identity="scope-42"))
     attack("clock overflow", lambda d: d["operations"][by_name["fence_worker_allocates_new_claim"]]["expected_response"]["claim"].update(expires_at="9223372036854775808"))
     attack("extra claim field", lambda d: d["operations"][by_name["fence_worker_allocates_new_claim"]]["expected_response"]["claim"].update(clock_basis="unix_nanoseconds"))
     attack("invalid clock classification", lambda d: d["clocks"][0].update(source_disposition="invalid"))
     attack("safe relocation false report", lambda d: d["profiles"][0]["expected_report"]["guarantees"].update(safe_relocation=True))
+    attack("lost response commits twice", lambda d: d["native_traces"][1]["steps"][1]["expected_ledger_after"].update(scope_generation="6"))
+    attack("scope identity reused", lambda d: d["allocation_checks"][0]["expected"].update(allocated=True))
     for name, document in attacks:
         try:
             validate_document(document, spec)

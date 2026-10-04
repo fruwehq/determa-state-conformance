@@ -68,6 +68,12 @@ def main() -> int:
         if observed != expected:
             raise SystemExit(f"{vector['id']}: native response or storage trace differs")
         checked += 1
+    for vector in manifest["allocation_checks"]:
+        completed = subprocess.run(args.adapter, input=compact({"kind": "scope_allocation_check", "input": vector["input"]}) + "\n",
+                                   text=True, capture_output=True)
+        if completed.returncode or json.loads(completed.stdout) != vector["expected"]:
+            raise SystemExit(f"{vector['id']}: scope identity was reused or storage observation differs")
+        checked += 1
     print(f"checked {checked} direct production responses and observations")
     return 0
 

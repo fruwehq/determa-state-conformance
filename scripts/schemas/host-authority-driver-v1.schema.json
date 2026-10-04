@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://determa.dev/state/conformance/host-authority-driver-v1.schema.json",
   "type": "object",
-  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "runtime_probes"],
+  "required": ["format", "schema_version", "specification_commit", "operations", "profiles", "clocks", "worker_checks", "native_traces", "allocation_checks", "runtime_probes"],
   "properties": {
     "format": {"const": "determa.host-authority-driver-v1"},
     "schema_version": {"const": 1},
@@ -12,13 +12,14 @@
     "clocks": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/clock"}},
     "worker_checks": {"type": "array", "minItems": 7, "maxItems": 7, "items": {"$ref": "#/$defs/workerCheck"}},
     "native_traces": {"type": "array", "minItems": 8, "maxItems": 8, "items": {"$ref": "#/$defs/nativeTrace"}},
+    "allocation_checks": {"type": "array", "minItems": 1, "maxItems": 1, "items": {"$ref": "#/$defs/allocationCheck"}},
     "runtime_probes": {"type": "array", "minItems": 9, "maxItems": 9, "uniqueItems": true, "items": {"type": "string"}}
   },
   "additionalProperties": false,
   "$defs": {
     "ledger": {
       "type": "object",
-      "required": ["allocated_scope_identities", "scope_identity", "owner_principal", "authority_epoch", "scope_generation", "state", "receipts", "mutation_bytes", "checkpoint_bytes", "journal_entries", "ingress_acknowledgements", "active_claims", "freeze", "inventory", "retirement_grants"],
+      "required": ["allocated_scope_identities", "scope_identity", "owner_principal", "authority_epoch", "scope_generation", "state", "receipts", "mutation_bytes", "checkpoint_bytes", "journal_entries", "ingress_acknowledgements", "active_claims", "roots", "tombstones", "pending_intents", "terminal_intents", "definition_references", "migration_references", "required_participant_records", "freeze", "inventory", "retirement_grants", "destination_activations"],
       "properties": {
         "allocated_scope_identities": {"type": "array", "items": {"type": "string"}},
         "scope_identity": {"type": "string"}, "owner_principal": {"type": "string"},
@@ -30,9 +31,17 @@
         "journal_entries": {"type": "array", "items": {"type": "object"}},
         "ingress_acknowledgements": {"type": "array", "items": {"type": "object"}},
         "active_claims": {"type": "array", "items": {"type": "object"}},
+        "roots": {"type": "array", "items": {"type": "string"}},
+        "tombstones": {"type": "array", "items": {"type": "string"}},
+        "pending_intents": {"type": "array", "items": {"type": "string"}},
+        "terminal_intents": {"type": "array", "items": {"type": "string"}},
+        "definition_references": {"type": "array", "items": {"type": "string"}},
+        "migration_references": {"type": "array", "items": {"type": "string"}},
+        "required_participant_records": {"type": "array", "items": {"type": "string"}},
         "freeze": {"type": ["object", "null"]},
         "inventory": {"type": "array", "items": {"type": "object"}},
-        "retirement_grants": {"type": "array", "items": {"type": "object"}}
+        "retirement_grants": {"type": "array", "items": {"type": "object"}},
+        "destination_activations": {"type": "array", "items": {"type": "object"}}
       }, "additionalProperties": false
     },
     "receipt": {
@@ -93,6 +102,11 @@
         "expected_response_bytes": {"type": ["string", "null"]},
         "expected_ledger_after": {"$ref": "#/$defs/ledger"}},
       "additionalProperties": false
+    },
+    "allocationCheck": {
+      "type": "object", "required": ["id", "input", "expected"],
+      "properties": {"id": {"type": "string"}, "input": {"type": "object"},
+        "expected": {"type": "object"}}, "additionalProperties": false
     }
   }
 }

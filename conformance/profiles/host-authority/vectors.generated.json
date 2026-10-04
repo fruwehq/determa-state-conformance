@@ -65,9 +65,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -84,9 +96,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -183,9 +207,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -214,9 +250,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "committed",
@@ -325,9 +373,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -356,9 +416,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -465,9 +537,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -503,21 +587,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -635,9 +743,21 @@
         ],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -680,9 +800,21 @@
             "state": "active"
           }
         ],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -818,21 +950,56 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -875,18 +1042,52 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
         "retirement_grants": [
@@ -895,7 +1096,8 @@
             "consumed": false,
             "single_use": true
           }
-        ]
+        ],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -1039,18 +1241,52 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
         "retirement_grants": [
@@ -1059,7 +1295,8 @@
             "consumed": false,
             "single_use": true
           }
-        ]
+        ],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -1102,18 +1339,52 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
         "retirement_grants": [
@@ -1122,7 +1393,8 @@
             "consumed": false,
             "single_use": true
           }
-        ]
+        ],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -1239,9 +1511,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -1258,9 +1542,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -1357,9 +1653,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -1376,9 +1684,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -1475,9 +1795,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -1494,9 +1826,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -1591,9 +1935,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -1610,9 +1966,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "unknown",
@@ -1719,9 +2087,21 @@
         ],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -1743,9 +2123,21 @@
         ],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -1871,9 +2263,21 @@
         ],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -1895,9 +2299,21 @@
         ],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -2033,21 +2449,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -2083,21 +2523,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -2234,21 +2698,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -2284,21 +2772,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -2385,9 +2897,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -2404,9 +2928,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -2515,9 +3051,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -2546,9 +3094,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -2657,9 +3217,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -2688,9 +3260,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -2780,9 +3364,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -2799,9 +3395,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -2890,9 +3498,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -2909,9 +3529,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -3000,9 +3632,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -3019,9 +3663,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -3138,21 +3794,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "ledger_after": {
         "allocated_scope_identities": [
@@ -3188,21 +3868,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "fault": {
         "native_transaction_fate": "known",
@@ -3987,9 +4691,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "schedule": "one_attempt_then_observe",
       "steps": [
@@ -4031,9 +4747,21 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": null,
             "inventory": [],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         }
       ]
@@ -4056,9 +4784,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "schedule": "restart_between_steps",
       "steps": [
@@ -4112,9 +4852,21 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": null,
             "inventory": [],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         },
         {
@@ -4167,9 +4919,21 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": null,
             "inventory": [],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         }
       ]
@@ -4192,9 +4956,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "schedule": "pause_first_inside_native_guard_start_second_then_commit_first",
       "steps": [
@@ -4248,9 +5024,21 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": null,
             "inventory": [],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         },
         {
@@ -4303,9 +5091,21 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": null,
             "inventory": [],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         }
       ]
@@ -4328,9 +5128,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "schedule": "pause_commit_inside_native_guard_start_freeze_release_commit_then_freeze",
       "steps": [
@@ -4384,9 +5196,21 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": null,
             "inventory": [],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         },
         {
@@ -4446,21 +5270,45 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": {
               "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
               "generation": "6"
             },
             "inventory": [
               {
-                "kind": "root",
-                "identity": "root-7"
+                "kind": "checkpoint",
+                "identity": "0"
+              },
+              {
+                "kind": "definition",
+                "identity": "definition-7"
               },
               {
                 "kind": "receipt",
                 "identity": "commit-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "freeze-1"
+              },
+              {
+                "kind": "root",
+                "identity": "root-7"
               }
             ],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         }
       ]
@@ -4483,9 +5331,21 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": null,
         "inventory": [],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "schedule": "disconnect_writer_before_fate_proof_then_attempt_freeze",
       "steps": [
@@ -4527,9 +5387,21 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": null,
             "inventory": [],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         }
       ]
@@ -4571,21 +5443,56 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [
+          "journal:journal-1",
+          "worker:worker-1"
+        ],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
+          },
+          {
+            "kind": "participant",
+            "identity": "journal:journal-1"
+          },
+          {
+            "kind": "participant",
+            "identity": "worker:worker-1"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "schedule": "omit_authoritative_receipt_from_frozen_enumeration",
       "steps": [
@@ -4646,21 +5553,56 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [
+              "journal:journal-1",
+              "worker:worker-1"
+            ],
             "freeze": {
               "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
               "generation": "6"
             },
             "inventory": [
               {
-                "kind": "root",
-                "identity": "root-7"
+                "kind": "checkpoint",
+                "identity": "0"
+              },
+              {
+                "kind": "definition",
+                "identity": "definition-7"
+              },
+              {
+                "kind": "participant",
+                "identity": "journal:journal-1"
+              },
+              {
+                "kind": "participant",
+                "identity": "worker:worker-1"
               },
               {
                 "kind": "receipt",
                 "identity": "commit-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "freeze-1"
+              },
+              {
+                "kind": "root",
+                "identity": "root-7"
               }
             ],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         }
       ]
@@ -4702,21 +5644,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "schedule": "one_attempt_then_observe",
       "steps": [
@@ -4777,21 +5743,45 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": {
               "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
               "generation": "6"
             },
             "inventory": [
               {
-                "kind": "root",
-                "identity": "root-7"
+                "kind": "checkpoint",
+                "identity": "0"
+              },
+              {
+                "kind": "definition",
+                "identity": "definition-7"
               },
               {
                 "kind": "receipt",
                 "identity": "commit-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "freeze-1"
+              },
+              {
+                "kind": "root",
+                "identity": "root-7"
               }
             ],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         }
       ]
@@ -4833,21 +5823,45 @@
         "journal_entries": [],
         "ingress_acknowledgements": [],
         "active_claims": [],
+        "roots": [
+          "root-7"
+        ],
+        "tombstones": [],
+        "pending_intents": [],
+        "terminal_intents": [],
+        "definition_references": [
+          "definition-7"
+        ],
+        "migration_references": [],
+        "required_participant_records": [],
         "freeze": {
           "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
           "generation": "6"
         },
         "inventory": [
           {
-            "kind": "root",
-            "identity": "root-7"
+            "kind": "checkpoint",
+            "identity": "0"
+          },
+          {
+            "kind": "definition",
+            "identity": "definition-7"
           },
           {
             "kind": "receipt",
             "identity": "commit-1"
+          },
+          {
+            "kind": "receipt",
+            "identity": "freeze-1"
+          },
+          {
+            "kind": "root",
+            "identity": "root-7"
           }
         ],
-        "retirement_grants": []
+        "retirement_grants": [],
+        "destination_activations": []
       },
       "schedule": "one_attempt_then_observe",
       "steps": [
@@ -4908,24 +5922,144 @@
             "journal_entries": [],
             "ingress_acknowledgements": [],
             "active_claims": [],
+            "roots": [
+              "root-7"
+            ],
+            "tombstones": [],
+            "pending_intents": [],
+            "terminal_intents": [],
+            "definition_references": [
+              "definition-7"
+            ],
+            "migration_references": [],
+            "required_participant_records": [],
             "freeze": {
               "evidence_digest": "sha256:259be5496362d1d2d14e356a67f493a1fa50ac75c721bf016f7578bc7a7c979d",
               "generation": "6"
             },
             "inventory": [
               {
-                "kind": "root",
-                "identity": "root-7"
+                "kind": "checkpoint",
+                "identity": "0"
+              },
+              {
+                "kind": "definition",
+                "identity": "definition-7"
               },
               {
                 "kind": "receipt",
                 "identity": "commit-1"
+              },
+              {
+                "kind": "receipt",
+                "identity": "freeze-1"
+              },
+              {
+                "kind": "root",
+                "identity": "root-7"
               }
             ],
-            "retirement_grants": []
+            "retirement_grants": [],
+            "destination_activations": []
           }
         }
       ]
+    }
+  ],
+  "allocation_checks": [
+    {
+      "id": "scope_id_permanent_after_checkpoint_deletion",
+      "input": {
+        "ledger_before": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "commit-1",
+              "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+              "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+            }
+          ],
+          "mutation_bytes": [
+            "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+          ],
+          "checkpoint_bytes": [
+            "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+          ],
+          "journal_entries": [],
+          "ingress_acknowledgements": [],
+          "active_claims": [],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        },
+        "delete_portable_checkpoint": true,
+        "requested_scope_identity": "scope-42"
+      },
+      "expected": {
+        "allocated": false,
+        "ledger_after": {
+          "allocated_scope_identities": [
+            "scope-42"
+          ],
+          "scope_identity": "scope-42",
+          "owner_principal": "owner-1",
+          "authority_epoch": "2",
+          "scope_generation": "5",
+          "state": "active",
+          "receipts": [
+            {
+              "operation_id": "commit-1",
+              "request_digest": "sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a",
+              "request_bytes": "{\"arguments\":{\"mutation_digest\":\"sha256:306a9d50a281c269563a5b347677af722779a8c02acc8f5ab5ffdd611544d76b\"},\"expected_authority_epoch\":\"2\",\"expected_scope_generation\":\"4\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"request_digest\":\"sha256:faebbbb37309135f8b020b63e30f133b914e90ab353e5976e1e0db69ee797e7a\",\"scope_identity\":\"scope-42\"}",
+              "result_bytes": "{\"authority_epoch\":\"2\",\"claim\":null,\"error_code\":null,\"evidence_digest\":\"sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6\",\"interface\":\"determa.host_authority\",\"interface_version\":1,\"operation\":\"guarded_commit\",\"operation_id\":\"commit-1\",\"scope_generation\":\"5\",\"scope_identity\":\"scope-42\",\"state\":\"active\",\"status\":\"accepted\"}",
+              "evidence_digest": "sha256:661fddea8fedd72d583984b6e3f173240679e68439287e94361c2cb65781c3c6"
+            }
+          ],
+          "mutation_bytes": [
+            "{\"checkpoint\":\"checkpoint-for-commit-1-4b2decac\",\"operation_id\":\"commit-1\",\"scope_identity\":\"scope-42\"}"
+          ],
+          "checkpoint_bytes": [],
+          "journal_entries": [],
+          "ingress_acknowledgements": [],
+          "active_claims": [],
+          "roots": [
+            "root-7"
+          ],
+          "tombstones": [],
+          "pending_intents": [],
+          "terminal_intents": [],
+          "definition_references": [
+            "definition-7"
+          ],
+          "migration_references": [],
+          "required_participant_records": [],
+          "freeze": null,
+          "inventory": [],
+          "retirement_grants": [],
+          "destination_activations": []
+        }
+      }
     }
   ],
   "runtime_probes": [

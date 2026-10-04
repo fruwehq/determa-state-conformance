@@ -39,7 +39,24 @@ def ledger(epoch: str = "2", generation: str = "4", state: str = "active") -> di
             "scope_generation": generation, "state": state, "receipts": [],
             "mutation_bytes": [], "checkpoint_bytes": [], "journal_entries": [],
             "ingress_acknowledgements": [], "active_claims": [],
-            "freeze": None, "inventory": [], "retirement_grants": []}
+            "roots": ["root-7"], "tombstones": [], "pending_intents": [],
+            "terminal_intents": [], "definition_references": ["definition-7"],
+            "migration_references": [], "required_participant_records": [],
+            "freeze": None, "inventory": [], "retirement_grants": [],
+            "destination_activations": []}
+
+
+def inventory_of(snapshot: dict) -> list[dict]:
+    members = []
+    for field, kind in (("roots", "root"), ("tombstones", "tombstone"),
+                        ("pending_intents", "pending_intent"), ("terminal_intents", "terminal_intent"),
+                        ("definition_references", "definition"), ("migration_references", "migration")):
+        members.extend({"kind": kind, "identity": item} for item in snapshot[field])
+    members.extend({"kind": "receipt", "identity": item["operation_id"]} for item in snapshot["receipts"])
+    members.extend({"kind": "checkpoint", "identity": str(index)} for index, _ in enumerate(snapshot["checkpoint_bytes"]))
+    members.extend({"kind": "journal", "identity": item["work_identity"]} for item in snapshot["journal_entries"])
+    members.extend({"kind": "participant", "identity": item} for item in snapshot["required_participant_records"])
+    return sorted(members, key=lambda item: (item["kind"], item["identity"]))
 
 
 def receipt(request: dict, result: dict) -> dict:
@@ -92,6 +109,9 @@ def render(spec_root: Path) -> bytes:
                 before["checkpoint_bytes"] = copy.deepcopy(first["guarded_native_commit"]["ledger_after"]["checkpoint_bytes"])
             elif name in {"retirement_with_known_fate", "retirement_equal_replay", "freeze_request_digest_is_not_committed_proof"}:
                 before = copy.deepcopy(first["freeze_after_drain"]["ledger_after"])
+                if name in {"retirement_with_known_fate", "retirement_equal_replay"}:
+                    before["required_participant_records"] = ["journal:journal-1", "worker:worker-1"]
+                    before["inventory"] = inventory_of(before)
                 if name == "retirement_equal_replay":
                     before = copy.deepcopy(first["retirement_with_known_fate"]["ledger_after"])
             elif name in {"conflicting_operation_reuse", "replay_evidence_expired"}:
@@ -129,8 +149,7 @@ def render(spec_root: Path) -> bytes:
                     after["active_claims"] = [result["claim"]]
                 elif name == "freeze_after_drain":
                     after["freeze"] = {"evidence_digest": result["evidence_digest"], "generation": "6"}
-                    after["inventory"] = [{"kind": "root", "identity": "root-7"},
-                                          {"kind": "receipt", "identity": "commit-1"}]
+                    after["inventory"] = inventory_of(after)
                 elif name == "retirement_with_known_fate":
                     after["retirement_grants"] = [{"destination_binding_digest": request["arguments"]["destination_binding_digest"],
                                                    "consumed": False, "single_use": True}]
@@ -258,12 +277,18 @@ def render(spec_root: Path) -> bytes:
          "steps": [step(first["copied_database_relocation"])]},
         {"id": "unsupported_relocation_inactive_destination", "required_guarantee": "none",
          "setup": first["unsupported_safe_relocation"]["ledger_before"], "schedule": "one_attempt_then_observe",
-         "steps": [step(first["unsupported_safe_relocation"])]}
+        "steps": [step(first["unsupported_safe_relocation"])]}
     ]
+    deleted_checkpoint_ledger = copy.deepcopy(commit["ledger_after"])
+    deleted_checkpoint_ledger["checkpoint_bytes"] = []
+    allocation_checks = [{"id": "scope_id_permanent_after_checkpoint_deletion",
+        "input": {"ledger_before": commit["ledger_after"], "delete_portable_checkpoint": True,
+                  "requested_scope_identity": "scope-42"},
+        "expected": {"allocated": False, "ledger_after": deleted_checkpoint_ledger}}]
     return (json.dumps({"format": "determa.host-authority-driver-v1", "schema_version": 1,
                        "specification_commit": SPEC_PIN, "operations": vectors,
                        "profiles": profile_vectors, "clocks": clock_vectors, "worker_checks": worker_checks,
-                       "native_traces": native_traces,
+                       "native_traces": native_traces, "allocation_checks": allocation_checks,
                        "runtime_probes": ["expiry_equal_rejected", "clock_unavailable_rejected",
                                           "race_second_writer_with_freeze", "precommit_rollback",
                                           "commit_unknown_restart", "postcommit_lost_response_replay",
