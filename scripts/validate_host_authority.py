@@ -219,8 +219,9 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
     profile_names = {row["name"]: (disposition, row) for disposition in ("valid", "invalid") for row in profile_source[disposition]}
     require(len(profile_names) == len(document["profiles"]) == 6, "profile coverage")
     seen = set()
+    common_inputs = {}
     for vector in document["profiles"]:
-        require(set(vector) == {"id", "source_disposition", "fixture_layer", "hypothetical_verification", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"}, "profile fields")
+        require(set(vector) == {"id", "source_disposition", "fixture_layer", "submitted_report", "hypothetical_verification", "configured_facts", "expected_report", "expected_report_bytes", "expected_outcome", "expected_support"}, "profile fields")
         name = vector["id"]
         require(name in profile_names and name not in seen, f"profile name {name}")
         seen.add(name)
@@ -240,11 +241,20 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
         require(vector["hypothetical_verification"] == {"source_context": example.get("context"),
                 "proved_predicates": atoms[name]}, f"{name}: source-only hypothetical premises")
         report = vector["expected_report"]
+        require(compact(vector["submitted_report"]) == compact(example["report"]),
+                f"{name}: submitted source report")
         require(vector["source_disposition"] == disposition and report == example["report"] and
                 vector["expected_report_bytes"] == compact(report), f"{name}: source profile report")
         require(bool(list(profile_schema.iter_errors(report))) == (disposition == "invalid"), f"{name}: profile schema")
         require(vector["expected_outcome"] == ({"status": "accepted", "report_bytes": compact(report)} if disposition == "valid" else
                 {"status": "rejected", "code": "host_capability_mismatch"}), f"{name}: profile refusal")
+        call_bytes = compact({"kind": "common_rule_profile", "submitted_report": vector["submitted_report"],
+                              "configured_facts": vector["configured_facts"],
+                              "hypothetical_verification": vector["hypothetical_verification"]})
+        outcome_bytes = compact(vector["expected_outcome"])
+        require(call_bytes not in common_inputs or common_inputs[call_bytes] == outcome_bytes,
+                f"{name}: identical common-rule input has conflicting outcomes")
+        common_inputs[call_bytes] = outcome_bytes
         facts = vector["configured_facts"]
         expected_requirement = None if report["extension_report"] is None else {
             "category": report["extension_report"]["category"],

@@ -51,6 +51,8 @@ as release promises in prose.
 
 ## Unreleased 0.3.0 conformance additions
 
+Authority common-rule checks supply the complete submitted report separately from independent facts and proof predicates, so unsupported guarantee requests remain executable negative cases. The validator rejects conflicting outcomes for identical inputs; public certification still requires actual configured native evidence.
+
 The optional application-projection profile adds twenty-three closed, schema-version-1
 facade vectors for selected-row mapping, full checkpoint reconstruction, exact §8
 return fields, replay and conflict precedence, capacity rejection, transaction
