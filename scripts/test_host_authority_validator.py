@@ -151,7 +151,8 @@ def main() -> int:
                      "freeze_waits_for_writer", "freeze_after_drain", "incomplete_frozen_inventory_refuses_freeze"}
     installation = {"closure_bytes_base64": base64.b64encode(closure_bytes).decode(),
                     "configuration_bytes_base64": base64.b64encode(configuration_bytes).decode(),
-                    "observed_health": "healthy", "native_proof_ids": sorted(needed_proofs)}
+                    "observed_health": "healthy", "participant_installations": [],
+                    "native_proof_ids": sorted(needed_proofs)}
     verify_configured_profile({"report_bytes": compact(guarded), "installation_evidence": installation},
                               spec, needed_proofs)
     try:
@@ -161,6 +162,31 @@ def main() -> int:
         pass
     else:
         raise AssertionError("public profile gate accepted a native claim without passed proofs")
+    worker = copy.deepcopy(next(row for row in baseline["profiles"] if row["id"] ==
+                           "guarded_local_worker_fencing")["expected_report"])
+    worker["extension_report"]["provider_reference"]["content_digest"] = guarded[
+        "extension_report"]["provider_reference"]["content_digest"]
+    worker["topology"]["configuration_digest"] = guarded["topology"]["configuration_digest"]
+    participant_installations = []
+    for participant in worker["required_participants"]:
+        participant_bytes = participant["role"].encode()
+        participant["provider_reference"]["content_digest"] = "sha256:" + hashlib.sha256(
+            participant_bytes).hexdigest()
+        participant_installations.append({"participant": copy.deepcopy(participant),
+            "closure_bytes_base64": base64.b64encode(participant_bytes).decode(),
+            "observed_health": "healthy"})
+    worker_installation = {**installation, "participant_installations": participant_installations}
+    verify_configured_profile({"report_bytes": compact(worker), "installation_evidence": worker_installation},
+                              spec, set(), require_native_proof=False)
+    corrupted = copy.deepcopy(worker_installation)
+    corrupted["participant_installations"][0]["closure_bytes_base64"] = "Yg=="
+    try:
+        verify_configured_profile({"report_bytes": compact(worker), "installation_evidence": corrupted},
+                                  spec, set(), require_native_proof=False)
+    except AdapterOutputError:
+        pass
+    else:
+        raise AssertionError("public profile gate accepted wrong installed participant")
     print(f"rejected {len(attacks)} adversarial host authority substitutions")
     return 0
 

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import binascii
 import hashlib
 import json
 import subprocess
@@ -71,12 +72,13 @@ def verify_configured_profile(observed: object, spec_root: Path, proved_ids: set
             raise AdapterOutputError("unconfigured authority asserted a guarantee")
         return report
     if type(installation) is not dict or set(installation) != {
-            "closure_bytes_base64", "configuration_bytes_base64", "observed_health", "native_proof_ids"}:
+            "closure_bytes_base64", "configuration_bytes_base64", "observed_health",
+            "participant_installations", "native_proof_ids"}:
         raise AdapterOutputError("incomplete installed provider evidence")
     try:
         closure = base64.b64decode(installation["closure_bytes_base64"], validate=True)
         configuration = base64.b64decode(installation["configuration_bytes_base64"], validate=True)
-    except (ValueError, TypeError) as error:
+    except (ValueError, TypeError, binascii.Error) as error:
         raise AdapterOutputError("invalid installed closure/configuration bytes") from error
     digest = lambda payload: "sha256:" + hashlib.sha256(payload).hexdigest()
     if not closure or not configuration or \
@@ -86,6 +88,21 @@ def verify_configured_profile(observed: object, spec_root: Path, proved_ids: set
             type(installation["native_proof_ids"]) is not list or \
             not all(type(item) is str for item in installation["native_proof_ids"]):
         raise AdapterOutputError("installed closure, configuration or health differs from report")
+    participants = installation["participant_installations"]
+    if type(participants) is not list or len(participants) != len(report["required_participants"]):
+        raise AdapterOutputError("installed participant inventory differs from report")
+    for installed, required in zip(participants, report["required_participants"]):
+        if type(installed) is not dict or set(installed) != {
+                "participant", "closure_bytes_base64", "observed_health"} or \
+                not exact_json_equal(installed["participant"], required) or \
+                installed["observed_health"] != "healthy":
+            raise AdapterOutputError("installed participant differs from report")
+        try:
+            participant_closure = base64.b64decode(installed["closure_bytes_base64"], validate=True)
+        except (ValueError, TypeError, binascii.Error):
+            raise AdapterOutputError("invalid installed participant closure bytes") from None
+        if not participant_closure or digest(participant_closure) != required["provider_reference"]["content_digest"]:
+            raise AdapterOutputError("installed participant closure digest differs from report")
     proofs = set(installation["native_proof_ids"])
     if not require_native_proof:
         return report
