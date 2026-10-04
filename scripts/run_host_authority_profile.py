@@ -133,7 +133,8 @@ def report_binding(report: dict) -> str:
 
 def select_production_scenario(manifest: dict, report: dict) -> dict | None:
     applicability = {"topology_identifier": report["topology"]["identifier"],
-                     "required_participants": report["required_participants"]}
+                     "required_participants": [{"role": item["role"], "instance_id": item["instance_id"]}
+                         for item in report["required_participants"]]}
     matching = [row for row in manifest["production_scenarios"] if
                 exact_json_equal(row["applicability"], applicability)]
     guarantees = report["guarantees"]

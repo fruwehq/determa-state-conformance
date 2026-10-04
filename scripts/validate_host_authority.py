@@ -481,7 +481,9 @@ def validate_document(document: dict, spec_root: Path) -> tuple[int, int, int, i
         require(set(scenario) == {"id", "applicability", "operations", "worker_checks",
                                   "native_traces", "allocation_check"} and
                 scenario["applicability"] == {"topology_identifier": source_report["topology"]["identifier"],
-                    "required_participants": source_report["required_participants"]},
+                    "required_participants": [
+                        {"role": item["role"], "instance_id": item["instance_id"]}
+                        for item in source_report["required_participants"]]},
                 "production scenario applicability")
         participants = [item["role"] + ":" + item["instance_id"]
                         for item in source_report["required_participants"]]
