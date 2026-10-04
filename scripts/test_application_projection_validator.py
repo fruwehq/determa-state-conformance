@@ -49,6 +49,16 @@ def change_replay_payload(profile: dict, _: dict) -> None:
     ])
 
 
+def change_new_delivery_payload(profile: dict, _: dict) -> None:
+    request = vector(profile, 'new_delivery_uses_current_row')['request']
+    delivery = request['delivery']
+    delivery['envelope']['payload'] = ['map', [['amount', ['integer', '7']]]]
+    delivery['envelope_digest'] = hash_value([
+        'determa-inbox-envelope-digest-1', '1', request['root_instance_id'],
+        delivery['delivery_mode'], delivery['envelope'],
+    ])
+
+
 def check_changed_declaration() -> None:
     with tempfile.TemporaryDirectory() as temporary:
         case = Path(temporary)
@@ -81,6 +91,14 @@ def main() -> int:
         ('wrong historical CAS', lambda p,t: vector(p, 'equal_delivery_replay')['request']['expected_checkpoint'].update(revision='77')),
         ('wrong replay origin', lambda p,t: vector(p, 'equal_delivery_replay').update(replay_of='env_success_admission')),
         ('wrong completed receipt', lambda p,t: vector(p, 'equal_delivery_replay')['outcome'].update(result_value=copy.deepcopy(vector(p, 'equal_pending_delivery_replay')['outcome']['result_value']))),
+        ('changed-row replay wrong owner', lambda p,t: vector(p, 'equal_changed_row_replay')['before']['selected_rows'][0].update(root_instance_id='foreign')),
+        ('changed-row replay lost supplement', lambda p,t: vector(p, 'equal_changed_row_replay')['before'].update(supplemental_checkpoint='created-checkpoint-v1.json')),
+        ('changed-row replay writes row', lambda p,t: vector(p, 'equal_changed_row_replay')['after']['selected_rows'][0].update(amount=['integer','7'])),
+        ('changed-row replay invokes core', lambda p,t: vector(p, 'equal_changed_row_replay')['outcome'].update(core_calls=1)),
+        ('changed-row replay invalid current type', lambda p,t: vector(p, 'equal_changed_row_replay')['before']['selected_rows'][0].update(amount=['float','4020000000000000'])),
+        ('new delivery stale mapped input', lambda p,t: vector(p, 'new_delivery_uses_current_row')['request']['mapped_input'].update(value=['integer','7'])),
+        ('new delivery wrong declared type', lambda p,t: vector(p, 'new_delivery_uses_current_row')['request']['mapped_input'].update(declaration='float')),
+        ('new delivery stale payload', change_new_delivery_payload),
         ('env source mismatch', lambda p,t: vector(p, 'env_success_admission')['before']['selected_rows'][0].update(token=['string','stale'])),
         ('env refresh result substitution', lambda p,t: vector(p, 'env_success_step')['outcome']['result_value']['state']['runtimes'][0]['variables'][0].update(value=['string','old'])),
         ('env fault row mutation', lambda p,t: vector(p, 'env_fault_step')['after']['selected_rows'][0].update(region=['string','east'])),

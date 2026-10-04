@@ -11,7 +11,8 @@ from validate_conformance import (
 REQUIRED = frozenset({
     'create_result_shape', 'typed_row_input_atomic_admit', 'step_preserves_complete_result',
     'row_float_to_integer_rejected', 'undeclared_row_field_rejected',
-    'equal_pending_delivery_replay', 'equal_delivery_replay',
+    'equal_pending_delivery_replay', 'equal_changed_row_replay',
+    'new_delivery_uses_current_row', 'equal_delivery_replay',
     'env_integer_admission', 'env_integer_step',
     'changed_identity_conflict_before_payload',
     'direct_state_edit_unsupported', 'enum_only_prior_unrepresentable',
@@ -39,6 +40,7 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
         'deferral-before-aggregate-v1.json', 'deferral-candidate-aggregate-v1.json',
         'deferral-candidate-result-v1.json', 'outbox-pending-checkpoint-v1.json',
         'replay-migrated-checkpoint-v1.json', 'replay-descriptor-v1.json',
+        'current-row-admitted-checkpoint-v1.json',
         *{f'env-{mode}-{stage}-checkpoint-v1.json'
           for mode in ('success', 'fault', 'integer') for stage in ('created', 'accepted', 'processed')}
     }
@@ -134,10 +136,15 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
                 fail(name, 'successful result lacks complete facade value')
         mapped = request['mapped_input']
         delivery = request['delivery']
-        if mapped is not None:
+        if mapped is not None and outcome['kind'] != 'replay':
             row_field = 'amount' if name == 'undeclared_row_field_rejected' else mapped['field']
             if row_field not in before['selected_rows'][0] or mapped['value'] != before['selected_rows'][0][row_field]:
-                fail(name, 'mapped value is not the selected row value')
+                fail(name, 'new mapped value is not the selected current row value')
+        if (outcome['kind'] == 'result' and request['operation'] == 'admit'
+                and request['boundary'] == 'declared_input'):
+            if (mapped is None or delivery is None or mapped['value'][0] != mapped['declaration']
+                    or delivery['envelope']['payload'] != ['map', [['amount', mapped['value']]]]):
+                fail(name, 'new delivery does not match current typed row and declaration')
         if delivery is not None:
             if delivery['envelope']['target']['root']['root_instance_id'] != request['root_instance_id']:
                 fail(name, 'delivery targets another root')
@@ -268,6 +275,8 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
                 if before['selected_rows'] != after['selected_rows']:
                     fail(name, 'env step committed a source row change')
         if outcome['kind'] == 'replay':
+            if canonical_json_bytes(before) != canonical_json_bytes(after):
+                fail(name, 'read-only replay changed selected row or supplemental storage')
             original = first_committed_admission(vector_index, request, name)
             original_request = original['request']
             if (vector.get('replay_of') != original['name'] or original['outcome']['kind'] != 'result'
@@ -341,9 +350,16 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
                         or migration_receipt['operation_kind'] != 'maintenance_migration'
                         or migration_receipt['request_digest'] != migration_digest):
                     fail(name, 'migration audit does not bind old receipt to current definition')
-            elif name == 'equal_pending_delivery_replay':
+            elif name in {'equal_pending_delivery_replay', 'equal_changed_row_replay'}:
                 if terminal or before_checkpoint != first_checkpoint:
                     fail(name, 'pending replay has terminal or changed checkpoint evidence')
+                if name == 'equal_changed_row_replay':
+                    current_row = before['selected_rows'][0]
+                    if (current_row['amount'] != ['integer', '8']
+                            or request['mapped_input']['value'] != ['integer', '7']
+                            or before_checkpoint['root_record']['aggregate_state']['validated_bundle_fingerprint']
+                               != validated_bundle_fingerprint(case / 'machine.yaml')):
+                        fail(name, 'changed application row is not a valid current integer input source')
             else:
                 fail(name, 'unrecognized replay coverage')
         expected_code = {
@@ -358,6 +374,13 @@ def validate_application_projection(case: Path, test: dict, artifact_paths: set[
             'shared_transaction_unavailable': 'projection_transaction_unavailable',
             'stale_revision_rolls_back_rows': 'checkpoint_revision_conflict',
         }.get(name)
+        if name == 'new_delivery_uses_current_row':
+            if (before['selected_rows'][0]['amount'] != ['integer', '8']
+                    or request['mapped_input']['value'] != ['integer', '8']
+                    or delivery is None or delivery['envelope']['event_id'] != 'projection-current-row-8'
+                    or after_checkpoint is None
+                    or after_checkpoint['operation_receipts'][-1]['request_digest'] != delivery['envelope_digest']):
+                fail(name, 'new delivery did not use the changed current row')
         if outcome['code'] != expected_code:
             fail(name, 'failure code does not match trigger')
         expected_failure_calls = {

@@ -17,7 +17,7 @@ The thirteen normative examples in SPEC §20.3 map to these exact witnesses:
 | `status = pending`, complete prior, typed integer `7`, atomic result | `typed_row_input_atomic_admit` |
 | Exact create/admit result fields, without invented fields | `create_result_shape`, `typed_row_input_atomic_admit` |
 | Row float presented to integer declaration | `row_float_to_integer_rejected` |
-| Equal retained delivery replay after an integer-to-float declaration change | `equal_pending_delivery_replay`, `equal_delivery_replay` |
+| Equal retained delivery replay after an integer-to-float declaration change | `equal_pending_delivery_replay`, `equal_delivery_replay`; `equal_changed_row_replay` also proves that a changed current source row does not override the retained identity |
 | Changed retained event identity conflicts before payload validation | `changed_identity_conflict_before_payload` |
 | Admitted `env.changed.amount = ["integer","7"]` with `refresh: {}` | `env_integer_admission`, `env_integer_step`; string field variant: `env_success_admission`, `env_success_step` |
 | Admitted `env` missing `refresh.only` field commits `action_fault` | `env_fault_admission`, `env_fault_step` |
@@ -28,6 +28,6 @@ The thirteen normative examples in SPEC §20.3 map to these exact witnesses:
 | Native shared transaction cannot be proved | `shared_transaction_unavailable` |
 | Concurrent revision change rolls back selected rows | `stale_revision_rolls_back_rows` |
 
-The completed replay witness derives a compatible maintenance migration from the handled checkpoint. `replay-target.yaml` changes the `increment.amount` declaration from integer to float while retaining the old terminal receipt; the validator binds the target fingerprint, descriptor, audit, receipt, and original caller request bytes. A separate pending replay returns the acceptance receipt. Both preserve the historical checkpoint CAS from the first admission.
+The completed replay witness derives a compatible maintenance migration from the handled checkpoint. `replay-target.yaml` changes the `increment.amount` declaration from integer to float while retaining the old terminal receipt; the validator binds the target fingerprint, descriptor, audit, receipt, and original caller request bytes. A separate pending replay returns the acceptance receipt. Both preserve the historical checkpoint CAS from the first admission. `equal_changed_row_replay` keeps the original integer-7 delivery and accepted checkpoint while the valid current application row holds integer 8; it returns the retained acceptance receipt without a core call or row commit. `new_delivery_uses_current_row` shows that a distinct delivery from that row must instead map integer 8 into its typed envelope.
 
 The deferred-capacity witness uses the exact portable `repeated-before` aggregate and its deferred step result from core case 117. The pending-intent witness uses a checkpoint with five outstanding effects from the execution-checkpoint profile. Both are generator-pinned source artifacts; their complete before and candidate values are checked relationally. `outcome` remains only an assertion. A runtime harness must invoke the production projection facade from `request`, `before`, and its configured mapping, then compare the returned value and observed storage to the golden.

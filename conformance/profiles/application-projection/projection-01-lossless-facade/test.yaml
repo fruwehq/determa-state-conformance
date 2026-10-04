@@ -11,6 +11,7 @@ artifacts:
     - { file: created-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: accepted-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: handled-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
+    - { file: current-row-admitted-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: replay-migrated-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-success-created-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
     - { file: env-success-accepted-checkpoint-v1.json, kind: execution_checkpoint_v1, valid: true }
@@ -34,6 +35,8 @@ application_projection_vectors:
   - row_float_to_integer_rejected
   - undeclared_row_field_rejected
   - equal_pending_delivery_replay
+  - equal_changed_row_replay
+  - new_delivery_uses_current_row
   - equal_delivery_replay
   - changed_identity_conflict_before_payload
   - direct_state_edit_unsupported

@@ -47,7 +47,7 @@ as release promises in prose.
 
 ## Unreleased 0.3.0 conformance additions
 
-The optional application-projection profile adds twenty-one closed, schema-version-1
+The optional application-projection profile adds twenty-three closed, schema-version-1
 facade vectors for selected-row mapping, full checkpoint reconstruction, exact §8
 return fields, replay and conflict precedence, capacity rejection, transaction
 capability, deferred-payload capacity, pending intents, declaration-change replay, and compare-and-swap rollback. It is a pre-release 0.3.0 addition;

@@ -126,6 +126,9 @@ def build() -> dict[str, bytes]:
         checkpoints['created-checkpoint-v1.json'], 'increment', 'complete-increment', {'amount': 7}
     )
     checkpoints['handled-checkpoint-v1.json'] = process(checkpoints['accepted-checkpoint-v1.json'])
+    checkpoints['current-row-admitted-checkpoint-v1.json'] = admit(
+        checkpoints['accepted-checkpoint-v1.json'], 'increment', 'projection-current-row-8', {'amount': 8}
+    )
     source_responses = json.loads((SOURCE / 'responses-v1.json').read_bytes())['responses']
     source_bundle = load_yaml(SOURCE / 'machine.yaml')
     target_bundle = copy.deepcopy(source_bundle)
@@ -305,6 +308,24 @@ def build() -> dict[str, bytes]:
         copy.deepcopy(original_admission), 'replay',
         result=checkpoints[accepted]['operation_receipts'][-1])
     vectors[-1]['replay_of'] = 'typed_row_input_atomic_admit'
+    add('equal_changed_row_replay', snapshot(accepted, amount=['integer', '8']),
+        snapshot(accepted, amount=['integer', '8']),
+        copy.deepcopy(original_admission), 'replay',
+        result=checkpoints[accepted]['operation_receipts'][-1])
+    vectors[-1]['replay_of'] = 'typed_row_input_atomic_admit'
+    current_envelope, current_digest = envelope_for(
+        checkpoints[accepted], 'increment', 'projection-current-row-8', {'amount': 8}
+    )
+    current_delivery = {'delivery_mode': 'input', 'envelope': current_envelope,
+                        'envelope_digest': current_digest}
+    current_mapped = {'field': 'amount', 'declaration': 'integer', 'value': ['integer', '8']}
+    current_result = {'status': 'running', 'accepted': True,
+                      'state': checkpoints['current-row-admitted-checkpoint-v1.json']['root_record']['aggregate_state'],
+                      'rejection': None}
+    add('new_delivery_uses_current_row', snapshot(accepted, amount=['integer', '8']),
+        snapshot('current-row-admitted-checkpoint-v1.json', amount=['integer', '8']),
+        request('admit', accepted, mapped=current_mapped, delivery=current_delivery),
+        'result', result=current_result, calls=1, committed=True)
     add('equal_delivery_replay', snapshot('replay-migrated-checkpoint-v1.json', status='done'),
         snapshot('replay-migrated-checkpoint-v1.json', status='done'),
         copy.deepcopy(original_admission), 'replay',
