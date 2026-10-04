@@ -1,0 +1,51 @@
+{
+  "title": "strict quarantine, fresh-scope takeover, clone, and conditional local transfer",
+  "recovery_vectors": {
+    "early": [
+      "unsupported_format",
+      "unsupported_version",
+      "malformed_request"
+    ],
+    "cases": [
+      "strict_quarantine",
+      "strict_active_unproved",
+      "quarantine_admit_denied",
+      "quarantine_helper_denied",
+      "quarantine_process_event_denied",
+      "quarantine_dispatch_effect_denied",
+      "quarantine_ack_ingress_denied",
+      "quarantine_promote_denied",
+      "quarantine_clock_timeout_denied",
+      "quarantine_cancel_helper_denied",
+      "standalone_takeover",
+      "standalone_duplicate_destination",
+      "standalone_resume",
+      "old_worker_matching_effect_rejected",
+      "ambiguous_effect_dispatch_denied",
+      "terminal_effect_no_redelivery",
+      "impure_provider_denied",
+      "abandon_ambiguous_with_evidence",
+      "clone_scope",
+      "clone_unresolved_work",
+      "clone_cancel_pending",
+      "clone_activate",
+      "clone_credentials_only",
+      "unsupported_transfer",
+      "unsupported_transfer_stage",
+      "local_prepare",
+      "local_stage",
+      "local_commit",
+      "local_activate",
+      "local_unequal_destination",
+      "local_stale_generation",
+      "local_consumed_grant",
+      "local_old_worker_fenced",
+      "local_ambiguous_retry_blocked",
+      "local_in_doubt_source",
+      "standalone_equal_replay",
+      "standalone_changed_request_conflict",
+      "source_provenance_mismatch",
+      "required_helper_missing"
+    ]
+  }
+}

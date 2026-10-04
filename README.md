@@ -37,6 +37,8 @@ migrated suite.
   lossless projection and embedded facade profile.
 - `conformance/profiles/portable-archive/` — the optional SPEC §22 complete export
   and inert staging profile with declared participants.
+- `conformance/profiles/recovery/` — the optional SPEC §24 strict quarantine,
+  fresh-scope takeover, clone, and conditional same-authority transfer profile.
 - `conformance/closed-code-registry/registry.json` — the single machine-readable
   authority for closed portable failure, rejection, fault, and disposition sets.
 - `conformance/closed-code-registry/vectors.generated.json` — the generated
