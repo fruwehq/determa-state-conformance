@@ -169,6 +169,8 @@ def run_case(command: list[str], case: dict, fixture: dict,
                                   'core_migration', 'effect_dispatch', 'helper_dispatch',
                                   'ingress_acknowledge', 'provider_evaluate', 'timer_fire')):
         raise ValueError(label + ': recovery invoked active processing or external work')
+    for key in ('external_dispatches', 'ingress_acknowledgements'):
+        equal(after[key], before[key], label + ': recovery changed external work')
     from validate_portable_archive import changed_paths
     actual_paths = sorted(changed_paths(before, after))
     equal(response['mutation_paths'], actual_paths, label + ': observed mutation footprint')
@@ -182,6 +184,25 @@ def run_case(command: list[str], case: dict, fixture: dict,
             raise ValueError(label + ': complete record absent from observed durable storage')
         if not actual_paths:
             raise ValueError(label + ': successful mutation has no observed storage change')
+        record = response['record']
+        if (case.get('request', {}).get('operation') in ('standalone_takeover', 'clone_scope') and
+                (record['destination_scope_identity'] not in after['scope_allocations'] or
+                 record['destination_scope_identity'] in before['scope_allocations'] or
+                 record['external_idempotency_namespace'] not in after['namespace_allocations'] or
+                 record['external_idempotency_namespace'] in before['namespace_allocations'] or
+                 record['operation_ledger_identity'] not in after['operation_ledgers'] or
+                 record['operation_ledger_identity'] in before['operation_ledgers'])):
+            raise ValueError(label + ': fresh scope, namespace or operation ledger not durably allocated')
+        if record['mode'] in ('standalone', 'clone', 'strict'):
+            for checkpoint in request['source_archive']['checkpoints']:
+                if checkpoint not in after['checkpoints']:
+                    raise ValueError(label + ': recovered scope omitted complete checkpoint bytes')
+            for participant in request['source_archive']['participants']:
+                if participant not in after['participants']:
+                    raise ValueError(label + ': recovered scope omitted required participant bytes')
+            if any(isinstance(claim, dict) and claim.get('scope_identity') ==
+                   record['destination_scope_identity'] for claim in after['worker_claims']):
+                raise ValueError(label + ': source worker claims were imported into destination')
     proof = case.get('expected_transfer_proof')
     if proof is not None:
         if case['request']['operation'] in ('prepare_transfer', 'commit_transfer') and \

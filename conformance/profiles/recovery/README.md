@@ -28,6 +28,11 @@ takeover or clone requires its own fresh logical scope and external namespace;
 strict restore is quarantined. Refusals and read-only guards leave all observed
 storage unchanged. Unknown external work remains ambiguous and cannot be
 automatically redispatched.
+The observation lists contain complete checkpoint and participant objects,
+permanent scope and namespace allocation identities, operation ledger identities,
+worker claims, authoritative inventory and transfer proofs. The runner checks
+their before/after bytes and forbids new external dispatch or ingress
+acknowledgement during recovery itself.
 
 The production runner currently exercises 38 standalone and refusal cases;
 the 10 local transfer cases remain source-validated only. Their successful result may be
