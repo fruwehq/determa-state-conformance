@@ -404,6 +404,7 @@ def run_hosted_source(command: list[str], database: Path, run_id: str,
             raise ValueError('actual production source lifecycle step did not commit')
     before_freeze = store_call(database, run_id, 'snapshot')['state']
     source = source_scope(before_freeze, source_identity)
+    proof = fixture['trusted_transfer_proofs'][0]
     required = {'scope_identity': source_identity,
                 'source_binding_digest': archive['source']['ownership_binding_digest'],
                 'source_profile_digest': archive['source']['profile_digest'],
@@ -422,6 +423,8 @@ def run_hosted_source(command: list[str], database: Path, run_id: str,
         'participants': before_freeze['source_participants'],
         'worker_claims': before_freeze['source_worker_claims']})
     if any(source.get(key) != value for key, value in required.items()) or \
+            source.get('authority_epoch') != proof['source_authority_epoch'] or \
+            source.get('scope_generation') != proof['source_scope_generation'] or \
             not source.get('native_instance_identity') or \
             source.get('complete_scope_inventory') is not True or \
             source.get('inventory_digest') != source_inventory_digest or \
@@ -437,7 +440,6 @@ def run_hosted_source(command: list[str], database: Path, run_id: str,
                     claim.get('state') == 'active'
                     for claim in before_freeze['source_worker_claims']):
         raise ValueError('hosted local transfer lacks a live complete native source inventory')
-    proof = fixture['trusted_transfer_proofs'][0]
     freeze_payload = {'scope_identity': source_identity,
                       'operation_id': archive['source_fence_reference']['operation_id'],
                       'expected_authority_epoch': proof['source_authority_epoch'],
@@ -509,10 +511,61 @@ def run_hosted_source(command: list[str], database: Path, run_id: str,
     return {'scope_identity': source_identity,
             'native_instance_identity': source['native_instance_identity'],
             'storage_identity': str(database),
+            'frozen_source_scope': frozen_scope,
+            'frozen_inventory': {key: frozen[key] for key in (
+                'source_checkpoints', 'source_host_journals',
+                'source_participants', 'source_worker_claims')},
+            'source_authority_ledger': frozen['source_authority_ledger'],
             'freeze_native_transaction_id': freeze_tx['native_transaction_id'],
             'freeze_native_proof_id': freeze_tx['proof_id'],
             'export_observation_id': export_operation_id,
             'source_fault_cut': cut_id}
+
+
+def verify_source_integrity(before: dict, after: dict, source_reference: dict,
+                            label: str, *, retiring: bool = False,
+                            expected_epoch: str | None = None,
+                            expected_generation: str | None = None,
+                            expected_transfer_id: str | None = None) -> None:
+    """Keep the actual frozen source bytes fixed across all import phases."""
+    baseline = source_reference.get('retired_source_scope',
+                                    source_reference['frozen_source_scope'])
+    prior_ledger = source_reference['source_authority_ledger']
+    source_before = source_scope(before, source_reference['scope_identity'])
+    source_after = source_scope(after, source_reference['scope_identity'])
+    if source_before != baseline or \
+            before['source_authority_ledger'] != prior_ledger:
+        raise ValueError(label + ': source changed before the recovery operation')
+    for state in (before, after):
+        if any(state[key] != value for key, value in
+               source_reference['frozen_inventory'].items()) or \
+                any(type(claim) is dict and
+                    claim.get('scope_identity') == source_reference['scope_identity'] and
+                    claim.get('state') == 'active'
+                    for claim in state['source_worker_claims']):
+            raise ValueError(label + ': frozen source inventory or claims changed')
+    if not retiring:
+        if source_after != baseline or \
+                after['source_authority_ledger'] != prior_ledger:
+            raise ValueError(label + ': recovery mutated the frozen source')
+        return
+    allowed = {'state', 'authority_epoch', 'scope_generation',
+               'active_transfer_id', 'old_writes_fenced'}
+    if set(source_after) - set(source_before) - allowed or \
+            set(source_before) - set(source_after) or \
+            any(source_after.get(key) != value for key, value in source_before.items()
+                if key not in allowed) or \
+            source_after.get('state') != 'retired' or \
+            source_after.get('authority_epoch') != expected_epoch or \
+            source_after.get('scope_generation') != expected_generation or \
+            source_after.get('active_transfer_id', expected_transfer_id) != \
+            expected_transfer_id or \
+            source_after.get('old_writes_fenced') is not True or \
+            after['source_authority_ledger'][:-1] != prior_ledger or \
+            len(after['source_authority_ledger']) != len(prior_ledger) + 1:
+        raise ValueError(label + ': retirement changed source bytes beyond authority transition')
+    source_reference['retired_source_scope'] = source_after
+    source_reference['source_authority_ledger'] = after['source_authority_ledger']
 
 
 def verify_local_source_step(case: dict, before: dict, after: dict,
@@ -541,6 +594,14 @@ def verify_local_source_step(case: dict, before: dict, after: dict,
                 entry.get('transaction_fate') == 'known_committed']
     if len(retained) != 1:
         raise ValueError(label + ': source freeze was not retained before recovery operation')
+    retiring = operation == 'commit_transfer' and \
+        case['expected_result']['status'] == 'succeeded'
+    transfer = case.get('expected_transfer_proof') if retiring else None
+    verify_source_integrity(
+        before, after, source_reference, label, retiring=retiring,
+        expected_epoch=transfer['destination_authority_epoch'] if transfer else None,
+        expected_generation=transfer['destination_scope_generation'] if transfer else None,
+        expected_transfer_id=transfer['transfer_id'] if transfer else None)
     if source_reference['source_fault_cut'] is not None:
         if label != 'local_in_doubt_source' or operation != 'prepare_transfer' or \
                 case['expected_result']['code'] != 'scope_transaction_in_doubt' or \
@@ -647,6 +708,9 @@ def run_case(command: list[str], case: dict, fixture: dict,
         stage_response, stage_before, stage_after, _ = native_call(
             command, database, run_id, str(uuid.uuid4()), 'archive_stage',
             stage_payload, stage_expected, hosted_binding_digest, bridge_identity)
+        if local:
+            verify_source_integrity(stage_before, stage_after, source_reference,
+                                    label + ': archive stage')
         stage = {'staging_identity': request['stage_request']['staging_identity'],
                  'archive': request['stage_archive']}
         if stage_expected['status'] == 'staged':

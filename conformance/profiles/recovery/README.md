@@ -85,7 +85,11 @@ For each local case, the trusted runner-selected plan drives source
 configuration, allocation, root creation, admission, stepping, journal writes
 and a worker claim through the reviewed production bridge. Its separate native
 observer must find the exact source scope and root instances, complete source
-checkpoints, host journals and participants in the same configured store. A
+checkpoints, host journals and participants in the same configured store. The
+live source epoch and generation must match the transfer proof before freeze.
+The complete frozen source inventory must remain byte-identical through archive
+staging, preparation, transfer staging, retirement and activation; retirement
+may change only its proved authority fields and append its native ledger entry. A
 guarded freeze must revoke the actual worker and retain a native transaction
 and complete inventory proof before `prepare_transfer`. A production §22 export
 must read that frozen source and return the exact local archive; the export is

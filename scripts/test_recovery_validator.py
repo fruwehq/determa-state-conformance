@@ -16,9 +16,10 @@ from unittest.mock import patch
 from validate_portable_archive import (ArchiveValidationError, canonical, digest, read_json,
                                        validate_archive_integrity, validator_registry, without, ROOT)
 from validate_recovery_profile import CASE, validate_profile, validate_owned_definition_closure
-from run_recovery_profile import (CALLS, STATE, input_for, run_case, source_fault_cut,
-                                  store_call, trusted_bridge, validate_source_plan,
-                                  verify_local_source_step)
+from run_recovery_profile import (CALLS, STATE, input_for, run_case, run_hosted_source,
+                                  source_fault_cut, store_call, trusted_bridge,
+                                  validate_source_plan, verify_local_source_step,
+                                  verify_source_integrity)
 from run_hosted_recovery_profile import observed_binding
 
 
@@ -315,6 +316,153 @@ def main() -> int:
     rejected('prepare uses only a transfer result with no prior native source freeze',
              lambda: verify_local_source_step(local, source_state, source_state,
                                               None, source_reference, fixture))
+    proof = fixture['trusted_transfer_proofs'][0]
+    frozen_scope = {
+        'scope_identity': source_identity, 'storage_identity': 'native-source-db',
+        'native_instance_identity': 'native-source-instance', 'state': 'frozen',
+        'authority_epoch': proof['source_authority_epoch'],
+        'scope_generation': proof['source_scope_generation'],
+        'inventory_digest': 'sha256:frozen-inventory',
+        'complete_scope_inventory': True}
+    frozen_inventory = {
+        'source_checkpoints': copy.deepcopy(local_archive['checkpoints']),
+        'source_host_journals': [{'root_instance_id': root} for root in
+                                 local_archive['selection']['root_instance_ids']],
+        'source_participants': copy.deepcopy(local_archive['participants']),
+        'source_worker_claims': [{'scope_identity': source_identity,
+                                  'state': 'revoked'}]}
+    freeze_entry = {'operation_kind': 'freeze_scope',
+                    'scope_identity': source_identity,
+                    'native_transaction_id': 'native-freeze',
+                    'native_proof_id': 'proof-freeze',
+                    'freeze_evidence_digest': proof['freeze_evidence_digest'],
+                    'transaction_fate': 'known_committed'}
+    frozen_state = {key: [] for key in STATE}
+    frozen_state.update(copy.deepcopy(frozen_inventory))
+    frozen_state['source_scopes'] = [copy.deepcopy(frozen_scope)]
+    frozen_state['source_authority_ledger'] = [copy.deepcopy(freeze_entry)]
+    frozen_reference = {
+        'scope_identity': source_identity,
+        'storage_identity': 'native-source-db',
+        'native_instance_identity': 'native-source-instance',
+        'frozen_source_scope': copy.deepcopy(frozen_scope),
+        'frozen_inventory': copy.deepcopy(frozen_inventory),
+        'source_authority_ledger': [copy.deepcopy(freeze_entry)],
+        'freeze_native_transaction_id': 'native-freeze',
+        'freeze_native_proof_id': 'proof-freeze',
+        'source_fault_cut': None}
+    stage_case = next(item for item in fixture['cases'] if item['case_id'] == 'local_stage')
+    verify_local_source_step(stage_case, frozen_state, frozen_state, None,
+                             copy.deepcopy(frozen_reference), fixture)
+    verify_source_integrity(frozen_state, frozen_state,
+                            copy.deepcopy(frozen_reference), 'local archive stage')
+    for name, mutate in [
+        ('deleted checkpoint', lambda state: state['source_checkpoints'].pop()),
+        ('rewritten participant', lambda state: state['source_participants'][0].update(
+            participant_id='other-helper')),
+        ('rewritten host journal', lambda state: state['source_host_journals'][0].update(
+            root_instance_id='other-root')),
+        ('rewritten source inventory', lambda state: state['source_scopes'][0].update(
+            inventory_digest='sha256:other')),
+    ]:
+        changed = copy.deepcopy(frozen_state)
+        mutate(changed)
+        rejected('local stage accepted ' + name,
+                 lambda state=changed: verify_local_source_step(
+                     stage_case, frozen_state, state, None,
+                     copy.deepcopy(frozen_reference), fixture))
+        rejected('local archive stage accepted ' + name,
+                 lambda state=changed: verify_source_integrity(
+                     frozen_state, state, copy.deepcopy(frozen_reference),
+                     'local archive stage'))
+    commit_case = next(item for item in fixture['cases'] if item['case_id'] == 'local_commit')
+    committed_state = copy.deepcopy(frozen_state)
+    committed_state['source_scopes'][0].update(
+        state='retired', authority_epoch=proof['destination_authority_epoch'],
+        scope_generation=proof['destination_scope_generation'],
+        old_writes_fenced=True)
+    committed_state['source_authority_ledger'].append({
+        'operation_kind': 'commit_transfer', 'scope_identity': source_identity,
+        'native_transaction_id': 'native-retire',
+        'native_proof_id': 'proof-retire',
+        'freeze_native_transaction_id': 'native-freeze',
+        'source_storage_identity': 'native-source-db',
+        'old_writes_fenced': True, 'transaction_fate': 'known_committed'})
+    retire_tx = {'native_transaction_id': 'native-retire', 'proof_id': 'proof-retire'}
+    retired_reference = copy.deepcopy(frozen_reference)
+    verify_local_source_step(commit_case, frozen_state, committed_state,
+                             retire_tx, retired_reference, fixture)
+    for name, mutate in [
+        ('deleted checkpoint', lambda state: state['source_checkpoints'].pop()),
+        ('rewritten host journal', lambda state: state['source_host_journals'][0].update(
+            root_instance_id='other-root')),
+        ('rewritten participant', lambda state: state['source_participants'][0].update(
+            participant_id='other-helper')),
+        ('rewritten scope inventory', lambda state: state['source_scopes'][0].update(
+            inventory_digest='sha256:other')),
+    ]:
+        changed = copy.deepcopy(committed_state)
+        mutate(changed)
+        rejected('local commit accepted ' + name,
+                 lambda state=changed: verify_local_source_step(
+                     commit_case, frozen_state, state, retire_tx,
+                     copy.deepcopy(frozen_reference), fixture))
+    activate_case = next(item for item in fixture['cases'] if item['case_id'] == 'local_activate')
+    verify_local_source_step(activate_case, committed_state, committed_state,
+                             None, copy.deepcopy(retired_reference), fixture)
+    for name, mutate in [
+        ('deleted checkpoint', lambda state: state['source_checkpoints'].pop()),
+        ('rewritten participant', lambda state: state['source_participants'][0].update(
+            participant_id='other-helper')),
+        ('rewritten journal', lambda state: state['source_host_journals'][0].update(
+            root_instance_id='other-root')),
+        ('rewritten scope inventory', lambda state: state['source_scopes'][0].update(
+            inventory_digest='sha256:other')),
+    ]:
+        changed = copy.deepcopy(committed_state)
+        mutate(changed)
+        rejected('local activation accepted ' + name,
+                 lambda state=changed: verify_local_source_step(
+                     activate_case, committed_state, state, None,
+                     copy.deepcopy(retired_reference), fixture))
+    active_state = copy.deepcopy(frozen_state)
+    active_state['source_scopes'][0].update(
+        state='active', source_binding_digest=local_archive['source']['ownership_binding_digest'],
+        source_profile_digest=local_archive['source']['profile_digest'],
+        participant_contract_digest=local_archive['participant_contract']['participant_contract_digest'],
+        root_instance_ids=local_archive['selection']['root_instance_ids'],
+        authority_token_identity='host-token', topology_identifier='local',
+        provider_content_digest='sha256:provider',
+        configuration_digest='sha256:configuration',
+        inventory_digest=digest({
+            'checkpoints': frozen_inventory['source_checkpoints'],
+            'host_journals': frozen_inventory['source_host_journals'],
+            'participants': frozen_inventory['source_participants'],
+            'worker_claims': frozen_inventory['source_worker_claims']}),
+        required_participants=[])
+    active_state['source_worker_claims'][0]['state'] = 'active'
+    active_state['source_scopes'][0]['inventory_digest'] = digest({
+        'checkpoints': active_state['source_checkpoints'],
+        'host_journals': active_state['source_host_journals'],
+        'participants': active_state['source_participants'],
+        'worker_claims': active_state['source_worker_claims']})
+    phases = []
+    def fake_source_native(command, database, run_id, operation_id, phase, *args):
+        phases.append(phase)
+        return ({}, {}, {}, {'native_transaction_id': 'native-setup'})
+    for field, stale in [('authority_epoch', '3'), ('scope_generation', '6')]:
+        candidate = copy.deepcopy(active_state)
+        candidate['source_scopes'][0][field] = stale
+        phases.clear()
+        with patch('run_recovery_profile.native_call', side_effect=fake_source_native), \
+             patch('run_recovery_profile.store_call', return_value={'state': candidate}):
+            rejected('freeze accepted stale actual source ' + field,
+                     lambda: run_hosted_source(
+                         ['bridge'], Path('/tmp/source.sqlite'), 'source-run',
+                         'test-reviewed-bridge', 'sha256:host', 'host-token',
+                         'local', 'sha256:provider', 'sha256:configuration', [],
+                         local_archive, fixture, plan, in_doubt=False))
+        assert phases == ['source_operation'] * len(plan['operations'])
     with tempfile.TemporaryDirectory(prefix='determa-recovery-source-cut-') as temporary:
         database = Path(temporary) / 'source.sqlite'
         initial = {key: [] for key in STATE}
