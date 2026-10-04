@@ -14,8 +14,8 @@ Passing these two gates proves the common registration/decision boundary, **not*
 
 | Gate | Applicability | Evidence | Release condition |
 | --- | --- | --- | --- |
-| Common decision rules | All implementations declaring this profile | 13 normative plus 8 additional relationship vectors | Required now; no published claims |
-| Public registration and loaded identity | All implementations declaring this profile | 14 real public API vectors; exact executing provider closure | Required now; accepted report has empty claims |
+| Common decision rules | All implementations declaring this profile | 13 normative plus 11 additional relationship vectors | Required now; no published claims |
+| Public registration and loaded identity | All implementations declaring this profile | 21 real public API vectors; exact executing provider closure | Required now; accepted report has empty claims |
 | Execution-store positive claims | Hosts advertising store guarantees | Storage/concurrency category profile and current configured proof | Required before claim |
 | Runtime-provider positive claims | Hosts advertising E guarantees | E provider execution vectors and current configured proof | Required before claim |
 | Authority/relocation positive claims | Hosts advertising C/I2 guarantees | Native authority and transfer vectors plus exact topology proof | Required before claim |

@@ -141,6 +141,28 @@ def render(spec_root: Path, profile: Path = PROFILE) -> bytes:
     unknown_io["configurations"][0]["configuration"]["health"] = "unknown"
     unknown_io["hypothetical_verification"]["proofs"][0]["configuration_digest"] = "sha256:" + hashlib.sha256(json.dumps(unknown_io["configurations"][0]["configuration"], sort_keys=True, separators=(",", ":")).encode()).hexdigest()
     vectors.append(unknown_io)
+    unregistered_config = copy.deepcopy(vectors[0])
+    unregistered_config["id"] = "unregistered_config_without_requirements"
+    unregistered_config["source_case"] = None
+    unregistered_config["registrations"] = []
+    unregistered_config["registration_bytes"] = []
+    unregistered_config["requirements"] = []
+    unregistered_config["expected"] = {"status": "rejected", "code": "unknown_extension"}
+    vectors.append(unregistered_config)
+    changed_configured_reference = copy.deepcopy(vectors[0])
+    changed_configured_reference["id"] = "configured_digest_mismatch_without_requirements"
+    changed_configured_reference["source_case"] = None
+    changed_configured_reference["requirements"] = []
+    changed_configured_reference["configurations"][0]["provider_reference"]["content_digest"] = "sha256:" + "f" * 64
+    changed_configured_reference["expected"] = {"status": "rejected", "code": "extension_identity_mismatch"}
+    vectors.append(changed_configured_reference)
+    unsupported_claim = copy.deepcopy(vectors[0])
+    unsupported_claim["id"] = "unsupported_claim_without_requirements"
+    unsupported_claim["source_case"] = None
+    unsupported_claim["requirements"] = []
+    unsupported_claim["configurations"][0]["configuration"]["claims"].append("shared_application_transaction")
+    unsupported_claim["expected"] = {"status": "rejected", "code": "invalid_extension_configuration"}
+    vectors.append(unsupported_claim)
     descriptor = {"category": "execution_store",
                   "provider_reference": {"identifier": "conformance.provider", "version": "1.0.0", "content_digest": digest},
                   "interface_version": 1, "supported_capabilities": ["durable_single_writer"]}
@@ -166,7 +188,7 @@ def render(spec_root: Path, profile: Path = PROFILE) -> bytes:
         registered_value = entry["registration"]
         entry["registration_bytes"] = [json.dumps(d, sort_keys=True, separators=(",", ":"))
                                        for d in (registered_value if isinstance(registered_value, list) else
-                                                 ([registered_value] if registered_value else []))]
+                                                 ([registered_value] if registered_value is not None else []))]
         stages = []
         for index, descriptor_bytes in enumerate(entry["registration_bytes"]):
             registration_error = ("invalid_extension_descriptor" if code == "invalid_extension_descriptor" else
@@ -195,6 +217,10 @@ def render(spec_root: Path, profile: Path = PROFILE) -> bytes:
         public_vectors.append(entry)
     public_case("loaded_provider_no_claim")
     public_case("direct_injection_no_claim", change=lambda e: e.update(installation="direct_injection"))
+    public_case("direct_injection_identity_mismatch", requested=True,
+                change=lambda e: (e.update(installation="direct_injection"),
+                                  e["requirement"]["provider_reference"].update(version="1.0.1")),
+                code="extension_identity_mismatch")
     public_case("unproved_claim_refused", requested=True, code="extension_capability_mismatch")
     hostile = copy.deepcopy(report)
     hostile["claims"] = ["durable_single_writer"]
@@ -231,6 +257,24 @@ def render(spec_root: Path, profile: Path = PROFILE) -> bytes:
     public_case("category_swap_refused", requested=True,
                 change=lambda e: e["requirement"].update(category="projection", capability="lossless_projection"),
                 code="unknown_extension")
+    public_case("empty_instance_id_refused", requested=False,
+                change=lambda e: e["configuration"].update(instance_id=""),
+                code="invalid_extension_configuration")
+    public_case("non_string_claim_refused", requested=False,
+                change=lambda e: e["configuration"].update(claims=[7]),
+                code="invalid_extension_configuration")
+    public_case("duplicate_claim_refused", requested=False,
+                change=lambda e: e["configuration"].update(claims=["durable_single_writer"] * 2),
+                code="invalid_extension_configuration")
+    public_case("unknown_claim_refused", requested=False,
+                change=lambda e: e["configuration"].update(claims=["magic_transfer"]),
+                code="invalid_extension_configuration")
+    public_case("unsupported_claim_refused", requested=False,
+                change=lambda e: e["configuration"].update(claims=["shared_application_transaction"]),
+                code="invalid_extension_configuration")
+    public_case("non_string_health_refused", requested=False,
+                change=lambda e: e["configuration"].update(health=7),
+                code="invalid_extension_configuration")
     return (json.dumps({"format": "determa.extension-negotiation-v1", "schema_version": 1,
         "specification_commit": SPEC_PIN,
         "provider_closure": {"content_digest": digest,

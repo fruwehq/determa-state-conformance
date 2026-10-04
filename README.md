@@ -376,7 +376,7 @@ A later, separate issue may define commands, exit codes, and JSON shapes for
 implementations that declare a CLI profile, without queue introspection. Until then,
 the absence of CLI cases is intentional and no CLI surface is portable conformance.
 
-The `extension-negotiation` profile fixes SPEC §11.5 public registration, exact provider identity, configuration, health, and closed capability decisions. Its 13 normative common-rule examples use hypothetical internal verification premises; 14 public API vectors bind the actually loaded test provider and publish no unproved claims. See [the profile README](conformance/profiles/extension-negotiation/README.md). Category-specific positive guarantees require their own operational profiles.
+The `extension-negotiation` profile fixes SPEC §11.5 public registration, exact provider identity, configuration, health, and closed capability decisions. Its 13 normative common-rule examples use hypothetical internal verification premises; 21 public API vectors bind the actually loaded test provider and publish no unproved claims. See [the profile README](conformance/profiles/extension-negotiation/README.md). Category-specific positive guarantees require their own operational profiles.
 
 The `execution-checkpoint` profile fixes the portable SPEC §17 durable-host lifecycle
 over the schema-version-1 checkpoint artifact. It covers native creation, ordered-batch

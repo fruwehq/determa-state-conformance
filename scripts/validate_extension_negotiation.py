@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -11,6 +12,9 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 from generate_extension_negotiation_profile import PROFILE, SPEC_CASES, SPEC_PIN, render
+
+
+INSTANCE_ID = re.compile(r"^[a-z][a-z0-9.-]*$")
 
 
 class ExtensionValidationError(ValueError):
@@ -61,6 +65,7 @@ def closure_digest(profile: Path, files: list[str]) -> str:
 
 def validators(spec_root: Path) -> dict[str, Draft202012Validator]:
     names = {
+        "reference": "provider-reference-v1.schema.json",
         "descriptor": "extension-descriptor-v1.schema.json",
         "report": "extension-capability-report-v1.schema.json",
         "requirement": "extension-capability-requirement-v1.schema.json",
@@ -78,6 +83,33 @@ def validators(spec_root: Path) -> dict[str, Draft202012Validator]:
 
 def valid(validator: Draft202012Validator, value: object) -> bool:
     return not list(validator.iter_errors(value))
+
+
+def exact_json_equal(left: object, right: object) -> bool:
+    """Compare JSON values without Python's bool == 0 and int == float coercions."""
+    if type(left) is not type(right):
+        return False
+    if isinstance(left, dict):
+        return left.keys() == right.keys() and all(
+            exact_json_equal(value, right[key]) for key, value in left.items()
+        )
+    if isinstance(left, list):
+        return len(left) == len(right) and all(
+            exact_json_equal(a, b) for a, b in zip(left, right)
+        )
+    return left == right
+
+
+def valid_configuration(configuration: object) -> bool:
+    return (isinstance(configuration, dict) and
+            set(configuration) == {"instance_id", "claims", "health"} and
+            type(configuration["instance_id"]) is str and
+            INSTANCE_ID.fullmatch(configuration["instance_id"]) is not None and
+            type(configuration["claims"]) is list and
+            all(type(claim) is str for claim in configuration["claims"]) and
+            len(configuration["claims"]) == len(set(configuration["claims"])) and
+            type(configuration["health"]) is str and
+            configuration["health"] in {"healthy", "degraded", "unavailable", "unknown"})
 
 
 def outcome(vector: dict, checks: dict[str, Draft202012Validator], digest: str) -> dict:
@@ -103,15 +135,24 @@ def outcome(vector: dict, checks: dict[str, Draft202012Validator], digest: str) 
     for configured in configurations:
         strict_keys(configured, {"category", "provider_reference", "configuration"}, "configured instance")
         config = configured["configuration"]
-        if not isinstance(config, dict) or set(config) != {"instance_id", "claims", "health"}:
+        if not valid_configuration(config):
             return {"status": "rejected", "code": "invalid_extension_configuration"}
-        if not isinstance(config["instance_id"], str) or not isinstance(config["claims"], list) or config["health"] not in ("healthy", "degraded", "unavailable", "unknown"):
-            return {"status": "rejected", "code": "invalid_extension_configuration"}
+        if not valid(checks["reference"], configured["provider_reference"]):
+            return {"status": "rejected", "code": "invalid_extension_descriptor"}
     for configured in configurations:
         ref = configured["provider_reference"]
         same_name = [d for d in registrations if d["category"] == configured["category"] and d["provider_reference"]["identifier"] == ref["identifier"]]
-        if same_name and not any(d["provider_reference"] == ref for d in same_name):
+        if not same_name:
+            return {"status": "rejected", "code": "unknown_extension"}
+        matching_factory = [d for d in same_name if d["provider_reference"] == ref]
+        if not matching_factory:
             return {"status": "rejected", "code": "extension_identity_mismatch"}
+        report = {"category": configured["category"], "provider_reference": ref,
+                  "instance_id": configured["configuration"]["instance_id"],
+                  "health": configured["configuration"]["health"],
+                  "claims": configured["configuration"]["claims"]}
+        if not valid(checks["report"], report) or not set(report["claims"]) <= set(matching_factory[0]["supported_capabilities"]):
+            return {"status": "rejected", "code": "invalid_extension_configuration"}
     reports = []
     for configured in configurations:
         config = configured["configuration"]
@@ -180,7 +221,9 @@ def outcome(vector: dict, checks: dict[str, Draft202012Validator], digest: str) 
 
 def public_outcome(vector: dict, checks: dict[str, Draft202012Validator], digest: str) -> dict:
     registration = vector["registration"]
-    registrations = registration if isinstance(registration, list) else ([registration] if registration else [])
+    registrations = registration if isinstance(registration, list) else ([registration] if registration is not None else [])
+    if vector["installation"] == "direct_injection" and len(registrations) != 1:
+        return {"status": "rejected", "code": "invalid_extension_descriptor"}
     if any(not valid(checks["descriptor"], descriptor) for descriptor in registrations):
         return {"status": "rejected", "code": "invalid_extension_descriptor"}
     if len(registrations) != len({(d["category"], d["provider_reference"]["identifier"], d["provider_reference"]["version"]) for d in registrations}):
@@ -188,12 +231,15 @@ def public_outcome(vector: dict, checks: dict[str, Draft202012Validator], digest
     if any(d["provider_reference"]["content_digest"] != digest for d in registrations):
         return {"status": "rejected", "code": "extension_identity_mismatch"}
     configuration = vector["configuration"]
-    if configuration is not None and (not isinstance(configuration, dict) or set(configuration) != {"instance_id", "claims", "health"}):
+    if configuration is not None and not valid_configuration(configuration):
         return {"status": "rejected", "code": "invalid_extension_configuration"}
-    if configuration is not None and (not isinstance(configuration["instance_id"], str) or
-                                      not isinstance(configuration["claims"], list) or
-                                      configuration["health"] not in ("healthy", "degraded", "unavailable", "unknown")):
-        return {"status": "rejected", "code": "invalid_extension_configuration"}
+    if configuration is not None and registrations:
+        descriptor = registrations[0]
+        report = {"category": descriptor["category"], "provider_reference": descriptor["provider_reference"],
+                  "instance_id": configuration["instance_id"], "health": configuration["health"],
+                  "claims": configuration["claims"]}
+        if not valid(checks["report"], report) or not set(report["claims"]) <= set(descriptor["supported_capabilities"]):
+            return {"status": "rejected", "code": "invalid_extension_configuration"}
     requirement = vector["requirement"]
     if requirement is not None:
         if not valid(checks["requirement"], requirement):
@@ -220,7 +266,7 @@ def public_outcome(vector: dict, checks: dict[str, Draft202012Validator], digest
 def public_stages(vector: dict, checks: dict[str, Draft202012Validator], digest: str) -> list[dict]:
     result = public_outcome(vector, checks, digest)
     registered_value = vector["registration"]
-    descriptors = registered_value if isinstance(registered_value, list) else ([registered_value] if registered_value else [])
+    descriptors = registered_value if isinstance(registered_value, list) else ([registered_value] if registered_value is not None else [])
     stages = []
     registered_keys = set()
     for descriptor, source in zip(descriptors, vector["registration_bytes"]):
@@ -299,9 +345,9 @@ def validate_document(document: dict, spec_root: Path, profile: Path = PROFILE, 
                     len(claim["configuration_digest"]) == 71 and
                     claim["configuration_digest"].startswith("sha256:"), f"{name}: proof shape")
         computed = outcome(vector, checks, digest)
-        require(computed == vector["expected"], f"{name}: expected {vector['expected']!r}, computed {computed!r}")
+        require(exact_json_equal(computed, vector["expected"]), f"{name}: expected {vector['expected']!r}, computed {computed!r}")
     require(covered == required, f"normative coverage mismatch: {sorted(required - covered)}")
-    require(len(seen) == 21, "extension vector coverage mismatch")
+    require(len(seen) == 24, "extension vector coverage mismatch")
     public_seen = set()
     for vector in document["public_vectors"]:
         strict_keys(vector, {"id", "installation", "registration", "registration_bytes", "configuration", "requirement", "untrusted_candidate_report", "lookup_uri", "expected", "expected_stages", "expected_core_mutations"}, "public vector")
@@ -310,16 +356,16 @@ def validate_document(document: dict, spec_root: Path, profile: Path = PROFILE, 
         public_seen.add(name)
         require(vector["installation"] in {"register", "direct_injection"}, f"{name}: installation mode")
         registered_value = vector["registration"]
-        registrations = registered_value if isinstance(registered_value, list) else ([registered_value] if registered_value else [])
+        registrations = registered_value if isinstance(registered_value, list) else ([registered_value] if registered_value is not None else [])
         require(vector["registration_bytes"] == [json.dumps(d, sort_keys=True, separators=(",", ":")) for d in registrations], f"{name}: public descriptor bytes mismatch")
         require(vector["expected_core_mutations"] == 0 and type(vector["expected_core_mutations"]) is int, f"{name}: core mutation")
         candidate = vector["untrusted_candidate_report"]
         if candidate is not None:
             require(valid(checks["report"], candidate), f"{name}: invalid candidate report")
         computed = public_outcome(vector, checks, digest)
-        require(vector["expected"] == computed, f"{name}: public result mismatch")
-        require(vector["expected_stages"] == public_stages(vector, checks, digest), f"{name}: public stage trace mismatch")
-    require(len(public_seen) == 14, "public registration coverage mismatch")
+        require(exact_json_equal(vector["expected"], computed), f"{name}: public result mismatch")
+        require(exact_json_equal(vector["expected_stages"], public_stages(vector, checks, digest)), f"{name}: public stage trace mismatch")
+    require(len(public_seen) == 21, "public registration coverage mismatch")
     if compare_generated:
         require((json.dumps(document, indent=2) + "\n").encode() == render(spec_root, profile), "generated vectors differ from normative source")
         extras = {p.relative_to(profile).as_posix() for p in profile.rglob("*.json")}

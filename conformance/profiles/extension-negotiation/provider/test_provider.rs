@@ -9,7 +9,11 @@ pub struct Configuration {
 }
 
 pub fn validate_configuration(configuration: &Configuration) -> Result<Configuration, &'static str> {
-    if configuration.instance_id.is_empty()
+    let mut instance_bytes = configuration.instance_id.bytes();
+    let first_valid = instance_bytes.next().is_some_and(|byte| byte.is_ascii_lowercase());
+    let rest_valid = instance_bytes.all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'.' || byte == b'-');
+    if !first_valid || !rest_valid
+        || configuration.claims.iter().enumerate().any(|(index, claim)| configuration.claims[..index].contains(claim))
         || !matches!(configuration.health.as_str(), "healthy" | "degraded" | "unavailable" | "unknown")
     {
         return Err("invalid_extension_configuration");

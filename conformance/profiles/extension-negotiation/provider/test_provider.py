@@ -5,17 +5,24 @@ Host policy supplies the descriptor, configuration and topology; this file does 
 claim that its own statements prove a production guarantee.
 """
 
+import re
+
+
+INSTANCE_ID = re.compile(r"^[a-z][a-z0-9.-]*$")
+
 
 def validate_configuration(configuration):
+    if not isinstance(configuration, dict):
+        raise ValueError("invalid_extension_configuration")
     if set(configuration) != {"instance_id", "claims", "health"}:
         raise ValueError("invalid_extension_configuration")
-    if not isinstance(configuration["instance_id"], str):
+    if type(configuration["instance_id"]) is not str or not INSTANCE_ID.fullmatch(configuration["instance_id"]):
         raise ValueError("invalid_extension_configuration")
-    if not isinstance(configuration["claims"], list) or not all(
-        isinstance(claim, str) for claim in configuration["claims"]
-    ):
+    if type(configuration["claims"]) is not list or not all(type(claim) is str for claim in configuration["claims"]):
         raise ValueError("invalid_extension_configuration")
-    if configuration["health"] not in ("healthy", "degraded", "unavailable", "unknown"):
+    if len(configuration["claims"]) != len(set(configuration["claims"])):
+        raise ValueError("invalid_extension_configuration")
+    if type(configuration["health"]) is not str or configuration["health"] not in ("healthy", "degraded", "unavailable", "unknown"):
         raise ValueError("invalid_extension_configuration")
     return dict(configuration)
 
