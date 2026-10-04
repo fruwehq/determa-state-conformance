@@ -3,12 +3,15 @@
   "$id": "https://determa.dev/schemas/conformance/lossless-delivery-v1.schema.json",
   "type": "object",
   "additionalProperties": false,
-  "required": ["lossless_delivery_format", "lossless_delivery_schema_version", "vectors", "invalid_vectors", "integration", "normative_examples"],
+  "required": ["lossless_delivery_format", "lossless_delivery_schema_version", "configured_transport_claims", "vectors", "invalid_vectors", "core_observability_vectors", "integration", "normative_examples"],
   "properties": {
     "lossless_delivery_format": {"const": "determa.conformance.lossless_delivery"},
     "lossless_delivery_schema_version": {"const": 1},
+    "configured_transport_claims": {"const": []},
     "vectors": {"type": "array", "minItems": 20, "items": {"$ref": "#/$defs/vector"}},
     "invalid_vectors": {"type": "array", "minItems": 27, "items": {"$ref": "#/$defs/invalid_vector"}},
+    "core_observability_vectors": {"type": "array", "minItems": 6, "maxItems": 6,
+      "items": {"$ref": "#/$defs/core_observability_vector"}},
     "integration": {
       "type": "object", "additionalProperties": false,
       "required": ["authority_scenario", "required_authority_guarantees", "effect_profile_format", "integration_vectors"],
@@ -52,6 +55,7 @@
           "properties": {"mode": {"const": "source_ordered"},
             "source_scope": {"type": "string"},
             "unresolved_source_delivery_id": {"type": "string"}}},
+        "premise_kind": {"const": "hypothetical_common_rule"},
         "authority_context": {"type": "object", "additionalProperties": false,
           "required": ["scope_identity", "claimed_epoch", "current_epoch", "guarantee"],
           "properties": {"scope_identity": {"type": "string"},
@@ -104,6 +108,23 @@
         "checkpoint_after": {"$ref": "https://determa.dev/state/schema/execution-checkpoint-v1.schema.json"},
         "journal_before": {"$ref": "https://determa.dev/state/schema/host-effect-journal-v1.schema.json"},
         "journal_after": {"$ref": "https://determa.dev/state/schema/host-effect-journal-v1.schema.json"}
+      }
+    },
+    "core_observability_vector": {
+      "type": "object", "additionalProperties": false,
+      "required": ["name", "core_case", "request_pointer", "operation", "request", "machine_source", "before_state", "expected_result", "descriptor", "target_machine_source", "source_acknowledgements"],
+      "properties": {
+        "name": {"type": "string", "pattern": "^[a-z][a-z0-9_]*$"},
+        "core_case": {"enum": ["117-version1-mailboxes", "118-version1-persistence"]},
+        "request_pointer": {"type": "string"},
+        "operation": {"enum": ["step_v1", "migrate_aggregate_v1"]},
+        "request": {"type": "object"},
+        "machine_source": {"type": "string", "minLength": 1},
+        "before_state": {"$ref": "https://determa.dev/state/schema/aggregate-state-v1.schema.json"},
+        "expected_result": {"type": "object"},
+        "descriptor": {"oneOf": [{"type": "null"}, {"$ref": "https://determa.dev/state/schema/migration-descriptor-v1.schema.json"}]},
+        "target_machine_source": {"type": ["string", "null"]},
+        "source_acknowledgements": {"const": []}
       }
     }
   }

@@ -55,6 +55,12 @@ Additional vectors check that an equal retained source replay under a stale
 epoch returns the exact §18 guard failure without source acknowledgement, that
 a failed two-item batch remains entirely source-owned, and that source-ordered
 pressure does not overtake an earlier unresolved item.
+The ordered-pressure vector is an internal hypothetical common-rule premise.
+It is withheld from the public adapter and cannot certify a configured
+`source_ordered` transport claim. This profile publishes an empty configured
+transport claim set. A positive public claim requires a separate operational
+transport proof for concurrent workers, retry gaps, durable dead letters, and
+recovery under the exact installed source configuration and provider closure.
 
 Five integration vectors bind the merged 43-vector §19 effect profile to the
 merged §18 `worker_sqlite` native authority scenario. They pin a real confirmed
@@ -68,11 +74,19 @@ runner expectation. `source_item: null` and an empty source acknowledgement list
 are assertions: §19 result admission is host-owned recovery work, not a broker
 item. A confirmed outbound transfer grants no provider retry or business success.
 
+Six core observability vectors reuse executable core 117/118 operation inputs,
+prior aggregate states, machine sources, and exact result artifacts. They bind a
+deferred-capacity terminal fault, retained internal emissions, cancellation and
+completion lifecycle dispositions, chained emissions, and an explicit
+`migration_disposed` reason. The runner invokes the base operation and compares
+the entire result and empty broker acknowledgement list. Faults and lifecycle
+disposals therefore cannot disappear behind a generic handled response.
+
 Rebuild with `python scripts/generate_lossless_delivery_profile.py` and check
 with `--check` using the repository validation environment. Run
 `scripts/test_lossless_delivery_validator.py` for adversarial reseeding and
-tampering probes. The repository validator counts 52 delivery vectors: 47
-delivery operations and invalid inputs plus five merged §18/§19 integration
+tampering probes. The repository validator counts 58 delivery vectors: 47
+delivery operations and invalid inputs, six core result observations, and five merged §18/§19 integration
 vectors. The standalone §21 profile does not itself assert the native capability.
 Machine `format: 1`, delivery schema version `1`,
 and package version `0.3.0` are distinct version domains.
@@ -84,6 +98,12 @@ adapter command. That runner invokes the §18 configured worker topology native
 proof and checks the loaded handler, destination, authority, and participant
 closure. The §21 runner then compares strict raw child JSON and the complete
 observed store after every invocation, withholding expected responses and case
-names. `--base-only` runs the weaker standalone delivery claim without claiming
+names. It also replays the five bound §19 operations through that same adapter
+with a delivery-observation flag, requiring direct response bytes, complete
+checkpoint and journal bytes, concrete core/provider call evidence, and zero
+broker source acknowledgements. It refuses a `source_ordered` configured report without a dedicated
+operational transport proof and runs 57 public delivery vectors in the full
+profile (52 with `--base-only`); the additional
+ordered-pressure common premise stays internal. `--base-only` runs the weaker standalone delivery claim without claiming
 §18 or §19. A passed source/schema check alone is fixture validation; configured
 destinations and hosts must actually prove durability and native transactions.

@@ -11,7 +11,8 @@ from pathlib import Path
 
 from validate_conformance import (ValidationFailure, analyze_artifact, canonical_json_bytes,
                                   hash_value, validate_typed_value_canonical,
-                                  analyze_json_artifact_source, verify_artifact_digest)
+                                  analyze_json_artifact_source, verify_artifact_digest,
+                                  load_fixture_document)
 
 NORM = ('delivery-v1-cases', 'execution-checkpoint-transfer-v1',
         'queue-placement-checkpoints-v1', 'outbound-checkpoint-lifecycle-v1',
@@ -126,6 +127,8 @@ def validate_profile(case: Path, test: dict, artifacts: set[Path], spec_root: Pa
     profile = analyze_artifact(case / 'delivery-vectors-v1.json').document
     if profile is None:
         fail('invalid profile source JSON')
+    if profile['configured_transport_claims'] != []:
+        fail('unproved configured transport capability was published')
     names = [v['name'] for v in profile['vectors']]
     if names != list(VECTORS + ('stale_owner_equal_replay_refused',
                                'batch_second_invalid_keeps_all_source_owned',
@@ -341,6 +344,7 @@ def validate_profile(case: Path, test: dict, artifacts: set[Path], spec_root: Pa
     if (pressure['operation'] != 'ingest' or pressure['request'] != second_request or
         pressure['before'] != initial or pressure['after'] != initial or
         pressure['fault_injection'] != 'earlier_source_item_unresolved' or
+        pressure.get('premise_kind') != 'hypothetical_common_rule' or
         pressure['ordering_context'] != {
             'mode': 'source_ordered', 'source_scope': 'orders/inbox',
             'unresolved_source_delivery_id': 'broker-42'} or
@@ -648,4 +652,52 @@ def validate_profile(case: Path, test: dict, artifacts: set[Path], spec_root: Pa
         no_proof['expected']['caller_kind'] != 'aborted' or
         no_proof['expected']['counts']['provider_calls'] != 0):
         fail('confirmed outbox or ambiguity authorized an unproved provider retry')
-    return len(profile['vectors']) + len(negative) + len(links)
+    observable = profile['core_observability_vectors']
+    expected_names = (
+        'fault_is_terminal_not_source_retry', 'internal_emission_retained',
+        'lifecycle_cancellation_is_visible', 'lifecycle_completion_is_visible',
+        'chained_emission_and_disposition_visible', 'migration_disposal_is_explicit')
+    if tuple(item['name'] for item in observable) != expected_names:
+        fail('closed core observability inventory differs')
+    core_root = Path(__file__).resolve().parents[1] / 'conformance/core'
+    for item in observable:
+        source = core_root / item['core_case']
+        test = load_fixture_document(source / 'test.yaml')
+        matches = [row for row in test['version1_vectors']
+                   if row['request_pointer'] == '/' + item['request_pointer']]
+        if len(matches) != 1:
+            fail(f'{item["name"]}: no unique executable core vector')
+        row = matches[0]
+        original_request = json.loads((source / row['request_file']).read_text())[item['request_pointer']]
+        expected_result = json.loads((source / row['expect']['exact_result_file']).read_text())
+        before_state = json.loads((source / row['state_before']).read_text())
+        bundle_file = row.get('bundle', original_request.get('source_bundle', {}).get('bundle_file'))
+        for field, expected in (
+                ('operation', row['operation']), ('request', original_request),
+                ('machine_source', (source / bundle_file).read_text()),
+                ('before_state', before_state), ('expected_result', expected_result)):
+            same(item[field], expected, f'{item["name"]}: {field} differs from core witness')
+        verify_artifact_digest('aggregate_state_v1', item['before_state'],
+                               source / row['state_before'])
+        if item['source_acknowledgements']:
+            fail(f'{item["name"]}: base core invented a broker acknowledgement')
+        if row['operation'] == 'migrate_aggregate_v1':
+            descriptor_file = original_request['migration_descriptor_file']
+            target_file = original_request['target_bundle']['bundle_file']
+            same(item['descriptor'], json.loads((source / descriptor_file).read_text()),
+                 'migration disposition descriptor differs')
+            same(item['target_machine_source'], (source / target_file).read_text(),
+                 'migration target definition differs')
+            if (not item['expected_result']['dispositions'] or
+                item['expected_result']['dispositions'][0]['disposition'] != 'migration_disposed' or
+                not item['expected_result']['dispositions'][0]['reason']):
+                fail('migration silently discarded a removed event')
+        elif item['descriptor'] is not None or item['target_machine_source'] is not None:
+            fail(f'{item["name"]}: core step invented migration inputs')
+    if (observable[0]['expected_result']['disposition'] != 'faulted' or
+        observable[0]['expected_result']['fault']['code'] != 'deferred_event_capacity_exceeded' or
+        len(observable[1]['expected_result']['emissions']) < 1 or
+        any(len(item['expected_result']['lifecycle_dispositions']) != 1
+            for item in observable[2:5])):
+        fail('fault, emission, or lifecycle disposition became silent')
+    return len(profile['vectors']) + len(negative) + len(links) + len(observable)

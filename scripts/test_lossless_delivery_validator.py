@@ -12,7 +12,9 @@ from pathlib import Path
 
 from validate_conformance import ValidationFailure, hash_value, load_fixture_document
 from validate_lossless_delivery import validate_profile
-from run_lossless_delivery_profile import run, strict_document
+from run_lossless_delivery_profile import (run, run_integrations,
+                                           run_core_observability, strict_document,
+                                           verify_configured_delivery_profile)
 
 ROOT = Path(__file__).resolve().parents[1]
 CASE = ROOT / 'conformance/profiles/lossless-delivery/delivery-01-source-transfer'
@@ -29,6 +31,11 @@ def invalid(profile: dict, name: str) -> dict:
 
 def integrated(profile: dict, name: str) -> dict:
     return next(item for item in profile['integration']['integration_vectors']
+                if item['name'] == name)
+
+
+def observable(profile: dict, name: str) -> dict:
+    return next(item for item in profile['core_observability_vectors']
                 if item['name'] == name)
 
 
@@ -116,6 +123,12 @@ def main() -> int:
         ('stale effect replay bypasses current epoch', lambda p: integrated(
             p, 'stale_result_replay_current_guard')['request']['auth_context'].update(
                 scope_authority_epoch='3')),
+        ('overflow fault lost', lambda p: observable(
+            p, 'fault_is_terminal_not_source_retry')['expected_result'].update(fault=None)),
+        ('lifecycle disposition lost', lambda p: observable(
+            p, 'lifecycle_cancellation_is_visible')['expected_result']['lifecycle_dispositions'].clear()),
+        ('migration disposal hidden', lambda p: observable(
+            p, 'migration_disposal_is_explicit')['expected_result']['dispositions'].clear()),
     )
     for name, mutate in probes:
         check_mutation(name, mutate, args.spec_root)
@@ -152,6 +165,27 @@ def main() -> int:
             pass
         else:
             raise AssertionError('runner accepted suppressed response on a noncrash vector')
+        child.write_text('import json,sys\nsys.stdin.buffer.read()\nprint(json.dumps({"format":"determa.conformance.lossless_delivery.configured_profile","schema_version":1,"source_ordering":"source_ordered","transport_claims":["source_ordered"]}))\n')
+        try:
+            verify_configured_delivery_profile([sys.executable, str(child)])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('runner accepted an unproved public source_ordered report')
+        child.write_text('import sys\nsys.stdin.buffer.read()\nsys.stdout.buffer.write(b\'{"response_utf8":null,"checkpoint_after_utf8":"{}","journal_after_utf8":"{}","source_acknowledgements":[],"provider_calls":[],"core_calls":[]}\')\n')
+        try:
+            run_integrations([sys.executable, str(child)])
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('runner accepted forged composed effect evidence')
+        child.write_text('import sys\nsys.stdin.buffer.read()\nsys.stdout.buffer.write(b\'{"result":{},"source_acknowledgements":[]}\')\n')
+        try:
+            run_core_observability([sys.executable, str(child)])
+        except AssertionError:
+            pass
+        else:
+            raise AssertionError('runner accepted a truncated core result')
     print(f'{len(probes)} lossless delivery adversarial probes rejected')
     return 0
 

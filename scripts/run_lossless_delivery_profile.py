@@ -26,6 +26,20 @@ def expanded(store: dict, checkpoints: dict[str, dict]) -> dict:
     return {**store, 'checkpoint': checkpoints[store['checkpoint']]}
 
 
+def verify_configured_delivery_profile(command: list[str]) -> None:
+    completed = subprocess.run(command, input=canonical_json_bytes({
+        'kind': 'configured_delivery_profile'}), stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE, check=False)
+    if completed.returncode:
+        raise ValueError('configured delivery profile call failed')
+    report = strict_document(completed.stdout, 'configured delivery profile')
+    if report != {
+            'format': 'determa.conformance.lossless_delivery.configured_profile',
+            'schema_version': 1, 'source_ordering': 'unordered',
+            'transport_claims': []}:
+        raise ValueError('unproved public source_ordered or transport claim')
+
+
 def run(command: list[str], case: Path = CASE) -> int:
     manifest = strict_document((case / 'delivery-vectors-v1.json').read_bytes(), 'manifest')
     checkpoints = {path.name: strict_document(path.read_bytes(), path.name)
@@ -34,6 +48,8 @@ def run(command: list[str], case: Path = CASE) -> int:
                 'outbound': (case / 'outbox-machine.yaml').read_text(encoding='utf-8')}
     count = 0
     for vector in manifest['vectors'] + manifest['invalid_vectors']:
+        if vector.get('premise_kind') == 'hypothetical_common_rule':
+            continue
         negative = 'candidate' in vector
         request = {'operation': vector['operation'],
                    'input': vector['candidate'] if negative else vector['request'],
@@ -69,6 +85,90 @@ def run(command: list[str], case: Path = CASE) -> int:
     return count
 
 
+def run_integrations(command: list[str], case: Path = CASE) -> int:
+    manifest = strict_document((case / 'delivery-vectors-v1.json').read_bytes(), 'manifest')
+    effects = ROOT / 'conformance/profiles/committed-native-effects/effect-01-result'
+    machine = (effects / 'machine.yaml').read_text(encoding='utf-8')
+    handlers = {str(path.relative_to(effects)): path.read_text(encoding='utf-8')
+                for path in sorted((effects / 'handler').glob('test_handler.*'))}
+    count = 0
+    for vector in manifest['integration']['integration_vectors']:
+        request = vector['request']
+        payload = {
+            'operation': request['operation'],
+            'checkpoint_before': vector['checkpoint_before'],
+            'journal_before': vector['journal_before'],
+            'claim': None if request['claim'] is None else
+                strict_document((effects / request['claim']).read_bytes(), request['claim']),
+            'host_configuration': request['host_configuration'],
+            'auth_context': request['auth_context'],
+            'arguments': request['arguments'], 'fault': request['fault'],
+            'machine_source_utf8': machine, 'handler_source_files': handlers,
+            'delivery_observation_requested': True,
+        }
+        completed = subprocess.run(command, input=canonical_json_bytes(payload),
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   check=False)
+        if completed.returncode:
+            raise AssertionError(f'{vector["name"]}: composed adapter failed')
+        observed = strict_document(completed.stdout, vector['name'])
+        if set(observed) != {'response_utf8', 'checkpoint_after_utf8',
+                             'journal_after_utf8', 'source_acknowledgements',
+                             'provider_calls', 'core_calls'}:
+            raise AssertionError(f'{vector["name"]}: incomplete composed delivery observation')
+        response_file = vector['expected']['response']
+        response = (None if response_file is None else
+                    canonical_json_bytes(strict_document((effects / response_file).read_bytes(),
+                                                         response_file)).decode('utf-8'))
+        if (observed['response_utf8'] != response or
+            observed['checkpoint_after_utf8'] !=
+                canonical_json_bytes(vector['checkpoint_after']).decode('utf-8') or
+            observed['journal_after_utf8'] !=
+                canonical_json_bytes(vector['journal_after']).decode('utf-8') or
+            observed['source_acknowledgements'] != [] or
+            type(observed['provider_calls']) is not list or
+            type(observed['core_calls']) is not list or
+            len(observed['provider_calls']) != vector['expected']['counts']['provider_calls'] or
+            len(observed['core_calls']) != vector['expected']['counts']['core_calls']):
+            raise AssertionError(f'{vector["name"]}: host-owned delivery evidence differs')
+        if observed['core_calls']:
+            receipt = vector['checkpoint_after']['operation_receipts'][-1]
+            expected_core = {
+                'event_id': receipt['event_id'],
+                'operation_kind': 'admit' if receipt['operation_kind'] == 'acceptance' else 'step',
+                'target': vector['checkpoint_after']['root_record']['aggregate_state']['runtimes'][0]['target_identity'],
+            }
+            if observed['core_calls'] != [expected_core]:
+                raise AssertionError(f'{vector["name"]}: core call bypassed pinned result envelope')
+        count += 1
+    return count
+
+
+def run_core_observability(command: list[str], case: Path = CASE) -> int:
+    manifest = strict_document((case / 'delivery-vectors-v1.json').read_bytes(), 'manifest')
+    count = 0
+    for vector in manifest['core_observability_vectors']:
+        payload = {
+            'operation': vector['operation'], 'request': vector['request'],
+            'machine_source': vector['machine_source'],
+            'before_state': vector['before_state'],
+            'descriptor': vector['descriptor'],
+            'target_machine_source': vector['target_machine_source'],
+            'delivery_observation_requested': True,
+        }
+        completed = subprocess.run(command, input=canonical_json_bytes(payload),
+                                   stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                   check=False)
+        if completed.returncode:
+            raise AssertionError(f'{vector["name"]}: core adapter failed')
+        observed = strict_document(completed.stdout, vector['name'])
+        expected = {'result': vector['expected_result'], 'source_acknowledgements': []}
+        if canonical_json_bytes(observed) != canonical_json_bytes(expected):
+            raise AssertionError(f'{vector["name"]}: core result lost a disposition or emission')
+        count += 1
+    return count
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument('--adapter', required=True,
@@ -79,6 +179,10 @@ def main() -> int:
     parser.add_argument('--base-only', action='store_true',
                         help='run the weaker delivery-only claim without §18/§19 native proof')
     args = parser.parse_args()
+    command = shlex.split(args.adapter)
+    if not command:
+        parser.error('empty adapter command')
+    verify_configured_delivery_profile(command)
     if args.base_only and args.authority_adapter:
         parser.error('--base-only cannot claim an authority adapter')
     if not args.base_only:
@@ -96,11 +200,13 @@ def main() -> int:
         if completed.returncode:
             raise SystemExit('§18/§19 configured native proof failed: ' +
                              completed.stderr.decode('utf-8', errors='replace').strip())
-    count = run(shlex.split(args.adapter))
+    count = run(command)
+    core = run_core_observability(command)
     if args.base_only:
-        print(f'passed {count} base lossless delivery vectors; no §18/§19 claim')
+        print(f'passed {count + core} base lossless delivery vectors; no §18/§19 claim')
     else:
-        print(f'passed {count + 5} production lossless delivery vectors under one configured host')
+        integrations = run_integrations(command)
+        print(f'passed {count + core + integrations} production lossless delivery vectors under one configured host')
     return 0
 
 

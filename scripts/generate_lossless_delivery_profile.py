@@ -102,6 +102,7 @@ def build(spec: Path) -> dict[str, bytes]:
     pressure['ordering_context'] = {
         'mode': 'source_ordered', 'source_scope': 'orders/inbox',
         'unresolved_source_delivery_id': 'broker-42'}
+    pressure['premise_kind'] = 'hypothetical_common_rule'
     vectors.append(pressure)
     def other(name: str, operation: str, request: dict, before_checkpoint: str,
               after_checkpoint: str, response: dict, *, before: dict | None = None,
@@ -329,9 +330,48 @@ def build(spec: Path) -> dict[str, bytes]:
             'journal_before': json.loads((effects / item['request']['journal_before']).read_text()),
             'journal_after': json.loads((effects / item['expected']['journal_after']).read_text()),
         })
+    core = ROOT / 'conformance/core'
+    observable = (
+        ('fault_is_terminal_not_source_retry', '117-version1-mailboxes',
+         'zero-capacity-machine.yaml', 'zero-capacity-before.json',
+         'overflow_step', 'overflow-result.json'),
+        ('internal_emission_retained', '117-version1-mailboxes',
+         'component-machine.yaml', 'retained-faulted-before.json',
+         'retained_faulted_step', 'internal-emission-retained-faulted-result.json'),
+        ('lifecycle_cancellation_is_visible', '117-version1-mailboxes',
+         'component-machine.yaml', 'cancellation-before.json',
+         'cancellation_step', 'internal-emission-cancelled-result.json'),
+        ('lifecycle_completion_is_visible', '117-version1-mailboxes',
+         'component-machine.yaml', 'natural-completion-before.json',
+         'natural_completion_step', 'internal-emission-runtime-completed-result.json'),
+        ('chained_emission_and_disposition_visible', '117-version1-mailboxes',
+         'component-machine.yaml', 'chained-internal-before.json',
+         'chained_internal_step', 'chained-internal-result.json'),
+        ('migration_disposal_is_explicit', '118-version1-persistence',
+         'machine.yaml', 'disposal-before.json', 'dispose',
+         'migration-dispose-result.json'),
+    )
+    observability_vectors = []
+    for name, directory, machine_file, before_file, pointer, result_file in observable:
+        location = core / directory
+        operation_input = json.loads((location / 'operation-inputs.json').read_text())[pointer]
+        descriptor = operation_input.get('migration_descriptor_file')
+        target = operation_input.get('target_bundle', {}).get('bundle_file')
+        observability_vectors.append({
+            'name': name, 'core_case': directory, 'request_pointer': pointer,
+            'operation': operation_input['operation'], 'request': operation_input,
+            'machine_source': (location / machine_file).read_text(),
+            'before_state': json.loads((location / before_file).read_text()),
+            'expected_result': json.loads((location / result_file).read_text()),
+            'descriptor': None if descriptor is None else json.loads((location / descriptor).read_text()),
+            'target_machine_source': None if target is None else (location / target).read_text(),
+            'source_acknowledgements': [],
+        })
     document = {'lossless_delivery_format': 'determa.conformance.lossless_delivery',
-                'lossless_delivery_schema_version': 1, 'vectors': vectors,
+                'lossless_delivery_schema_version': 1,
+                'configured_transport_claims': [], 'vectors': vectors,
                 'invalid_vectors': invalid_vectors,
+                'core_observability_vectors': observability_vectors,
                 'integration': {
                     'authority_scenario': 'worker_sqlite',
                     'required_authority_guarantees': ['guarded_local_writes', 'worker_fencing'],

@@ -1,6 +1,7 @@
 {
   "lossless_delivery_format": "determa.conformance.lossless_delivery",
   "lossless_delivery_schema_version": 1,
+  "configured_transport_claims": [],
   "vectors": [
     {
       "name": "first_committed_admission",
@@ -956,7 +957,8 @@
         "mode": "source_ordered",
         "source_scope": "orders/inbox",
         "unresolved_source_delivery_id": "broker-42"
-      }
+      },
+      "premise_kind": "hypothetical_common_rule"
     },
     {
       "name": "source_owned_backpressure",
@@ -3217,6 +3219,3003 @@
       },
       "expected_failure": "invalid_delivery",
       "acknowledge_source": false
+    }
+  ],
+  "core_observability_vectors": [
+    {
+      "name": "fault_is_terminal_not_source_retry",
+      "core_case": "117-version1-mailboxes",
+      "request_pointer": "overflow_step",
+      "operation": "step_v1",
+      "request": {
+        "operation": "step_v1",
+        "target_runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5"
+      },
+      "machine_source": "format: 1\nnamespace: example.transaction_server\n\nevents:\n  new_request:\n    direction: input\n    payload:\n      transaction_id: { type: string, required: true }\n  received:\n    direction: input\n  authorized:\n    direction: input\n  priority_request:\n    direction: input\n  retry:\n    direction: input\n\nmachines:\n  - machine_id: transaction_server\n    root:\n      type: composite\n      deferred_event_capacity: 0\n      initial: { transition_to: idle }\n      states:\n        idle:\n          on_events:\n            new_request: { transition_to: busy.receiving }\n        busy:\n          type: composite\n          deferred_events: [new_request]\n          initial: { transition_to: busy.receiving }\n          on_events:\n            priority_request: { transition_to: idle }\n          states:\n            receiving:\n              on_events:\n                received: { transition_to: busy.authorizing }\n            authorizing:\n              deferred_events: [priority_request, retry]\n              on_events:\n                new_request: {}\n                retry: { guard: \"false\" }\n                authorized: { transition_to: idle }\n",
+      "before_state": {
+        "aggregate_state_digest": "sha256:5894476d915fb6022e3d4d1ebebd373531b56836a8c3579c17a64b46efc8d477",
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "creation_id": "create-server-1",
+        "machine_format": 1,
+        "migration_sequence": "0",
+        "namespace": "example.transaction_server",
+        "next_acceptance_sequence": "1",
+        "next_logical_step_sequence": "2",
+        "next_output_sequence": "0",
+        "next_queue_sequence": "1",
+        "root_instance_id": "server-1",
+        "root_machine_id": "transaction_server",
+        "root_machine_version": "1",
+        "root_runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5",
+        "runtimes": [
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/busy/states/receiving"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/busy"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/busy/states/receiving"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "transaction_server",
+                "machine_version": "1",
+                "namespace": "example.transaction_server",
+                "root_definition_pointer": "/machines/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:c54ded7abd3ba8f4849ee242aabc8f03c98d64d1856f2f7f011d760117fb7754"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "definition": {
+                "machine": {
+                  "machine_id": "transaction_server",
+                  "machine_version": "1",
+                  "namespace": "example.transaction_server",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:c54ded7abd3ba8f4849ee242aabc8f03c98d64d1856f2f7f011d760117fb7754"
+              },
+              "kind": "root",
+              "root_instance_id": "server-1"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/busy",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/idle",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [
+              {
+                "acceptance_sequence": "0",
+                "deferral_count": "1",
+                "delivery_mode": "input",
+                "envelope": {
+                  "cause_id": "request-repeated",
+                  "event": "new_request",
+                  "event_id": "request-repeated",
+                  "payload": [
+                    "map",
+                    [
+                      [
+                        "transaction_id",
+                        [
+                          "string",
+                          "transaction-r"
+                        ]
+                      ]
+                    ]
+                  ],
+                  "source": {
+                    "host": true
+                  },
+                  "target": {
+                    "root": {
+                      "root_instance_id": "server-1",
+                      "root_runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5"
+                    }
+                  }
+                },
+                "envelope_digest": "sha256:7aba1cba43e1cf361652744d7203c96df2b3fedde12cecaca0a9ef9920cece44",
+                "queue_sequence": "0"
+              }
+            ],
+            "relation": {
+              "kind": "root"
+            },
+            "runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5",
+            "status": "running",
+            "target_identity": {
+              "root": {
+                "root_instance_id": "server-1",
+                "root_runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5"
+              }
+            },
+            "variables": []
+          }
+        ],
+        "validated_bundle_fingerprint": "sha256:c54ded7abd3ba8f4849ee242aabc8f03c98d64d1856f2f7f011d760117fb7754"
+      },
+      "expected_result": {
+        "core_step_result_format": "determa.core_step_result",
+        "core_step_result_schema_version": 1,
+        "disposition": "faulted",
+        "emissions": [],
+        "fault": {
+          "cause_id": "request-repeated",
+          "code": "deferred_event_capacity_exceeded",
+          "definition_fingerprint": "sha256:c54ded7abd3ba8f4849ee242aabc8f03c98d64d1856f2f7f011d760117fb7754",
+          "runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5",
+          "source_locator": "system:deferred_event_capacity",
+          "step_sequence": "2"
+        },
+        "lifecycle_dispositions": [],
+        "rejection": null,
+        "state": {
+          "aggregate_state_digest": "sha256:3bb01f1e6f997a550eb719053c0fe795b45528c63af1aadde927d2b119f83605",
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "creation_id": "create-server-1",
+          "machine_format": 1,
+          "migration_sequence": "0",
+          "namespace": "example.transaction_server",
+          "next_acceptance_sequence": "1",
+          "next_logical_step_sequence": "3",
+          "next_output_sequence": "0",
+          "next_queue_sequence": "1",
+          "root_instance_id": "server-1",
+          "root_machine_id": "transaction_server",
+          "root_machine_version": "1",
+          "root_runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5",
+          "runtimes": [
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/busy/states/receiving"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/busy"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/busy/states/receiving"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "transaction_server",
+                  "machine_version": "1",
+                  "namespace": "example.transaction_server",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:c54ded7abd3ba8f4849ee242aabc8f03c98d64d1856f2f7f011d760117fb7754"
+              },
+              "deferred_mailbox": [],
+              "fault": {
+                "cause_id": "request-repeated",
+                "code": "deferred_event_capacity_exceeded",
+                "definition_fingerprint": "sha256:c54ded7abd3ba8f4849ee242aabc8f03c98d64d1856f2f7f011d760117fb7754",
+                "runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5",
+                "source_locator": "system:deferred_event_capacity",
+                "step_sequence": "2"
+              },
+              "history": [],
+              "identity_origin": {
+                "definition": {
+                  "machine": {
+                    "machine_id": "transaction_server",
+                    "machine_version": "1",
+                    "namespace": "example.transaction_server",
+                    "root_definition_pointer": "/machines/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:c54ded7abd3ba8f4849ee242aabc8f03c98d64d1856f2f7f011d760117fb7754"
+                },
+                "kind": "root",
+                "root_instance_id": "server-1"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/busy",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/idle",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "kind": "root"
+              },
+              "runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5",
+              "status": "faulted",
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "server-1",
+                  "root_runtime_id": "sha256:cc21f374f75677320ba3ead556f7e0a3a51041d902c564e418a4d03fff066da5"
+                }
+              },
+              "variables": []
+            }
+          ],
+          "validated_bundle_fingerprint": "sha256:c54ded7abd3ba8f4849ee242aabc8f03c98d64d1856f2f7f011d760117fb7754"
+        },
+        "status": "faulted"
+      },
+      "descriptor": null,
+      "target_machine_source": null,
+      "source_acknowledgements": []
+    },
+    {
+      "name": "internal_emission_retained",
+      "core_case": "117-version1-mailboxes",
+      "request_pointer": "retained_faulted_step",
+      "operation": "step_v1",
+      "request": {
+        "operation": "step_v1",
+        "target_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+      },
+      "machine_source": "format: 1\nnamespace: conformance.case_09_parallel_components\nevents:\n  fanout:\n    direction: input\n  finish_left:\n    direction: input\n  finish_right:\n    direction: input\n  enter_faulty:\n    direction: input\n  cancel_after_send:\n    direction: input\n  cleanup_rollback:\n    direction: input\n  enter_cleanup:\n    direction: input\n  aggregate_finish:\n    direction: input\n  component_work:\n    direction: internal\n  component_finish:\n    direction: internal\nmachines:\n  - machine_id: parallel_components\n    version: 1\n    root:\n      type: composite\n      initial: { transition_to: processing }\n      states:\n        processing:\n          type: parallel\n          on_events:\n            fanout:\n              action:\n                - send:\n                    event: component_work\n                    targets:\n                      - { component: left }\n                      - { component: right }\n            finish_left:\n              action:\n                - send:\n                    event: component_finish\n                    to: { component: left }\n            finish_right:\n              action:\n                - send:\n                    event: component_finish\n                    to: { component: right }\n            cancel_after_send:\n              action:\n                - send:\n                    event: component_work\n                    to: { component: left }\n              transition_to: finished\n            done: { transition_to: finished }\n            determa.component_completed: {}\n          components:\n            - component_id: left\n              root:\n                type: composite\n                variables:\n                  trace: { type: list, init: [] }\n                initial: { transition_to: running }\n                states:\n                  running:\n                    on_events:\n                      component_work:\n                        action:\n                          - assign: { trace: \"trace + ['left']\" }\n                      component_finish:\n                        action:\n                          - send:\n                              event: component_work\n                              to: { self: true }\n                        transition_to: complete\n                  complete: { type: final }\n            - component_id: right\n              root:\n                type: composite\n                variables:\n                  trace: { type: list, init: [] }\n                initial: { transition_to: running }\n                states:\n                  running:\n                    on_events:\n                      component_work:\n                        action:\n                          - assign: { trace: \"trace + ['right']\" }\n                      component_finish:\n                        action:\n                          - send:\n                              event: component_work\n                              to: { self: true }\n                        transition_to: complete\n                  complete: { type: final }\n        finished: { type: final }\n        cleanup_failed:\n          type: parallel\n          on_events:\n            cleanup_rollback:\n              action:\n                - send:\n                    event: component_work\n                    to: { component: retained }\n              transition_to: finished\n          exit:\n            - assign: { cleanup_marker: \"1 / 0\" }\n          variables:\n            cleanup_marker: { type: int, init: 0 }\n          components:\n            - component_id: retained\n              root: {}\n            - component_id: retained_peer\n              root: {}\n        faulty_processing:\n          type: parallel\n          entry:\n            - send:\n                event: component_work\n                to: { component: faulty }\n          components:\n            - component_id: faulty\n              root:\n                variables:\n                  count: { type: int, init: 0 }\n                entry:\n                  - assign: { count: \"count % 0\" }\n            - component_id: observer\n              root: {}\n      on_events:\n        enter_faulty: { transition_to: faulty_processing }\n        enter_cleanup: { transition_to: cleanup_failed }\n        aggregate_finish:\n          action:\n            - send:\n                event: component_work\n                to: { self: true }\n            - stop: {}\n",
+      "before_state": {
+        "aggregate_state_digest": "sha256:e855fe4edfefb871f141c552bff8ff214135adb53634dd6ee61ce6f903b4e191",
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "creation_id": "component-migration-create",
+        "machine_format": 1,
+        "migration_sequence": "0",
+        "namespace": "conformance.case_09_parallel_components",
+        "next_acceptance_sequence": "3",
+        "next_logical_step_sequence": "1",
+        "next_output_sequence": "0",
+        "next_queue_sequence": "3",
+        "root_instance_id": "component-migration-root",
+        "root_machine_id": "parallel_components",
+        "root_machine_version": "1",
+        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+        "runtimes": [
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing/components/0/root/states/running"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "activation_sequence": "0",
+              "component_definition_pointer": "/machines/0/root/states/processing/components/0",
+              "declaration_index": "0",
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [],
+            "relation": {
+              "activation_sequence": "0",
+              "component_id": "left",
+              "current_component_definition_pointer": "/machines/0/root/states/processing/components/0",
+              "declaration_index": "0",
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+            "status": "running",
+            "target_identity": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "left",
+                "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "list",
+                  []
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/processing/components/0/root/variables/trace"
+              }
+            ]
+          },
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing/components/1/root/states/running"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "activation_sequence": "0",
+              "component_definition_pointer": "/machines/0/root/states/processing/components/1",
+              "declaration_index": "1",
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [],
+            "relation": {
+              "activation_sequence": "0",
+              "component_id": "right",
+              "current_component_definition_pointer": "/machines/0/root/states/processing/components/1",
+              "declaration_index": "1",
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+            "status": "running",
+            "target_identity": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "right",
+                "component_runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "list",
+                  []
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/processing/components/1/root/variables/trace"
+              }
+            ]
+          },
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "root",
+              "root_instance_id": "component-migration-root"
+            },
+            "next_component_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1",
+                "next_sequence": "1"
+              }
+            ],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [
+              {
+                "acceptance_sequence": "0",
+                "deferral_count": "0",
+                "delivery_mode": "input",
+                "envelope": {
+                  "cause_id": "enter-faulty-1",
+                  "event": "enter_faulty",
+                  "event_id": "enter-faulty-1",
+                  "payload": [
+                    "map",
+                    []
+                  ],
+                  "source": {
+                    "host": true
+                  },
+                  "target": {
+                    "root": {
+                      "root_instance_id": "component-migration-root",
+                      "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                    }
+                  }
+                },
+                "envelope_digest": "sha256:57f7acf64d839bf7ada0d677876fd8d1d9ecfd2153f0de3337c3321363f0dc41",
+                "queue_sequence": "0"
+              }
+            ],
+            "relation": {
+              "kind": "root"
+            },
+            "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+            "status": "running",
+            "target_identity": {
+              "root": {
+                "root_instance_id": "component-migration-root",
+                "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              }
+            },
+            "variables": []
+          }
+        ],
+        "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+      },
+      "expected_result": {
+        "core_step_result_format": "determa.core_step_result",
+        "core_step_result_schema_version": 1,
+        "disposition": "handled",
+        "emissions": [
+          {
+            "acceptance_sequence": "3",
+            "emission_index": "0",
+            "event_id": "sha256:355ddd495a79f7177b1d6c4cc2f005302389eb1790a27776f280782831499834",
+            "kind": "internal_mailbox",
+            "queue_sequence": "3"
+          },
+          {
+            "acceptance_sequence": "4",
+            "emission_index": "0",
+            "event_id": "sha256:2affe34c519e0df80faf58ca331a29f7ec0720715129853aff398f02ea54c91b",
+            "kind": "internal_mailbox",
+            "queue_sequence": "4"
+          }
+        ],
+        "fault": null,
+        "lifecycle_dispositions": [],
+        "rejection": null,
+        "state": {
+          "aggregate_state_digest": "sha256:69b26aa331adf4a47b358f078276f3660df49c13d43fb2a8bc9e233f46e1acf8",
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "creation_id": "component-migration-create",
+          "machine_format": 1,
+          "migration_sequence": "0",
+          "namespace": "conformance.case_09_parallel_components",
+          "next_acceptance_sequence": "5",
+          "next_logical_step_sequence": "2",
+          "next_output_sequence": "0",
+          "next_queue_sequence": "5",
+          "root_instance_id": "component-migration-root",
+          "root_machine_id": "parallel_components",
+          "root_machine_version": "1",
+          "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+          "runtimes": [
+            {
+              "active_leaf_state_definition_pointers": [],
+              "active_state_activations": [],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/faulty_processing/components/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": {
+                "cause_id": "sha256:c9ddc32ce9b8f870365ff6a1f7168304686237b200080e73fa852306530b9f29",
+                "code": "action_fault",
+                "definition_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6",
+                "runtime_id": "sha256:279321e420831e7f491c34854d34578685f7fc1a662ca929db1efc578fea8b59",
+                "source_locator": "/machines/0/root/states/faulty_processing/components/0/root/entry/0/assign/count",
+                "step_sequence": "1"
+              },
+              "history": [],
+              "identity_origin": {
+                "activation_sequence": "0",
+                "component_definition_pointer": "/machines/0/root/states/faulty_processing/components/0",
+                "declaration_index": "0",
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root/states/faulty_processing/components/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [],
+              "ready_mailbox": [
+                {
+                  "acceptance_sequence": "3",
+                  "deferral_count": "0",
+                  "delivery_mode": "internal",
+                  "envelope": {
+                    "cause_id": "enter-faulty-1",
+                    "event": "component_work",
+                    "event_id": "sha256:355ddd495a79f7177b1d6c4cc2f005302389eb1790a27776f280782831499834",
+                    "payload": [
+                      "map",
+                      []
+                    ],
+                    "source": {
+                      "runtime": {
+                        "root": {
+                          "root_instance_id": "component-migration-root",
+                          "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                        }
+                      }
+                    },
+                    "target": {
+                      "component": {
+                        "activation_sequence": "0",
+                        "component_id": "faulty",
+                        "component_runtime_id": "sha256:279321e420831e7f491c34854d34578685f7fc1a662ca929db1efc578fea8b59",
+                        "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                        "root_instance_id": "component-migration-root"
+                      }
+                    }
+                  },
+                  "envelope_digest": "sha256:2f3e817752a5b1b66609b23890b3a41790b3b66ed3dfe4ee5d6bbf80d260ed10",
+                  "queue_sequence": "3"
+                }
+              ],
+              "relation": {
+                "activation_sequence": "0",
+                "component_id": "faulty",
+                "current_component_definition_pointer": "/machines/0/root/states/faulty_processing/components/0",
+                "declaration_index": "0",
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "runtime_id": "sha256:279321e420831e7f491c34854d34578685f7fc1a662ca929db1efc578fea8b59",
+              "status": "faulted",
+              "target_identity": {
+                "component": {
+                  "activation_sequence": "0",
+                  "component_id": "faulty",
+                  "component_runtime_id": "sha256:279321e420831e7f491c34854d34578685f7fc1a662ca929db1efc578fea8b59",
+                  "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                  "root_instance_id": "component-migration-root"
+                }
+              },
+              "variables": []
+            },
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/faulty_processing/components/1/root"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/faulty_processing/components/1/root"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/faulty_processing/components/1/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "activation_sequence": "0",
+                "component_definition_pointer": "/machines/0/root/states/faulty_processing/components/1",
+                "declaration_index": "1",
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root/states/faulty_processing/components/1/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/faulty_processing/components/1/root",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "activation_sequence": "0",
+                "component_id": "observer",
+                "current_component_definition_pointer": "/machines/0/root/states/faulty_processing/components/1",
+                "declaration_index": "1",
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "runtime_id": "sha256:736f5ae49256699bec4732de3360a5101ebf94cad0a7f3e82ca02935fe914b7f",
+              "status": "running",
+              "target_identity": {
+                "component": {
+                  "activation_sequence": "0",
+                  "component_id": "observer",
+                  "component_runtime_id": "sha256:736f5ae49256699bec4732de3360a5101ebf94cad0a7f3e82ca02935fe914b7f",
+                  "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                  "root_instance_id": "component-migration-root"
+                }
+              },
+              "variables": []
+            },
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/faulty_processing"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/faulty_processing"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "root",
+                "root_instance_id": "component-migration-root"
+              },
+              "next_component_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/faulty_processing/components/0",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/faulty_processing/components/1",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/faulty_processing",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [
+                {
+                  "acceptance_sequence": "4",
+                  "deferral_count": "0",
+                  "delivery_mode": "internal",
+                  "envelope": {
+                    "cause_id": "sha256:c9ddc32ce9b8f870365ff6a1f7168304686237b200080e73fa852306530b9f29",
+                    "event": "determa.component_failed",
+                    "event_id": "sha256:2affe34c519e0df80faf58ca331a29f7ec0720715129853aff398f02ea54c91b",
+                    "payload": [
+                      "map",
+                      [
+                        [
+                          "component_id",
+                          [
+                            "string",
+                            "faulty"
+                          ]
+                        ],
+                        [
+                          "component_runtime_id",
+                          [
+                            "string",
+                            "sha256:279321e420831e7f491c34854d34578685f7fc1a662ca929db1efc578fea8b59"
+                          ]
+                        ],
+                        [
+                          "fault",
+                          [
+                            "map",
+                            [
+                              [
+                                "cause_id",
+                                [
+                                  "string",
+                                  "sha256:c9ddc32ce9b8f870365ff6a1f7168304686237b200080e73fa852306530b9f29"
+                                ]
+                              ],
+                              [
+                                "code",
+                                [
+                                  "string",
+                                  "action_fault"
+                                ]
+                              ],
+                              [
+                                "runtime_id",
+                                [
+                                  "string",
+                                  "sha256:279321e420831e7f491c34854d34578685f7fc1a662ca929db1efc578fea8b59"
+                                ]
+                              ],
+                              [
+                                "source_locator",
+                                [
+                                  "string",
+                                  "/machines/0/root/states/faulty_processing/components/0/root/entry/0/assign/count"
+                                ]
+                              ],
+                              [
+                                "step_sequence",
+                                [
+                                  "string",
+                                  "1"
+                                ]
+                              ]
+                            ]
+                          ]
+                        ]
+                      ]
+                    ],
+                    "source": {
+                      "system": "system:component_failure"
+                    },
+                    "target": {
+                      "root": {
+                        "root_instance_id": "component-migration-root",
+                        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                      }
+                    }
+                  },
+                  "envelope_digest": "sha256:bde52c2885d936a05576ee6935784af813ba8db4bc284c94f4e9d215cc3db361",
+                  "queue_sequence": "4"
+                }
+              ],
+              "relation": {
+                "kind": "root"
+              },
+              "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+              "status": "running",
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "component-migration-root",
+                  "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                }
+              },
+              "variables": []
+            }
+          ],
+          "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+        },
+        "status": "running"
+      },
+      "descriptor": null,
+      "target_machine_source": null,
+      "source_acknowledgements": []
+    },
+    {
+      "name": "lifecycle_cancellation_is_visible",
+      "core_case": "117-version1-mailboxes",
+      "request_pointer": "cancellation_step",
+      "operation": "step_v1",
+      "request": {
+        "operation": "step_v1",
+        "target_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+      },
+      "machine_source": "format: 1\nnamespace: conformance.case_09_parallel_components\nevents:\n  fanout:\n    direction: input\n  finish_left:\n    direction: input\n  finish_right:\n    direction: input\n  enter_faulty:\n    direction: input\n  cancel_after_send:\n    direction: input\n  cleanup_rollback:\n    direction: input\n  enter_cleanup:\n    direction: input\n  aggregate_finish:\n    direction: input\n  component_work:\n    direction: internal\n  component_finish:\n    direction: internal\nmachines:\n  - machine_id: parallel_components\n    version: 1\n    root:\n      type: composite\n      initial: { transition_to: processing }\n      states:\n        processing:\n          type: parallel\n          on_events:\n            fanout:\n              action:\n                - send:\n                    event: component_work\n                    targets:\n                      - { component: left }\n                      - { component: right }\n            finish_left:\n              action:\n                - send:\n                    event: component_finish\n                    to: { component: left }\n            finish_right:\n              action:\n                - send:\n                    event: component_finish\n                    to: { component: right }\n            cancel_after_send:\n              action:\n                - send:\n                    event: component_work\n                    to: { component: left }\n              transition_to: finished\n            done: { transition_to: finished }\n            determa.component_completed: {}\n          components:\n            - component_id: left\n              root:\n                type: composite\n                variables:\n                  trace: { type: list, init: [] }\n                initial: { transition_to: running }\n                states:\n                  running:\n                    on_events:\n                      component_work:\n                        action:\n                          - assign: { trace: \"trace + ['left']\" }\n                      component_finish:\n                        action:\n                          - send:\n                              event: component_work\n                              to: { self: true }\n                        transition_to: complete\n                  complete: { type: final }\n            - component_id: right\n              root:\n                type: composite\n                variables:\n                  trace: { type: list, init: [] }\n                initial: { transition_to: running }\n                states:\n                  running:\n                    on_events:\n                      component_work:\n                        action:\n                          - assign: { trace: \"trace + ['right']\" }\n                      component_finish:\n                        action:\n                          - send:\n                              event: component_work\n                              to: { self: true }\n                        transition_to: complete\n                  complete: { type: final }\n        finished: { type: final }\n        cleanup_failed:\n          type: parallel\n          on_events:\n            cleanup_rollback:\n              action:\n                - send:\n                    event: component_work\n                    to: { component: retained }\n              transition_to: finished\n          exit:\n            - assign: { cleanup_marker: \"1 / 0\" }\n          variables:\n            cleanup_marker: { type: int, init: 0 }\n          components:\n            - component_id: retained\n              root: {}\n            - component_id: retained_peer\n              root: {}\n        faulty_processing:\n          type: parallel\n          entry:\n            - send:\n                event: component_work\n                to: { component: faulty }\n          components:\n            - component_id: faulty\n              root:\n                variables:\n                  count: { type: int, init: 0 }\n                entry:\n                  - assign: { count: \"count % 0\" }\n            - component_id: observer\n              root: {}\n      on_events:\n        enter_faulty: { transition_to: faulty_processing }\n        enter_cleanup: { transition_to: cleanup_failed }\n        aggregate_finish:\n          action:\n            - send:\n                event: component_work\n                to: { self: true }\n            - stop: {}\n",
+      "before_state": {
+        "aggregate_state_digest": "sha256:e0782cb48f4455744ed6b662c222858a53cb08787552e6f1cc2a9637295b3e15",
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "creation_id": "component-migration-create",
+        "machine_format": 1,
+        "migration_sequence": "0",
+        "namespace": "conformance.case_09_parallel_components",
+        "next_acceptance_sequence": "3",
+        "next_logical_step_sequence": "1",
+        "next_output_sequence": "0",
+        "next_queue_sequence": "3",
+        "root_instance_id": "component-migration-root",
+        "root_machine_id": "parallel_components",
+        "root_machine_version": "1",
+        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+        "runtimes": [
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing/components/0/root/states/running"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "activation_sequence": "0",
+              "component_definition_pointer": "/machines/0/root/states/processing/components/0",
+              "declaration_index": "0",
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [],
+            "relation": {
+              "activation_sequence": "0",
+              "component_id": "left",
+              "current_component_definition_pointer": "/machines/0/root/states/processing/components/0",
+              "declaration_index": "0",
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+            "status": "running",
+            "target_identity": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "left",
+                "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "list",
+                  []
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/processing/components/0/root/variables/trace"
+              }
+            ]
+          },
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing/components/1/root/states/running"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "activation_sequence": "0",
+              "component_definition_pointer": "/machines/0/root/states/processing/components/1",
+              "declaration_index": "1",
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [],
+            "relation": {
+              "activation_sequence": "0",
+              "component_id": "right",
+              "current_component_definition_pointer": "/machines/0/root/states/processing/components/1",
+              "declaration_index": "1",
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+            "status": "running",
+            "target_identity": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "right",
+                "component_runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "list",
+                  []
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/processing/components/1/root/variables/trace"
+              }
+            ]
+          },
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "root",
+              "root_instance_id": "component-migration-root"
+            },
+            "next_component_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1",
+                "next_sequence": "1"
+              }
+            ],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [
+              {
+                "acceptance_sequence": "0",
+                "deferral_count": "0",
+                "delivery_mode": "input",
+                "envelope": {
+                  "cause_id": "cancel-after-send-1",
+                  "event": "cancel_after_send",
+                  "event_id": "cancel-after-send-1",
+                  "payload": [
+                    "map",
+                    []
+                  ],
+                  "source": {
+                    "host": true
+                  },
+                  "target": {
+                    "root": {
+                      "root_instance_id": "component-migration-root",
+                      "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                    }
+                  }
+                },
+                "envelope_digest": "sha256:1381a72e49e06c62161c1a18c7c8c379306ba60c509a9b9975e6c8a24af698b1",
+                "queue_sequence": "0"
+              }
+            ],
+            "relation": {
+              "kind": "root"
+            },
+            "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+            "status": "running",
+            "target_identity": {
+              "root": {
+                "root_instance_id": "component-migration-root",
+                "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              }
+            },
+            "variables": []
+          }
+        ],
+        "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+      },
+      "expected_result": {
+        "core_step_result_format": "determa.core_step_result",
+        "core_step_result_schema_version": 1,
+        "disposition": "handled",
+        "emissions": [
+          {
+            "acceptance_sequence": "3",
+            "emission_index": "0",
+            "event_id": "sha256:5590439011ae7705204fa453987d4686e92ae00edf1d04746443539e43faac27",
+            "kind": "internal_disposed",
+            "lifecycle_disposition_index": "0"
+          }
+        ],
+        "fault": null,
+        "lifecycle_dispositions": [
+          {
+            "acceptance_sequence": "3",
+            "event_id": "sha256:5590439011ae7705204fa453987d4686e92ae00edf1d04746443539e43faac27",
+            "final_queue_sequence": "3",
+            "reason": "runtime_cancelled",
+            "request_digest": "sha256:9154304df6b869e623d637dc7a8578fe6eacc5e79de269ce49f302bd4417d7be",
+            "target_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918"
+          }
+        ],
+        "rejection": null,
+        "state": {
+          "aggregate_state_digest": "sha256:0bcdf3626617c8e51cb358c38e4e30e1122b9bad78d4d57c109eb6febf0550d4",
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "creation_id": "component-migration-create",
+          "machine_format": 1,
+          "migration_sequence": "0",
+          "namespace": "conformance.case_09_parallel_components",
+          "next_acceptance_sequence": "4",
+          "next_logical_step_sequence": "2",
+          "next_output_sequence": "0",
+          "next_queue_sequence": "4",
+          "root_instance_id": "component-migration-root",
+          "root_machine_id": "parallel_components",
+          "root_machine_version": "1",
+          "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+          "runtimes": [
+            {
+              "active_leaf_state_definition_pointers": [],
+              "active_state_activations": [],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "root",
+                "root_instance_id": "component-migration-root"
+              },
+              "next_component_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/finished",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "kind": "root"
+              },
+              "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+              "status": "completed",
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "component-migration-root",
+                  "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                }
+              },
+              "variables": []
+            }
+          ],
+          "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+        },
+        "status": "completed"
+      },
+      "descriptor": null,
+      "target_machine_source": null,
+      "source_acknowledgements": []
+    },
+    {
+      "name": "lifecycle_completion_is_visible",
+      "core_case": "117-version1-mailboxes",
+      "request_pointer": "natural_completion_step",
+      "operation": "step_v1",
+      "request": {
+        "operation": "step_v1",
+        "target_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918"
+      },
+      "machine_source": "format: 1\nnamespace: conformance.case_09_parallel_components\nevents:\n  fanout:\n    direction: input\n  finish_left:\n    direction: input\n  finish_right:\n    direction: input\n  enter_faulty:\n    direction: input\n  cancel_after_send:\n    direction: input\n  cleanup_rollback:\n    direction: input\n  enter_cleanup:\n    direction: input\n  aggregate_finish:\n    direction: input\n  component_work:\n    direction: internal\n  component_finish:\n    direction: internal\nmachines:\n  - machine_id: parallel_components\n    version: 1\n    root:\n      type: composite\n      initial: { transition_to: processing }\n      states:\n        processing:\n          type: parallel\n          on_events:\n            fanout:\n              action:\n                - send:\n                    event: component_work\n                    targets:\n                      - { component: left }\n                      - { component: right }\n            finish_left:\n              action:\n                - send:\n                    event: component_finish\n                    to: { component: left }\n            finish_right:\n              action:\n                - send:\n                    event: component_finish\n                    to: { component: right }\n            cancel_after_send:\n              action:\n                - send:\n                    event: component_work\n                    to: { component: left }\n              transition_to: finished\n            done: { transition_to: finished }\n            determa.component_completed: {}\n          components:\n            - component_id: left\n              root:\n                type: composite\n                variables:\n                  trace: { type: list, init: [] }\n                initial: { transition_to: running }\n                states:\n                  running:\n                    on_events:\n                      component_work:\n                        action:\n                          - assign: { trace: \"trace + ['left']\" }\n                      component_finish:\n                        action:\n                          - send:\n                              event: component_work\n                              to: { self: true }\n                        transition_to: complete\n                  complete: { type: final }\n            - component_id: right\n              root:\n                type: composite\n                variables:\n                  trace: { type: list, init: [] }\n                initial: { transition_to: running }\n                states:\n                  running:\n                    on_events:\n                      component_work:\n                        action:\n                          - assign: { trace: \"trace + ['right']\" }\n                      component_finish:\n                        action:\n                          - send:\n                              event: component_work\n                              to: { self: true }\n                        transition_to: complete\n                  complete: { type: final }\n        finished: { type: final }\n        cleanup_failed:\n          type: parallel\n          on_events:\n            cleanup_rollback:\n              action:\n                - send:\n                    event: component_work\n                    to: { component: retained }\n              transition_to: finished\n          exit:\n            - assign: { cleanup_marker: \"1 / 0\" }\n          variables:\n            cleanup_marker: { type: int, init: 0 }\n          components:\n            - component_id: retained\n              root: {}\n            - component_id: retained_peer\n              root: {}\n        faulty_processing:\n          type: parallel\n          entry:\n            - send:\n                event: component_work\n                to: { component: faulty }\n          components:\n            - component_id: faulty\n              root:\n                variables:\n                  count: { type: int, init: 0 }\n                entry:\n                  - assign: { count: \"count % 0\" }\n            - component_id: observer\n              root: {}\n      on_events:\n        enter_faulty: { transition_to: faulty_processing }\n        enter_cleanup: { transition_to: cleanup_failed }\n        aggregate_finish:\n          action:\n            - send:\n                event: component_work\n                to: { self: true }\n            - stop: {}\n",
+      "before_state": {
+        "aggregate_state_digest": "sha256:63959d4bd0e1102810d40642c0623d8638801c4994b8a7177c6c24633b495cff",
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "creation_id": "component-migration-create",
+        "machine_format": 1,
+        "migration_sequence": "0",
+        "namespace": "conformance.case_09_parallel_components",
+        "next_acceptance_sequence": "3",
+        "next_logical_step_sequence": "1",
+        "next_output_sequence": "0",
+        "next_queue_sequence": "3",
+        "root_instance_id": "component-migration-root",
+        "root_machine_id": "parallel_components",
+        "root_machine_version": "1",
+        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+        "runtimes": [
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing/components/0/root/states/running"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "activation_sequence": "0",
+              "component_definition_pointer": "/machines/0/root/states/processing/components/0",
+              "declaration_index": "0",
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [
+              {
+                "acceptance_sequence": "2",
+                "deferral_count": "0",
+                "delivery_mode": "internal",
+                "envelope": {
+                  "cause_id": "component-finish-1",
+                  "event": "component_finish",
+                  "event_id": "component-finish-1",
+                  "payload": [
+                    "map",
+                    []
+                  ],
+                  "source": {
+                    "runtime": {
+                      "root": {
+                        "root_instance_id": "component-migration-root",
+                        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                      }
+                    }
+                  },
+                  "target": {
+                    "component": {
+                      "activation_sequence": "0",
+                      "component_id": "left",
+                      "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                      "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                      "root_instance_id": "component-migration-root"
+                    }
+                  }
+                },
+                "envelope_digest": "sha256:4461a699b3ac711425d47561f93104797a0ae301107be80d60eaf4a533baad3e",
+                "queue_sequence": "2"
+              }
+            ],
+            "relation": {
+              "activation_sequence": "0",
+              "component_id": "left",
+              "current_component_definition_pointer": "/machines/0/root/states/processing/components/0",
+              "declaration_index": "0",
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+            "status": "running",
+            "target_identity": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "left",
+                "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "list",
+                  []
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/processing/components/0/root/variables/trace"
+              }
+            ]
+          },
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing/components/1/root/states/running"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "activation_sequence": "0",
+              "component_definition_pointer": "/machines/0/root/states/processing/components/1",
+              "declaration_index": "1",
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [],
+            "relation": {
+              "activation_sequence": "0",
+              "component_id": "right",
+              "current_component_definition_pointer": "/machines/0/root/states/processing/components/1",
+              "declaration_index": "1",
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+            "status": "running",
+            "target_identity": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "right",
+                "component_runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "list",
+                  []
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/processing/components/1/root/variables/trace"
+              }
+            ]
+          },
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "root",
+              "root_instance_id": "component-migration-root"
+            },
+            "next_component_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1",
+                "next_sequence": "1"
+              }
+            ],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [],
+            "relation": {
+              "kind": "root"
+            },
+            "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+            "status": "running",
+            "target_identity": {
+              "root": {
+                "root_instance_id": "component-migration-root",
+                "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              }
+            },
+            "variables": []
+          }
+        ],
+        "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+      },
+      "expected_result": {
+        "core_step_result_format": "determa.core_step_result",
+        "core_step_result_schema_version": 1,
+        "disposition": "handled",
+        "emissions": [
+          {
+            "acceptance_sequence": "3",
+            "emission_index": "0",
+            "event_id": "sha256:3bfd564357f0708e4386bc90375da95b13f3df2dd95d92e546b2b184884b9d23",
+            "kind": "internal_disposed",
+            "lifecycle_disposition_index": "0"
+          },
+          {
+            "acceptance_sequence": "4",
+            "emission_index": "0",
+            "event_id": "sha256:479db39515b334242bdf65f79cb9a6e2d3be44a9f2e99bf01117200674b33d1b",
+            "kind": "internal_mailbox",
+            "queue_sequence": "4"
+          }
+        ],
+        "fault": null,
+        "lifecycle_dispositions": [
+          {
+            "acceptance_sequence": "3",
+            "event_id": "sha256:3bfd564357f0708e4386bc90375da95b13f3df2dd95d92e546b2b184884b9d23",
+            "final_queue_sequence": "3",
+            "reason": "runtime_completed",
+            "request_digest": "sha256:4f7280964d1d957ea1ba7afaf1484ab21558b2064e8c21b8567c8e952d8fa097",
+            "target_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918"
+          }
+        ],
+        "rejection": null,
+        "state": {
+          "aggregate_state_digest": "sha256:cd4ecbd251cdb1c016f7d7b1687ac74bf541428f81f062b0de2f1e3bbc547c59",
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "creation_id": "component-migration-create",
+          "machine_format": 1,
+          "migration_sequence": "0",
+          "namespace": "conformance.case_09_parallel_components",
+          "next_acceptance_sequence": "5",
+          "next_logical_step_sequence": "2",
+          "next_output_sequence": "0",
+          "next_queue_sequence": "5",
+          "root_instance_id": "component-migration-root",
+          "root_machine_id": "parallel_components",
+          "root_machine_version": "1",
+          "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+          "runtimes": [
+            {
+              "active_leaf_state_definition_pointers": [],
+              "active_state_activations": [],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "activation_sequence": "0",
+                "component_definition_pointer": "/machines/0/root/states/processing/components/0",
+                "declaration_index": "0",
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/complete",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "activation_sequence": "0",
+                "component_id": "left",
+                "current_component_definition_pointer": "/machines/0/root/states/processing/components/0",
+                "declaration_index": "0",
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+              "status": "completed",
+              "target_identity": {
+                "component": {
+                  "activation_sequence": "0",
+                  "component_id": "left",
+                  "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                  "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                  "root_instance_id": "component-migration-root"
+                }
+              },
+              "variables": []
+            },
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/processing/components/1/root/states/running"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "activation_sequence": "0",
+                "component_definition_pointer": "/machines/0/root/states/processing/components/1",
+                "declaration_index": "1",
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "activation_sequence": "0",
+                "component_id": "right",
+                "current_component_definition_pointer": "/machines/0/root/states/processing/components/1",
+                "declaration_index": "1",
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+              "status": "running",
+              "target_identity": {
+                "component": {
+                  "activation_sequence": "0",
+                  "component_id": "right",
+                  "component_runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+                  "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                  "root_instance_id": "component-migration-root"
+                }
+              },
+              "variables": [
+                {
+                  "declaring_state_activation_sequence": "0",
+                  "value": [
+                    "list",
+                    []
+                  ],
+                  "variable_declaration_pointer": "/machines/0/root/states/processing/components/1/root/variables/trace"
+                }
+              ]
+            },
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/processing"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "root",
+                "root_instance_id": "component-migration-root"
+              },
+              "next_component_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [
+                {
+                  "acceptance_sequence": "4",
+                  "deferral_count": "0",
+                  "delivery_mode": "internal",
+                  "envelope": {
+                    "cause_id": "component-finish-1",
+                    "event": "determa.component_completed",
+                    "event_id": "sha256:479db39515b334242bdf65f79cb9a6e2d3be44a9f2e99bf01117200674b33d1b",
+                    "payload": [
+                      "map",
+                      [
+                        [
+                          "component_id",
+                          [
+                            "string",
+                            "left"
+                          ]
+                        ],
+                        [
+                          "component_runtime_id",
+                          [
+                            "string",
+                            "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918"
+                          ]
+                        ]
+                      ]
+                    ],
+                    "source": {
+                      "system": "system:component_completion"
+                    },
+                    "target": {
+                      "root": {
+                        "root_instance_id": "component-migration-root",
+                        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                      }
+                    }
+                  },
+                  "envelope_digest": "sha256:27b3e198343c9b980629eb5e7cef5b5af59293a0f6d069fe513aa0203f896687",
+                  "queue_sequence": "4"
+                }
+              ],
+              "relation": {
+                "kind": "root"
+              },
+              "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+              "status": "running",
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "component-migration-root",
+                  "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                }
+              },
+              "variables": []
+            }
+          ],
+          "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+        },
+        "status": "running"
+      },
+      "descriptor": null,
+      "target_machine_source": null,
+      "source_acknowledgements": []
+    },
+    {
+      "name": "chained_emission_and_disposition_visible",
+      "core_case": "117-version1-mailboxes",
+      "request_pointer": "chained_internal_step",
+      "operation": "step_v1",
+      "request": {
+        "operation": "step_v1",
+        "target_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918"
+      },
+      "machine_source": "format: 1\nnamespace: conformance.case_09_parallel_components\nevents:\n  fanout:\n    direction: input\n  finish_left:\n    direction: input\n  finish_right:\n    direction: input\n  enter_faulty:\n    direction: input\n  cancel_after_send:\n    direction: input\n  cleanup_rollback:\n    direction: input\n  enter_cleanup:\n    direction: input\n  aggregate_finish:\n    direction: input\n  component_work:\n    direction: internal\n  component_finish:\n    direction: internal\nmachines:\n  - machine_id: parallel_components\n    version: 1\n    root:\n      type: composite\n      initial: { transition_to: processing }\n      states:\n        processing:\n          type: parallel\n          on_events:\n            fanout:\n              action:\n                - send:\n                    event: component_work\n                    targets:\n                      - { component: left }\n                      - { component: right }\n            finish_left:\n              action:\n                - send:\n                    event: component_finish\n                    to: { component: left }\n            finish_right:\n              action:\n                - send:\n                    event: component_finish\n                    to: { component: right }\n            cancel_after_send:\n              action:\n                - send:\n                    event: component_work\n                    to: { component: left }\n              transition_to: finished\n            done: { transition_to: finished }\n            determa.component_completed: {}\n          components:\n            - component_id: left\n              root:\n                type: composite\n                variables:\n                  trace: { type: list, init: [] }\n                initial: { transition_to: running }\n                states:\n                  running:\n                    on_events:\n                      component_work:\n                        action:\n                          - assign: { trace: \"trace + ['left']\" }\n                      component_finish:\n                        action:\n                          - send:\n                              event: component_work\n                              to: { self: true }\n                        transition_to: complete\n                  complete: { type: final }\n            - component_id: right\n              root:\n                type: composite\n                variables:\n                  trace: { type: list, init: [] }\n                initial: { transition_to: running }\n                states:\n                  running:\n                    on_events:\n                      component_work:\n                        action:\n                          - assign: { trace: \"trace + ['right']\" }\n                      component_finish:\n                        action:\n                          - send:\n                              event: component_work\n                              to: { self: true }\n                        transition_to: complete\n                  complete: { type: final }\n        finished: { type: final }\n        cleanup_failed:\n          type: parallel\n          on_events:\n            cleanup_rollback:\n              action:\n                - send:\n                    event: component_work\n                    to: { component: retained }\n              transition_to: finished\n          exit:\n            - assign: { cleanup_marker: \"1 / 0\" }\n          variables:\n            cleanup_marker: { type: int, init: 0 }\n          components:\n            - component_id: retained\n              root: {}\n            - component_id: retained_peer\n              root: {}\n        faulty_processing:\n          type: parallel\n          entry:\n            - send:\n                event: component_work\n                to: { component: faulty }\n          components:\n            - component_id: faulty\n              root:\n                variables:\n                  count: { type: int, init: 0 }\n                entry:\n                  - assign: { count: \"count % 0\" }\n            - component_id: observer\n              root: {}\n      on_events:\n        enter_faulty: { transition_to: faulty_processing }\n        enter_cleanup: { transition_to: cleanup_failed }\n        aggregate_finish:\n          action:\n            - send:\n                event: component_work\n                to: { self: true }\n            - stop: {}\n",
+      "before_state": {
+        "aggregate_state_digest": "sha256:361aa44621279b3945dd414751efd5d2593a1b850fb90f1f21861be2d5569e4c",
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "creation_id": "component-migration-create",
+        "machine_format": 1,
+        "migration_sequence": "0",
+        "namespace": "conformance.case_09_parallel_components",
+        "next_acceptance_sequence": "4",
+        "next_logical_step_sequence": "2",
+        "next_output_sequence": "0",
+        "next_queue_sequence": "4",
+        "root_instance_id": "component-migration-root",
+        "root_machine_id": "parallel_components",
+        "root_machine_version": "1",
+        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+        "runtimes": [
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing/components/0/root/states/running"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "activation_sequence": "0",
+              "component_definition_pointer": "/machines/0/root/states/processing/components/0",
+              "declaration_index": "0",
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [
+              {
+                "acceptance_sequence": "3",
+                "deferral_count": "0",
+                "delivery_mode": "internal",
+                "envelope": {
+                  "cause_id": "chain-host-1",
+                  "event": "component_finish",
+                  "event_id": "sha256:51a7f223050e3bdfc388927694cc5e73f0a49e6ea67eaafa003ab08081596a47",
+                  "payload": [
+                    "map",
+                    []
+                  ],
+                  "source": {
+                    "runtime": {
+                      "root": {
+                        "root_instance_id": "component-migration-root",
+                        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                      }
+                    }
+                  },
+                  "target": {
+                    "component": {
+                      "activation_sequence": "0",
+                      "component_id": "left",
+                      "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                      "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                      "root_instance_id": "component-migration-root"
+                    }
+                  }
+                },
+                "envelope_digest": "sha256:3addf09afa2f5f21e6c4a3abedb12343c35f1849c168fb7428f63c7ba93feafa",
+                "queue_sequence": "3"
+              }
+            ],
+            "relation": {
+              "activation_sequence": "0",
+              "component_id": "left",
+              "current_component_definition_pointer": "/machines/0/root/states/processing/components/0",
+              "declaration_index": "0",
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+            "status": "running",
+            "target_identity": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "left",
+                "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "list",
+                  []
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/processing/components/0/root/variables/trace"
+              }
+            ]
+          },
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing/components/1/root/states/running"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "activation_sequence": "0",
+              "component_definition_pointer": "/machines/0/root/states/processing/components/1",
+              "declaration_index": "1",
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [],
+            "relation": {
+              "activation_sequence": "0",
+              "component_id": "right",
+              "current_component_definition_pointer": "/machines/0/root/states/processing/components/1",
+              "declaration_index": "1",
+              "kind": "component",
+              "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+            },
+            "runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+            "status": "running",
+            "target_identity": {
+              "component": {
+                "activation_sequence": "0",
+                "component_id": "right",
+                "component_runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                "root_instance_id": "component-migration-root"
+              }
+            },
+            "variables": [
+              {
+                "declaring_state_activation_sequence": "0",
+                "value": [
+                  "list",
+                  []
+                ],
+                "variable_declaration_pointer": "/machines/0/root/states/processing/components/1/root/variables/trace"
+              }
+            ]
+          },
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/processing"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/processing"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "parallel_components",
+                "machine_version": "1",
+                "namespace": "conformance.case_09_parallel_components",
+                "root_definition_pointer": "/machines/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+            },
+            "deferred_mailbox": [],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "kind": "root",
+              "root_instance_id": "component-migration-root"
+            },
+            "next_component_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/0",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing/components/1",
+                "next_sequence": "1"
+              }
+            ],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/processing",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [],
+            "relation": {
+              "kind": "root"
+            },
+            "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+            "status": "running",
+            "target_identity": {
+              "root": {
+                "root_instance_id": "component-migration-root",
+                "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              }
+            },
+            "variables": []
+          }
+        ],
+        "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+      },
+      "expected_result": {
+        "core_step_result_format": "determa.core_step_result",
+        "core_step_result_schema_version": 1,
+        "disposition": "handled",
+        "emissions": [
+          {
+            "acceptance_sequence": "4",
+            "emission_index": "0",
+            "event_id": "sha256:4e078f95e4fa99e69aebcc296a37297f84b1074e331dbf9ae0e5c86758f8070e",
+            "kind": "internal_disposed",
+            "lifecycle_disposition_index": "0"
+          },
+          {
+            "acceptance_sequence": "5",
+            "emission_index": "0",
+            "event_id": "sha256:b94b97707d61a46dd40d3715c9764c2e30c0b8c1b5c252ced0df07e1143d02f2",
+            "kind": "internal_mailbox",
+            "queue_sequence": "5"
+          }
+        ],
+        "fault": null,
+        "lifecycle_dispositions": [
+          {
+            "acceptance_sequence": "4",
+            "event_id": "sha256:4e078f95e4fa99e69aebcc296a37297f84b1074e331dbf9ae0e5c86758f8070e",
+            "final_queue_sequence": "4",
+            "reason": "runtime_completed",
+            "request_digest": "sha256:5cd59940c64af452582108736ed607eae1137fae811aaa737059bbe5a4b602f2",
+            "target_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918"
+          }
+        ],
+        "rejection": null,
+        "state": {
+          "aggregate_state_digest": "sha256:3eade80fee6d74f65167511d36139e7316545c5fb8f6d0e675615062fe5f85e9",
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "creation_id": "component-migration-create",
+          "machine_format": 1,
+          "migration_sequence": "0",
+          "namespace": "conformance.case_09_parallel_components",
+          "next_acceptance_sequence": "6",
+          "next_logical_step_sequence": "3",
+          "next_output_sequence": "0",
+          "next_queue_sequence": "6",
+          "root_instance_id": "component-migration-root",
+          "root_machine_id": "parallel_components",
+          "root_machine_version": "1",
+          "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+          "runtimes": [
+            {
+              "active_leaf_state_definition_pointers": [],
+              "active_state_activations": [],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "activation_sequence": "0",
+                "component_definition_pointer": "/machines/0/root/states/processing/components/0",
+                "declaration_index": "0",
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root/states/processing/components/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/complete",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0/root/states/running",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "activation_sequence": "0",
+                "component_id": "left",
+                "current_component_definition_pointer": "/machines/0/root/states/processing/components/0",
+                "declaration_index": "0",
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+              "status": "completed",
+              "target_identity": {
+                "component": {
+                  "activation_sequence": "0",
+                  "component_id": "left",
+                  "component_runtime_id": "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918",
+                  "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                  "root_instance_id": "component-migration-root"
+                }
+              },
+              "variables": []
+            },
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/processing/components/1/root/states/running"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "activation_sequence": "0",
+                "component_definition_pointer": "/machines/0/root/states/processing/components/1",
+                "declaration_index": "1",
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root/states/processing/components/1/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1/root/states/running",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [],
+              "relation": {
+                "activation_sequence": "0",
+                "component_id": "right",
+                "current_component_definition_pointer": "/machines/0/root/states/processing/components/1",
+                "declaration_index": "1",
+                "kind": "component",
+                "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+              },
+              "runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+              "status": "running",
+              "target_identity": {
+                "component": {
+                  "activation_sequence": "0",
+                  "component_id": "right",
+                  "component_runtime_id": "sha256:921f7e56c311eebf73b31413e31a1d53a0e38a6e79a26bc6c0168e99cd2e49d5",
+                  "owner_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+                  "root_instance_id": "component-migration-root"
+                }
+              },
+              "variables": [
+                {
+                  "declaring_state_activation_sequence": "0",
+                  "value": [
+                    "list",
+                    []
+                  ],
+                  "variable_declaration_pointer": "/machines/0/root/states/processing/components/1/root/variables/trace"
+                }
+              ]
+            },
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/processing"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/processing"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "parallel_components",
+                  "machine_version": "1",
+                  "namespace": "conformance.case_09_parallel_components",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "definition": {
+                  "machine": {
+                    "machine_id": "parallel_components",
+                    "machine_version": "1",
+                    "namespace": "conformance.case_09_parallel_components",
+                    "root_definition_pointer": "/machines/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+                },
+                "kind": "root",
+                "root_instance_id": "component-migration-root"
+              },
+              "next_component_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/0",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing/components/1",
+                  "next_sequence": "1"
+                }
+              ],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/processing",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [
+                {
+                  "acceptance_sequence": "5",
+                  "deferral_count": "0",
+                  "delivery_mode": "internal",
+                  "envelope": {
+                    "cause_id": "sha256:51a7f223050e3bdfc388927694cc5e73f0a49e6ea67eaafa003ab08081596a47",
+                    "event": "determa.component_completed",
+                    "event_id": "sha256:b94b97707d61a46dd40d3715c9764c2e30c0b8c1b5c252ced0df07e1143d02f2",
+                    "payload": [
+                      "map",
+                      [
+                        [
+                          "component_id",
+                          [
+                            "string",
+                            "left"
+                          ]
+                        ],
+                        [
+                          "component_runtime_id",
+                          [
+                            "string",
+                            "sha256:091838e7830890e456d0b289e32adbeca9ca6a36b57c0272a7214624ef93e918"
+                          ]
+                        ]
+                      ]
+                    ],
+                    "source": {
+                      "system": "system:component_completion"
+                    },
+                    "target": {
+                      "root": {
+                        "root_instance_id": "component-migration-root",
+                        "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                      }
+                    }
+                  },
+                  "envelope_digest": "sha256:8d231884ef68f9d225094cd16808b3854a6afe175b83af80c423665000fa83ac",
+                  "queue_sequence": "5"
+                }
+              ],
+              "relation": {
+                "kind": "root"
+              },
+              "runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b",
+              "status": "running",
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "component-migration-root",
+                  "root_runtime_id": "sha256:f5fe92acee0ae937088c7e6310cbd6ccafd040ec3a365c899c47a83edd69052b"
+                }
+              },
+              "variables": []
+            }
+          ],
+          "validated_bundle_fingerprint": "sha256:ebb5fe893e47d7f6267609472f9620f4c89a00df207e1330f3dacd009d11ddf6"
+        },
+        "status": "running"
+      },
+      "descriptor": null,
+      "target_machine_source": null,
+      "source_acknowledgements": []
+    },
+    {
+      "name": "migration_disposal_is_explicit",
+      "core_case": "118-version1-persistence",
+      "request_pointer": "dispose",
+      "operation": "migrate_aggregate_v1",
+      "request": {
+        "maintenance_mode": true,
+        "migration_descriptor_digest_route": [
+          "sha256:34af674dfcffa8045a01e3558c3401977f1cee1a3cdbedc717359e3d6b23d332"
+        ],
+        "migration_descriptor_file": "descriptor-dispose-v1.json",
+        "operation": "migrate_aggregate_v1",
+        "source_bundle": {
+          "bundle_file": "machine.yaml",
+          "bundle_source_digest": "sha256:93652da6e1f6a08e03b0118c01e65bde929ac48a2200f3de3552817826768e91",
+          "validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0"
+        },
+        "target_bundle": {
+          "bundle_file": "target-removed-event.yaml",
+          "bundle_source_digest": "sha256:c2c765b80926055806a374e1ce106108dca4856c4ba4f0a1fa08da72d82faf93",
+          "validated_bundle_fingerprint": "sha256:0c38ba854a1f01639a4085b34b2cb8253669847a3e54b6044292e37a43688820"
+        }
+      },
+      "machine_source": "format: 1\nnamespace: example.transaction_server\n\nevents:\n  action_sink:\n    direction: internal\n    payload:\n      amount: { type: int, required: true }\n  new_request:\n    direction: input\n    payload:\n      transaction_id: { type: string, required: true }\n  received: { direction: input }\n  authorized: { direction: input }\n  priority_request: { direction: input }\n  retry: { direction: input }\n  retired_event: { direction: input }\n\nmachines:\n  - machine_id: transaction_server\n    root:\n      type: composite\n      deferred_event_capacity: 16\n      initial: { transition_to: idle }\n      states:\n        idle:\n          on_events:\n            new_request: { transition_to: busy.receiving }\n        busy:\n          type: composite\n          deferred_events: [new_request, retired_event]\n          initial: { transition_to: busy.receiving }\n          on_events:\n            priority_request: { transition_to: idle }\n          states:\n            receiving:\n              on_events:\n                received:\n                  action:\n                    - send:\n                        event: action_sink\n                        to: { self: true }\n                        payload: { amount: \"1 % 0\" }\n                  transition_to: busy.authorizing\n            authorizing:\n              deferred_events: [priority_request, retry]\n              on_events:\n                new_request: {}\n                retry: { guard: \"false\" }\n                authorized: { transition_to: idle }\n",
+      "before_state": {
+        "aggregate_state_digest": "sha256:1f3dd462f3880839002bee534f2f6ca377d8a675548dc19248d8a843ecfbdad5",
+        "aggregate_state_format": "determa.aggregate_state",
+        "aggregate_state_schema_version": 1,
+        "creation_id": "create-server-1",
+        "machine_format": 1,
+        "migration_sequence": "0",
+        "namespace": "example.transaction_server",
+        "next_acceptance_sequence": "2",
+        "next_logical_step_sequence": "1",
+        "next_output_sequence": "0",
+        "next_queue_sequence": "4",
+        "root_instance_id": "server-1",
+        "root_machine_id": "transaction_server",
+        "root_machine_version": "1",
+        "root_runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d",
+        "runtimes": [
+          {
+            "active_leaf_state_definition_pointers": [
+              "/machines/0/root/states/busy/states/receiving"
+            ],
+            "active_state_activations": [
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/busy"
+              },
+              {
+                "activation_sequence": "0",
+                "state_definition_pointer": "/machines/0/root/states/busy/states/receiving"
+              }
+            ],
+            "current_definition": {
+              "machine": {
+                "machine_id": "transaction_server",
+                "machine_version": "1",
+                "namespace": "example.transaction_server",
+                "root_definition_pointer": "/machines/0/root"
+              },
+              "validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0"
+            },
+            "deferred_mailbox": [
+              {
+                "acceptance_sequence": "0",
+                "deferral_count": "1",
+                "delivery_mode": "input",
+                "envelope": {
+                  "cause_id": "retired-1",
+                  "event": "retired_event",
+                  "event_id": "retired-1",
+                  "payload": [
+                    "map",
+                    []
+                  ],
+                  "source": {
+                    "host": true
+                  },
+                  "target": {
+                    "root": {
+                      "root_instance_id": "server-1",
+                      "root_runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d"
+                    }
+                  }
+                },
+                "envelope_digest": "sha256:208db0f9908305b489b481ef27d44ddddbd2a803e8c6eedea39bc83f3f0cf9ce",
+                "queue_sequence": "2"
+              }
+            ],
+            "fault": null,
+            "history": [],
+            "identity_origin": {
+              "definition": {
+                "machine": {
+                  "machine_id": "transaction_server",
+                  "machine_version": "1",
+                  "namespace": "example.transaction_server",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0"
+              },
+              "kind": "root",
+              "root_instance_id": "server-1"
+            },
+            "next_component_activation_sequences": [],
+            "next_spawn_sequence": "0",
+            "next_state_activation_sequences": [
+              {
+                "definition_pointer": "/machines/0/root",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/busy",
+                "next_sequence": "1"
+              },
+              {
+                "definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                "next_sequence": "1"
+              }
+            ],
+            "ready_mailbox": [
+              {
+                "acceptance_sequence": "1",
+                "deferral_count": "0",
+                "delivery_mode": "input",
+                "envelope": {
+                  "cause_id": "received-1",
+                  "event": "received",
+                  "event_id": "received-1",
+                  "payload": [
+                    "map",
+                    []
+                  ],
+                  "source": {
+                    "host": true
+                  },
+                  "target": {
+                    "root": {
+                      "root_instance_id": "server-1",
+                      "root_runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d"
+                    }
+                  }
+                },
+                "envelope_digest": "sha256:3eb2e3a9e846257eeae6cecf26faee2818fa9cd354905f36b37a096b44e7c106",
+                "queue_sequence": "3"
+              }
+            ],
+            "relation": {
+              "kind": "root"
+            },
+            "runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d",
+            "status": "running",
+            "target_identity": {
+              "root": {
+                "root_instance_id": "server-1",
+                "root_runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d"
+              }
+            },
+            "variables": []
+          }
+        ],
+        "validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0"
+      },
+      "expected_result": {
+        "aggregate_state": {
+          "aggregate_state_digest": "sha256:249b3ca56cfb4750bffe28be659b0764404cee8138ef2588acdf9146c9ba009c",
+          "aggregate_state_format": "determa.aggregate_state",
+          "aggregate_state_schema_version": 1,
+          "creation_id": "create-server-1",
+          "machine_format": 1,
+          "migration_sequence": "1",
+          "namespace": "example.transaction_server",
+          "next_acceptance_sequence": "2",
+          "next_logical_step_sequence": "1",
+          "next_output_sequence": "0",
+          "next_queue_sequence": "4",
+          "root_instance_id": "server-1",
+          "root_machine_id": "transaction_server",
+          "root_machine_version": "1",
+          "root_runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d",
+          "runtimes": [
+            {
+              "active_leaf_state_definition_pointers": [
+                "/machines/0/root/states/busy/states/receiving"
+              ],
+              "active_state_activations": [
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/busy"
+                },
+                {
+                  "activation_sequence": "0",
+                  "state_definition_pointer": "/machines/0/root/states/busy/states/receiving"
+                }
+              ],
+              "current_definition": {
+                "machine": {
+                  "machine_id": "transaction_server",
+                  "machine_version": "1",
+                  "namespace": "example.transaction_server",
+                  "root_definition_pointer": "/machines/0/root"
+                },
+                "validated_bundle_fingerprint": "sha256:0c38ba854a1f01639a4085b34b2cb8253669847a3e54b6044292e37a43688820"
+              },
+              "deferred_mailbox": [],
+              "fault": null,
+              "history": [],
+              "identity_origin": {
+                "definition": {
+                  "machine": {
+                    "machine_id": "transaction_server",
+                    "machine_version": "1",
+                    "namespace": "example.transaction_server",
+                    "root_definition_pointer": "/machines/0/root"
+                  },
+                  "validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0"
+                },
+                "kind": "root",
+                "root_instance_id": "server-1"
+              },
+              "next_component_activation_sequences": [],
+              "next_spawn_sequence": "0",
+              "next_state_activation_sequences": [
+                {
+                  "definition_pointer": "/machines/0/root",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/busy",
+                  "next_sequence": "1"
+                },
+                {
+                  "definition_pointer": "/machines/0/root/states/busy/states/receiving",
+                  "next_sequence": "1"
+                }
+              ],
+              "ready_mailbox": [
+                {
+                  "acceptance_sequence": "1",
+                  "deferral_count": "0",
+                  "delivery_mode": "input",
+                  "envelope": {
+                    "cause_id": "received-1",
+                    "event": "received",
+                    "event_id": "received-1",
+                    "payload": [
+                      "map",
+                      []
+                    ],
+                    "source": {
+                      "host": true
+                    },
+                    "target": {
+                      "root": {
+                        "root_instance_id": "server-1",
+                        "root_runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d"
+                      }
+                    }
+                  },
+                  "envelope_digest": "sha256:3eb2e3a9e846257eeae6cecf26faee2818fa9cd354905f36b37a096b44e7c106",
+                  "queue_sequence": "3"
+                }
+              ],
+              "relation": {
+                "kind": "root"
+              },
+              "runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d",
+              "status": "running",
+              "target_identity": {
+                "root": {
+                  "root_instance_id": "server-1",
+                  "root_runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d"
+                }
+              },
+              "variables": []
+            }
+          ],
+          "validated_bundle_fingerprint": "sha256:0c38ba854a1f01639a4085b34b2cb8253669847a3e54b6044292e37a43688820"
+        },
+        "audit_records": [
+          {
+            "migration_audit_record_schema_version": 1,
+            "migration_descriptor_digest": "sha256:34af674dfcffa8045a01e3558c3401977f1cee1a3cdbedc717359e3d6b23d332",
+            "migration_sequence": "1",
+            "result_code": "migration_applied",
+            "root_instance_id": "server-1",
+            "root_runtime_id": "sha256:f65d1c2c698cc7374151a32160dd28b4add2c50ac6f96944fd812fabb045556d",
+            "source_aggregate_state_digest": "sha256:1f3dd462f3880839002bee534f2f6ca377d8a675548dc19248d8a843ecfbdad5",
+            "source_validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0",
+            "target_aggregate_state_digest": "sha256:249b3ca56cfb4750bffe28be659b0764404cee8138ef2588acdf9146c9ba009c",
+            "target_validated_bundle_fingerprint": "sha256:0c38ba854a1f01639a4085b34b2cb8253669847a3e54b6044292e37a43688820"
+          }
+        ],
+        "dispositions": [
+          {
+            "disposition": "migration_disposed",
+            "migration_descriptor_digest": "sha256:34af674dfcffa8045a01e3558c3401977f1cee1a3cdbedc717359e3d6b23d332",
+            "reason": "event removed by version migration"
+          }
+        ],
+        "result": "success"
+      },
+      "descriptor": {
+        "mappings": {
+          "active_states": [],
+          "components": [],
+          "counters": [],
+          "history": [],
+          "lifetime_holders": [],
+          "machines": [],
+          "owned_runtimes": [],
+          "variables": []
+        },
+        "migration_descriptor_digest": "sha256:34af674dfcffa8045a01e3558c3401977f1cee1a3cdbedc717359e3d6b23d332",
+        "migration_descriptor_format": "determa.aggregate_migration",
+        "migration_descriptor_schema_version": 1,
+        "mode": "compatible",
+        "queued_event_default": "preserve_if_compatible",
+        "queued_event_rules": [
+          {
+            "action": "dispose",
+            "delivery_mode": "input",
+            "event": "retired_event",
+            "machine_id": "transaction_server",
+            "reason": "event removed by version migration"
+          }
+        ],
+        "resource_requirements": {
+          "maximum_cel_ast_nodes": "0",
+          "maximum_cel_evaluation_steps": "0",
+          "maximum_cel_expression_length": "0",
+          "maximum_transformed_output_bytes": "0"
+        },
+        "source_aggregate_shape_fingerprint": "sha256:e62c9ec1bca4e36f47869e1f6d961ca4980085f17773382187828ed599a1ee17",
+        "source_machine_format": 1,
+        "source_validated_bundle_fingerprint": "sha256:e7f3e557bb92158f4f7dbf45d5190b6e9c9b25813a70018962af498e98466df0",
+        "target_aggregate_shape_fingerprint": "sha256:e62c9ec1bca4e36f47869e1f6d961ca4980085f17773382187828ed599a1ee17",
+        "target_machine_format": 1,
+        "target_validated_bundle_fingerprint": "sha256:0c38ba854a1f01639a4085b34b2cb8253669847a3e54b6044292e37a43688820",
+        "terminal_policy": {
+          "completed": "preserve",
+          "faulted": "preserve"
+        }
+      },
+      "target_machine_source": "{\"events\":{\"action_sink\":{\"direction\":\"internal\",\"payload\":{\"amount\":{\"required\":true,\"type\":\"int\"}}},\"authorized\":{\"direction\":\"input\"},\"priority_request\":{\"direction\":\"input\"},\"received\":{\"direction\":\"input\"},\"replacement_request\":{\"direction\":\"input\",\"payload\":{\"transaction_id\":{\"required\":true,\"type\":\"string\"}}},\"retired_event\":{\"direction\":\"input\"},\"retry\":{\"direction\":\"input\"}},\"format\":1,\"machines\":[{\"languages\":{\"action\":\"determa\",\"guard\":\"cel\"},\"machine_id\":\"transaction_server\",\"root\":{\"deferred_event_capacity\":16,\"history\":\"none\",\"initial\":{\"transition_to\":\"idle\"},\"states\":{\"busy\":{\"history\":\"none\",\"initial\":{\"transition_to\":\"busy.receiving\"},\"on_events\":{\"priority_request\":{\"lang\":\"cel\",\"transition_to\":\"idle\"}},\"states\":{\"authorizing\":{\"deferred_events\":[\"priority_request\",\"retry\"],\"on_events\":{\"authorized\":{\"lang\":\"cel\",\"transition_to\":\"idle\"},\"retry\":{\"guard\":\"false\",\"lang\":\"cel\"}},\"type\":\"simple\"},\"receiving\":{\"on_events\":{\"received\":{\"action\":[{\"send\":{\"event\":\"action_sink\",\"payload\":{\"amount\":\"1 % 0\"},\"to\":{\"self\":true}}}],\"lang\":\"cel\",\"transition_to\":\"busy.authorizing\"}},\"type\":\"simple\"}},\"type\":\"composite\"},\"idle\":{\"on_events\":{\"replacement_request\":{\"lang\":\"cel\",\"transition_to\":\"busy.receiving\"}},\"type\":\"simple\"}},\"type\":\"composite\"},\"version\":1}],\"namespace\":\"example.transaction_server\"}",
+      "source_acknowledgements": []
     }
   ],
   "integration": {
