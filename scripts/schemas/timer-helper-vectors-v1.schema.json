@@ -10,7 +10,7 @@
     "setup_test_file": {"const": "test.yaml"},
     "clock_cases": {"type": "object"},
     "clock_vectors": {"type": "array", "minItems": 25, "maxItems": 25, "items": {"$ref": "#/$defs/case"}},
-    "fence_vectors": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/case"}},
+    "fence_vectors": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"$ref": "#/$defs/case"}},
     "cases": {"type": "array", "minItems": 24, "items": {"$ref": "#/$defs/case"}}
   },
   "required": ["fixture_format", "fixture_schema_version", "specification_commit", "machine_file", "setup_test_file", "clock_cases", "clock_vectors", "fence_vectors", "cases"],
@@ -24,6 +24,7 @@
       "id": {"type": "string", "minLength": 1},
       "request": {"type": "object"},
       "trusted_now": {"type": ["string", "null"]},
+      "trusted_clock_sequence": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": ["string", "null"]}},
       "claim_expires_at": {"type": ["string", "null"]},
       "previous_attempt_fate": {"enum": [null, "committed", "proved_uncommitted", "unknown"]},
       "admission_disposition": {"enum": [null, "accepted", "capacity_unavailable"]},
@@ -31,7 +32,7 @@
       "expected_result": {"$ref": "https://determa.dev/state/schema/timer-helper-operation-v1.schema.json"},
       "after": {"$ref": "#/$defs/snapshot"},
       "expected_calls": {"type": "object", "properties": {
-        "clock": {"type": "integer", "minimum": 0, "maximum": 1},
+        "clock": {"type": "integer", "minimum": 0, "maximum": 2},
         "admission": {"type": "integer", "minimum": 0, "maximum": 1}
       }, "required": ["clock", "admission"], "additionalProperties": false}
     }, "required": ["id", "request", "trusted_now", "claim_expires_at", "previous_attempt_fate", "admission_disposition", "before", "expected_result", "after", "expected_calls"], "additionalProperties": false}
