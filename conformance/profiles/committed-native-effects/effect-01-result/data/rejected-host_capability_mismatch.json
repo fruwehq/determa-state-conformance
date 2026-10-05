@@ -1,0 +1,12 @@
+{
+  "status": "rejected",
+  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+  "attempt_fence": "1",
+  "attempt_report": null,
+  "outcome": null,
+  "result_event_id": null,
+  "admission_receipt": null,
+  "checkpoint_revision": null,
+  "journal_revision": null,
+  "error_code": "host_capability_mismatch"
+}

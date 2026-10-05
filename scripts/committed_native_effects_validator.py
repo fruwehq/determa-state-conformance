@@ -506,4 +506,21 @@ def validate_profile(spec_root: Path):
     if any(artifacts[by_name[target]['expected']['response']]['error_code'] != 'stale_attempt_fence'
            for target in ('claim_expired_at_exact_boundary', 'stale_fence')):
         raise ValueError('old epoch/fence source example requires stale attempt refusal')
+    safe = by_name['safe_retry_report']
+    if artifacts[safe['expected']['response']]['attempt_report']['reason'] != 'destination_deduplication_proven':
+        raise ValueError('safe retry mislabels destination deduplication as no-call proof')
+    for failure in ('missing', 'boolean', 'fabricated', 'wrong_work', 'wrong_destination', 'verifier_unavailable'):
+        vector = by_name.get('retry_safety_' + failure)
+        if vector is None or vector['request'] != {**safe['request'], 'fault': 'retry_safety_' + failure} or \
+                vector['expected'] != {**safe['expected'],
+                                       'response': 'data/rejected-host_capability_mismatch.json',
+                                       'journal_after': safe['request']['journal_before']}:
+            raise ValueError('independent retry safety refusal boundary is incomplete or mutated')
+        retry = by_name.get('ambiguous_retry_safety_' + failure)
+        safe_claim = by_name['ambiguous_retry_with_proven_deduplication']
+        if retry is None or retry['request'] != {**safe_claim['request'], 'fault': 'retry_safety_' + failure} or \
+                retry['expected'] != {**safe_claim['expected'],
+                                      'caller_kind': 'aborted', 'journal_after': safe_claim['request']['journal_before'],
+                                      'counts': {'provider_calls': 0, 'core_calls': 0, 'new_claims': 0}}:
+            raise ValueError('independent ambiguous retry refusal boundary is incomplete or mutated')
     return len(vectors)

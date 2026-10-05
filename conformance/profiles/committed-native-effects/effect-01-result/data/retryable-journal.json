@@ -59,8 +59,8 @@
         {
           "attempt_fence": "1",
           "report_kind": "retryable_failure",
-          "report_digest": "sha256:08f790d48fe7ed10927d2d09293098aeeddc342bc2bf370e0566faae9618f81f",
-          "reason": "no_call_proven"
+          "report_digest": "sha256:48a3f76364fd8b2c0bc03808a8707b66250f5532f3c6706179292bab3ce5b641",
+          "reason": "destination_deduplication_proven"
         }
       ],
       "invocation_state": "unclaimed",
@@ -76,5 +76,5 @@
       "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
     }
   ],
-  "host_effect_journal_digest": "sha256:9a93e2300cb950845c126affb487db4740961f17a5c1fa585547ee810ec0819d"
+  "host_effect_journal_digest": "sha256:8729ea22e3955c86c69e757d5570e52a3912879d1d446c3fe3ce7a365547fd96"
 }

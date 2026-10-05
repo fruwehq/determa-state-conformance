@@ -74,7 +74,7 @@ transport claim set. A positive public claim requires a separate operational
 transport proof for concurrent workers, retry gaps, durable dead letters, and
 recovery under the exact installed source configuration and provider closure.
 
-Five integration vectors bind the merged 43-vector §19 effect profile to the
+Five integration vectors bind the merged 55-vector §19 effect profile to the
 merged §18 `worker_sqlite` native authority scenario. They pin a real confirmed
 outbox record whose business invocation is still `unclaimed`, a host-owned
 result admission with one live mailbox entry and acceptance receipt, interrupted
@@ -105,7 +105,7 @@ and package version `0.3.0` are distinct version domains.
 
 For a full operational claim, run
 `python scripts/run_lossless_delivery_profile.py --spec-root <pinned-spec> --adapter '<production-adapter-command>' --authority-adapter '<same-installation-authority-command>'`.
-The runner first executes all 43 §19 vectors through the same production
+The runner first executes all 55 §19 vectors through the same production
 adapter command. That runner invokes the §18 configured worker topology native
 proof and checks the loaded handler, destination, authority, and participant
 closure. The §21 configured report and each native operation bind the exact
