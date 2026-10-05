@@ -1,6 +1,6 @@
 # Exact runtime provider and source compilation profile (unreleased 0.3)
 
-This optional profile targets SPEC §5.4 and the common §11.5 registration boundary at immutable specification commit `77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0`. Its 41 vectors exercise exact installed identity, transitive source closure, weak native execution, action output validation, safe inspection, source compilation, and restoration. CEL guards and structured actions remain mandatory core behavior. Hosts advertise this profile only after running the vectors through their production provider registration, resolver, loader, evaluator, compiler and host commit paths. Source/schema validation alone is not operational certification.
+This optional profile targets SPEC §5.4 and the common §11.5 registration boundary at immutable specification commit `77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0`. Its 44 vectors exercise exact installed identity, transitive source closure, weak native execution, action output validation, safe inspection, source compilation, and restoration. CEL guards and structured actions remain mandatory core behavior. Hosts advertise this profile only after running the vectors through their production provider registration, resolver, loader, evaluator, compiler and host commit paths. Source/schema validation alone is not operational certification.
 
 `provider/test_provider.py` and `provider/test_provider.rs` are executable equivalents. `provider-closure.json` records the exact raw source byte hashes. A provider `content_digest` is SHA-256 over `determa-test-runtime-provider-closure-1\0` followed, in Python then Rust order, by each eight-byte big-endian path length, UTF-8 path bytes, eight-byte big-endian source length, and raw source bytes. `source_digest` hashes the canonical closure JSON bytes. The `example.native-common` reference is a required transitive dependency, even though the test source has no third-party package dependency. A production adapter must independently verify that the actually loaded or compiled code and its complete dependency closure match these bytes, that the exact descriptor is installed, trusted and healthy, and that the configured host policy proves each positive capability. A path or digest copied from the request is not proof. Changed, missing and untrusted closures fail before creation, evaluation, migration target activation or restoration, with no alias substitution or automatic recompilation.
 
@@ -35,3 +35,24 @@ require code installation. Both fixture languages produce the actual repeated-se
 result from their source closure.
 
 The mixed-send vector interleaves two external and two internal proposals before an ordinary external send. It checks independently derived effect and event IDs, separate local ordinals, retained internal mailbox references, and the unchanged ordinal reset of the following ordinary slot. Durable replay compares the complete retained effect references and pending outbox entries, including IDs, local indexes, sequences, payload, correlation, revision and delivery state.
+
+Compiler preflight accepts only executable grammar slots. For `invalid_slot:
+metadata_guard`, the adapter copies the source template, inserts `meta.guard:
+"true"`, and changes the sole region locator to `/meta/guard`. For
+`invalid_slot: variable_action`, it inserts the root variable declaration
+`data: {type: map, init: {action: []}}`, changes the region kind to `actions`,
+and uses `/machines/0/root/variables/data/init/action`. In each case it reseals
+the modified source artifact and supplies no compilation manifest. Both are
+rejected during source preflight, before resolution or any compiler invocation;
+matching the last pointer token is insufficient. The `compile_region` call count
+is measured at the actual entrypoint, including failed invocations.
+
+The `weak_compiler` input withholds positive compiler capability proofs while
+retaining the exact trusted source closure. The fixture still compiles the same
+CEL guard. With `without_manifest: true`, successful compilation must retain the
+source digest, compiler dependency references, generated fingerprint, and weaker
+effective source capability report in its returned compilation evidence. The
+adapter reports that evidence from the production return, then independently
+loads and restores the generated CEL definition with no installed compiler.
+Its runtime capability reports remain strong, and restoration invokes no compiler.
+Historical compilation guarantees do not become generated-core requirements.

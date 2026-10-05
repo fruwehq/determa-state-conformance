@@ -34,6 +34,7 @@ REQUIRED = frozenset((
     "restore_changed_runtime", "restore_untrusted_runtime", "compile_changed_compiler",
     "compile_untrusted_compiler", "compile_manifest_fingerprint_mismatch",
     "compile_source_digest_mismatch", "compile_limit_exceeded",
+    "compile_invalid_metadata_slot", "compile_invalid_variable_value_slot", "compile_weak_without_manifest",
     "native_repeated_sends_have_distinct_ids", "native_repeated_sends_commit_and_replay", "native_mixed_sends_have_separate_ordinals", "load_inert_provider_metadata",
     "native_root_assignment_before_final", "ordinary_root_assignment_before_final",
     "native_local_write_destroyed_by_event", "native_local_write_destroyed_after_choice",
@@ -273,6 +274,33 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
     for vector in manifest["vectors"]:
         request = vector["request"]
         expected = vector["expected"]
+        compiler_calls = expected["calls"]["compile_region"]
+        _require(compiler_calls == (1 if vector["name"] in {
+            "compile_exact_source", "compile_bad_region_source",
+            "compile_manifest_fingerprint_mismatch", "compile_weak_without_manifest"} else 0),
+            f"{vector['name']}: compiler invocation accounting changed")
+        if vector["name"] in {"compile_invalid_metadata_slot", "compile_invalid_variable_value_slot"}:
+            _require(request["arguments"].get("without_manifest") is True and
+                     request["arguments"].get("invalid_slot") ==
+                     ("metadata_guard" if vector["name"] == "compile_invalid_metadata_slot" else "variable_action") and
+                     expected["stages"] == ["validate_source"] and
+                     expected["result"] == "rejected" and expected["code"] == "language_compilation_failed",
+                     "inert source locator was not rejected before compiler resolution")
+        if vector["name"] == "compile_weak_without_manifest":
+            value = expected["value"]
+            _require(request["arguments"].get("without_manifest") is True and
+                     request["arguments"].get("weak_compiler") is True and
+                     expected["effective_capabilities"] == {
+                         "deterministic": False, "pure": False, "portable": False,
+                         "semantically_introspectable": False, "process_contained": False,
+                         "external_io_capable": True} and
+                     value["source_artifact_digest"] == source["artifact_digest"] and
+                     value["compiler_providers"] == content["compiler_providers"] and
+                     value["generated_validated_bundle_fingerprint"] == content["generated_validated_bundle_fingerprint"] and
+                     value["generated_runtime_capabilities"] == content["source_capabilities"] and
+                     value["restored_runtime_capabilities"] == content["source_capabilities"] and
+                     value["restore_compiler_calls"] == 0,
+                     "weak source compilation lost provenance or weakened generated CEL restoration")
         installed = request["installed"]
         setup = request["setup"]
         if request["operation"] in {"step", "host_commit", "inspect", "create"}:
