@@ -1,0 +1,38 @@
+{
+  "record_format": "determa.public_host_compatibility_change",
+  "record_schema_version": 1,
+  "issue": "106",
+  "old_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
+  "proposed_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
+  "manifest_fingerprint": "sha256:01264a3638bbc2cb93bc291dbb219e7d9cc050dfe84c81d70dcf4d4388da5621",
+  "affected_capabilities": [
+    "external_timer_helper",
+    "portable_archive"
+  ],
+  "cross_language_fixture_matrix": [
+    {
+      "consumer": "Python embedded client",
+      "positive": "examples/timers/timer-helper-cases-v1.json#complete_equal_replay; examples/timers/timer-records-v1.json; examples/timers/timer-archive-stage-v1.json#timer_required_stage",
+      "negative": "examples/timers/timer-helper-cases-v1.json#operation_id_collision; examples/timers/timer-archive-stage-v1.json#resealed_missing_required_timer",
+      "rule": "Verify equal replay against the retained request digest, conflicting replay refusal, original null schedule correlation in all restored timer records, and exact participant payload/member/archive hashes."
+    },
+    {
+      "consumer": "Rust embedded client",
+      "positive": "examples/timers/timer-helper-cases-v1.json#complete_equal_replay; examples/timers/timer-records-v1.json; examples/timers/timer-archive-stage-v1.json#timer_required_stage",
+      "negative": "examples/timers/timer-helper-cases-v1.json#operation_id_collision; examples/timers/timer-archive-stage-v1.json#resealed_missing_required_timer",
+      "rule": "Verify equal replay against the retained request digest, conflicting replay refusal, original null schedule correlation in all restored timer records, and exact participant payload/member/archive hashes."
+    },
+    {
+      "consumer": "local reference host",
+      "positive": "examples/timers/timer-helper-cases-v1.json#complete_equal_replay; examples/timers/timer-records-v1.json; examples/timers/timer-archive-stage-v1.json#timer_required_stage",
+      "negative": "examples/timers/timer-helper-cases-v1.json#operation_id_collision; examples/timers/timer-archive-stage-v1.json#resealed_missing_required_timer",
+      "rule": "Verify equal replay against the retained request digest, conflicting replay refusal, original null schedule correlation in all restored timer records, and exact participant payload/member/archive hashes."
+    },
+    {
+      "consumer": "future hosted service",
+      "positive": "examples/timers/timer-helper-cases-v1.json#complete_equal_replay; examples/timers/timer-records-v1.json; examples/timers/timer-archive-stage-v1.json#timer_required_stage",
+      "negative": "examples/timers/timer-helper-cases-v1.json#operation_id_collision; examples/timers/timer-archive-stage-v1.json#resealed_missing_required_timer",
+      "rule": "Verify equal replay against the retained request digest, conflicting replay refusal, original null schedule correlation in all restored timer records, and exact participant payload/member/archive hashes."
+    }
+  ]
+}

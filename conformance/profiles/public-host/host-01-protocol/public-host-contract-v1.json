@@ -1,0 +1,738 @@
+{
+  "manifest_format": "determa.public_host_contract",
+  "manifest_schema_version": 1,
+  "protocol": "determa.execution_host",
+  "protocol_version": 1,
+  "state_semver": "0.3.0",
+  "fingerprint_algorithm": "sha256(raw UTF-8 file bytes)",
+  "boundary_sources": [
+    {
+      "path": "SPEC.md",
+      "sha256": "sha256:7ec57ac4be248d7b7cf58a7a4fc09e64a4862fc4d55a8fbb57f199434024bfd4"
+    },
+    {
+      "path": "VERSION",
+      "sha256": "sha256:d915cc95d6ca8f47ae297713ed46d4e5c5d99ddd29fc3c61e263bdf305f2b5b0"
+    },
+    {
+      "path": "schema/aggregate-state-package-v1.schema.json",
+      "sha256": "sha256:2146670d7b1cece9a2be53caaf8506b58a0a11e6fa67c42212e75c153945fc2b"
+    },
+    {
+      "path": "schema/aggregate-state-v1.schema.json",
+      "sha256": "sha256:7cf0eda1199ba1cfc63dc9c6c4daea9e69e502ecbb1c60570d527a6487e82d92"
+    },
+    {
+      "path": "schema/archive-export-request-v1.schema.json",
+      "sha256": "sha256:d45e715c139a1f3545629017a6279abe68f6eb289c9a6c9c14b70b63e9e9e4b8"
+    },
+    {
+      "path": "schema/archive-export-source-v1.schema.json",
+      "sha256": "sha256:1f66d36706b1b7e19634c9186a5a61c3f0968140550586d82fec989015cb6af4"
+    },
+    {
+      "path": "schema/archive-host-journal-inventory-v1.schema.json",
+      "sha256": "sha256:4dccaf243b81d9a996013628c333f3c1ee6d42e0e9214df30c4e6294f79a06ed"
+    },
+    {
+      "path": "schema/archive-import-request-v1.schema.json",
+      "sha256": "sha256:9b4215b1de58ba99e6a3e0890a8b8fa443e8f31d42e11d1617e085a6487ffe3a"
+    },
+    {
+      "path": "schema/archive-participant-v1.schema.json",
+      "sha256": "sha256:c04f8256611f3ce25cf2b3219773f41c3bcea9a1b40d2ac3210b6ffae745192a"
+    },
+    {
+      "path": "schema/archive-result-v1.schema.json",
+      "sha256": "sha256:a1282ee3a5541dc349e9a313ac05efc0a7e8b1048e2d14706c517e5e74267780"
+    },
+    {
+      "path": "schema/archive-v1.schema.json",
+      "sha256": "sha256:21b6d627ed575f0dc2e015d9c17b2feb0281c78885490ec0158097b05557f309"
+    },
+    {
+      "path": "schema/compilation-manifest-v1.schema.json",
+      "sha256": "sha256:6b670c09afd0f6c9286e40122c8a48027066e2c259bc845dfbcbb814e3975900"
+    },
+    {
+      "path": "schema/core-step-result-v1.schema.json",
+      "sha256": "sha256:8fd0fa85d1fbad63b94f1fa1c52d7fe5f1ed2f22c773bfad47b91611d4837b08"
+    },
+    {
+      "path": "schema/delivery-v1.schema.json",
+      "sha256": "sha256:b9ec469241c2157d28d68d3c7a383d70145d9869e82258134811adf6daae5acc"
+    },
+    {
+      "path": "schema/effect-cancellation-request-v1.schema.json",
+      "sha256": "sha256:542f62c24ed9a9a95d2170c3cc57affe748c2bbf8e84a218851261f1321530f8"
+    },
+    {
+      "path": "schema/effect-cancellation-response-v1.schema.json",
+      "sha256": "sha256:a6fea2051d066aa7856b3e72ad31cc8a33fa441dffeb9cb94c5b732d957abaf9"
+    },
+    {
+      "path": "schema/effect-result-request-v1.schema.json",
+      "sha256": "sha256:4b553ff1280efd37da7639de86f718b36dff4904ddfbe13aa6e1f76ce2ef4863"
+    },
+    {
+      "path": "schema/effect-result-response-v1.schema.json",
+      "sha256": "sha256:e5b9bf9374323ae6c52ddb50fc8d2e6f11b1652cb47671b6e427887248c478c9"
+    },
+    {
+      "path": "schema/execution-checkpoint-v1.schema.json",
+      "sha256": "sha256:97669ab05319bad0af8af5f6bd29e0a6d8f3b2799725b0c987184e2aa11ff8bf"
+    },
+    {
+      "path": "schema/extension-capability-report-v1.schema.json",
+      "sha256": "sha256:54bed67ea6d64a8e107c8e8aa73c49a037c8b63d4c77355700806d89f9102d25"
+    },
+    {
+      "path": "schema/extension-capability-requirement-v1.schema.json",
+      "sha256": "sha256:18e163be2815fef08725512614741fd2dd2ccdb6e6222210dd7767281da517b5"
+    },
+    {
+      "path": "schema/extension-descriptor-v1.schema.json",
+      "sha256": "sha256:ba6ed9d8d7025d39b5b24c91fcba8d7331334c0f58c93837a9bae44e7fb5ddd7"
+    },
+    {
+      "path": "schema/host-authority-operation-v1.schema.json",
+      "sha256": "sha256:5a3fd69a79179836d78cc3ebb8724d58665e3c1a35ec0bf331397cd22da4efb4"
+    },
+    {
+      "path": "schema/host-authority-profile-report-v1.schema.json",
+      "sha256": "sha256:1053a305fbd63907a3c62c8c5b4d52d401fe48374eba4d362e653b8cdeefbe36"
+    },
+    {
+      "path": "schema/host-effect-claim-v1.schema.json",
+      "sha256": "sha256:81266a8bddea399c708e92476a3a1f6e13ace8666c06571366fe0be6a425ef50"
+    },
+    {
+      "path": "schema/host-effect-journal-v1.schema.json",
+      "sha256": "sha256:b8943b5f085b6e3c0413b068795c51a64622d6e710c404819ed1802a049b19d2"
+    },
+    {
+      "path": "schema/inspection-v1.schema.json",
+      "sha256": "sha256:64ea87191400ed54921d1570718064d60ee0c62cbad4f784e3fafb9252b8966d"
+    },
+    {
+      "path": "schema/language-source-v1.schema.json",
+      "sha256": "sha256:1e692df3fb69a5ab3d152d233edf8c9024570bec6145dda8041f577f365e8f33"
+    },
+    {
+      "path": "schema/machine.schema.json",
+      "sha256": "sha256:bf9cbdf7f16ffc82e877a3d86214db1f0180a368651dba70beb1f810a3767a85"
+    },
+    {
+      "path": "schema/migration-descriptor-v1.schema.json",
+      "sha256": "sha256:54b9dd0183beae5b1bfc39d69b12dd5d3de3d34bf4ca6c6ecacc522e00a55ccd"
+    },
+    {
+      "path": "schema/provider-reference-v1.schema.json",
+      "sha256": "sha256:48e4e4c750e8943a957f1ad96b825a25197cb1e992025fb0958ebbf1935d9d1e"
+    },
+    {
+      "path": "schema/public-host-change-record-v1.schema.json",
+      "sha256": "sha256:8cd90cb7b8ac62c026e6981fde7a2cc0f25b195db006f1b392e4b68e59bdc09a"
+    },
+    {
+      "path": "schema/public-host-contract-v1.schema.json",
+      "sha256": "sha256:830437bdc871d3bd73b4a78490237b3892c70dd96bbfddd129befdaf89f378a8"
+    },
+    {
+      "path": "schema/public-host-request-v1.schema.json",
+      "sha256": "sha256:1b508c5ac6bc14ca9229b6b29021743edc12e0bd08aa1f467d723b9fbe8ae838"
+    },
+    {
+      "path": "schema/public-host-response-v1.schema.json",
+      "sha256": "sha256:afc4bc08bdc35cd340f3b7cb19442569514d3db9c93d14f71ddbd1b878ec76d4"
+    },
+    {
+      "path": "schema/recovery-batch-v1.schema.json",
+      "sha256": "sha256:249a0700a7d37de478baeb8eb3231e54ec8789fa4edb5109e8adbc730f7b40b9"
+    },
+    {
+      "path": "schema/recovery-operation-v1.schema.json",
+      "sha256": "sha256:903b696b1de168402689629b4409690a269e1189fbb9bd698cf8341de93fd641"
+    },
+    {
+      "path": "schema/recovery-record-v1.schema.json",
+      "sha256": "sha256:28cdc3282c059327a17e585af3dd29cd1a13712761d4a02f52b85195ffb0a64a"
+    },
+    {
+      "path": "schema/recovery-transfer-proof-v1.schema.json",
+      "sha256": "sha256:c7800a8f5bd34efeb0c00ec3c69c22df69216e04717305fbfc6e8c311a603ffb"
+    },
+    {
+      "path": "schema/runtime-action-output-v1.schema.json",
+      "sha256": "sha256:a03e288f2e050af090558eadf1bf401c97b02ee36e143929f71fce859c0c3bfc"
+    },
+    {
+      "path": "schema/runtime-provider-descriptor-v1.schema.json",
+      "sha256": "sha256:80df468f2ff70e6d1dd1fa2949e5cf6a292f815af4bf8f019211897b4a7bc9ea"
+    },
+    {
+      "path": "schema/timer-helper-operation-v1.schema.json",
+      "sha256": "sha256:d8c7584f355ef21a248fea0e1d986f2d7520f6d85510090be4a810fdad9e8c5d"
+    },
+    {
+      "path": "schema/timer-record-v1.schema.json",
+      "sha256": "sha256:a2ecefce2c72ff0a3746f5286bcca27501cc00984785bde9c03f13e4f08d6302"
+    },
+    {
+      "path": "examples/persistence/execution-checkpoint-v1.json",
+      "sha256": "sha256:a9138981fd204db476fc3b2c66c66c6aa87bf454ae2153bc4053918d487a10d0"
+    },
+    {
+      "path": "examples/inspection/shape-and-precedence-v1.json",
+      "sha256": "sha256:372ff68ccdcd0816978844b381014988726511f425d99bcba4734233998f6bc5"
+    },
+    {
+      "path": "examples/authority/host-authority-cases-v1.json",
+      "sha256": "sha256:ce080fd5dac6f15a76c8687846c79086419d4cd49959871f149e2b0f0c4092eb"
+    },
+    {
+      "path": "examples/authority/host-authority-profile-cases-v1.json",
+      "sha256": "sha256:dcb5959e4d07e8c951862886c3d5881a8fdb65f8000e007ac581c195817792d2"
+    },
+    {
+      "path": "examples/public-host/positive-v1.json",
+      "sha256": "sha256:4f1a4229753d979169d1a56cc6bbfc35c50eb41b5d062b3ec22a95d4cfa3c36f"
+    },
+    {
+      "path": "examples/public-host/negative-v1.json",
+      "sha256": "sha256:2cf2a014333cb7159752a39cfb8a26630d4f8f078d1f3354c6900812ad9dc01a"
+    },
+    {
+      "path": "examples/public-host/README.md",
+      "sha256": "sha256:4e1e8c40d248c794d14c2e2965123477e3282d1af914d1a9cfbd4feb00a86a16"
+    },
+    {
+      "path": "examples/effects/active-effect-claim-v1.json",
+      "sha256": "sha256:55df5a9104e559994ce49364d64c2b68618a199f31918c3a49542b17a4eeb00c"
+    },
+    {
+      "path": "examples/effects/cancel-after-possible-call-journal-v1.json",
+      "sha256": "sha256:94f7530172371306d674c8b753334ea186ddd97ab403d729daa81016e08f5137"
+    },
+    {
+      "path": "examples/effects/cancel-before-claim-journal-v1.json",
+      "sha256": "sha256:4d7a34c8ec2e5ead7497145a89fa78d7e5ee19dfe73e9ad70d9e2e6f250c53ae"
+    },
+    {
+      "path": "examples/effects/committed-effect-checkpoint-v1.json",
+      "sha256": "sha256:d4c4909b45f1fd0711f2dd4d8ce9cafc4f2207ce51670472705f45cfe37f2e94"
+    },
+    {
+      "path": "examples/effects/effect-ambiguous-report-response-v1.json",
+      "sha256": "sha256:456598ff291b1e21fdcfd696c49b061a75d1d20b248330ff98d64084588436f9"
+    },
+    {
+      "path": "examples/effects/effect-cancellation-after-call-request-v1.json",
+      "sha256": "sha256:d39f76b789e8dee3f6c0d4d27250f10f366013b537f7d0fd62491f943a47de79"
+    },
+    {
+      "path": "examples/effects/effect-cancellation-cases-v1.json",
+      "sha256": "sha256:91ee81affbc63ae3fbfc4e7410b344e499c02a9c89ae10175b0a397046ded7b4"
+    },
+    {
+      "path": "examples/effects/effect-cancellation-committed-response-v1.json",
+      "sha256": "sha256:6d876212efc531cfa4dac0caaeb7d66b5b240d57913fde69cb64ff2fe13ee8e4"
+    },
+    {
+      "path": "examples/effects/effect-cancellation-reconciliation-response-v1.json",
+      "sha256": "sha256:14cad58f8815271c9aca368c4662ecc4e085e034d9e7d2eda72d8f02ad93ec2d"
+    },
+    {
+      "path": "examples/effects/effect-cancellation-rejected-response-v1.json",
+      "sha256": "sha256:32cf2f8e395666cda4fd1ee1cce150e228b1a7946150e6fdb16d7542d627876d"
+    },
+    {
+      "path": "examples/effects/effect-cancellation-request-v1.json",
+      "sha256": "sha256:33c9e083b1adaa4aa245a08f982639562afde87cfefafcfbbc74f3ffa8e14a6b"
+    },
+    {
+      "path": "examples/effects/effect-cancelled-envelope-v1.json",
+      "sha256": "sha256:c2fc12b4b24099a8c41465edd706e62a3fdf9a470c99ad5d4ee864f633f35691"
+    },
+    {
+      "path": "examples/effects/effect-result-committed-response-v1.json",
+      "sha256": "sha256:1d743b779902e228d9de77ae24dcbe6b8843bc37d7ffdc841ed9777c7f9841e0"
+    },
+    {
+      "path": "examples/effects/effect-result-conflict-response-v1.json",
+      "sha256": "sha256:4d01c87cd15b691608db22395321e4c78841183329fab09993b31029deed5d11"
+    },
+    {
+      "path": "examples/effects/effect-result-envelope-v1.json",
+      "sha256": "sha256:92e55ca8d19800566cc6f4dc422380efa1fef49089b214faffc178aac049451b"
+    },
+    {
+      "path": "examples/effects/effect-result-request-v1.json",
+      "sha256": "sha256:c6f16704fc6c8b19fe4a36a7e4bcd97a8e6e5ce26993a50bff0490c4da44573c"
+    },
+    {
+      "path": "examples/effects/empty-host-effect-journal-v1.json",
+      "sha256": "sha256:f53cc88c481a733479688374047292069e0a436ddf9bc009fd50ec60af3a2a2b"
+    },
+    {
+      "path": "examples/effects/expired-effect-claim-v1.json",
+      "sha256": "sha256:c7b86d540f76089d8b31e7df777d6488aecd48d8f719123d1e3f88cad0a5efc8"
+    },
+    {
+      "path": "examples/effects/host-native-effect-cases-v1.json",
+      "sha256": "sha256:2d02e3da254e753e81abdf8a44e9b32433a9e38c02c5de18df6d26f482370e4a"
+    },
+    {
+      "path": "examples/effects/leased-host-effect-journal-v1.json",
+      "sha256": "sha256:3cf7c32dcf34406bac7d0d7e66d7a96b22bcccdb919f8c7787b59b5847256e43"
+    },
+    {
+      "path": "examples/effects/outcome-recorded-journal-v1.json",
+      "sha256": "sha256:26b63c099c2691bcdd584fbc4373d7b33148af830f738636f6d528e5a4b1f19f"
+    },
+    {
+      "path": "examples/effects/recovery-after-claim-expiry-v1.json",
+      "sha256": "sha256:0c6dcc56203ca62147eb3bdde04a4209b8c56710b373a0c4034896ec9689650f"
+    },
+    {
+      "path": "examples/effects/result-admission-cases-v1.json",
+      "sha256": "sha256:83b522f62e232008706f663bd37eee51aadfe87d4fd7088a4dff4a71e157753b"
+    },
+    {
+      "path": "examples/effects/result-identity-cases-v1.json",
+      "sha256": "sha256:c7470d45c8aeb49303b87a7514865364cc9f3c7bdd03406b88220dffd3263f36"
+    },
+    {
+      "path": "examples/delivery/delivery-v1-cases.json",
+      "sha256": "sha256:02953f3ebc9bcc319ff91ea23a728f6ec9b6f71a9d66bc3dd0e68618dc42e6a4"
+    },
+    {
+      "path": "examples/delivery/execution-checkpoint-transfer-v1.json",
+      "sha256": "sha256:3cb005157173fe89fe227c0f41484d09d9e2fd32bbb70655ded84878d6f25204"
+    },
+    {
+      "path": "examples/delivery/outbound-checkpoint-lifecycle-v1.json",
+      "sha256": "sha256:919aa21e2b0fe862933b583821fc60a9cf5a1aadb7557be09c77cc763d28e8c7"
+    },
+    {
+      "path": "examples/delivery/outbound-destination-receipts-v1.json",
+      "sha256": "sha256:1cd3342a46d8b2f3496da112ced08e4bb89ee09d624398513cd589ec17de6b65"
+    },
+    {
+      "path": "examples/delivery/queue-placement-checkpoints-v1.json",
+      "sha256": "sha256:98546a09ab9455fba0b1ffe748a14f7190cae0a9e73533a40ccf975324dd9d56"
+    },
+    {
+      "path": "examples/archives/archive-v1.json",
+      "sha256": "sha256:89a4a9ce5a19f7b41b741f580cd919935636a6ff6ff88e30bf7b387f2b2f3c9f"
+    },
+    {
+      "path": "examples/archives/export-cases-v1.json",
+      "sha256": "sha256:9b88778bb813bfdd4ef87234a14855a0151cf490cdb93321f3a7f7d28a74c0fc"
+    },
+    {
+      "path": "examples/archives/hash-checks-v1.json",
+      "sha256": "sha256:b4fb491a8df0bb55665decff68c970cf3031e4782b0df938c5234b39bc23ef35"
+    },
+    {
+      "path": "examples/archives/stage-cases-v1.json",
+      "sha256": "sha256:1b4a016f45f7726e83559a96794f460bce78f0140594651a1865741bfdd882b8"
+    },
+    {
+      "path": "examples/archives/helper-payload-v1.schema.json",
+      "sha256": "sha256:587dd791a5eef81a39d64ab7ed0c78493d326019b48298cbd415f24aec180114"
+    },
+    {
+      "path": "examples/archives/host-journal-payload-v1.schema.json",
+      "sha256": "sha256:1826456fd8313ffa99e4bce51bdf71260e2c357d6b7c71ef50b27e7c4494a356"
+    },
+    {
+      "path": "examples/archives/stage-configuration-v1.schema.json",
+      "sha256": "sha256:2b3cf08841a7dd528c4c902568f3e1edf03f670840528144b293efa2df49e508"
+    },
+    {
+      "path": "examples/recovery/archive-local-transfer-v1.json",
+      "sha256": "sha256:6755bee133e36fee274809b0a8fe76c896f4a6fecc6f70c50340ae085d7dbd3c"
+    },
+    {
+      "path": "examples/recovery/recovery-cases-v1.json",
+      "sha256": "sha256:d376da9db8441076d4aa51b18e0dd7d8a2177c40bbbceabc942ab56532a53bb2"
+    },
+    {
+      "path": "examples/timers/timer-archive-export-v1.json",
+      "sha256": "sha256:22758a582a561e720bc6183181529dcdf4d0955fa6c2206c85455c4796815a58"
+    },
+    {
+      "path": "examples/timers/timer-archive-stage-v1.json",
+      "sha256": "sha256:7e993bd505938aef95d79d7b773fb01ad7fd012c9f57dd85614a01887449ebce"
+    },
+    {
+      "path": "examples/timers/timer-cancelled-records-v1.json",
+      "sha256": "sha256:dd040969a5f93e2c2601bdf42a1f10f833b7fd982c612ae3d18c39f14518b373"
+    },
+    {
+      "path": "examples/timers/timer-clock-cases-v1.json",
+      "sha256": "sha256:9dd6c6f2bb97b086f167bc1c0e1fba0ed9b8e3b08877303b9b173ce517ba0712"
+    },
+    {
+      "path": "examples/timers/timer-committed-admission-v1.json",
+      "sha256": "sha256:0c1e948c1768b33cdc011c65a3b11e2132d8517ec6e2423e699f93d2f08d928a"
+    },
+    {
+      "path": "examples/timers/timer-fired-records-v1.json",
+      "sha256": "sha256:d2fbcdbc276d2c9d3cda7f7358a44be5fb593fd91b64790b91703d99c0bf481e"
+    },
+    {
+      "path": "examples/timers/timer-helper-cases-v1.json",
+      "sha256": "sha256:6b8e8a2154dcc84dfb8291e911ca2d43676e0af23b0459b21b260de4fa8bfb86"
+    },
+    {
+      "path": "examples/timers/timer-records-v1.json",
+      "sha256": "sha256:d5d4244b46a4f58300c908dcf5e34df6f247211e8c72a085ff17373f3c39eb40"
+    },
+    {
+      "path": "examples/extensions/capability-cases-v1.json",
+      "sha256": "sha256:ae8dc3f1d5d24911daf803326275f2b32db6d541ea59c7489e1c359410650e0a"
+    },
+    {
+      "path": "examples/providers/action-output.json",
+      "sha256": "sha256:bb814d9e28f905a13e41250ef2e140c6b64454fe48256f6b3e48cd8c366cca52"
+    },
+    {
+      "path": "examples/providers/mixed-cel-native.yaml",
+      "sha256": "sha256:f4ccac15b347a095c560622c78436c88326ef939ae4546092f392ad63ecd543c"
+    },
+    {
+      "path": "examples/providers/invalid-missing-correlation-action-output.json",
+      "sha256": "sha256:9b0ec3e93cb79c3d60a9c779c01379cc70c881c3502b50299d162fb2ed6654af"
+    },
+    {
+      "path": "examples/providers/README.md",
+      "sha256": "sha256:6a8a34c81ead0c609e84dee64d9fd9fb8a2a5f6e0b720b3f349541d13d375e7f"
+    }
+  ],
+  "hash_domains": [
+    {
+      "name": "determa-validated-bundle-fingerprint-1",
+      "source": "SPEC.md#2"
+    },
+    {
+      "name": "determa-root-runtime-identity-1",
+      "source": "SPEC.md#9"
+    },
+    {
+      "name": "determa-component-runtime-identity-1",
+      "source": "SPEC.md#9"
+    },
+    {
+      "name": "determa-spawned-runtime-identity-1",
+      "source": "SPEC.md#9"
+    },
+    {
+      "name": "determa-cause-identity-1",
+      "source": "SPEC.md#9"
+    },
+    {
+      "name": "determa-event-identity-1",
+      "source": "SPEC.md#9"
+    },
+    {
+      "name": "determa-effect-identity-1",
+      "source": "SPEC.md#9"
+    },
+    {
+      "name": "determa-guard-binding-1",
+      "source": "SPEC.md#12"
+    },
+    {
+      "name": "determa-aggregate-shape-fingerprint-1",
+      "source": "SPEC.md#16"
+    },
+    {
+      "name": "determa-aggregate-state-digest-1",
+      "source": "SPEC.md#16"
+    },
+    {
+      "name": "determa-migration-descriptor-1",
+      "source": "SPEC.md#16"
+    },
+    {
+      "name": "determa-inbox-envelope-digest-1",
+      "source": "SPEC.md#16.15"
+    },
+    {
+      "name": "determa-execution-checkpoint-digest-1",
+      "source": "SPEC.md#17.2"
+    },
+    {
+      "name": "determa-creation-request-digest-1",
+      "source": "SPEC.md#17.3"
+    },
+    {
+      "name": "determa-maintenance-migration-request-digest-1",
+      "source": "SPEC.md#17.5"
+    },
+    {
+      "name": "determa-outbox-intent-digest-1",
+      "source": "SPEC.md#17.6"
+    },
+    {
+      "name": "determa-host-authority-request-1",
+      "source": "SPEC.md#18.2"
+    },
+    {
+      "name": "determa-host-authority-evidence-1",
+      "source": "SPEC.md#18.2"
+    },
+    {
+      "name": "determa-host-operation-token-1",
+      "source": "SPEC.md#19.1"
+    },
+    {
+      "name": "determa-host-effect-journal-digest-1",
+      "source": "SPEC.md#19.2"
+    },
+    {
+      "name": "determa-host-operation-response-1",
+      "source": "SPEC.md#19.2"
+    },
+    {
+      "name": "determa-effect-attempt-report-1",
+      "source": "SPEC.md#19.3"
+    },
+    {
+      "name": "determa-effect-outcome-1",
+      "source": "SPEC.md#19.3"
+    },
+    {
+      "name": "determa-effect-result-event-1",
+      "source": "SPEC.md#19.4"
+    },
+    {
+      "name": "determa-delivery-source-content-digest-1",
+      "source": "SPEC.md#21"
+    },
+    {
+      "name": "determa-admission-binding-digest-1",
+      "source": "SPEC.md#21"
+    },
+    {
+      "name": "determa-ingress-dead-letter-digest-1",
+      "source": "SPEC.md#21"
+    },
+    {
+      "name": "determa-outbound-destination-receipt-digest-1",
+      "source": "SPEC.md#21"
+    },
+    {
+      "name": "determa-archive-digest-1",
+      "source": "SPEC.md#22"
+    },
+    {
+      "name": "determa-archive-host-journal-inventory-1",
+      "source": "SPEC.md#22"
+    },
+    {
+      "name": "determa-archive-participant-contract-1",
+      "source": "SPEC.md#22"
+    },
+    {
+      "name": "determa-archive-payload-1",
+      "source": "SPEC.md#22"
+    },
+    {
+      "name": "determa-archive-source-profile-1",
+      "source": "SPEC.md#22"
+    },
+    {
+      "name": "determa-recovery-record-1",
+      "source": "SPEC.md#24.6"
+    },
+    {
+      "name": "determa-recovery-request-1",
+      "source": "SPEC.md#24.6"
+    },
+    {
+      "name": "determa-recovery-transfer-proof-1",
+      "source": "SPEC.md#24.5"
+    },
+    {
+      "name": "determa-timer-admission-receipt-1",
+      "source": "SPEC.md#23"
+    },
+    {
+      "name": "determa-timer-artifact-1",
+      "source": "SPEC.md#23"
+    },
+    {
+      "name": "determa-timer-fire-event-1",
+      "source": "SPEC.md#23"
+    },
+    {
+      "name": "determa-timer-request-1",
+      "source": "SPEC.md#23"
+    },
+    {
+      "name": "determa-timer-result-1",
+      "source": "SPEC.md#23"
+    },
+    {
+      "name": "determa-timer-source-delivery-1",
+      "source": "SPEC.md#23"
+    },
+    {
+      "name": "determa-public-host-request-digest-1",
+      "source": "SPEC.md#25.2"
+    },
+    {
+      "name": "determa-public-host-evidence-1",
+      "source": "SPEC.md#25.2"
+    },
+    {
+      "name": "determa-public-host-acceptance-evidence-1",
+      "source": "SPEC.md#25.2"
+    },
+    {
+      "name": "determa-public-host-profile-1",
+      "source": "SPEC.md#25.3"
+    }
+  ],
+  "capability_meanings": [
+    {
+      "name": "structural_inspection",
+      "source": "SPEC.md#12.1",
+      "rule": "exact candidate shape, nonmutating"
+    },
+    {
+      "name": "semantic_inspection",
+      "source": "SPEC.md#12.2",
+      "rule": "proved bounded nonmutating guard entrypoint"
+    },
+    {
+      "name": "durable_embedded_processing",
+      "source": "SPEC.md#17.11",
+      "rule": "atomic checkpoint admission and processing"
+    },
+    {
+      "name": "authoritative_scope_fencing",
+      "source": "SPEC.md#18.1",
+      "rule": "configured authority guard and old-writer refusal"
+    },
+    {
+      "name": "worker_fencing",
+      "source": "SPEC.md#18.4",
+      "rule": "authenticated current epoch, attempt fence and principal"
+    },
+    {
+      "name": "safe_relocation",
+      "source": "SPEC.md#18.5",
+      "rule": "proved source retirement and single-use destination-bound grant"
+    },
+    {
+      "name": "native_effect_results",
+      "source": "SPEC.md#19",
+      "rule": "committed pinned effect route and authenticated result"
+    },
+    {
+      "name": "lossless_projection",
+      "source": "SPEC.md#20",
+      "rule": "complete artifact round-trip for selected rows"
+    },
+    {
+      "name": "portable_archive",
+      "source": "SPEC.md#22",
+      "rule": "complete closed archive decoding and integrity verification"
+    },
+    {
+      "name": "portable_checkpoint",
+      "source": "SPEC.md#22",
+      "rule": "closed checkpoint decoder and exact digest validation"
+    },
+    {
+      "name": "normalized_definition",
+      "source": "SPEC.md#22",
+      "rule": "trusted normalized definition attachment decoding"
+    },
+    {
+      "name": "migration_descriptor",
+      "source": "SPEC.md#22",
+      "rule": "trusted migration descriptor attachment decoding"
+    },
+    {
+      "name": "archive_participant",
+      "source": "SPEC.md#22",
+      "rule": "declared participant closure and exact schema/provider verification"
+    },
+    {
+      "name": "host_effect_journal",
+      "source": "SPEC.md#22",
+      "rule": "paired native effect journal participant and trusted inventory verification"
+    },
+    {
+      "name": "strict_quarantine_restore",
+      "source": "SPEC.md#24.2",
+      "rule": "inert complete archive quarantine without active work"
+    },
+    {
+      "name": "fresh_scope_takeover",
+      "source": "SPEC.md#24.3",
+      "rule": "fresh namespace and explicit old-owner risk acknowledgement"
+    },
+    {
+      "name": "independent_clone",
+      "source": "SPEC.md#24.4",
+      "rule": "fresh namespace and proven isolation before activation"
+    },
+    {
+      "name": "local_safe_relocation",
+      "source": "SPEC.md#24.5",
+      "rule": "same-authority single-use transfer with verified source retirement"
+    },
+    {
+      "name": "external_timer_helper",
+      "source": "SPEC.md#23",
+      "rule": "configured durable timer helper with exact clock, operation and archived participant evidence"
+    },
+    {
+      "name": "saved_response_replay",
+      "source": "SPEC.md#25.2",
+      "rule": "exact first response at saved binding"
+    },
+    {
+      "name": "deterministic_reexecution",
+      "source": "SPEC.md#25.3",
+      "rule": "exact equality only for deterministic portable closures"
+    }
+  ],
+  "helper_participant_rules": [
+    {
+      "kind": "timer",
+      "required_when": "selected roots depend on scheduled work",
+      "source": "SPEC.md#23",
+      "rule": "exact timer records, fired/admission evidence, helper provider and schema closure; required absence blocks activation"
+    },
+    {
+      "kind": "application",
+      "required_when": "declared application projection rows are included",
+      "source": "SPEC.md#22",
+      "rule": "exact selected rows, provider reference, schema digest and reconstruction closure remain separately identified"
+    },
+    {
+      "kind": "effect",
+      "required_when": "source claims durable native effect results",
+      "source": "SPEC.md#22",
+      "rule": "required host-effect journal paired with every selected checkpoint and independently trusted inventory; unresolved work retained"
+    },
+    {
+      "kind": "archive",
+      "required_when": "archive import or recovery profile",
+      "source": "SPEC.md#22",
+      "rule": "complete required and optional participant references, dependencies and externally referenced bytes verified before staging or activation"
+    }
+  ],
+  "golden_matrix": {
+    "positive": "examples/public-host/positive-v1.json",
+    "negative": "examples/public-host/negative-v1.json",
+    "comparison_rule": "exact JCS hashes, closed schema and complete response bytes; exact reexecution only for deterministic portable closures"
+  }
+}
