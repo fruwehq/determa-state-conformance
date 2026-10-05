@@ -185,11 +185,14 @@ def verify_invocation(database, run_id, invocation_id, request_digest, factory_i
 
 
 def operation_input(row, target_machine):
-    return {"kind": "timer_operation", "machine_source": target_machine,
+    body = {"kind": "timer_operation", "machine_source": target_machine,
             "before": row["before"], "request": row["request"],
             "trusted_now": row["trusted_now"], "claim_expires_at": row["claim_expires_at"],
             "previous_attempt_fate": row["previous_attempt_fate"],
             "admission_disposition": row["admission_disposition"]}
+    if "trusted_clock_sequence" in row:
+        body["trusted_clock_sequence"] = row["trusted_clock_sequence"]
+    return body
 
 
 def run_timer_operation(command, row, target_machine, factory_identity="test-unverified",
@@ -643,7 +646,7 @@ def lifecycle_call(command, lifecycle, machine, target_machine, label,
                 "fire_envelope": lifecycle["expected_fire_envelope"],
                 "calls": {"intent_create": 2, "intent_admission": 3,
                           "intent_step": 3, "target_create": 1, "schedule": 2,
-                          "clock": 4, "cancel": 1, "claim": 1, "complete": 1,
+                          "clock": 5, "cancel": 1, "claim": 1, "complete": 1,
                           "target_admission": 1, "target_step": 1}}
     if not exact_json_equal(observed, expected):
         raise ValueError(f"{label}: create/intent/schedule/claim/admit/step or complete state differs")

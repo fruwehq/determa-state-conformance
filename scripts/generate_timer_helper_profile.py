@@ -194,7 +194,7 @@ def render(spec_root: Path):
                      "before": {"helper_artifact": before, "checkpoint": checkpoint_before},
                      "expected_result": expected,
                      "after": {"helper_artifact": after, "checkpoint": checkpoint_after},
-                     "expected_calls": {"clock": int(name in ("schedule_first", "duration_overflow", "clock_unavailable", "claim_at_deadline", "claim_before_deadline", "uncommitted_fire_recovery", "ambiguous_fire_fate", "coordinated_fire_commits", "admission_rejected_before_commit")),
+                     "expected_calls": {"clock": 2 if name == "coordinated_fire_commits" else int(name in ("schedule_first", "duration_overflow", "clock_unavailable", "claim_at_deadline", "claim_before_deadline", "uncommitted_fire_recovery", "ambiguous_fire_fate", "admission_rejected_before_commit")),
                                         "admission": int(name == "coordinated_fire_commits")}})
     clock_vectors = []
     def add_clock(label, field, value, now, deadline=None, error=None):
@@ -281,6 +281,22 @@ def render(spec_root: Path):
             "claim_expires_at": None, "previous_attempt_fate": None,
             "admission_disposition": None, "before": before, "expected_result": result,
             "after": copy.deepcopy(before), "expected_calls": {"clock": clock_calls, "admission": 0}})
+    for name, error, second_now in (
+            ("complete_expires_before_commit", "timer_stale_fence", "130"),
+            ("complete_clock_unavailable_before_commit", "timer_clock_unavailable", None)):
+        request = copy.deepcopy(fire_row["request"])
+        request["operation_id"] = name
+        request["request_digest"] = digest(["determa-timer-request-1",
+            {key: item for key, item in request.items() if key != "request_digest"}])
+        result = copy.deepcopy(fire_row["expected_result"])
+        result.update(operation_id=name, status="rejected", record_revision="2",
+                      delivery_state="none", error_code=error, result_digest=None)
+        before = copy.deepcopy(fire_row["before"])
+        fence_vectors.append({"id": name, "request": request, "trusted_now": "120",
+            "trusted_clock_sequence": ["120", second_now],
+            "claim_expires_at": None, "previous_attempt_fate": None,
+            "admission_disposition": "accepted", "before": before, "expected_result": result,
+            "after": copy.deepcopy(before), "expected_calls": {"clock": 2, "admission": 1}})
     value["fence_vectors"] = fence_vectors
     create = {"operation": "create_v1", "bundle": {"bundle_file": "target-machine.yaml",
               "bundle_source_digest": "sha256:" + hashlib.sha256(target_source).hexdigest(),
@@ -312,7 +328,7 @@ def render(spec_root: Path):
                  "complete_request": fire_row["request"],
                  "step_request": {"operation": "step_v1", "target_runtime_id":
                                   first_row["request"]["root_runtime_id"]},
-                 "trusted_clock_sequence": ["100", "100", "110", "120"],
+                 "trusted_clock_sequence": ["100", "100", "110", "120", "120"],
                  "expected_create_checkpoint": delivery["before_admission"],
                  "expected_helper_after_schedule": first_row["after"]["helper_artifact"],
                  "expected_helper_after_cancel": cancel_row["after"]["helper_artifact"],

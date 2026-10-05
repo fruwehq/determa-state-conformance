@@ -17,7 +17,7 @@
     "claim_request": {"$ref": "https://determa.dev/state/schema/timer-helper-operation-v1.schema.json#/$defs/request"},
     "complete_request": {"$ref": "https://determa.dev/state/schema/timer-helper-operation-v1.schema.json#/$defs/request"},
     "step_request": {"type": "object"},
-    "trusted_clock_sequence": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "string"}},
+    "trusted_clock_sequence": {"type": "array", "minItems": 5, "maxItems": 5, "items": {"type": "string"}},
     "expected_create_checkpoint": {"$ref": "https://determa.dev/state/schema/execution-checkpoint-v1.schema.json"},
     "expected_helper_after_schedule": {"$ref": "https://determa.dev/state/schema/timer-record-v1.schema.json"},
     "expected_helper_after_cancel": {"$ref": "https://determa.dev/state/schema/timer-record-v1.schema.json"},

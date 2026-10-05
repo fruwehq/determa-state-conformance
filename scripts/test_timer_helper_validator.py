@@ -26,7 +26,12 @@ def main():
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
-    assert validate_profile(args.spec_root, root) == (24, 25, 3, 4, 2, 3)
+    assert validate_profile(args.spec_root, root) == (24, 25, 5, 4, 2, 3)
+    document = json.loads((root / "conformance/profiles/timer-helper/timer-01-external-helper/vectors.generated.json").read_text())
+    for row in document["fence_vectors"][-2:]:
+        body = operation_input(row, "reviewed machine source")
+        assert body["trusted_clock_sequence"] == row["trusted_clock_sequence"]
+        assert not ({"id", "expected_result", "expected_calls", "after"} & set(body))
     try:
         trusted_bridge_registration(["/tmp/decoy-adapter"], root / "no-registration.json")
     except ValueError:
@@ -292,6 +297,9 @@ def main():
             ("helper mutation", lambda d: d["cases"][0]["after"]["helper_artifact"]["records"][0].update(state="fired")),
             ("checkpoint mutation", lambda d: d["cases"][0]["after"].update(checkpoint={})),
             ("coverage deletion", lambda d: d["cases"].pop()),
+            ("precommit expiry hidden", lambda d: d["fence_vectors"][-2].update(trusted_clock_sequence=["120", "120"])),
+            ("precommit clock failure hidden", lambda d: d["fence_vectors"][-1].update(trusted_clock_sequence=["120", "120"])),
+            ("precommit write escaped rollback", lambda d: d["fence_vectors"][-2].update(after=d["cases"][7]["after"])),
         ):
             changed = json.loads(json.dumps(document))
             mutate(changed)

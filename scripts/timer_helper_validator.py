@@ -144,21 +144,26 @@ def validate_profile(spec_root: Path, repository_root: Path) -> tuple[int, int, 
                 row["before"] != row["after"]:
             raise TimerHelperValidationError("overflow or unavailable clock mutated timer state")
     if [row["id"] for row in document["fence_vectors"]] != [
-            "complete_at_expiry", "wrong_worker", "changed_fire_event"]:
+            "complete_at_expiry", "wrong_worker", "changed_fire_event",
+            "complete_expires_before_commit", "complete_clock_unavailable_before_commit"]:
         raise TimerHelperValidationError("helper claim fence coverage changed")
     for row, error, clock_calls in zip(document["fence_vectors"],
-                                       ("timer_stale_fence", "timer_worker_mismatch", "timer_event_conflict"),
-                                       (1, 0, 0)):
+                                       ("timer_stale_fence", "timer_worker_mismatch", "timer_event_conflict",
+                                        "timer_stale_fence", "timer_clock_unavailable"),
+                                       (1, 0, 0, 2, 2)):
         request = row["request"]
         if request["request_digest"] != digest(["determa-timer-request-1",
                 {key: value for key, value in request.items() if key != "request_digest"}]) or \
                 row["expected_result"]["error_code"] != error or \
-                row["expected_calls"] != {"clock": clock_calls, "admission": 0} or \
+                row["expected_calls"] != {"clock": clock_calls, "admission": int(clock_calls == 2)} or \
                 row["before"] != row["after"] or \
                 row["before"]["helper_artifact"]["records"][0]["state"] != "claimed" or \
                 row["before"]["checkpoint"] != next(item for item in document["cases"]
                     if item["id"] == "coordinated_fire_commits")["before"]["checkpoint"]:
             raise TimerHelperValidationError("expired, wrong-worker or conflicting fire altered state")
+        if clock_calls == 2 and row["trusted_clock_sequence"] != ["120",
+                "130" if row["id"] == "complete_expires_before_commit" else None]:
+            raise TimerHelperValidationError("precommit clock observation changed")
     export = json.loads(expected_files["archive-export.generated.json"])
     live_export = json.loads(expected_files["archive-operational.generated.json"])
     stage = json.loads(expected_files["archive-stage.generated.json"])
