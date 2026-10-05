@@ -110,6 +110,7 @@ durable_host_vectors:
   - name: checkpoint_public_adapter_registry
     covers: [checkpoint_public_adapter_registry, checkpoint_third_party_adapter_registration]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_adapter }
@@ -119,6 +120,7 @@ durable_host_vectors:
   - name: checkpoint_capability_composition
     covers: [checkpoint_capability_composition, checkpoint_durable_profile_requirements, checkpoint_exactly_once_requirements, checkpoint_broker_requirements, checkpoint_strict_outbox_requirements]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/validate_capabilities }

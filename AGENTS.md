@@ -89,6 +89,14 @@ semantics; it does not replace each implementation's runtime harness.
 
 The extension-negotiation profile has separate common-rule and real public-registration gates. The common-rule hypothetical premises never prove a configured production claim; loaded test provider reports carry no verified operational guarantee. See its README for category profile obligations.
 
+The execution-checkpoint profile likewise classifies 26 adapter-policy probes as
+conditional decisions. They use shared production decision functions and never mint
+verified store handles. `run_adapter_policy_profile.py` compares actual policy returns;
+`run_execution_store_gates.py` separately requires reviewed engine mappings and fresh
+native test execution. Missing or skipped PostgreSQL service tests leave verified
+adapter integration unmet. Run `python scripts/test_adapter_evidence.py` after changing
+this evidence routing, and preserve exact production durable first/replay returns.
+
 CI checks the deterministic generators, including the application-projection generator. Run
 `python scripts/generate_execution_checkpoint_profile.py --check` after changing any
 durable-host request, result, checkpoint, store, call-log, or profile manifest.
