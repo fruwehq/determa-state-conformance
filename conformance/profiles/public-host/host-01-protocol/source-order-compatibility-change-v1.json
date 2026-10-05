@@ -1,0 +1,37 @@
+{
+  "record_format": "determa.public_host_compatibility_change",
+  "record_schema_version": 1,
+  "issue": "104",
+  "old_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
+  "proposed_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
+  "manifest_fingerprint": "sha256:01264a3638bbc2cb93bc291dbb219e7d9cc050dfe84c81d70dcf4d4388da5621",
+  "affected_capabilities": [
+    "source_ordered"
+  ],
+  "cross_language_fixture_matrix": [
+    {
+      "consumer": "Python embedded client",
+      "positive": "examples/extensions/capability-cases-v1.json#configured_transport_source_order_satisfied",
+      "negative": "examples/extensions/capability-cases-v1.json#unknown_transport_capability",
+      "rule": "Exact descriptor/report/requirement schema checks and production common negotiation with independently verified premises; public source_ordered advertisement additionally requires actual configured source-order operational proof."
+    },
+    {
+      "consumer": "Rust embedded client",
+      "positive": "examples/extensions/capability-cases-v1.json#configured_transport_source_order_satisfied",
+      "negative": "examples/extensions/capability-cases-v1.json#unknown_transport_capability",
+      "rule": "Exact descriptor/report/requirement schema checks and production common negotiation with independently verified premises; public source_ordered advertisement additionally requires actual configured source-order operational proof."
+    },
+    {
+      "consumer": "local reference host",
+      "positive": "examples/extensions/capability-cases-v1.json#configured_transport_source_order_satisfied",
+      "negative": "examples/extensions/capability-cases-v1.json#unknown_transport_capability",
+      "rule": "Exact descriptor/report/requirement schema checks and production common negotiation with independently verified premises; public source_ordered advertisement additionally requires actual configured source-order operational proof."
+    },
+    {
+      "consumer": "future hosted service",
+      "positive": "examples/extensions/capability-cases-v1.json#configured_transport_source_order_satisfied",
+      "negative": "examples/extensions/capability-cases-v1.json#unknown_transport_capability",
+      "rule": "Exact descriptor/report/requirement schema checks and production common negotiation with independently verified premises; public source_ordered advertisement additionally requires actual configured source-order operational proof."
+    }
+  ]
+}

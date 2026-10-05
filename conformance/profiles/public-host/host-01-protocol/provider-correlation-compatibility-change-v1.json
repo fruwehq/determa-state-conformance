@@ -1,0 +1,38 @@
+{
+  "record_format": "determa.public_host_compatibility_change",
+  "record_schema_version": 1,
+  "issue": "108",
+  "old_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
+  "proposed_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
+  "manifest_fingerprint": "sha256:01264a3638bbc2cb93bc291dbb219e7d9cc050dfe84c81d70dcf4d4388da5621",
+  "affected_capabilities": [
+    "native_actions",
+    "external_send_correlation"
+  ],
+  "cross_language_fixture_matrix": [
+    {
+      "consumer": "Python embedded client",
+      "positive": "examples/providers/mixed-cel-native.yaml; examples/providers/action-output.json",
+      "negative": "examples/providers/invalid-missing-correlation-action-output.json",
+      "rule": "Check the CEL external send has a statically typed non-empty string correlation, validate the typed provider result against its declared output event, and reject a provider action output that omits external-send correlation under SPEC.md §5.3 and §5.4."
+    },
+    {
+      "consumer": "Rust embedded client",
+      "positive": "examples/providers/mixed-cel-native.yaml; examples/providers/action-output.json",
+      "negative": "examples/providers/invalid-missing-correlation-action-output.json",
+      "rule": "Check the CEL external send has a statically typed non-empty string correlation, validate the typed provider result against its declared output event, and reject a provider action output that omits external-send correlation under SPEC.md §5.3 and §5.4."
+    },
+    {
+      "consumer": "local reference host",
+      "positive": "examples/providers/mixed-cel-native.yaml; examples/providers/action-output.json",
+      "negative": "examples/providers/invalid-missing-correlation-action-output.json",
+      "rule": "Check the CEL external send has a statically typed non-empty string correlation, validate the typed provider result against its declared output event, and reject a provider action output that omits external-send correlation under SPEC.md §5.3 and §5.4."
+    },
+    {
+      "consumer": "future hosted service",
+      "positive": "examples/providers/mixed-cel-native.yaml; examples/providers/action-output.json",
+      "negative": "examples/providers/invalid-missing-correlation-action-output.json",
+      "rule": "Check the CEL external send has a statically typed non-empty string correlation, validate the typed provider result against its declared output event, and reject a provider action output that omits external-send correlation under SPEC.md §5.3 and §5.4."
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "record_format": "determa.public_host_compatibility_change",
+  "record_schema_version": 1,
+  "issue": "96",
+  "old_protocol_fingerprint": null,
+  "proposed_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
+  "manifest_fingerprint": "sha256:01264a3638bbc2cb93bc291dbb219e7d9cc050dfe84c81d70dcf4d4388da5621",
+  "affected_capabilities": [
+    "structural_inspection",
+    "semantic_inspection",
+    "durable_embedded_processing",
+    "authoritative_scope_fencing",
+    "worker_fencing",
+    "safe_relocation",
+    "native_effect_results",
+    "lossless_projection",
+    "portable_archive",
+    "portable_checkpoint",
+    "normalized_definition",
+    "migration_descriptor",
+    "archive_participant",
+    "host_effect_journal",
+    "strict_quarantine_restore",
+    "fresh_scope_takeover",
+    "independent_clone",
+    "local_safe_relocation",
+    "external_timer_helper",
+    "saved_response_replay",
+    "deterministic_reexecution"
+  ],
+  "cross_language_fixture_matrix": [
+    {
+      "consumer": "Python embedded client",
+      "positive": "examples/public-host/positive-v1.json",
+      "negative": "examples/public-host/negative-v1.json",
+      "rule": "canonical artifact/evidence checks; deterministic portable equality only"
+    },
+    {
+      "consumer": "Rust embedded client",
+      "positive": "examples/public-host/positive-v1.json",
+      "negative": "examples/public-host/negative-v1.json",
+      "rule": "same request/response hash and artifact checks"
+    },
+    {
+      "consumer": "local reference host",
+      "positive": "examples/public-host/positive-v1.json",
+      "negative": "examples/public-host/negative-v1.json",
+      "rule": "every advertised operation/profile"
+    },
+    {
+      "consumer": "future hosted service",
+      "positive": "examples/public-host/positive-v1.json",
+      "negative": "examples/public-host/negative-v1.json",
+      "rule": "required only when service exists, for every advertised capability"
+    }
+  ]
+}

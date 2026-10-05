@@ -109,6 +109,17 @@ The lossless-delivery generator is checked with
 The non-normative CLI profile runner is retained at
 `conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.
 
+The public-host protocol profile is pinned to the approved specification
+`86bb88dd21cb1f799eefe5020b6e49dabf6e7225` with all four current compatibility change records. Run
+`python scripts/validate_public_host.py --spec-root SPEC` and
+`python scripts/test_public_host_validator.py --spec-root SPEC` for structural
+fixture and boundary checks. A production claim additionally runs
+`python scripts/run_public_host_profile.py --spec-root SPEC -- ADAPTER` with
+actual client/host calls and independent observations. Its composition/proof
+metadata is not native certification: separate reviewed operational gates must
+pass for every advertised operation and capability. Never synthesize a response from
+the expected fixture or infer it from after-state.
+
 ## Releasing
 Bump `VERSION`, tag `vX.Y.Z` after merge. Implementations pin the suite at that tag
 (python fetches it into `.cache/`; rust as a git submodule that CI force-pins to the tag).
