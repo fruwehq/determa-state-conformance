@@ -4757,6 +4757,14 @@ def validate_version1_vectors(
                 prior_runtime = target_runtime(prior_aggregate, target_id)
                 result_state = result_document["state"]
                 validate_aggregate_against_bundle(result_state, case / vector["bundle"])
+                if (
+                    result_document["disposition"] == "deferred"
+                    and result_state["next_logical_step_sequence"]
+                    != prior_aggregate["next_logical_step_sequence"]
+                ):
+                    raise ValidationFailure(
+                        f"{location}: deferral consumed a logical-step sequence"
+                    )
                 if result_state["root_instance_id"] != prior_aggregate["root_instance_id"]:
                     raise ValidationFailure(f"{location}: step result switched root aggregate")
                 if prior_runtime is None:

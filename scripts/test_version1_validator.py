@@ -50,6 +50,20 @@ def validate_case(
 
 
 class Version1ValidatorTests(unittest.TestCase):
+    def test_nonfaulting_deferral_cannot_consume_logical_step(self) -> None:
+        from generate_version1_vectors import seal_aggregate
+
+        result = load(MAILBOX_CASE / "repeated-deferral-result.json")
+        result["state"]["next_logical_step_sequence"] = str(
+            int(result["state"]["next_logical_step_sequence"]) + 1
+        )
+        result["state"] = seal_aggregate(result["state"])
+        with self.assertRaisesRegex(ValidationFailure, "deferral consumed a logical-step"):
+            validate_case(
+                MAILBOX_CASE,
+                artifact_overrides={"repeated-deferral-result.json": result},
+            )
+
     def test_old_initialization_hashes_are_rejected(self) -> None:
         for name, old_hash, field in (
             (
