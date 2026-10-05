@@ -297,8 +297,8 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
                      value["source_artifact_digest"] == source["artifact_digest"] and
                      value["compiler_providers"] == content["compiler_providers"] and
                      value["generated_validated_bundle_fingerprint"] == content["generated_validated_bundle_fingerprint"] and
-                     value["generated_runtime_capabilities"] == content["source_capabilities"] and
-                     value["restored_runtime_capabilities"] == content["source_capabilities"] and
+                     value["generated_runtime_capabilities"] == dict(content["source_capabilities"], process_contained=True) and
+                     value["restored_runtime_capabilities"] == dict(content["source_capabilities"], process_contained=True) and
                      value["restore_compiler_calls"] == 0,
                      "weak source compilation lost provenance or weakened generated CEL restoration")
         installed = request["installed"]

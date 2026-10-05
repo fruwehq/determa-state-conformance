@@ -208,6 +208,7 @@ def render(spec_root: Path) -> dict[str, bytes]:
                     "semantically_introspectable": False, "process_contained": False,
                     "external_io_capable": True}
     safe_profile = dict(manifest["content"]["source_capabilities"])
+    generated_profile = dict(safe_profile, process_contained=True)
     vectors = []
 
     def add(name, operation, installed_override=None, expected=None, bundle_file="machine.yaml", **arguments):
@@ -488,8 +489,8 @@ def render(spec_root: Path) -> dict[str, bytes]:
                "source_artifact_digest": source["artifact_digest"],
                "compiler_providers": manifest["content"]["compiler_providers"],
                "generated_validated_bundle_fingerprint": manifest["content"]["generated_validated_bundle_fingerprint"],
-               "generated_runtime_capabilities": safe_profile,
-               "restored_runtime_capabilities": safe_profile,
+               "generated_runtime_capabilities": generated_profile,
+               "restored_runtime_capabilities": generated_profile,
                "restore_compiler_calls": 0}),
         source_file="source-package.json", without_manifest=True, weak_compiler=True,
         generated_bundle_file="norm-compiled-machine.json")
