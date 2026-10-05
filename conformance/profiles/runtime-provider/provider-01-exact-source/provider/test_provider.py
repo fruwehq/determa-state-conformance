@@ -1,5 +1,13 @@
 """Executable provider fixture. The host must bind these exact source bytes."""
 
+def portable_copy(value):
+    if isinstance(value, (list, tuple)):
+        return [portable_copy(item) for item in value]
+    if hasattr(value, "items"):
+        return {name: portable_copy(item) for name, item in value.items()}
+    return value
+
+
 class ExternalReply:
     """An SDK-style object which never crosses the engine boundary."""
     def __init__(self, approved):
@@ -13,8 +21,11 @@ class Provider:
         self.external_calls = 0
         self.irreversible_effects = 0
         self.external_effect_log = []
+        self.guard_snapshot = None
+        self.action_snapshot = None
 
     def evaluate_guard(self, snapshot, *, external_io=False, fail=False, guard_override=None):
+        self.guard_snapshot = portable_copy(snapshot)
         self.guard_calls += 1
         if external_io:
             self.external_calls += 1
@@ -28,6 +39,7 @@ class Provider:
         return bool(reply.approved if guard_override is None else guard_override)
 
     def evaluate_actions(self, snapshot, *, invalid=False, fail=False, external_io=False, repeat_send=False):
+        self.action_snapshot = portable_copy(snapshot)
         self.action_calls += 1
         if external_io:
             self.external_calls += 1

@@ -8,6 +8,8 @@ pub struct Provider {
     pub external_calls: u64,
     pub irreversible_effects: u64,
     pub external_effect_log: Vec<&'static str>,
+    pub guard_snapshot: Option<String>,
+    pub action_snapshot: Option<String>,
 }
 
 impl Provider {
@@ -32,6 +34,16 @@ impl Provider {
         if !repeat_send || invalid { return Ok(output); }
         let send = r#"{"send":{"event":"accepted","to":{"external":true},"payload":["map",[]],"correlation_id":["string","provider-correlation"]}}"#;
         Ok(format!(r#"{{"actions":[{{"assign":{{"variable":"accepted","value":["boolean",true]}}}},{send},{send}]}}"#))
+    }
+    pub fn evaluate_guard_snapshot(&mut self, snapshot: &str, approved: bool, override_value: Option<bool>, external_io: bool, fail: bool)
+        -> Result<bool, &'static str> {
+        self.guard_snapshot = Some(snapshot.into());
+        self.evaluate_guard(approved, override_value, external_io, fail)
+    }
+    pub fn evaluate_actions_snapshot(&mut self, snapshot: &str, invalid: bool, fail: bool, external_io: bool, repeat_send: bool)
+        -> Result<String, &'static str> {
+        self.action_snapshot = Some(snapshot.into());
+        self.evaluate_actions_repeated(invalid, fail, external_io, repeat_send)
     }
     pub fn inspect_guard(&self, approved: bool, guards: u64, steps: u64)
         -> Result<(bool,u64,u64), &'static str> {

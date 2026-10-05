@@ -1,0 +1,36 @@
+format: 1
+namespace: example.runtime_profile
+events:
+  submit:
+    direction: input
+    payload:
+      approved:
+        type: bool
+        required: true
+  accepted:
+    direction: output
+machines:
+  - machine_id: order
+    root:
+      type: composite
+      variables:
+        accepted:
+          type: bool
+          init: false
+      initial:
+        transition_to: pending
+      states:
+        pending:
+          type: composite
+          variables:
+            accepted:
+              type: bool
+              init: false
+          initial:
+            transition_to: done
+            action:
+              - assign:
+                  accepted: 'true'
+          states:
+            done:
+              type: final

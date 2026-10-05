@@ -7,6 +7,18 @@ static:
       valid: true
     - file: machine-inert.yaml
       valid: true
+    - file: machine-final.yaml
+      valid: true
+    - file: machine-final-control.yaml
+      valid: true
+    - file: machine-local-write.yaml
+      valid: true
+    - file: machine-choice-write.yaml
+      valid: true
+    - file: machine-initial-write.yaml
+      valid: true
+    - file: machine-initial-control.yaml
+      valid: true
 artifacts:
   documents:
     - file: actions-descriptor.json

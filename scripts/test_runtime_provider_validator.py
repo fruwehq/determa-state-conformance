@@ -23,7 +23,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root, ROOT) == 32
+    assert validate_profile(args.spec_root, ROOT) == 39
     case = ROOT / CASE_REL
     with tempfile.TemporaryDirectory() as temporary:
         clone = Path(temporary)
@@ -90,7 +90,9 @@ def main() -> None:
     assert provider.evaluate_guard(snapshot, guard_override=True) is True
     result = provider.evaluate_actions(snapshot)
     assert result == json.loads((case / "norm-action-output.json").read_text())
+    assert provider.guard_snapshot == snapshot
     assert provider.evaluate_actions(snapshot, repeat_send=True) == json.loads((case / "norm-multiple-send-action-output.json").read_text())
+    assert provider.action_snapshot == snapshot
     assert provider.evaluate_actions(snapshot, invalid=True) == json.loads(
         (case / "norm-invalid-action-output.json").read_text())
     safe_provider = module.Provider()
@@ -144,6 +146,13 @@ fn main() {{
     assert_eq!(provider.external_calls, 1);
     assert_eq!(provider.irreversible_effects, 1);
     assert_eq!(provider.external_effect_log, vec!["fixture-io-1:external_write:before_commit"]);
+    let mut recorded = Provider::default();
+    let snapshot = r#"{{"event":{{"cause_id":"distinct-cause","source":{{"host":true}}}},"variables":["map",[]]}}"#;
+    assert_eq!(recorded.evaluate_guard_snapshot(snapshot, false, Some(true), false, false), Ok(true));
+    recorded.evaluate_actions_snapshot(snapshot, false, false, false, true).unwrap();
+    assert_eq!(recorded.guard_snapshot.as_deref(), Some(snapshot));
+    assert_eq!(recorded.action_snapshot.as_deref(), Some(snapshot));
+    assert_eq!((recorded.guard_calls, recorded.action_calls), (1, 1));
     let safe = Provider::default();
     let before = safe.clone();
     assert_eq!(safe.inspect_guard(true, 1, 2), Ok((true, 1, 2)));

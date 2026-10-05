@@ -35,6 +35,10 @@ REQUIRED = frozenset((
     "compile_untrusted_compiler", "compile_manifest_fingerprint_mismatch",
     "compile_source_digest_mismatch", "compile_limit_exceeded",
     "native_repeated_sends_have_distinct_ids", "load_inert_provider_metadata",
+    "native_root_assignment_before_final", "ordinary_root_assignment_before_final",
+    "native_local_write_destroyed_by_event", "native_local_write_destroyed_after_choice",
+    "native_snapshot_preserves_complete_queue_envelope",
+    "native_initial_local_write_destroyed_by_final", "ordinary_initial_destroyed_write_rejected_at_load",
 ))
 
 
@@ -271,9 +275,9 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
         expected = vector["expected"]
         installed = request["installed"]
         setup = request["setup"]
-        if request["operation"] in {"step", "host_commit", "inspect"}:
+        if request["operation"] in {"step", "host_commit", "inspect", "create"}:
             _require(isinstance(setup, dict), "execution request omitted setup")
-            selected = machine if request["bundle"] == "machine.yaml" else safe_machine
+            selected = YAML(typ="safe").load((case / request["bundle"]).read_text())
             creation = setup["create_request"]
             target = digest(["determa-root-runtime-identity-1", "1",
                              bundle_fingerprint_document(selected), selected["namespace"],
@@ -283,7 +287,7 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
             _require(setup["target_runtime_id"] == target and
                      envelope["target"] == {"root": {"root_instance_id": creation["root_instance_id"],
                                                      "root_runtime_id": target}} and
-                     setup["provider_snapshot"]["event"] == envelope and
+                     (setup["provider_snapshot"].get("event") == envelope if request["operation"] != "create" else "event" not in setup["provider_snapshot"]) and
                      setup["provider_snapshot"]["variables"] ==
                      ["map", [["accepted", ["boolean", False]]]],
                      f"{vector['name']}: execution snapshot or target changed")
@@ -314,10 +318,11 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
         _require(len(expected["external_effects"]) == expected["irreversible_side_effects"],
                  f"{vector['name']}: external evidence changed")
         if setup is not None:
-            _require(expected["state_before"] is not None and
-                     expected["state_after"] is not None,
+            _require(expected["state_after"] is not None and
+                     (expected["state_before"] is None if request["operation"] == "create"
+                      else expected["state_before"] is not None),
                      f"{vector['name']}: state observation missing")
-            if not expected["determa_state_committed"]:
+            if not expected["determa_state_committed"] and request["operation"] != "create":
                 _require(expected["state_after"] == expected["state_before"],
                          f"{vector['name']}: uncommitted state changed")
         if expected["result"] in {"rejected", "faulted", "uncommitted"}:
@@ -325,6 +330,9 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
                      f"{vector['name']}: failed operation committed")
         if vector["name"].startswith("load_") and expected["result"] == "rejected":
             _require(not any(expected["calls"].values()), "rejected load invoked provider")
+    captured = next(vector for vector in manifest["vectors"] if vector["name"] == "native_snapshot_preserves_complete_queue_envelope")
+    for key in ("guard_snapshot", "action_snapshot"):
+        _require(captured["expected"]["value"][key] == captured["request"]["setup"]["provider_snapshot"], "native snapshot lost complete source/cause envelope or typed variables")
     repeated = next(vector for vector in manifest["vectors"] if vector["name"] == "native_repeated_sends_have_distinct_ids")
     setup = repeated["request"]["setup"]
     slot = "/machines/0/root/states/pending/on_events/submit/1/action/0"

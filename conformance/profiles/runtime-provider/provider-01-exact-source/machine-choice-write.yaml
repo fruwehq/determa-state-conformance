@@ -86,3 +86,15 @@ machines:
                       to:
                         external: true
                       correlation_id: "'provider-correlation'"
+                transition_to: decision
+          variables:
+            accepted:
+              type: bool
+              init: false
+        left:
+          type: simple
+        decision:
+          choice:
+            - guard: 'true'
+              transition_to: left
+            - transition_to: left
