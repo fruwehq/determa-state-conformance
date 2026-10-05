@@ -10,7 +10,7 @@
     "source_files": {"const": ["provider/test_provider.py", "provider/test_provider.rs"]},
     "source_closure_file": {"const": "provider-closure.json"},
     "normative_examples": {"type": "array", "minItems": 14, "maxItems": 14, "uniqueItems": true, "items": {"type": "string"}},
-    "vectors": {"type": "array", "minItems": 39, "maxItems": 39, "items": {"$ref": "#/$defs/vector"}}
+    "vectors": {"type": "array", "minItems": 40, "maxItems": 40, "items": {"$ref": "#/$defs/vector"}}
   },
   "$defs": {
     "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
@@ -47,7 +47,7 @@
           "properties": {
             "opt_in_weak": {"type": "boolean"}, "approved": {"type": "boolean"},
             "native_selected": {"type": "boolean"}, "guard_override": {"type": "boolean"},
-            "repeat_send": {"type": "boolean"}, "destroyed_write": {"type": "boolean"}, "capture_snapshot": {"type": "boolean"}, "invalid_output": {"type": "boolean"}, "action_fail": {"type": "boolean"},
+            "repeat_send": {"type": "boolean"}, "replay": {"type": "boolean"}, "destroyed_write": {"type": "boolean"}, "capture_snapshot": {"type": "boolean"}, "invalid_output": {"type": "boolean"}, "action_fail": {"type": "boolean"},
             "action_external_io": {"type": "boolean"}, "cas_conflict": {"type": "boolean"},
             "maximum_attempts": {"type": "integer", "minimum": 1},
             "mode": {"enum": ["structural", "semantic"]},
@@ -89,7 +89,7 @@
       "required": ["stages", "result", "code", "value", "calls", "irreversible_side_effects", "external_effects", "determa_state_committed", "effective_capabilities", "state_before", "state_after"],
       "additionalProperties": false,
       "properties": {
-        "stages": {"type": "array", "minItems": 1, "items": {"enum": ["resolve_closure", "create", "admit", "verify_capabilities", "load", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output", "commit", "compare_and_swap", "preflight_inspection", "structural_inspection", "invoke_inspect_guard", "resolve_runtime_closure", "restore", "validate_source", "resolve_compiler_closure", "compile_region", "strict_load", "verify_manifest"]}},
+        "stages": {"type": "array", "minItems": 1, "items": {"enum": ["resolve_closure", "create", "admit", "verify_capabilities", "load", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output", "commit", "replay", "compare_and_swap", "preflight_inspection", "structural_inspection", "invoke_inspect_guard", "resolve_runtime_closure", "restore", "validate_source", "resolve_compiler_closure", "compile_region", "strict_load", "verify_manifest"]}},
         "result": {"enum": ["accepted", "rejected", "handled_now", "unhandled", "faulted", "uncommitted"]},
         "code": {"type": ["string", "null"]},
         "value": {"type": ["object", "null"]},

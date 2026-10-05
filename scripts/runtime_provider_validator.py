@@ -34,7 +34,7 @@ REQUIRED = frozenset((
     "restore_changed_runtime", "restore_untrusted_runtime", "compile_changed_compiler",
     "compile_untrusted_compiler", "compile_manifest_fingerprint_mismatch",
     "compile_source_digest_mismatch", "compile_limit_exceeded",
-    "native_repeated_sends_have_distinct_ids", "load_inert_provider_metadata",
+    "native_repeated_sends_have_distinct_ids", "native_repeated_sends_commit_and_replay", "load_inert_provider_metadata",
     "native_root_assignment_before_final", "ordinary_root_assignment_before_final",
     "native_local_write_destroyed_by_event", "native_local_write_destroyed_after_choice",
     "native_snapshot_preserves_complete_queue_envelope",
@@ -333,6 +333,7 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
     captured = next(vector for vector in manifest["vectors"] if vector["name"] == "native_snapshot_preserves_complete_queue_envelope")
     for key in ("guard_snapshot", "action_snapshot"):
         _require(captured["expected"]["value"][key] == captured["request"]["setup"]["provider_snapshot"], "native snapshot lost complete source/cause envelope or typed variables")
+    _require(captured["request"]["setup"]["envelope"]["cause_id"] != captured["request"]["setup"]["envelope"]["event_id"], "snapshot no longer distinguishes event identity from cause identity")
     repeated = next(vector for vector in manifest["vectors"] if vector["name"] == "native_repeated_sends_have_distinct_ids")
     setup = repeated["request"]["setup"]
     slot = "/machines/0/root/states/pending/on_events/submit/1/action/0"
@@ -345,6 +346,17 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
                               setup["create_request"]["root_instance_id"], setup["target_runtime_id"],
                               setup["envelope"]["cause_id"], "1", pointer, str(ordinal)])
         _require(identity == {"effect_id": expected_id, "emission_index": str(ordinal), "sequence": str(position)}, "native operational identity/receipt index changed")
+    replay = next(vector for vector in manifest["vectors"] if vector["name"] == "native_repeated_sends_commit_and_replay")
+    _require(replay["request"]["arguments"].get("replay") is True and
+             replay["request"]["arguments"].get("cas_conflict") is False and
+             replay["request"]["arguments"]["maximum_attempts"] == 1 and
+             replay["expected"]["value"]["emission_identities"] == identities and
+             replay["expected"]["value"]["checkpoint_revision"] == "2" and
+             replay["expected"]["value"]["retained_effect_references"] == 3 and
+             replay["expected"]["value"]["pending_outbox_entries"] == 3 and
+             all(replay["expected"]["value"][key] is True for key in
+                 ("replay_receipt_equal", "replay_checkpoint_unchanged", "replay_provider_calls_unchanged")),
+             "durable native commit/replay evidence changed")
     io_failure = next(v for v in manifest["vectors"] if v["name"] == "native_io_then_cas_conflict")
     _require(io_failure["request"]["arguments"]["maximum_attempts"] == 1 and
              io_failure["expected"]["irreversible_side_effects"] == 1 and

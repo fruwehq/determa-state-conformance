@@ -309,6 +309,16 @@ def render(spec_root: Path) -> dict[str, bytes]:
         guard=1, actions=1, committed=True, guarantees=weak_profile,
         value={"accepted": ["boolean", True], "emissions": 3, "emission_identities": identities}),
         approved=False, native_selected=True, guard_override=True, repeat_send=True)
+    add("native_repeated_sends_commit_and_replay", "host_commit", expected=observation(
+        "handled_now", stages=["resolve_closure", "evaluate_cel", "evaluate_guard",
+                               "evaluate_actions", "validate_output", "compare_and_swap", "commit", "replay"],
+        guard=1, actions=1, committed=True, guarantees=weak_profile,
+        value={"accepted": ["boolean", True], "emissions": 3, "emission_identities": copy.deepcopy(identities),
+               "checkpoint_revision": "2", "retained_effect_references": 3, "pending_outbox_entries": 3,
+               "replay_receipt_equal": True, "replay_checkpoint_unchanged": True,
+               "replay_provider_calls_unchanged": True}),
+        approved=False, native_selected=True, guard_override=True, repeat_send=True,
+        cas_conflict=False, maximum_attempts=1, replay=True)
     add("load_inert_provider_metadata", "load", bundle_file="machine-inert.yaml", expected=observation(
         "accepted", stages=["resolve_closure", "verify_capabilities", "load"],
         guarantees=dict.fromkeys(("deterministic", "pure", "portable", "semantically_introspectable", "process_contained"), True) | {"external_io_capable": False}),
@@ -336,6 +346,8 @@ def render(spec_root: Path) -> dict[str, bytes]:
         guard=1, actions=1, committed=True, guarantees=weak_profile,
         value={"accepted": ["boolean", True], "emissions": 2}),
         approved=False, native_selected=True, guard_override=True, capture_snapshot=True)
+    vectors[-1]["request"]["setup"]["envelope"]["cause_id"] = "runtime-provider-distinct-cause-1"
+    vectors[-1]["request"]["setup"]["provider_snapshot"]["event"]["cause_id"] = "runtime-provider-distinct-cause-1"
     for key in ("guard_snapshot", "action_snapshot"):
         vectors[-1]["expected"]["value"][key] = copy.deepcopy(vectors[-1]["request"]["setup"]["provider_snapshot"])
     add("native_initial_local_write_destroyed_by_final", "create", bundle_file="machine-initial-write.yaml", expected=observation(

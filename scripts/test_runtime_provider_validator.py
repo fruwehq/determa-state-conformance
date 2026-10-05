@@ -23,7 +23,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root, ROOT) == 39
+    assert validate_profile(args.spec_root, ROOT) == 40
     case = ROOT / CASE_REL
     with tempfile.TemporaryDirectory() as temporary:
         clone = Path(temporary)
