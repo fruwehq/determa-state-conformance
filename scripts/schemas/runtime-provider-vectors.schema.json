@@ -10,7 +10,7 @@
     "source_files": {"const": ["provider/test_provider.py", "provider/test_provider.rs"]},
     "source_closure_file": {"const": "provider-closure.json"},
     "normative_examples": {"type": "array", "minItems": 14, "maxItems": 14, "uniqueItems": true, "items": {"type": "string"}},
-    "vectors": {"type": "array", "minItems": 41, "maxItems": 41, "items": {"$ref": "#/$defs/vector"}}
+    "vectors": {"type": "array", "minItems": 44, "maxItems": 44, "items": {"$ref": "#/$defs/vector"}}
   },
   "$defs": {
     "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
@@ -60,17 +60,20 @@
             "source_override": {"type": "string"},
             "source_digest_override": {"$ref": "#/$defs/digest"},
             "manifest_fingerprint_override": {"$ref": "#/$defs/digest"},
+            "invalid_slot": {"enum": ["metadata_guard", "variable_action"]},
+            "without_manifest": {"type": "boolean"}, "weak_compiler": {"type": "boolean"},
             "maximum_compilation_steps": {"type": "integer", "minimum": 0}
           }}
       }
     },
     "calls": {
-      "type": "object", "required": ["guard", "actions", "inspect_guard", "external"],
+      "type": "object", "required": ["guard", "actions", "inspect_guard", "compile_region", "external"],
       "additionalProperties": false,
       "properties": {
         "guard": {"type": "integer", "minimum": 0},
         "actions": {"type": "integer", "minimum": 0},
         "inspect_guard": {"type": "integer", "minimum": 0},
+        "compile_region": {"type": "integer", "minimum": 0},
         "external": {"type": "integer", "minimum": 0}
       }
     },

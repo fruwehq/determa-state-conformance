@@ -23,7 +23,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root, ROOT) == 41
+    assert validate_profile(args.spec_root, ROOT) == 44
     case = ROOT / CASE_REL
     with tempfile.TemporaryDirectory() as temporary:
         clone = Path(temporary)
@@ -68,6 +68,16 @@ def main() -> None:
               lambda vector: vector["expected"]["value"]["pending_outbox_entries"][1]["intent"].update(effect_id="sha256:" + "0" * 64)))
         probe("vectors.generated.json", change_operational("native_mixed_sends_have_separate_ordinals",
               lambda vector: vector["expected"]["value"]["emission_identities"][1].update(emission_index="1")))
+        probe("vectors.generated.json", change_operational("compile_invalid_metadata_slot",
+              lambda vector: vector["expected"]["calls"].update(compile_region=1)))
+        probe("vectors.generated.json", change_operational("compile_invalid_variable_value_slot",
+              lambda vector: vector["request"]["arguments"].update(invalid_slot="metadata_guard")))
+        probe("vectors.generated.json", change_operational("compile_weak_without_manifest",
+              lambda vector: vector["expected"]["effective_capabilities"].update(pure=True)))
+        probe("vectors.generated.json", change_operational("compile_weak_without_manifest",
+              lambda vector: vector["expected"]["value"].update(source_artifact_digest="sha256:" + "0" * 64)))
+        probe("vectors.generated.json", change_operational("compile_weak_without_manifest",
+              lambda vector: vector["expected"]["value"]["restored_runtime_capabilities"].update(pure=False)))
         probe("norm-invalid-action-output.json", lambda body: b'{"actions":[]}')
         probe("norm-multiple-send-identities.json", lambda body: body.replace(b'"emission_index":"1"', b'"emission_index":"0"'))
         probe("norm-invalid-multiple-send-identities.json", lambda body: (fixture / "norm-multiple-send-identities.json").read_bytes())

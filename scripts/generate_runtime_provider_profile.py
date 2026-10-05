@@ -88,12 +88,12 @@ def machine(guard: dict, actions: dict) -> dict:
 
 
 def observation(result: str, *, code=None, stages=(), guard=0, actions=0,
-                inspection=0, external=0, effects=0, committed=False,
+                inspection=0, compilation=0, external=0, effects=0, committed=False,
                 guarantees=None, value=None) -> dict:
     return {
         "stages": list(stages), "result": result, "code": code, "value": value,
         "calls": {"guard": guard, "actions": actions, "inspect_guard": inspection,
-                  "external": external},
+                  "compile_region": compilation, "external": external},
         "irreversible_side_effects": effects,
         "external_effects": ([{"effect_id": "fixture-io-1", "kind": "external_write",
                               "phase": "before_commit"}] if effects else []),
@@ -208,6 +208,7 @@ def render(spec_root: Path) -> dict[str, bytes]:
                     "semantically_introspectable": False, "process_contained": False,
                     "external_io_capable": True}
     safe_profile = dict(manifest["content"]["source_capabilities"])
+    generated_profile = dict(safe_profile, process_contained=True)
     vectors = []
 
     def add(name, operation, installed_override=None, expected=None, bundle_file="machine.yaml", **arguments):
@@ -439,7 +440,7 @@ def render(spec_root: Path) -> dict[str, bytes]:
                     stages=["resolve_runtime_closure"]))
     add("compile_exact_source", "compile", expected=observation(
         "accepted", stages=["validate_source", "resolve_compiler_closure", "compile_region",
-                            "strict_load", "verify_manifest"], guarantees=safe_profile,
+                            "strict_load", "verify_manifest"], guarantees=safe_profile, compilation=1,
         value={"generated_guard": "event.payload.approved"}),
         source_file="source-package.json", manifest_file="source-manifest.json",
         generated_bundle_file="norm-compiled-machine.json")
@@ -458,7 +459,7 @@ def render(spec_root: Path) -> dict[str, bytes]:
                     stages=["validate_source", "resolve_compiler_closure"]),
         source_file="source-package.json")
     add("compile_manifest_fingerprint_mismatch", "compile", expected=observation(
-        "rejected", code="language_compilation_failed",
+        "rejected", code="language_compilation_failed", compilation=1,
         stages=["validate_source", "resolve_compiler_closure", "compile_region",
                 "strict_load", "verify_manifest"]),
         source_file="source-package.json", manifest_file="source-manifest.json",
@@ -473,9 +474,26 @@ def render(spec_root: Path) -> dict[str, bytes]:
         source_file="source-package.json",
         maximum_compilation_steps=0)
     add("compile_bad_region_source", "compile", expected=observation(
-        "rejected", code="language_compilation_failed",
+        "rejected", code="language_compilation_failed", compilation=1,
         stages=["validate_source", "resolve_compiler_closure", "compile_region"]),
         source_file="source-package.json", source_override="invalid expression")
+    for name, slot in (("compile_invalid_metadata_slot", "metadata_guard"),
+                       ("compile_invalid_variable_value_slot", "variable_action")):
+        add(name, "compile", expected=observation(
+            "rejected", code="language_compilation_failed", stages=["validate_source"]),
+            source_file="source-package.json", invalid_slot=slot, without_manifest=True)
+    add("compile_weak_without_manifest", "compile", expected=observation(
+        "accepted", stages=["validate_source", "resolve_compiler_closure", "compile_region",
+                            "strict_load"], guarantees=weak_profile, compilation=1,
+        value={"generated_guard": "event.payload.approved",
+               "source_artifact_digest": source["artifact_digest"],
+               "compiler_providers": manifest["content"]["compiler_providers"],
+               "generated_validated_bundle_fingerprint": manifest["content"]["generated_validated_bundle_fingerprint"],
+               "generated_runtime_capabilities": generated_profile,
+               "restored_runtime_capabilities": generated_profile,
+               "restore_compiler_calls": 0}),
+        source_file="source-package.json", without_manifest=True, weak_compiler=True,
+        generated_bundle_file="norm-compiled-machine.json")
     outputs["vectors.generated.json"] = canonical({
         "format": "determa.runtime_provider_vectors", "version": 1,
         "source_files": list(SOURCES), "source_closure_file": "provider-closure.json",
