@@ -110,7 +110,7 @@ The non-normative CLI profile runner is retained at
 `conformance/profiles/cli/run_cli.py`, but no CLI profile cases are currently defined.
 
 The public-host protocol profile is pinned to the approved specification
-`86bb88dd21cb1f799eefe5020b6e49dabf6e7225` with all four current compatibility change records. Run
+`77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0` with all five current compatibility change records. Run
 `python scripts/validate_public_host.py --spec-root SPEC` and
 `python scripts/test_public_host_validator.py --spec-root SPEC` for structural
 fixture and boundary checks. A production claim additionally runs

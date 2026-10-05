@@ -22,6 +22,8 @@ NORMATIVE = (
     "invalid-guard-output-type.json", "invalid-missing-correlation-action-output.json",
     "invalid-provider-digest.json",
     "language-source-v1.json", "mixed-cel-native.yaml",
+    "multiple-send-action-output.json", "multiple-send-identities.json",
+    "invalid-multiple-send-identities.json", "inert-provider-metadata.yaml",
 )
 DOMAIN = b"determa-test-runtime-provider-closure-1\0"
 
@@ -118,11 +120,16 @@ def render(spec_root: Path) -> dict[str, bytes]:
     yaml.indent(mapping=2, sequence=4, offset=2)
     def dump_machine(document):
         yaml_data = copy.deepcopy(document)
-        branches = yaml_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"]
-        native_branch = branches[1] if isinstance(branches, list) else branches
-        for native in (native_branch["guard"]["provider"], native_branch["action"][0]["provider_actions"]):
-            native["provider_reference"]["version"] = DoubleQuotedScalarString("1.0.0")
-            native["dependencies"][0]["version"] = DoubleQuotedScalarString("1.0.0")
+        def quote_versions(value):
+            if isinstance(value, dict):
+                if value.get("version") == "1.0.0":
+                    value["version"] = DoubleQuotedScalarString("1.0.0")
+                for child in value.values():
+                    quote_versions(child)
+            elif isinstance(value, list):
+                for child in value:
+                    quote_versions(child)
+        quote_versions(yaml_data)
         stream = StringIO()
         yaml.dump(yaml_data, stream)
         return stream.getvalue().replace(": \n", ":\n").encode()
@@ -139,6 +146,40 @@ def render(spec_root: Path) -> dict[str, bytes]:
     for name in NORMATIVE:
         destination = "norm-" + (name[:-5] + ".source" if name.endswith(".yaml") else name)
         outputs[destination] = (spec_root / "examples/providers" / name).read_bytes()
+
+    final_data = copy.deepcopy(data)
+    final_root = final_data["machines"][0]["root"]
+    final_root["states"]["pending"]["on_events"]["submit"][1]["transition_to"] = "done"
+    final_root["states"]["done"] = {"type": "final"}
+    final_root["exit"] = [{"send": {"event": "accepted", "to": {"external": True}, "correlation_id": "string(accepted)"}}]
+    control_data = copy.deepcopy(final_data)
+    control_branch = control_data["machines"][0]["root"]["states"]["pending"]["on_events"]["submit"][1]
+    control_branch["guard"] = "true"
+    control_branch["action"][0] = {"assign": {"accepted": "true"}}
+    local_data = copy.deepcopy(data)
+    local_root = local_data["machines"][0]["root"]
+    local_root["states"]["pending"]["variables"] = {"accepted": {"type": "bool", "init": False}}
+    local_root["states"]["pending"]["on_events"]["submit"][1]["transition_to"] = "left"
+    local_root["states"]["left"] = {"type": "simple"}
+    choice_data = copy.deepcopy(local_data)
+    choice_root = choice_data["machines"][0]["root"]
+    choice_root["states"]["pending"]["on_events"]["submit"][1]["transition_to"] = "decision"
+    choice_root["states"]["decision"] = {"choice": [{"guard": "true", "transition_to": "left"}, {"transition_to": "left"}]}
+    initial_data = copy.deepcopy(data)
+    initial_root = initial_data["machines"][0]["root"]
+    initial_root["states"] = {"pending": {"type": "composite", "variables": {"accepted": {"type": "bool", "init": False}},
+        "initial": {"transition_to": "done", "action": [{"provider_actions": copy.deepcopy(actions)}]},
+        "states": {"done": {"type": "final"}}}}
+    initial_control = copy.deepcopy(initial_data)
+    initial_control["machines"][0]["root"]["states"]["pending"]["initial"]["action"] = [{"assign": {"accepted": "true"}}]
+    mixed_data = copy.deepcopy(data)
+    mixed_data["events"]["notice"] = {"direction": "internal"}
+    bundles = {"machine-mixed.yaml": mixed_data, "machine.yaml": data, "machine-safe.yaml": safe_data, "machine-final.yaml": final_data,
+               "machine-final-control.yaml": control_data, "machine-local-write.yaml": local_data,
+               "machine-choice-write.yaml": choice_data, "machine-initial-write.yaml": initial_data,
+               "machine-initial-control.yaml": initial_control}
+    for filename, document in bundles.items():
+        outputs[filename] = dump_machine(document)
 
     source = json.loads(outputs["norm-language-source-v1.json"])
     source["content"]["regions"][0]["provider_reference"] = reference("example.guard-compiler", digest)
@@ -157,6 +198,7 @@ def render(spec_root: Path) -> dict[str, bytes]:
     outputs["source-package.json"] = canonical(source)
     outputs["source-manifest.json"] = canonical(manifest)
 
+    outputs["machine-inert.yaml"] = (spec_root / "examples/providers/inert-provider-metadata.yaml").read_bytes()
     installed = [dependency, guard["provider_reference"], actions["provider_reference"]]
     compiler_installed = [dependency, reference("example.guard-compiler", digest)]
     exact = {"mode": "exact", "providers": installed, "closure_digest": digest,
@@ -170,8 +212,8 @@ def render(spec_root: Path) -> dict[str, bytes]:
 
     def add(name, operation, installed_override=None, expected=None, bundle_file="machine.yaml", **arguments):
         setup = None
-        if operation in {"step", "host_commit", "inspect"}:
-            bundle = data if bundle_file == "machine.yaml" else safe_data
+        if operation in {"step", "host_commit", "inspect", "create"}:
+            bundle = bundles[bundle_file]
             fingerprint = bundle_fingerprint_document(bundle)
             runtime_id = value_digest([
                 "determa-root-runtime-identity-1", "1", fingerprint,
@@ -204,10 +246,15 @@ def render(spec_root: Path) -> dict[str, bytes]:
             if expected["determa_state_committed"]:
                 after["ready_mailbox_length"] = 0
                 if expected["value"] is not None:
-                    after["variables"]["accepted"] = expected["value"]["accepted"]
+                    if "accepted" in expected["value"]:
+                        after["variables"]["accepted"] = expected["value"]["accepted"]
                     after["output_count"] = expected["value"]["emissions"]
             expected["state_before"] = before
             expected["state_after"] = after
+            if operation == "create":
+                setup["provider_snapshot"].pop("event")
+                expected["state_before"] = None
+                expected["state_after"] = {"status": "faulted", "active_leaf": None, "variables": {}, "ready_mailbox_length": 0, "deferred_mailbox_length": 0, "output_count": 0}
         if operation == "restore":
             selected = compiled if bundle_file == "norm-compiled-machine.json" else data
             arguments["definition_fingerprint"] = bundle_fingerprint_document(selected)
@@ -251,6 +298,81 @@ def render(spec_root: Path) -> dict[str, bytes]:
         guard=1, actions=1, committed=True, guarantees=weak_profile,
         value={"accepted": ["boolean", True], "emissions": 2}),
         approved=False, native_selected=True, guard_override=True)
+    slot = "/machines/0/root/states/pending/on_events/submit/1/action/0"
+    runtime_id = value_digest(["determa-root-runtime-identity-1", "1", bundle_fingerprint_document(data),
+                             data["namespace"], "order", "1", "runtime-provider-root-1"])
+    identities = [{"effect_id": value_digest(["determa-effect-identity-1", "1", [data["namespace"], "order", "1"],
+                   "runtime-provider-root-1", runtime_id, "runtime-provider-event-1", "1", pointer, str(index)]),
+                   "emission_index": str(index), "sequence": str(sequence)}
+                  for pointer, index, sequence in [(slot, 0, 0), (slot, 1, 1), (slot.replace("action/0", "action/1/send"), 0, 2)]]
+    add("native_repeated_sends_have_distinct_ids", "step", expected=observation(
+        "handled_now", stages=["resolve_closure", "evaluate_cel", "evaluate_guard",
+                               "evaluate_actions", "validate_output", "commit"],
+        guard=1, actions=1, committed=True, guarantees=weak_profile,
+        value={"accepted": ["boolean", True], "emissions": 3, "emission_identities": identities}),
+        approved=False, native_selected=True, guard_override=True, repeat_send=True)
+    add("native_repeated_sends_commit_and_replay", "host_commit", expected=observation(
+        "handled_now", stages=["resolve_closure", "evaluate_cel", "evaluate_guard",
+                               "evaluate_actions", "validate_output", "compare_and_swap", "commit", "replay"],
+        guard=1, actions=1, committed=True, guarantees=weak_profile,
+        value={"accepted": ["boolean", True], "emissions": 3, "emission_identities": copy.deepcopy(identities),
+               "checkpoint_revision": "2", "retained_effect_references": [{"kind": "external_outbox", "effect_id": item["effect_id"], "emission_index": item["emission_index"]} for item in identities],
+               "pending_outbox_entries": [{"intent": {"effect_id": item["effect_id"], "sequence": item["sequence"], "event": "accepted", "payload": ["map", []], "correlation_id": "provider-correlation"}, "state_revision": "2", "delivery_state": {"status": "not_attempted"}} for item in identities],
+               "replay_receipt_equal": True, "replay_checkpoint_unchanged": True,
+               "replay_provider_calls_unchanged": True}),
+        approved=False, native_selected=True, guard_override=True, repeat_send=True,
+        cas_conflict=False, maximum_attempts=1, replay=True)
+    mixed_runtime_id = value_digest(["determa-root-runtime-identity-1", "1", bundle_fingerprint_document(mixed_data),
+                                    mixed_data["namespace"], "order", "1", "runtime-provider-root-1"])
+    mixed_identities = []
+    for position, kind, ordinal in ((0, "external", 0), (1, "internal", 0), (2, "external", 1), (3, "internal", 1), (4, "external", 0)):
+        pointer = slot if position < 4 else slot.replace("action/0", "action/1/send")
+        if kind == "external":
+            mixed_identities.append({"effect_id": value_digest(["determa-effect-identity-1", "1", [mixed_data["namespace"], "order", "1"], "runtime-provider-root-1", mixed_runtime_id, "runtime-provider-event-1", "1", pointer, str(ordinal)]), "emission_index": str(ordinal), "sequence": str(position // 2)})
+        else:
+            mixed_identities.append({"event_id": value_digest(["determa-event-identity-1", "1", "runtime-provider-root-1", mixed_runtime_id, mixed_runtime_id, "runtime-provider-event-1", "1", pointer, str(ordinal)]), "emission_index": str(ordinal), "acceptance_sequence": str(ordinal + 1), "queue_sequence": str(ordinal + 1)})
+    add("native_mixed_sends_have_separate_ordinals", "step", bundle_file="machine-mixed.yaml", expected=observation(
+        "handled_now", stages=["resolve_closure", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output", "commit"],
+        guard=1, actions=1, committed=True, guarantees=weak_profile,
+        value={"accepted": ["boolean", True], "emissions": 5, "emission_identities": mixed_identities}),
+        approved=False, native_selected=True, guard_override=True, mixed_send=True)
+    vectors[-1]["expected"]["state_after"].update(ready_mailbox_length=2, output_count=3)
+    add("load_inert_provider_metadata", "load", bundle_file="machine-inert.yaml", expected=observation(
+        "accepted", stages=["resolve_closure", "verify_capabilities", "load"],
+        guarantees=dict.fromkeys(("deterministic", "pure", "portable", "semantically_introspectable", "process_contained"), True) | {"external_io_capable": False}),
+        opt_in_weak=True)
+    for filename, name, count, claims, native in (
+        ("machine-final.yaml", "native_root_assignment_before_final", 3, weak_profile, True),
+        ("machine-final-control.yaml", "ordinary_root_assignment_before_final", 2,
+         dict.fromkeys(("deterministic", "pure", "portable", "semantically_introspectable", "process_contained"), True) | {"external_io_capable": False}, False),
+    ):
+        add(name, "step", bundle_file=filename, expected=observation(
+            "handled_now", stages=["resolve_closure", "evaluate_cel"] + (["evaluate_guard", "evaluate_actions", "validate_output"] if native else []) + ["commit"],
+            guard=int(native), actions=int(native), committed=True, guarantees=claims,
+            value={"emissions": count, "exit_correlation": "true", "status": "completed"}),
+            approved=False, native_selected=native, guard_override=True)
+        vectors[-1]["expected"]["state_after"].update(status="completed", active_leaf=None, variables={})
+    for filename, name in (("machine-local-write.yaml", "native_local_write_destroyed_by_event"),
+                           ("machine-choice-write.yaml", "native_local_write_destroyed_after_choice")):
+        add(name, "step", bundle_file=filename, expected=observation(
+            "faulted", code="action_fault", stages=["resolve_closure", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output"],
+            guard=1, actions=1, guarantees=weak_profile,
+            value={"boundary_code": "runtime_provider_output_invalid", "source_locator": "/machines/0/root/states/pending/on_events/submit/1/action/0"}),
+            approved=False, native_selected=True, guard_override=True, destroyed_write=True)
+    add("native_snapshot_preserves_complete_queue_envelope", "step", expected=observation(
+        "handled_now", stages=["resolve_closure", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output", "commit"],
+        guard=1, actions=1, committed=True, guarantees=weak_profile,
+        value={"accepted": ["boolean", True], "emissions": 2}),
+        approved=False, native_selected=True, guard_override=True, capture_snapshot=True)
+    for key in ("guard_snapshot", "action_snapshot"):
+        vectors[-1]["expected"]["value"][key] = copy.deepcopy(vectors[-1]["request"]["setup"]["provider_snapshot"])
+    add("native_initial_local_write_destroyed_by_final", "create", bundle_file="machine-initial-write.yaml", expected=observation(
+        "faulted", code="action_fault", stages=["resolve_closure", "evaluate_actions", "validate_output"],
+        actions=1, guarantees=weak_profile,
+        value={"boundary_code": "runtime_provider_output_invalid", "source_locator": "/machines/0/root/states/pending/initial/action/0", "emissions": 0, "status": "faulted"}),
+        approved=False, destroyed_write=True)
+    add("ordinary_initial_destroyed_write_rejected_at_load", "load", bundle_file="machine-initial-control.yaml", expected=observation(
+        "rejected", code="destroyed_variable_write", stages=["resolve_closure", "load"]), opt_in_weak=True)
     add("invalid_action_output_rolls_back", "step", expected=observation(
         "faulted", code="action_fault", stages=["resolve_closure", "evaluate_cel",
           "evaluate_guard", "evaluate_actions", "validate_output"], guard=1, actions=1,
@@ -362,7 +484,9 @@ def render(spec_root: Path) -> dict[str, bytes]:
     })
     test = {"title": "Exact runtime provider and compiler source profile",
             "static": {"documents": [{"file": "machine.yaml", "valid": True},
-                                      {"file": "machine-safe.yaml", "valid": True}]},
+                                      {"file": "machine-safe.yaml", "valid": True},
+                                      {"file": "machine-inert.yaml", "valid": True},
+                                      *[{"file": name, "valid": True} for name in bundles if name not in {"machine.yaml", "machine-safe.yaml"}]]},
             "artifacts": {"documents": [
                 {"file": name, "kind": "json_value", "valid": True}
                 for name in sorted(outputs) if name.endswith(".json")

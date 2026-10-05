@@ -4,7 +4,7 @@
   "issue": "104",
   "old_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
   "proposed_protocol_fingerprint": "sha256:b844d89c472954876ba54ff38511aeb9bfaa0c0bbf7546f3d35a089568315fe8",
-  "manifest_fingerprint": "sha256:01264a3638bbc2cb93bc291dbb219e7d9cc050dfe84c81d70dcf4d4388da5621",
+  "manifest_fingerprint": "sha256:4c5f82adb4c4bc33ffcda3ae21c8f47937210c731708f8d2882a5305ef822b12",
   "affected_capabilities": [
     "source_ordered"
   ],

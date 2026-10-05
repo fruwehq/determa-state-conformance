@@ -9,6 +9,8 @@ events:
         required: true
   accepted:
     direction: output
+  notice:
+    direction: internal
 machines:
   - machine_id: order
     root:

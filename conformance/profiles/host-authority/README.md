@@ -1,6 +1,6 @@
 # Optional host authority profile (SPEC §18)
 
-This profile targets the merged specification at `86bb88dd21cb1f799eefe5020b6e49dabf6e7225`. It applies only to a host that declares the corresponding authority capability. It does not add authority, a clock, journal, coordinator, archive, or worker to the base evaluator.
+This profile targets the merged specification at `77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0`. It applies only to a host that declares the corresponding authority capability. It does not add authority, a clock, journal, coordinator, archive, or worker to the base evaluator.
 
 `vectors.generated.json` fixes 7 accepted and 15 rejected operation outcomes, 4 valid and 2 invalid profile reports, and 3 valid and 4 invalid signed Unix nanosecond values. It also supplies 7 dispatch/result claim checks, 9 native traces, a permanent scope identity allocation check, and 4 base-core authority refusals. Each operation provides the exact nine-field request bytes, twelve-field raw response bytes, trusted invocation, proposed native mutation bytes, one-attempt fault, and complete before/after ledger observations. Replay retains the original request and first response bytes. The generator derives guarded-commit digests from concrete mutation bytes and recomputes their request and evidence digests; it therefore preserves the normative named outcomes rather than pretending the example's illustrative digest has a known byte preimage. The accepted retirement row similarly binds the exact destination of the conditional PostgreSQL topology example.
 

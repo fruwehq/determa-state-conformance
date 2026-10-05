@@ -1,0 +1,47 @@
+format: 1
+namespace: example.runtime_profile
+events:
+  submit:
+    direction: input
+    payload:
+      approved:
+        type: bool
+        required: true
+  accepted:
+    direction: output
+machines:
+  - machine_id: order
+    root:
+      type: composite
+      variables:
+        accepted:
+          type: bool
+          init: false
+      initial:
+        transition_to: pending
+      states:
+        pending:
+          on_events:
+            submit:
+              - guard: event.payload.approved == true
+                action:
+                  - assign:
+                      accepted: 'true'
+              - guard: 'true'
+                action:
+                  - assign:
+                      accepted: 'true'
+                  - send:
+                      event: accepted
+                      to:
+                        external: true
+                      correlation_id: "'provider-correlation'"
+                transition_to: done
+        done:
+          type: final
+      exit:
+        - send:
+            event: accepted
+            to:
+              external: true
+            correlation_id: string(accepted)

@@ -86,3 +86,12 @@ machines:
                       to:
                         external: true
                       correlation_id: "'provider-correlation'"
+                transition_to: done
+        done:
+          type: final
+      exit:
+        - send:
+            event: accepted
+            to:
+              external: true
+            correlation_id: string(accepted)

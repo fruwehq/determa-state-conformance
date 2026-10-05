@@ -23,7 +23,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root, ROOT) == 30
+    assert validate_profile(args.spec_root, ROOT) == 41
     case = ROOT / CASE_REL
     with tempfile.TemporaryDirectory() as temporary:
         clone = Path(temporary)
@@ -54,7 +54,23 @@ def main() -> None:
         probe("source-package.json", lambda body: body.replace(b"event.payload.approved", b"false"))
         probe("source-manifest.json", lambda body: body.replace(b"source_artifact_digest", b"wrong_source_digest"))
         probe("vectors.generated.json", lambda body: body.replace(b"compare_and_swap_conflict", b"retry"))
+        def change_operational(name, transform):
+            def mutate(body):
+                document = json.loads(body)
+                vector = next(item for item in document["vectors"] if item["name"] == name)
+                transform(vector)
+                return json.dumps(document, separators=(",", ":")).encode()
+            return mutate
+
+        probe("vectors.generated.json", change_operational("native_repeated_sends_commit_and_replay",
+              lambda vector: vector["expected"]["value"]["retained_effect_references"][1].update(effect_id="sha256:" + "0" * 64)))
+        probe("vectors.generated.json", change_operational("native_repeated_sends_commit_and_replay",
+              lambda vector: vector["expected"]["value"]["pending_outbox_entries"][1]["intent"].update(effect_id="sha256:" + "0" * 64)))
+        probe("vectors.generated.json", change_operational("native_mixed_sends_have_separate_ordinals",
+              lambda vector: vector["expected"]["value"]["emission_identities"][1].update(emission_index="1")))
         probe("norm-invalid-action-output.json", lambda body: b'{"actions":[]}')
+        probe("norm-multiple-send-identities.json", lambda body: body.replace(b'"emission_index":"1"', b'"emission_index":"0"'))
+        probe("norm-invalid-multiple-send-identities.json", lambda body: (fixture / "norm-multiple-send-identities.json").read_bytes())
         probe("norm-invalid-missing-correlation-action-output.json", lambda body: b'{"actions":[]}')
 
     machine = YAML(typ="safe").load((case / "machine.yaml").read_text())
@@ -88,8 +104,15 @@ def main() -> None:
     assert provider.evaluate_guard(snapshot, guard_override=True) is True
     result = provider.evaluate_actions(snapshot)
     assert result == json.loads((case / "norm-action-output.json").read_text())
+    assert provider.guard_snapshot == snapshot
+    assert provider.evaluate_actions(snapshot, repeat_send=True) == json.loads((case / "norm-multiple-send-action-output.json").read_text())
+    assert provider.action_snapshot == snapshot
     assert provider.evaluate_actions(snapshot, invalid=True) == json.loads(
         (case / "norm-invalid-action-output.json").read_text())
+    mixed_provider = module.Provider()
+    mixed_output = mixed_provider.evaluate_actions(snapshot, mixed_send=True)
+    assert [item.get("send", {}).get("event") for item in mixed_output["actions"]] == [None, "accepted", "notice", "accepted", "notice"]
+    assert mixed_provider.action_calls == 1
     safe_provider = module.Provider()
     provider_before_inspection = copy.deepcopy(safe_provider.__dict__)
     host_inspection_calls = 0
@@ -136,10 +159,21 @@ fn main() {{
     assert_eq!(provider.evaluate_guard(false, None, false, false), Ok(false));
     println!("{{}}", provider.evaluate_actions(false, false, false).unwrap());
     println!("{{}}", provider.evaluate_actions(true, false, false).unwrap());
+    println!("{{}}", provider.evaluate_actions_repeated(false, false, false, true).unwrap());
+    let mut mixed = Provider::default();
+    println!("{{}}", mixed.evaluate_actions_mixed(false, false, false, true).unwrap());
+    assert_eq!(mixed.action_calls, 1);
     assert_eq!(provider.evaluate_actions(false, true, true), Err("action_fault"));
     assert_eq!(provider.external_calls, 1);
     assert_eq!(provider.irreversible_effects, 1);
     assert_eq!(provider.external_effect_log, vec!["fixture-io-1:external_write:before_commit"]);
+    let mut recorded = Provider::default();
+    let snapshot = r#"{{"event":{{"cause_id":"distinct-cause","source":{{"host":true}}}},"variables":["map",[]]}}"#;
+    assert_eq!(recorded.evaluate_guard_snapshot(snapshot, false, Some(true), false, false), Ok(true));
+    recorded.evaluate_actions_snapshot(snapshot, false, false, false, true).unwrap();
+    assert_eq!(recorded.guard_snapshot.as_deref(), Some(snapshot));
+    assert_eq!(recorded.action_snapshot.as_deref(), Some(snapshot));
+    assert_eq!((recorded.guard_calls, recorded.action_calls), (1, 1));
     let safe = Provider::default();
     let before = safe.clone();
     assert_eq!(safe.inspect_guard(true, 1, 2), Ok((true, 1, 2)));
@@ -157,7 +191,8 @@ fn main() {{
             result = subprocess.run([str(executable)], check=True, capture_output=True, text=True)
             outputs = [json.loads(line) for line in result.stdout.splitlines()]
             assert outputs == [json.loads((case / "norm-action-output.json").read_text()),
-                               json.loads((case / "norm-invalid-action-output.json").read_text())]
+                               json.loads((case / "norm-invalid-action-output.json").read_text()),
+                               json.loads((case / "norm-multiple-send-action-output.json").read_text()), mixed_output]
     with tempfile.TemporaryDirectory() as temporary:
         location = Path(temporary)
         adapter = location / "reject_adapter.py"

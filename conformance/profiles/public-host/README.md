@@ -1,7 +1,7 @@
 # Public client and execution-host protocol (§25)
 
 `host-01-protocol` contains the exact approved specification bytes from commit
-`86bb88dd21cb1f799eefe5020b6e49dabf6e7225`: 33 positive messages, 24
+`77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0`: 33 positive messages, 24
 negative messages, 15 invalid responses, the public-host-contract manifest and
 all four current compatibility change records. The validator checks every canonical request
 hash operand, digest, schema, response receipt and nested refusal, and all 101

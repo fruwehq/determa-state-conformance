@@ -239,7 +239,7 @@ def render(spec_root: Path):
         add_clock(name, "delay_nanoseconds", sample["duration"], sample["now"],
                   deadline=deadline, error=sample.get("expected_error"))
     value = {"fixture_format": "determa.timer_helper.conformance", "fixture_schema_version": 1,
-             "specification_commit": "86bb88dd21cb1f799eefe5020b6e49dabf6e7225",
+             "specification_commit": "77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0",
              "machine_file": "machine.yaml", "setup_test_file": "test.yaml",
              "clock_cases": clock, "clock_vectors": clock_vectors, "cases": rows}
     fire_id = admission["fire_event_id"]

@@ -124,6 +124,10 @@ def normalize_transition(transition: dict[str, Any], *, event_transition: bool) 
 
 
 def normalize_state(state: dict[str, Any]) -> None:
+    if "choice" in state:
+        for branch in state["choice"]:
+            normalize_transition(branch, event_transition=False)
+        return
     state.setdefault("type", "simple")
     if state["type"] == "composite":
         state.setdefault("history", "none")

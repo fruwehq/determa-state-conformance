@@ -1,0 +1,60 @@
+format: 1
+namespace: example.runtime_profile
+events:
+  submit:
+    direction: input
+    payload:
+      approved:
+        type: bool
+        required: true
+  accepted:
+    direction: output
+machines:
+  - machine_id: order
+    root:
+      type: composite
+      variables:
+        accepted:
+          type: bool
+          init: false
+      initial:
+        transition_to: pending
+      states:
+        pending:
+          type: composite
+          variables:
+            accepted:
+              type: bool
+              init: false
+          initial:
+            transition_to: done
+            action:
+              - provider_actions:
+                  provider_reference:
+                    identifier: example.native-actions
+                    version: "1.0.0"
+                    content_digest:
+                      sha256:e5bac599a387d00ae6b755a1de9f20b38a5a2f99877be51b66c0610d5922d2fe
+                  source_media_type:
+                    application/vnd.determa.runtime-fixture+json
+                  source_digest:
+                    sha256:9105fdc87698beba2d47f59573619fe34c2b2bd44b34c17ae60f1f0f6c6156a2
+                  dependencies:
+                    - identifier: example.native-common
+                      version: "1.0.0"
+                      content_digest:
+                        sha256:e5bac599a387d00ae6b755a1de9f20b38a5a2f99877be51b66c0610d5922d2fe
+                  capabilities:
+                    deterministic: false
+                    pure: false
+                    portable: false
+                    semantically_introspectable: false
+                    process_contained: false
+                    external_io_capable: true
+                  input_types:
+                    event: event_envelope
+                    variables: typed_variables
+                  output_type: structured_actions
+          states:
+            done:
+              type: final
