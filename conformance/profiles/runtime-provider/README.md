@@ -67,5 +67,7 @@ step, observes the resulting component mailbox, then steps that actual component
 through its `refresh` action. It reports the emitted envelope's payload, variables
 before and after refresh, and mailbox lengths. Invalid proposals fault at the
 containing native action element and leave assignment, queues and outputs
-uncommitted. The fixture source tests compare all eight proposals across Python
+uncommitted. Negative observations include both component runtimes’ variables and
+ready/deferred mailbox lengths from the actual fault result, so partial component
+mutation cannot hide behind an unchanged root projection. The fixture source tests compare all eight proposals across Python
 and Rust 1.86/stable; production certification still requires actual engine runs.

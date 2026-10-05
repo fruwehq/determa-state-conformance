@@ -296,7 +296,12 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
                     "typed component environment was not committed and actually refreshed")
             else:
                 _require(expected["result"] == "faulted" and expected["code"] == "action_fault" and
-                         expected["value"] == {"source_locator": "/machines/0/root/states/pending/on_events/submit/1/action/0"} and
+                         expected["value"]["source_locator"] == "/machines/0/root/states/pending/on_events/submit/1/action/0" and
+                         expected["value"]["component_states_before"] == expected["value"]["component_states_after"] == {
+                             "replica": {"status": "running", "variables": {"limit": ["integer", "1"]},
+                                         "ready_mailbox_length": 0, "deferred_mailbox_length": 0},
+                             "companion": {"status": "running", "variables": {},
+                                           "ready_mailbox_length": 0, "deferred_mailbox_length": 0}} and
                          not expected["determa_state_committed"] and
                          expected["state_before"] == expected["state_after"],
                          "invalid native environment proposal did not atomically roll back")

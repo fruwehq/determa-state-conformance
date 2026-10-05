@@ -309,6 +309,12 @@ def render(spec_root: Path) -> dict[str, bytes]:
         guard=1, actions=1, committed=True, guarantees=weak_profile,
         value={"accepted": ["boolean", True], "emissions": 2}),
         approved=False, native_selected=True, guard_override=True)
+    component_before = {
+        "replica": {"status": "running", "variables": {"limit": ["integer", "1"]},
+                    "ready_mailbox_length": 0, "deferred_mailbox_length": 0},
+        "companion": {"status": "running", "variables": {},
+                      "ready_mailbox_length": 0, "deferred_mailbox_length": 0},
+    }
     for mode in ("valid", "self", "unknown_component", "multiple", "correlation",
                  "empty", "unknown_variable", "wrong_type"):
         valid = mode == "valid"
@@ -323,7 +329,9 @@ def render(spec_root: Path) -> dict[str, bytes]:
                    "component_variables_before": {"limit": ["integer", "1"]},
                    "component_variables_after": {"limit": ["integer", "10"]},
                    "component_ready_before_delivery": 1, "component_ready_after_delivery": 0}
-                  if valid else {"source_locator": "/machines/0/root/states/pending/on_events/submit/1/action/0"})
+                  if valid else {"source_locator": "/machines/0/root/states/pending/on_events/submit/1/action/0",
+                                 "component_states_before": copy.deepcopy(component_before),
+                                 "component_states_after": copy.deepcopy(component_before)})
         add("native_environment_" + mode, "step", expected=expected,
             bundle_file="machine-environment.yaml", environment_send=mode,
             approved=False, native_selected=True, guard_override=True)

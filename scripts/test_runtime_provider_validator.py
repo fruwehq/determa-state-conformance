@@ -82,6 +82,10 @@ def main() -> None:
               lambda vector: vector["expected"]["value"]["component_variables_after"].update(limit=["integer", "1"])))
         probe("vectors.generated.json", change_operational("native_environment_multiple",
               lambda vector: vector["request"]["arguments"].update(environment_send="valid")))
+        probe("vectors.generated.json", change_operational("native_environment_empty",
+              lambda vector: vector["expected"]["value"]["component_states_after"]["replica"].update(ready_mailbox_length=1)))
+        probe("vectors.generated.json", change_operational("native_environment_wrong_type",
+              lambda vector: vector["expected"]["value"]["component_states_after"]["companion"]["variables"].update(leak=["boolean", True])))
         probe("norm-invalid-action-output.json", lambda body: b'{"actions":[]}')
         probe("norm-multiple-send-identities.json", lambda body: body.replace(b'"emission_index":"1"', b'"emission_index":"0"'))
         probe("norm-invalid-multiple-send-identities.json", lambda body: (fixture / "norm-multiple-send-identities.json").read_bytes())
