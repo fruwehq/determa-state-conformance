@@ -49,6 +49,7 @@ jobs:
           python scripts/generate_public_host_profile.py --spec-root .determa-public-host-spec --check
           python scripts/validate_public_host.py --spec-root .determa-public-host-spec
           python scripts/test_public_host_validator.py --spec-root .determa-public-host-spec
+          python scripts/test_public_host_runner.py
 
       - name: Validate fixture sources and schema results
         run: >-

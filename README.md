@@ -83,9 +83,10 @@ claiming the profile run the production adapter driver for an operational result
 The optional [public client/host protocol profile](conformance/profiles/public-host/README.md)
 pins 33 positive, 24 negative, and 15 malformed-response §25 messages, with
 canonical request/receipt hashes and the reviewed public compatibility manifest.
-Its actual-host runner requires independently observed state and same-run native
-proof for every advertised capability. This fixture gate alone makes no production
-host or SaaS conformance claim.
+Its protocol runner checks independently observed state and same-run composition
+metadata. Configured native capability evidence requires separate reviewed
+operational gates; protocol observations alone make no production host or SaaS
+conformance claim.
 
 ## Release 0.3.0
 

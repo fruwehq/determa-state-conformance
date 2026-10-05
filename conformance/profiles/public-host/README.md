@@ -49,11 +49,26 @@ It must use a single configured host instance across each relevant scenario.
 The runner compares complete canonical response values, replays every committed
 mutation using the identical request and binding, and requires the exact first
 wire response bytes on replay. It checks read/refusal nonmutation, prevents replay
-from triggering work, and requires observed state change for first commits. A successful run certifies only the actual
-injected client/host/storage/provider/configuration combination. A capability
-report alone is not evidence of the backing provider, native authority, archive
-participants, or topology. Production release claims require independent native
-proof for those dependencies, tied to the same configured instance and run.
+from triggering work, and requires observed state change for first commits.
+Committed responses must match exactly one independently observed retained
+`public_operation_receipts` record with `scope_binding_identity`, `operation_id`,
+`request_digest`, and `response_bytes_base64`. Returned checkpoints must match
+the complete checkpoint in the observer's `checkpoints` list. First core
+create/admit/process commits require one corresponding actual core call.
+Replay must begin at the first call's complete after-state, including composition.
+Read-only authority and timer commands, refusals, and replays permit none of the
+eight active-work counters to advance.
+
+A successful run establishes protocol observations only. The adapter's
+`native_proof` fields are correlation metadata: checking internally consistent
+digests and proof IDs does not independently execute or certify a capability.
+Configured native capability certification remains unmet until separate reviewed
+operational gates execute against the same configured implementation and
+topology. This includes the execution-store native gate mapping described in
+the [checkpoint profile](../execution-checkpoint/README.md), plus the native
+authority, helper, archive and recovery gates for every advertised operation.
+The native tests and independent observer implementation require source review;
+an adapter-generated expected response or proof ID is never a substitute.
 Portable deterministic closures may compare exact repeat execution; weak or
 nondeterministic providers are checked for artifact bytes, retained evidence,
 identities, capability reports, and refusals only. No SaaS infrastructure is
@@ -64,6 +79,7 @@ for every capability it advertises.
 python scripts/generate_public_host_profile.py --spec-root SPEC --check
 python scripts/validate_public_host.py --spec-root SPEC
 python scripts/test_public_host_validator.py --spec-root SPEC
+python scripts/test_public_host_runner.py
 python scripts/run_public_host_profile.py --spec-root SPEC -- ADAPTER
 ```
 

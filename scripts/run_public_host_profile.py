@@ -80,7 +80,17 @@ def verify_proof(proof: dict, request: dict, response: dict | None, run_id: str)
                 raise ValueError(f'{claim}: foreign native proof {key}')
 
 
-def run_case(command: list[str], case: dict, negative: bool, run_id: str, *, replay: bool = False) -> bytes | None:
+def read_only(request: dict) -> bool:
+    operation, arguments = request['operation'], request['arguments']
+    return (operation in ('read', 'inspect', 'capabilities', 'receipt')
+            or (operation == 'timer_command'
+                and arguments['timer_request']['operation'] == 'read_timer')
+            or (operation == 'scope_operation' and arguments['action'] == 'authority'
+                and arguments['authority_request']['operation'] == 'read_authority'))
+
+
+def run_case(command: list[str], case: dict, negative: bool, run_id: str, *,
+             replay: bool = False, previous_after: dict | None = None) -> tuple[bytes | None, dict]:
     name = case['name']
     invocation = {'run_id': run_id, 'request': case['request'],
                   'transport_context': case.get('transport_context'),
@@ -149,6 +159,9 @@ def run_case(command: list[str], case: dict, negative: bool, run_id: str, *, rep
                 composition[key] != proof[key] for key in composition):
             raise ValueError(f'{name}: observed composition differs from native proof')
     request = case['request']
+    if replay and (previous_after is None or
+                   canonical(previous_after) != canonical(observed['before'])):
+        raise ValueError(f'{name}: replay is not continuous with the committed host state')
     if any(type(item) is not dict for item in observed['before']['checkpoints']):
         raise ValueError(f'{name}: malformed independent checkpoint observation')
     if name == 'unauthorized_scope_precedes_existence':
@@ -166,20 +179,36 @@ def run_case(command: list[str], case: dict, negative: bool, run_id: str, *, rep
     if observed['transport_error'] != expected_transport:
         raise ValueError(f'{name}: transport/client outcome differs')
     request = case['request']
-    if request['operation'] in ('read', 'inspect', 'capabilities', 'receipt') or negative or replay:
+    if read_only(request) or negative or replay:
         if canonical(observed['before']) != canonical(observed['after']):
             raise ValueError(f'{name}: observational/refused operation changed host state')
-    if negative and any(calls.values()):
-        # A rejected operation may consult a native provider but cannot dispatch work.
-        if any(calls[key] for key in ('core_create', 'core_admit', 'core_step',
-                                      'effect_dispatch', 'archive_stage', 'recovery_mutation')):
-            raise ValueError(f'{name}: refused operation performed active work')
-    if (request['operation'] in ('read', 'inspect', 'receipt') or replay) and any(calls.values()):
-        raise ValueError(f'{name}: read/replay invoked active work')
+    if (negative or read_only(request) or replay) and any(calls.values()):
+        raise ValueError(f'{name}: refused/read/replay operation invoked active work')
+    if expected is not None and expected['status'] == 'committed' and expected['receipt'] is not None:
+        retained = {
+            'scope_binding_identity': expected['receipt']['scope_binding_identity'],
+            'operation_id': request['operation_id'],
+            'request_digest': case['request_digest'],
+            'response_bytes_base64': encoded,
+        }
+        matches = [item for item in observed['after']['public_operation_receipts']
+                   if isinstance(item, dict) and item.get('operation_id') == request['operation_id']
+                   and item.get('scope_binding_identity') == retained['scope_binding_identity']]
+        if len(matches) != 1 or canonical(matches[0]) != canonical(retained):
+            raise ValueError(f'{name}: committed response lacks exact retained native receipt')
+        checkpoint = expected['value']['result'].get('checkpoint')
+        if checkpoint is not None:
+            matches = [item for item in observed['after']['checkpoints']
+                       if isinstance(item, dict) and item.get('root_instance_id') == checkpoint['root_instance_id']]
+            if len(matches) != 1 or canonical(matches[0]) != canonical(checkpoint):
+                raise ValueError(f'{name}: committed checkpoint differs from observed native checkpoint')
+        core_call = {'create': 'core_create', 'admit': 'core_admit', 'process': 'core_step'}.get(request['operation'])
+        if not replay and core_call is not None and calls[core_call] != 1:
+            raise ValueError(f'{name}: committed operation lacks its actual core call')
     if not replay and expected is not None and expected['status'] == 'committed' and expected['receipt'] is not None:
         if canonical(observed['before']) == canonical(observed['after']):
             raise ValueError(f'{name}: committed receipt lacks observed host change')
-    return response_bytes
+    return response_bytes, observed['after']
 
 
 def run_invalid_response(command: list[str], case: dict, run_id: str) -> None:
@@ -209,10 +238,11 @@ def main() -> int:
     run_id = str(uuid.uuid4())
     replay_count = 0
     for case in positive:
-        first_bytes = run_case(command, case, False, run_id)
+        first_bytes, first_after = run_case(command, case, False, run_id)
         response = case['response']
         if response['status'] == 'committed' and response['receipt'] is not None:
-            replay_bytes = run_case(command, case, False, run_id, replay=True)
+            replay_bytes, _ = run_case(command, case, False, run_id, replay=True,
+                                       previous_after=first_after)
             if first_bytes != replay_bytes:
                 raise ValueError(f'{case["name"]}: replay changed saved first response bytes')
             replay_count += 1
@@ -220,7 +250,8 @@ def main() -> int:
         run_case(command, case, True, run_id)
     for case in negative_fixture['invalid_responses']:
         run_invalid_response(command, case, run_id)
-    print(f'{len(positive)} positive, {len(negative)} negative and {replay_count} exact replay actual-host calls and {len(negative_fixture['invalid_responses'])} client response refusals passed')
+    print(f'{len(positive)} positive, {len(negative)} negative and {replay_count} replay protocol observations; {len(negative_fixture["invalid_responses"])} client response refusals passed')
+    print('Configured native capability certification remains unmet until separate reviewed operational gates pass.')
     return 0
 
 if __name__ == '__main__':

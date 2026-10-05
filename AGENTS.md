@@ -115,8 +115,9 @@ The public-host protocol profile is pinned to the approved specification
 `python scripts/test_public_host_validator.py --spec-root SPEC` for structural
 fixture and boundary checks. A production claim additionally runs
 `python scripts/run_public_host_profile.py --spec-root SPEC -- ADAPTER` with
-actual client/host calls, independent observations, and same-run native proof
-for every advertised operation and capability. Never synthesize a response from
+actual client/host calls and independent observations. Its composition/proof
+metadata is not native certification: separate reviewed operational gates must
+pass for every advertised operation and capability. Never synthesize a response from
 the expected fixture or infer it from after-state.
 
 ## Releasing
