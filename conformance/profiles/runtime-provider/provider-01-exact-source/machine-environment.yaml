@@ -86,10 +86,30 @@ machines:
                       to:
                         external: true
                       correlation_id: "'provider-correlation'"
-                transition_to: left
-          variables:
-            accepted:
-              type: bool
-              init: false
-        left:
-          type: simple
+          type: parallel
+          components:
+            - component_id: replica
+              with:
+                external:
+                  limit: '1'
+              root:
+                type: composite
+                variables:
+                  limit:
+                    type: int
+                    external: true
+                initial:
+                  transition_to: waiting
+                states:
+                  waiting: {}
+                on_events:
+                  env:
+                    action:
+                      - refresh: {}
+            - component_id: companion
+              root:
+                type: composite
+                initial:
+                  transition_to: waiting
+                states:
+                  waiting: {}

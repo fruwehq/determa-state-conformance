@@ -174,7 +174,17 @@ def render(spec_root: Path) -> dict[str, bytes]:
     initial_control["machines"][0]["root"]["states"]["pending"]["initial"]["action"] = [{"assign": {"accepted": "true"}}]
     mixed_data = copy.deepcopy(data)
     mixed_data["events"]["notice"] = {"direction": "internal"}
-    bundles = {"machine-mixed.yaml": mixed_data, "machine.yaml": data, "machine-safe.yaml": safe_data, "machine-final.yaml": final_data,
+    environment_data = copy.deepcopy(data)
+    environment_pending = environment_data["machines"][0]["root"]["states"]["pending"]
+    environment_pending.update(type="parallel", components=[
+        {"component_id": "replica", "with": {"external": {"limit": "1"}}, "root": {
+            "type": "composite", "variables": {"limit": {"type": "int", "external": True}},
+            "initial": {"transition_to": "waiting"}, "states": {"waiting": {}},
+            "on_events": {"env": {"action": [{"refresh": {}}]}}}},
+        {"component_id": "companion", "root": {"type": "composite",
+            "initial": {"transition_to": "waiting"}, "states": {"waiting": {}}}},
+    ])
+    bundles = {"machine-environment.yaml": environment_data, "machine-mixed.yaml": mixed_data, "machine.yaml": data, "machine-safe.yaml": safe_data, "machine-final.yaml": final_data,
                "machine-final-control.yaml": control_data, "machine-local-write.yaml": local_data,
                "machine-choice-write.yaml": choice_data, "machine-initial-write.yaml": initial_data,
                "machine-initial-control.yaml": initial_control}
@@ -299,6 +309,26 @@ def render(spec_root: Path) -> dict[str, bytes]:
         guard=1, actions=1, committed=True, guarantees=weak_profile,
         value={"accepted": ["boolean", True], "emissions": 2}),
         approved=False, native_selected=True, guard_override=True)
+    for mode in ("valid", "self", "unknown_component", "multiple", "correlation",
+                 "empty", "unknown_variable", "wrong_type"):
+        valid = mode == "valid"
+        expected = observation("handled_now" if valid else "faulted",
+            code=None if valid else "action_fault",
+            stages=["resolve_closure", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output"] +
+                   (["commit", "deliver_env"] if valid else []),
+            guard=1, actions=1, committed=valid, guarantees=weak_profile,
+            value={"accepted": ["boolean", True], "emissions": 2,
+                   "forwarded_event": {"event": "env", "component_id": "replica",
+                       "payload": ["map", [["changed", ["map", [["limit", ["integer", "10"]]]]]]]},
+                   "component_variables_before": {"limit": ["integer", "1"]},
+                   "component_variables_after": {"limit": ["integer", "10"]},
+                   "component_ready_before_delivery": 1, "component_ready_after_delivery": 0}
+                  if valid else {"source_locator": "/machines/0/root/states/pending/on_events/submit/1/action/0"})
+        add("native_environment_" + mode, "step", expected=expected,
+            bundle_file="machine-environment.yaml", environment_send=mode,
+            approved=False, native_selected=True, guard_override=True)
+        if valid:
+            expected["state_after"]["output_count"] = 1
     slot = "/machines/0/root/states/pending/on_events/submit/1/action/0"
     runtime_id = value_digest(["determa-root-runtime-identity-1", "1", bundle_fingerprint_document(data),
                              data["namespace"], "order", "1", "runtime-provider-root-1"])

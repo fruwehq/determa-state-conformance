@@ -43,6 +43,24 @@ impl Provider {
         let internal = r#"{"send":{"event":"notice","to":{"self":true},"payload":["map",[]]}}"#;
         Ok(format!(r#"{{"actions":[{{"assign":{{"variable":"accepted","value":["boolean",true]}}}},{external},{internal},{external},{internal}]}}"#))
     }
+    pub fn evaluate_actions_environment(&mut self, mode: &str) -> Result<String, &'static str> {
+        self.evaluate_actions(false, false, false)?;
+        let target = match mode {
+            "self" => r#""to":{"self":true}"#,
+            "unknown_component" => r#""to":{"component":"missing"}"#,
+            "multiple" => r#""targets":[{"component":"replica"},{"component":"replica"}]"#,
+            _ => r#""to":{"component":"replica"}"#,
+        };
+        let changed = match mode {
+            "empty" => "[]",
+            "unknown_variable" => r#"[["missing",["integer","10"]]]"#,
+            "wrong_type" => r#"[["limit",["string","10"]]]"#,
+            _ => r#"[["limit",["integer","10"]]]"#,
+        };
+        let correlation = if mode == "correlation" { r#", "correlation_id":["string","forbidden"]"# } else { "" };
+        Ok(r#"{"actions":[{"assign":{"variable":"accepted","value":["boolean",true]}},{"send":{"event":"env",TARGET,"payload":["map",[["changed",["map",CHANGED]]]]CORRELATION}}]}"#
+            .replace("TARGET", target).replace("CHANGED", changed).replace("CORRELATION", correlation))
+    }
     pub fn evaluate_guard_snapshot(&mut self, snapshot: &str, approved: bool, override_value: Option<bool>, external_io: bool, fail: bool)
         -> Result<bool, &'static str> {
         self.guard_snapshot = Some(snapshot.into());

@@ -7,6 +7,8 @@ static:
       valid: true
     - file: machine-inert.yaml
       valid: true
+    - file: machine-environment.yaml
+      valid: true
     - file: machine-mixed.yaml
       valid: true
     - file: machine-final.yaml

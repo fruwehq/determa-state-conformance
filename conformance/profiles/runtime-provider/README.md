@@ -1,6 +1,6 @@
 # Exact runtime provider and source compilation profile (unreleased 0.3)
 
-This optional profile targets SPEC §5.4 and the common §11.5 registration boundary at immutable specification commit `77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0`. Its 44 vectors exercise exact installed identity, transitive source closure, weak native execution, action output validation, safe inspection, source compilation, and restoration. CEL guards and structured actions remain mandatory core behavior. Hosts advertise this profile only after running the vectors through their production provider registration, resolver, loader, evaluator, compiler and host commit paths. Source/schema validation alone is not operational certification.
+This optional profile targets SPEC §5.4 and the common §11.5 registration boundary at immutable specification commit `77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0`. Its 52 vectors exercise exact installed identity, transitive source closure, weak native execution, action output validation, safe inspection, source compilation, and restoration. CEL guards and structured actions remain mandatory core behavior. Hosts advertise this profile only after running the vectors through their production provider registration, resolver, loader, evaluator, compiler and host commit paths. Source/schema validation alone is not operational certification.
 
 `provider/test_provider.py` and `provider/test_provider.rs` are executable equivalents. `provider-closure.json` records the exact raw source byte hashes. A provider `content_digest` is SHA-256 over `determa-test-runtime-provider-closure-1\0` followed, in Python then Rust order, by each eight-byte big-endian path length, UTF-8 path bytes, eight-byte big-endian source length, and raw source bytes. `source_digest` hashes the canonical closure JSON bytes. The `example.native-common` reference is a required transitive dependency, even though the test source has no third-party package dependency. A production adapter must independently verify that the actually loaded or compiled code and its complete dependency closure match these bytes, that the exact descriptor is installed, trusted and healthy, and that the configured host policy proves each positive capability. A path or digest copied from the request is not proof. Changed, missing and untrusted closures fail before creation, evaluation, migration target activation or restoration, with no alias substitution or automatic recompilation.
 
@@ -56,3 +56,16 @@ adapter reports that evidence from the production return, then independently
 loads and restores the generated CEL definition with no installed compiler.
 Its runtime capability reports remain strong, and restoration invokes no compiler.
 Historical compilation guarantees do not become generated-core requirements.
+
+Native action proposals may use the same restricted owner-to-component `env`
+forwarding form as ordinary actions. `environment_send` selects actual fixture
+proposals: `valid` sends typed `changed.limit = 10` to static placement `replica`;
+`self`, `unknown_component`, `multiple`, `correlation`, `empty`, `unknown_variable`,
+and `wrong_type` independently violate target or payload rules. The parallel
+placement starts with external `limit = 1`. The positive adapter commits the owner
+step, observes the resulting component mailbox, then steps that actual component
+through its `refresh` action. It reports the emitted envelope's payload, variables
+before and after refresh, and mailbox lengths. Invalid proposals fault at the
+containing native action element and leave assignment, queues and outputs
+uncommitted. The fixture source tests compare all eight proposals across Python
+and Rust 1.86/stable; production certification still requires actual engine runs.
