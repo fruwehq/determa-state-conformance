@@ -22,8 +22,9 @@ SOURCES = {
     'source-order-compatibility-change-v1.json': 'examples/public-host/source-order-compatibility-change-v1.json',
     'timer-evidence-compatibility-change-v1.json': 'examples/public-host/timer-evidence-compatibility-change-v1.json',
     'provider-correlation-compatibility-change-v1.json': 'examples/public-host/provider-correlation-compatibility-change-v1.json',
+    'native-slot-identities-compatibility-change-v1.json': 'examples/public-host/native-slot-identities-compatibility-change-v1.json',
 }
-SPEC_PIN = '86bb88dd21cb1f799eefe5020b6e49dabf6e7225'
+SPEC_PIN = '77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0'
 
 
 def strict_const(validator, expected, instance, schema):
@@ -120,7 +121,7 @@ def check_response(request: dict, request_digest: str, response: dict, label: st
 
 def check_manifest(spec_root: Path, manifest: dict, records: list[dict], vv: dict) -> None:
     schema_ok(vv['public-host-contract'], manifest, 'boundary manifest')
-    require({record['issue'] for record in records} == {'96', '104', '106', '108'},
+    require({record['issue'] for record in records} == {'96', '104', '106', '108', '110'},
             'required public compatibility change records absent')
     for record in records:
         schema_ok(vv['public-host-change-record'], record, 'change record')

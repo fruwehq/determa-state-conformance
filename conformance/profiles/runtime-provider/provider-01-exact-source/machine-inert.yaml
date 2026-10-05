@@ -1,0 +1,19 @@
+format: 1
+namespace: example.inert_provider_metadata
+meta:
+  provider_actions: ordinary-data
+  guard:
+    provider: ordinary-data
+machines:
+  - machine_id: inert
+    root:
+      type: simple
+      meta:
+        provider_actions: ordinary-data
+      variables:
+        record:
+          type: map
+          init:
+            provider_actions: ordinary-data
+            guard:
+              provider: ordinary-data

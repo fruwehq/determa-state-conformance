@@ -23,7 +23,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root, ROOT) == 30
+    assert validate_profile(args.spec_root, ROOT) == 32
     case = ROOT / CASE_REL
     with tempfile.TemporaryDirectory() as temporary:
         clone = Path(temporary)
@@ -55,6 +55,8 @@ def main() -> None:
         probe("source-manifest.json", lambda body: body.replace(b"source_artifact_digest", b"wrong_source_digest"))
         probe("vectors.generated.json", lambda body: body.replace(b"compare_and_swap_conflict", b"retry"))
         probe("norm-invalid-action-output.json", lambda body: b'{"actions":[]}')
+        probe("norm-multiple-send-identities.json", lambda body: body.replace(b'"emission_index":"1"', b'"emission_index":"0"'))
+        probe("norm-invalid-multiple-send-identities.json", lambda body: (fixture / "norm-multiple-send-identities.json").read_bytes())
         probe("norm-invalid-missing-correlation-action-output.json", lambda body: b'{"actions":[]}')
 
     machine = YAML(typ="safe").load((case / "machine.yaml").read_text())
@@ -88,6 +90,7 @@ def main() -> None:
     assert provider.evaluate_guard(snapshot, guard_override=True) is True
     result = provider.evaluate_actions(snapshot)
     assert result == json.loads((case / "norm-action-output.json").read_text())
+    assert provider.evaluate_actions(snapshot, repeat_send=True) == json.loads((case / "norm-multiple-send-action-output.json").read_text())
     assert provider.evaluate_actions(snapshot, invalid=True) == json.loads(
         (case / "norm-invalid-action-output.json").read_text())
     safe_provider = module.Provider()
@@ -136,6 +139,7 @@ fn main() {{
     assert_eq!(provider.evaluate_guard(false, None, false, false), Ok(false));
     println!("{{}}", provider.evaluate_actions(false, false, false).unwrap());
     println!("{{}}", provider.evaluate_actions(true, false, false).unwrap());
+    println!("{{}}", provider.evaluate_actions_repeated(false, false, false, true).unwrap());
     assert_eq!(provider.evaluate_actions(false, true, true), Err("action_fault"));
     assert_eq!(provider.external_calls, 1);
     assert_eq!(provider.irreversible_effects, 1);
@@ -157,7 +161,8 @@ fn main() {{
             result = subprocess.run([str(executable)], check=True, capture_output=True, text=True)
             outputs = [json.loads(line) for line in result.stdout.splitlines()]
             assert outputs == [json.loads((case / "norm-action-output.json").read_text()),
-                               json.loads((case / "norm-invalid-action-output.json").read_text())]
+                               json.loads((case / "norm-invalid-action-output.json").read_text()),
+                               json.loads((case / "norm-multiple-send-action-output.json").read_text())]
     with tempfile.TemporaryDirectory() as temporary:
         location = Path(temporary)
         adapter = location / "reject_adapter.py"

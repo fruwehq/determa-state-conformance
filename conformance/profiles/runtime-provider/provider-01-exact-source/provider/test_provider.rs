@@ -26,6 +26,13 @@ impl Provider {
         if invalid { return Ok("{\"actions\":[{\"assign\":{\"variable\":\"accepted\",\"value\":[\"boolean\",true]}},{\"stop\":{}}]}".into()); }
         Ok("{\"actions\":[{\"assign\":{\"variable\":\"accepted\",\"value\":[\"boolean\",true]}},{\"send\":{\"event\":\"accepted\",\"to\":{\"external\":true},\"payload\":[\"map\",[]],\"correlation_id\":[\"string\",\"provider-correlation\"]}}]}".into())
     }
+    pub fn evaluate_actions_repeated(&mut self, invalid: bool, fail: bool, external_io: bool, repeat_send: bool)
+        -> Result<String, &'static str> {
+        let output = self.evaluate_actions(invalid, fail, external_io)?;
+        if !repeat_send || invalid { return Ok(output); }
+        let send = r#"{"send":{"event":"accepted","to":{"external":true},"payload":["map",[]],"correlation_id":["string","provider-correlation"]}}"#;
+        Ok(format!(r#"{{"actions":[{{"assign":{{"variable":"accepted","value":["boolean",true]}}}},{send},{send}]}}"#))
+    }
     pub fn inspect_guard(&self, approved: bool, guards: u64, steps: u64)
         -> Result<(bool,u64,u64), &'static str> {
         if guards < 1 || steps < 2 { return Err("inspection_limit_exceeded"); }

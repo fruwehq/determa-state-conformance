@@ -1,0 +1,25 @@
+{
+  "definition": [
+    "example.runtime_profile",
+    "order",
+    "1"
+  ],
+  "root_instance_id": "native-slot-root-1",
+  "emitting_runtime_id": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "cause_id": "native-slot-event-1",
+  "step_sequence": "1",
+  "action_document_pointer": "/machines/0/root/states/pending/on_events/submit/1/action/0",
+  "output_file": "multiple-send-action-output.json",
+  "external_emissions": [
+    {
+      "emission_index": "0",
+      "sequence": "0",
+      "effect_id": "sha256:d99a0c6740bc56c1b289e2e27cb6bdc3a089e740d24a28cf20485f3dea9b1258"
+    },
+    {
+      "emission_index": "1",
+      "sequence": "1",
+      "effect_id": "sha256:d99a0c6740bc56c1b289e2e27cb6bdc3a089e740d24a28cf20485f3dea9b1258"
+    }
+  ]
+}

@@ -18,6 +18,8 @@ EXAMPLES = (
     "invalid-guard-output-type.json", "invalid-missing-correlation-action-output.json",
     "invalid-provider-digest.json",
     "language-source-v1.json", "mixed-cel-native.yaml",
+    "multiple-send-action-output.json", "multiple-send-identities.json",
+    "invalid-multiple-send-identities.json", "inert-provider-metadata.yaml",
 )
 SOURCES = ("provider/test_provider.py", "provider/test_provider.rs")
 REQUIRED = frozenset((
@@ -32,6 +34,7 @@ REQUIRED = frozenset((
     "restore_changed_runtime", "restore_untrusted_runtime", "compile_changed_compiler",
     "compile_untrusted_compiler", "compile_manifest_fingerprint_mismatch",
     "compile_source_digest_mismatch", "compile_limit_exceeded",
+    "native_repeated_sends_have_distinct_ids", "load_inert_provider_metadata",
 ))
 
 
@@ -95,6 +98,21 @@ def validate_positive_semantics(machine: dict, output: dict) -> None:
         if "send" in action and action["send"].get("to") == {"external": True}:
             _require(action["send"].get("correlation_id") == ["string", "provider-correlation"],
                      "external provider proposal lacks a nonempty typed correlation")
+
+
+def validate_native_emission_identities(record: dict) -> None:
+    """Recompute identities from declared operands, independently of the generator."""
+    _require(set(record) == {"definition", "root_instance_id", "emitting_runtime_id", "cause_id", "step_sequence", "action_document_pointer", "output_file", "external_emissions"}, "native identity vector shape changed")
+    ids = []
+    for ordinal, emission in enumerate(record["external_emissions"]):
+        _require(set(emission) == {"effect_id", "emission_index", "sequence"}, "native emission shape changed")
+        _require(emission["emission_index"] == str(ordinal) and emission["sequence"] == str(ordinal), "native slot ordinal reset")
+        expected = digest(["determa-effect-identity-1", "1", record["definition"], record["root_instance_id"],
+                           record["emitting_runtime_id"], record["cause_id"], record["step_sequence"],
+                           record["action_document_pointer"], emission["emission_index"]])
+        _require(emission["effect_id"] == expected, "native effect identity differs from its slot operands")
+        ids.append(emission["effect_id"])
+    _require(len(ids) == 2 and len(set(ids)) == 2, "native repeated sends lost distinct identities")
 
 
 def validate_profile(spec_root: Path, repository_root: Path) -> int:
@@ -234,6 +252,20 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
                                          registry=registry).iter_errors(invalid_output))),
              "invalid action example became valid")
 
+    multiple_output = json.loads((case / "norm-multiple-send-action-output.json").read_text())
+    _validate(schemas["runtime-action-output-v1.schema.json"], multiple_output, registry, "multiple native sends")
+    validate_positive_semantics(machine, multiple_output)
+    _require(multiple_output["actions"][1] == multiple_output["actions"][2], "repeated-send fixture no longer repeats a send")
+    validate_native_emission_identities(json.loads((case / "norm-multiple-send-identities.json").read_text()))
+    try:
+        validate_native_emission_identities(json.loads((case / "norm-invalid-multiple-send-identities.json").read_text()))
+    except RuntimeProviderValidationError:
+        pass
+    else:
+        raise RuntimeProviderValidationError("duplicate native identity negative became valid")
+    inert = YAML(typ="safe").load((case / "machine-inert.yaml").read_text())
+    _validate(schemas["machine.schema.json"], inert, registry, "inert provider metadata")
+    _require((case / "machine-inert.yaml").read_bytes() == (spec_root / "examples/providers/inert-provider-metadata.yaml").read_bytes(), "inert provider machine differs from specification")
     for vector in manifest["vectors"]:
         request = vector["request"]
         expected = vector["expected"]
@@ -293,6 +325,18 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
                      f"{vector['name']}: failed operation committed")
         if vector["name"].startswith("load_") and expected["result"] == "rejected":
             _require(not any(expected["calls"].values()), "rejected load invoked provider")
+    repeated = next(vector for vector in manifest["vectors"] if vector["name"] == "native_repeated_sends_have_distinct_ids")
+    setup = repeated["request"]["setup"]
+    slot = "/machines/0/root/states/pending/on_events/submit/1/action/0"
+    identities = repeated["expected"]["value"]["emission_identities"]
+    _require(len(identities) == 3, "native operational output lost a send")
+    for position, identity in enumerate(identities):
+        pointer = slot if position < 2 else "/machines/0/root/states/pending/on_events/submit/1/action/1/send"
+        ordinal = position if position < 2 else 0
+        expected_id = digest(["determa-effect-identity-1", "1", [machine["namespace"], "order", "1"],
+                              setup["create_request"]["root_instance_id"], setup["target_runtime_id"],
+                              setup["envelope"]["cause_id"], "1", pointer, str(ordinal)])
+        _require(identity == {"effect_id": expected_id, "emission_index": str(ordinal), "sequence": str(position)}, "native operational identity/receipt index changed")
     io_failure = next(v for v in manifest["vectors"] if v["name"] == "native_io_then_cas_conflict")
     _require(io_failure["request"]["arguments"]["maximum_attempts"] == 1 and
              io_failure["expected"]["irreversible_side_effects"] == 1 and

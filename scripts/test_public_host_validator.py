@@ -44,14 +44,15 @@ def main() -> int:
     records = [load(CASE / name) for name in ('compatibility-change-v1.json',
                'source-order-compatibility-change-v1.json',
                'timer-evidence-compatibility-change-v1.json',
-               'provider-correlation-compatibility-change-v1.json')]
+               'provider-correlation-compatibility-change-v1.json',
+               'native-slot-identities-compatibility-change-v1.json')]
     altered_manifest = copy.deepcopy(manifest)
     altered_manifest['boundary_sources'].pop(0)
     rejected('boundary source removal', lambda: check_manifest(spec_root, altered_manifest, records, vv))
     rejected('change record omitted', lambda: check_manifest(spec_root, manifest, records[:-1], vv))
     altered_records = copy.deepcopy(records)
     altered_records[-1]['manifest_fingerprint'] = 'sha256:' + '0' * 64
-    rejected('stale fourth change record', lambda: check_manifest(
+    rejected('stale final change record', lambda: check_manifest(
              spec_root, manifest, altered_records, vv))
     altered_manifest = copy.deepcopy(manifest)
     altered_manifest['boundary_sources'][0]['sha256'] = 'sha256:' + '0' * 64

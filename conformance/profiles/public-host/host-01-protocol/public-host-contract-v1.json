@@ -8,7 +8,7 @@
   "boundary_sources": [
     {
       "path": "SPEC.md",
-      "sha256": "sha256:7ec57ac4be248d7b7cf58a7a4fc09e64a4862fc4d55a8fbb57f199434024bfd4"
+      "sha256": "sha256:8fd620b0b0c0744b0678b18afbe17b885d7a913f147f8f0f96de07f3e9d39383"
     },
     {
       "path": "VERSION",
@@ -204,7 +204,7 @@
     },
     {
       "path": "examples/public-host/README.md",
-      "sha256": "sha256:4e1e8c40d248c794d14c2e2965123477e3282d1af914d1a9cfbd4feb00a86a16"
+      "sha256": "sha256:e903e8efca532635f408f0060dc1360f97ef814a7d7326cb2a26748a54c5fd1b"
     },
     {
       "path": "examples/effects/active-effect-claim-v1.json",
@@ -408,7 +408,23 @@
     },
     {
       "path": "examples/providers/README.md",
-      "sha256": "sha256:6a8a34c81ead0c609e84dee64d9fd9fb8a2a5f6e0b720b3f349541d13d375e7f"
+      "sha256": "sha256:9f6efecffa196ede571e10f8a5888ee5646b85376ae35f9a78fe74591ddf5cad"
+    },
+    {
+      "path": "examples/providers/inert-provider-metadata.yaml",
+      "sha256": "sha256:42cfa9ec6b0d1245b2c2b615dde12595041e0cd2c9e7b1a765b6c77dafdcc1ca"
+    },
+    {
+      "path": "examples/providers/invalid-multiple-send-identities.json",
+      "sha256": "sha256:b06341149866af4e2b81dec3cb5d4d3c31c8a8a4e9adae5c0024b434145bf2b8"
+    },
+    {
+      "path": "examples/providers/multiple-send-action-output.json",
+      "sha256": "sha256:d8bb866c3121b4c295aee8e68238df37d3790a509d68ee7acf9b31c2040bac8e"
+    },
+    {
+      "path": "examples/providers/multiple-send-identities.json",
+      "sha256": "sha256:50fa89b5bb5ee85b9f7b7fa2f73c88869579417ba62b8081102098a87c27233c"
     }
   ],
   "hash_domains": [

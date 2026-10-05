@@ -14,7 +14,7 @@ from validate_conformance import hash_value, expected_core_step_result
 
 ROOT = Path(__file__).resolve().parents[1]
 SPEC = ROOT.parent / 'determa-state-spec'
-SPEC_PIN = '86bb88dd21cb1f799eefe5020b6e49dabf6e7225'
+SPEC_PIN = '77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0'
 TARGET = ROOT / 'conformance/profiles/lossless-delivery/delivery-01-source-transfer'
 EXAMPLES = ('delivery-v1-cases', 'execution-checkpoint-transfer-v1',
             'queue-placement-checkpoints-v1', 'outbound-checkpoint-lifecycle-v1',

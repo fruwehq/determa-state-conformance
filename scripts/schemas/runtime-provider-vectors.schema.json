@@ -9,8 +9,8 @@
     "version": {"const": 1},
     "source_files": {"const": ["provider/test_provider.py", "provider/test_provider.rs"]},
     "source_closure_file": {"const": "provider-closure.json"},
-    "normative_examples": {"type": "array", "minItems": 10, "maxItems": 10, "uniqueItems": true, "items": {"type": "string"}},
-    "vectors": {"type": "array", "minItems": 30, "maxItems": 30, "items": {"$ref": "#/$defs/vector"}}
+    "normative_examples": {"type": "array", "minItems": 14, "maxItems": 14, "uniqueItems": true, "items": {"type": "string"}},
+    "vectors": {"type": "array", "minItems": 32, "maxItems": 32, "items": {"$ref": "#/$defs/vector"}}
   },
   "$defs": {
     "digest": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
@@ -39,7 +39,7 @@
       "additionalProperties": false,
       "properties": {
         "operation": {"enum": ["load", "step", "host_commit", "inspect", "restore", "compile"]},
-        "bundle": {"enum": ["machine.yaml", "machine-safe.yaml", "norm-compiled-machine.json"]},
+        "bundle": {"enum": ["machine.yaml", "machine-safe.yaml", "machine-inert.yaml", "norm-compiled-machine.json"]},
         "installed": {"$ref": "#/$defs/installed"},
         "setup": {"type": ["object", "null"], "required": ["create_request", "target_runtime_id", "envelope", "provider_snapshot"], "additionalProperties": false,
           "properties": {"create_request": {"type": "object"}, "target_runtime_id": {"$ref": "#/$defs/digest"}, "envelope": {"type": "object"}, "provider_snapshot": {"type": "object"}}},
@@ -47,7 +47,7 @@
           "properties": {
             "opt_in_weak": {"type": "boolean"}, "approved": {"type": "boolean"},
             "native_selected": {"type": "boolean"}, "guard_override": {"type": "boolean"},
-            "invalid_output": {"type": "boolean"}, "action_fail": {"type": "boolean"},
+            "repeat_send": {"type": "boolean"}, "invalid_output": {"type": "boolean"}, "action_fail": {"type": "boolean"},
             "action_external_io": {"type": "boolean"}, "cas_conflict": {"type": "boolean"},
             "maximum_attempts": {"type": "integer", "minimum": 1},
             "mode": {"enum": ["structural", "semantic"]},

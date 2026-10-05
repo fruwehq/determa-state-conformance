@@ -12,7 +12,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 PROFILE = ROOT / "conformance/profiles/extension-negotiation"
 SPEC_CASES = "examples/extensions/capability-cases-v1.json"
-SPEC_PIN = "86bb88dd21cb1f799eefe5020b6e49dabf6e7225"
+SPEC_PIN = "77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0"
 
 
 def render(spec_root: Path, profile: Path = PROFILE) -> bytes:

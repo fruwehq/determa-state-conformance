@@ -27,7 +27,7 @@ class Provider:
         reply = ExternalReply(approved)
         return bool(reply.approved if guard_override is None else guard_override)
 
-    def evaluate_actions(self, snapshot, *, invalid=False, fail=False, external_io=False):
+    def evaluate_actions(self, snapshot, *, invalid=False, fail=False, external_io=False, repeat_send=False):
         self.action_calls += 1
         if external_io:
             self.external_calls += 1
@@ -41,12 +41,15 @@ class Provider:
                 {"assign": {"variable": "accepted", "value": ["boolean", True]}},
                 {"stop": {}},
             ]}
-        return {"actions": [
+        output = {"actions": [
             {"assign": {"variable": "accepted", "value": ["boolean", True]}},
             {"send": {"event": "accepted", "to": {"external": True},
                       "payload": ["map", []],
                       "correlation_id": ["string", "provider-correlation"]}},
         ]}
+        if repeat_send:
+            output["actions"].append(output["actions"][1].copy())
+        return output
 
     def inspect_guard(self, snapshot, maximum_guard_evaluations, maximum_evaluation_steps):
         if maximum_guard_evaluations < 1 or maximum_evaluation_steps < 2:

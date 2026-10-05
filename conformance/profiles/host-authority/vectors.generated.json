@@ -1,7 +1,7 @@
 {
   "format": "determa.host-authority-driver-v1",
   "schema_version": 1,
-  "specification_commit": "86bb88dd21cb1f799eefe5020b6e49dabf6e7225",
+  "specification_commit": "77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0",
   "operations": [
     {
       "id": "authorized_read",

@@ -5,6 +5,8 @@ static:
       valid: true
     - file: machine-safe.yaml
       valid: true
+    - file: machine-inert.yaml
+      valid: true
 artifacts:
   documents:
     - file: actions-descriptor.json
@@ -34,10 +36,19 @@ artifacts:
     - file: norm-invalid-missing-correlation-action-output.json
       kind: json_value
       valid: true
+    - file: norm-invalid-multiple-send-identities.json
+      kind: json_value
+      valid: true
     - file: norm-invalid-provider-digest.json
       kind: json_value
       valid: true
     - file: norm-language-source-v1.json
+      kind: json_value
+      valid: true
+    - file: norm-multiple-send-action-output.json
+      kind: json_value
+      valid: true
+    - file: norm-multiple-send-identities.json
       kind: json_value
       valid: true
     - file: provider-closure.json

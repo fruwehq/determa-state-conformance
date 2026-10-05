@@ -22,6 +22,8 @@ NORMATIVE = (
     "invalid-guard-output-type.json", "invalid-missing-correlation-action-output.json",
     "invalid-provider-digest.json",
     "language-source-v1.json", "mixed-cel-native.yaml",
+    "multiple-send-action-output.json", "multiple-send-identities.json",
+    "invalid-multiple-send-identities.json", "inert-provider-metadata.yaml",
 )
 DOMAIN = b"determa-test-runtime-provider-closure-1\0"
 
@@ -157,6 +159,7 @@ def render(spec_root: Path) -> dict[str, bytes]:
     outputs["source-package.json"] = canonical(source)
     outputs["source-manifest.json"] = canonical(manifest)
 
+    outputs["machine-inert.yaml"] = (spec_root / "examples/providers/inert-provider-metadata.yaml").read_bytes()
     installed = [dependency, guard["provider_reference"], actions["provider_reference"]]
     compiler_installed = [dependency, reference("example.guard-compiler", digest)]
     exact = {"mode": "exact", "providers": installed, "closure_digest": digest,
@@ -251,6 +254,23 @@ def render(spec_root: Path) -> dict[str, bytes]:
         guard=1, actions=1, committed=True, guarantees=weak_profile,
         value={"accepted": ["boolean", True], "emissions": 2}),
         approved=False, native_selected=True, guard_override=True)
+    slot = "/machines/0/root/states/pending/on_events/submit/1/action/0"
+    runtime_id = value_digest(["determa-root-runtime-identity-1", "1", bundle_fingerprint_document(data),
+                             data["namespace"], "order", "1", "runtime-provider-root-1"])
+    identities = [{"effect_id": value_digest(["determa-effect-identity-1", "1", [data["namespace"], "order", "1"],
+                   "runtime-provider-root-1", runtime_id, "runtime-provider-event-1", "1", pointer, str(index)]),
+                   "emission_index": str(index), "sequence": str(sequence)}
+                  for pointer, index, sequence in [(slot, 0, 0), (slot, 1, 1), (slot.replace("action/0", "action/1/send"), 0, 2)]]
+    add("native_repeated_sends_have_distinct_ids", "step", expected=observation(
+        "handled_now", stages=["resolve_closure", "evaluate_cel", "evaluate_guard",
+                               "evaluate_actions", "validate_output", "commit"],
+        guard=1, actions=1, committed=True, guarantees=weak_profile,
+        value={"accepted": ["boolean", True], "emissions": 3, "emission_identities": identities}),
+        approved=False, native_selected=True, guard_override=True, repeat_send=True)
+    add("load_inert_provider_metadata", "load", bundle_file="machine-inert.yaml", expected=observation(
+        "accepted", stages=["resolve_closure", "verify_capabilities", "load"],
+        guarantees=dict.fromkeys(("deterministic", "pure", "portable", "semantically_introspectable", "process_contained"), True) | {"external_io_capable": False}),
+        opt_in_weak=True)
     add("invalid_action_output_rolls_back", "step", expected=observation(
         "faulted", code="action_fault", stages=["resolve_closure", "evaluate_cel",
           "evaluate_guard", "evaluate_actions", "validate_output"], guard=1, actions=1,
@@ -362,7 +382,8 @@ def render(spec_root: Path) -> dict[str, bytes]:
     })
     test = {"title": "Exact runtime provider and compiler source profile",
             "static": {"documents": [{"file": "machine.yaml", "valid": True},
-                                      {"file": "machine-safe.yaml", "valid": True}]},
+                                      {"file": "machine-safe.yaml", "valid": True},
+                                      {"file": "machine-inert.yaml", "valid": True}]},
             "artifacts": {"documents": [
                 {"file": name, "kind": "json_value", "valid": True}
                 for name in sorted(outputs) if name.endswith(".json")
