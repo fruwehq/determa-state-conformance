@@ -7,7 +7,7 @@
   "lifecycle_dispositions": [],
   "rejection": null,
   "state": {
-    "aggregate_state_digest": "sha256:36010ded4cdb89879f73c0245dc2f8b050578bb9d837b868b3a3e7651dc130ff",
+    "aggregate_state_digest": "sha256:d60bf09c692535c42880989ea85168ebffb6d1cf96fb7f51db2b3b5c4a69b729",
     "aggregate_state_format": "determa.aggregate_state",
     "aggregate_state_schema_version": 1,
     "creation_id": "create-server-1",
@@ -15,7 +15,7 @@
     "migration_sequence": "0",
     "namespace": "example.transaction_server",
     "next_acceptance_sequence": "1",
-    "next_logical_step_sequence": "3",
+    "next_logical_step_sequence": "2",
     "next_output_sequence": "0",
     "next_queue_sequence": "2",
     "root_instance_id": "server-1",

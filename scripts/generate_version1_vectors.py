@@ -1500,6 +1500,13 @@ def outputs() -> dict[Path, bytes]:
             result[directory / name] = data
     for path in LIFECYCLE_RECEIPT_RESULTS:
         result[path] = produce_lifecycle_receipt_result(path)
+    mailbox = LIFECYCLE_RECEIPT_RESULTS[0].parent
+    deferred = load(mailbox / "repeated-deferral-result.json")
+    deferred["state"]["next_logical_step_sequence"] = load(
+        mailbox / "repeated-before.json"
+    )["next_logical_step_sequence"]
+    deferred["state"] = seal_aggregate(deferred["state"])
+    result[mailbox / "repeated-deferral-result.json"] = canonical(deferred)
     for case in (PERSISTENCE, LIFECYCLE_RECEIPT_RESULTS[0].parent, CHECKPOINT):
         path = case / "operation-failures.json"
         result[path] = canonical(load(path))
