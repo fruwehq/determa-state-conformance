@@ -23,6 +23,9 @@ EXAMPLES = (
 )
 SOURCES = ("provider/test_provider.py", "provider/test_provider.rs")
 REQUIRED = frozenset((
+    "native_environment_valid", "native_environment_self", "native_environment_unknown_component",
+    "native_environment_multiple", "native_environment_correlation", "native_environment_empty",
+    "native_environment_unknown_variable", "native_environment_wrong_type",
     "load_exact_weak_opt_in", "load_missing_dependency", "load_changed_dependency",
     "load_untrusted_closure", "load_changed_source_bytes", "load_strong_host_refuses_weak",
     "cel_first_skips_native", "native_false_no_actions", "native_action_proposals",
@@ -274,6 +277,34 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
     for vector in manifest["vectors"]:
         request = vector["request"]
         expected = vector["expected"]
+        if vector["name"].startswith("native_environment_"):
+            mode = vector["name"].removeprefix("native_environment_")
+            _require(request["bundle"] == "machine-environment.yaml" and
+                     request["arguments"].get("environment_send") == mode and
+                     expected["calls"]["guard"] == expected["calls"]["actions"] == 1,
+                     "environment proposal request or provider calls changed")
+            if mode == "valid":
+                _require(expected["value"] == {
+                    "accepted": ["boolean", True], "emissions": 2,
+                    "forwarded_event": {"event": "env", "component_id": "replica",
+                        "payload": ["map", [["changed", ["map", [["limit", ["integer", "10"]]]]]]]},
+                    "component_variables_before": {"limit": ["integer", "1"]},
+                    "component_variables_after": {"limit": ["integer", "10"]},
+                    "component_ready_before_delivery": 1, "component_ready_after_delivery": 0} and
+                    expected["state_after"]["output_count"] == 1 and
+                    expected["stages"][-2:] == ["commit", "deliver_env"],
+                    "typed component environment was not committed and actually refreshed")
+            else:
+                _require(expected["result"] == "faulted" and expected["code"] == "action_fault" and
+                         expected["value"]["source_locator"] == "/machines/0/root/states/pending/on_events/submit/1/action/0" and
+                         expected["value"]["component_states_before"] == expected["value"]["component_states_after"] == {
+                             "replica": {"status": "running", "variables": {"limit": ["integer", "1"]},
+                                         "ready_mailbox_length": 0, "deferred_mailbox_length": 0},
+                             "companion": {"status": "running", "variables": {},
+                                           "ready_mailbox_length": 0, "deferred_mailbox_length": 0}} and
+                         not expected["determa_state_committed"] and
+                         expected["state_before"] == expected["state_after"],
+                         "invalid native environment proposal did not atomically roll back")
         compiler_calls = expected["calls"]["compile_region"]
         _require(compiler_calls == (1 if vector["name"] in {
             "compile_exact_source", "compile_bad_region_source",

@@ -38,7 +38,7 @@ class Provider:
         reply = ExternalReply(approved)
         return bool(reply.approved if guard_override is None else guard_override)
 
-    def evaluate_actions(self, snapshot, *, invalid=False, fail=False, external_io=False, repeat_send=False, mixed_send=False):
+    def evaluate_actions(self, snapshot, *, invalid=False, fail=False, external_io=False, repeat_send=False, mixed_send=False, environment_send=None):
         self.action_snapshot = portable_copy(snapshot)
         self.action_calls += 1
         if external_io:
@@ -59,6 +59,26 @@ class Provider:
                       "payload": ["map", []],
                       "correlation_id": ["string", "provider-correlation"]}},
         ]}
+        if environment_send is not None:
+            send = {"event": "env", "to": {"component": "replica"},
+                    "payload": ["map", [["changed", ["map", [["limit", ["integer", "10"]]]]]]]}
+            if environment_send == "self":
+                send["to"] = {"self": True}
+            elif environment_send == "unknown_component":
+                send["to"] = {"component": "missing"}
+            elif environment_send == "multiple":
+                del send["to"]
+                send["targets"] = [{"component": "replica"}, {"component": "replica"}]
+            elif environment_send == "correlation":
+                send["correlation_id"] = ["string", "forbidden"]
+            elif environment_send == "empty":
+                send["payload"] = ["map", [["changed", ["map", []]]]]
+            elif environment_send == "unknown_variable":
+                send["payload"] = ["map", [["changed", ["map", [["missing", ["integer", "10"]]]]]]]
+            elif environment_send == "wrong_type":
+                send["payload"] = ["map", [["changed", ["map", [["limit", ["string", "10"]]]]]]]
+            output["actions"][1] = {"send": send}
+            return output
         if mixed_send:
             internal = {"send": {"event": "notice", "to": {"self": True}, "payload": ["map", []]}}
             output["actions"].extend([internal, output["actions"][1].copy(), internal.copy()])

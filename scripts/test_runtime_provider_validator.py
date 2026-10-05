@@ -23,7 +23,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--spec-root", type=Path, required=True)
     args = parser.parse_args()
-    assert validate_profile(args.spec_root, ROOT) == 44
+    assert validate_profile(args.spec_root, ROOT) == 52
     case = ROOT / CASE_REL
     with tempfile.TemporaryDirectory() as temporary:
         clone = Path(temporary)
@@ -78,6 +78,14 @@ def main() -> None:
               lambda vector: vector["expected"]["value"].update(source_artifact_digest="sha256:" + "0" * 64)))
         probe("vectors.generated.json", change_operational("compile_weak_without_manifest",
               lambda vector: vector["expected"]["value"]["restored_runtime_capabilities"].update(pure=False)))
+        probe("vectors.generated.json", change_operational("native_environment_valid",
+              lambda vector: vector["expected"]["value"]["component_variables_after"].update(limit=["integer", "1"])))
+        probe("vectors.generated.json", change_operational("native_environment_multiple",
+              lambda vector: vector["request"]["arguments"].update(environment_send="valid")))
+        probe("vectors.generated.json", change_operational("native_environment_empty",
+              lambda vector: vector["expected"]["value"]["component_states_after"]["replica"].update(ready_mailbox_length=1)))
+        probe("vectors.generated.json", change_operational("native_environment_wrong_type",
+              lambda vector: vector["expected"]["value"]["component_states_after"]["companion"]["variables"].update(leak=["boolean", True])))
         probe("norm-invalid-action-output.json", lambda body: b'{"actions":[]}')
         probe("norm-multiple-send-identities.json", lambda body: body.replace(b'"emission_index":"1"', b'"emission_index":"0"'))
         probe("norm-invalid-multiple-send-identities.json", lambda body: (fixture / "norm-multiple-send-identities.json").read_bytes())
@@ -123,6 +131,14 @@ def main() -> None:
     mixed_output = mixed_provider.evaluate_actions(snapshot, mixed_send=True)
     assert [item.get("send", {}).get("event") for item in mixed_output["actions"]] == [None, "accepted", "notice", "accepted", "notice"]
     assert mixed_provider.action_calls == 1
+    environment_modes = ("valid", "self", "unknown_component", "multiple", "correlation",
+                         "empty", "unknown_variable", "wrong_type")
+    environment_outputs = []
+    for mode in environment_modes:
+        native = module.Provider()
+        result = native.evaluate_actions(snapshot, environment_send=mode)
+        assert native.action_calls == 1
+        environment_outputs.append(result)
     safe_provider = module.Provider()
     provider_before_inspection = copy.deepcopy(safe_provider.__dict__)
     host_inspection_calls = 0
@@ -173,6 +189,11 @@ fn main() {{
     let mut mixed = Provider::default();
     println!("{{}}", mixed.evaluate_actions_mixed(false, false, false, true).unwrap());
     assert_eq!(mixed.action_calls, 1);
+    for mode in ["valid", "self", "unknown_component", "multiple", "correlation", "empty", "unknown_variable", "wrong_type"] {{
+        let mut environment = Provider::default();
+        println!("{{}}", environment.evaluate_actions_environment(mode).unwrap());
+        assert_eq!(environment.action_calls, 1);
+    }}
     assert_eq!(provider.evaluate_actions(false, true, true), Err("action_fault"));
     assert_eq!(provider.external_calls, 1);
     assert_eq!(provider.irreversible_effects, 1);
@@ -202,7 +223,8 @@ fn main() {{
             outputs = [json.loads(line) for line in result.stdout.splitlines()]
             assert outputs == [json.loads((case / "norm-action-output.json").read_text()),
                                json.loads((case / "norm-invalid-action-output.json").read_text()),
-                               json.loads((case / "norm-multiple-send-action-output.json").read_text()), mixed_output]
+                               json.loads((case / "norm-multiple-send-action-output.json").read_text()), mixed_output,
+                               *environment_outputs]
     with tempfile.TemporaryDirectory() as temporary:
         location = Path(temporary)
         adapter = location / "reject_adapter.py"
