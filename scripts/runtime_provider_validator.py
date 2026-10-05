@@ -34,7 +34,7 @@ REQUIRED = frozenset((
     "restore_changed_runtime", "restore_untrusted_runtime", "compile_changed_compiler",
     "compile_untrusted_compiler", "compile_manifest_fingerprint_mismatch",
     "compile_source_digest_mismatch", "compile_limit_exceeded",
-    "native_repeated_sends_have_distinct_ids", "native_repeated_sends_commit_and_replay", "load_inert_provider_metadata",
+    "native_repeated_sends_have_distinct_ids", "native_repeated_sends_commit_and_replay", "native_mixed_sends_have_separate_ordinals", "load_inert_provider_metadata",
     "native_root_assignment_before_final", "ordinary_root_assignment_before_final",
     "native_local_write_destroyed_by_event", "native_local_write_destroyed_after_choice",
     "native_snapshot_preserves_complete_queue_envelope",
@@ -333,7 +333,7 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
     captured = next(vector for vector in manifest["vectors"] if vector["name"] == "native_snapshot_preserves_complete_queue_envelope")
     for key in ("guard_snapshot", "action_snapshot"):
         _require(captured["expected"]["value"][key] == captured["request"]["setup"]["provider_snapshot"], "native snapshot lost complete source/cause envelope or typed variables")
-    _require(captured["request"]["setup"]["envelope"]["cause_id"] != captured["request"]["setup"]["envelope"]["event_id"], "snapshot no longer distinguishes event identity from cause identity")
+    _require(captured["request"]["setup"]["envelope"]["cause_id"] == captured["request"]["setup"]["envelope"]["event_id"] and captured["request"]["setup"]["envelope"]["source"] == {"host": True}, "snapshot vector lost valid host delivery provenance")
     repeated = next(vector for vector in manifest["vectors"] if vector["name"] == "native_repeated_sends_have_distinct_ids")
     setup = repeated["request"]["setup"]
     slot = "/machines/0/root/states/pending/on_events/submit/1/action/0"
@@ -352,11 +352,29 @@ def validate_profile(spec_root: Path, repository_root: Path) -> int:
              replay["request"]["arguments"]["maximum_attempts"] == 1 and
              replay["expected"]["value"]["emission_identities"] == identities and
              replay["expected"]["value"]["checkpoint_revision"] == "2" and
-             replay["expected"]["value"]["retained_effect_references"] == 3 and
-             replay["expected"]["value"]["pending_outbox_entries"] == 3 and
+             replay["expected"]["value"]["retained_effect_references"] == [{"kind": "external_outbox", "effect_id": item["effect_id"], "emission_index": item["emission_index"]} for item in identities] and
+             replay["expected"]["value"]["pending_outbox_entries"] == [{"intent": {"effect_id": item["effect_id"], "sequence": item["sequence"], "event": "accepted", "payload": ["map", []], "correlation_id": "provider-correlation"}, "state_revision": "2", "delivery_state": {"status": "not_attempted"}} for item in identities] and
              all(replay["expected"]["value"][key] is True for key in
                  ("replay_receipt_equal", "replay_checkpoint_unchanged", "replay_provider_calls_unchanged")),
              "durable native commit/replay evidence changed")
+    mixed = next(vector for vector in manifest["vectors"] if vector["name"] == "native_mixed_sends_have_separate_ordinals")
+    mixed_setup = mixed["request"]["setup"]
+    mixed_machine = YAML(typ="safe").load((case / mixed["request"]["bundle"]).read_text())
+    mixed_ids = mixed["expected"]["value"]["emission_identities"]
+    _require(len(mixed_ids) == 5 and mixed["request"]["arguments"].get("mixed_send") is True,
+             "mixed send coverage changed")
+    for position, kind, ordinal in ((0, "external", 0), (1, "internal", 0), (2, "external", 1), (3, "internal", 1), (4, "external", 0)):
+        locator = slot if position < 4 else slot.replace("action/0", "action/1/send")
+        identity = mixed_ids[position]
+        common = [mixed_setup["create_request"]["root_instance_id"], mixed_setup["target_runtime_id"]]
+        if kind == "external":
+            expected_digest = digest(["determa-effect-identity-1", "1", [mixed_machine["namespace"], "order", "1"], *common, mixed_setup["envelope"]["cause_id"], "1", locator, str(ordinal)])
+            _require(identity == {"effect_id": expected_digest, "emission_index": str(ordinal), "sequence": str(position // 2)}, "mixed external ordinal/identity changed")
+        else:
+            expected_digest = digest(["determa-event-identity-1", "1", *common, mixed_setup["target_runtime_id"], mixed_setup["envelope"]["cause_id"], "1", locator, str(ordinal)])
+            _require(identity == {"event_id": expected_digest, "emission_index": str(ordinal), "acceptance_sequence": str(ordinal + 1), "queue_sequence": str(ordinal + 1)}, "mixed internal ordinal/identity changed")
+    _require(mixed["expected"]["state_after"]["ready_mailbox_length"] == 2 and mixed["expected"]["state_after"]["output_count"] == 3,
+             "mixed send mailbox/output projection changed")
     io_failure = next(v for v in manifest["vectors"] if v["name"] == "native_io_then_cas_conflict")
     _require(io_failure["request"]["arguments"]["maximum_attempts"] == 1 and
              io_failure["expected"]["irreversible_side_effects"] == 1 and

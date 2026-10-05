@@ -9,6 +9,8 @@ events:
         required: true
   accepted:
     direction: output
+  notice:
+    direction: internal
 machines:
   - machine_id: order
     root:
@@ -86,10 +88,3 @@ machines:
                       to:
                         external: true
                       correlation_id: "'provider-correlation'"
-                transition_to: left
-          variables:
-            accepted:
-              type: bool
-              init: false
-        left:
-          type: simple

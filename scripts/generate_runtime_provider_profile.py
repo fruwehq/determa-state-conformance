@@ -172,7 +172,9 @@ def render(spec_root: Path) -> dict[str, bytes]:
         "states": {"done": {"type": "final"}}}}
     initial_control = copy.deepcopy(initial_data)
     initial_control["machines"][0]["root"]["states"]["pending"]["initial"]["action"] = [{"assign": {"accepted": "true"}}]
-    bundles = {"machine.yaml": data, "machine-safe.yaml": safe_data, "machine-final.yaml": final_data,
+    mixed_data = copy.deepcopy(data)
+    mixed_data["events"]["notice"] = {"direction": "internal"}
+    bundles = {"machine-mixed.yaml": mixed_data, "machine.yaml": data, "machine-safe.yaml": safe_data, "machine-final.yaml": final_data,
                "machine-final-control.yaml": control_data, "machine-local-write.yaml": local_data,
                "machine-choice-write.yaml": choice_data, "machine-initial-write.yaml": initial_data,
                "machine-initial-control.yaml": initial_control}
@@ -314,11 +316,27 @@ def render(spec_root: Path) -> dict[str, bytes]:
                                "evaluate_actions", "validate_output", "compare_and_swap", "commit", "replay"],
         guard=1, actions=1, committed=True, guarantees=weak_profile,
         value={"accepted": ["boolean", True], "emissions": 3, "emission_identities": copy.deepcopy(identities),
-               "checkpoint_revision": "2", "retained_effect_references": 3, "pending_outbox_entries": 3,
+               "checkpoint_revision": "2", "retained_effect_references": [{"kind": "external_outbox", "effect_id": item["effect_id"], "emission_index": item["emission_index"]} for item in identities],
+               "pending_outbox_entries": [{"intent": {"effect_id": item["effect_id"], "sequence": item["sequence"], "event": "accepted", "payload": ["map", []], "correlation_id": "provider-correlation"}, "state_revision": "2", "delivery_state": {"status": "not_attempted"}} for item in identities],
                "replay_receipt_equal": True, "replay_checkpoint_unchanged": True,
                "replay_provider_calls_unchanged": True}),
         approved=False, native_selected=True, guard_override=True, repeat_send=True,
         cas_conflict=False, maximum_attempts=1, replay=True)
+    mixed_runtime_id = value_digest(["determa-root-runtime-identity-1", "1", bundle_fingerprint_document(mixed_data),
+                                    mixed_data["namespace"], "order", "1", "runtime-provider-root-1"])
+    mixed_identities = []
+    for position, kind, ordinal in ((0, "external", 0), (1, "internal", 0), (2, "external", 1), (3, "internal", 1), (4, "external", 0)):
+        pointer = slot if position < 4 else slot.replace("action/0", "action/1/send")
+        if kind == "external":
+            mixed_identities.append({"effect_id": value_digest(["determa-effect-identity-1", "1", [mixed_data["namespace"], "order", "1"], "runtime-provider-root-1", mixed_runtime_id, "runtime-provider-event-1", "1", pointer, str(ordinal)]), "emission_index": str(ordinal), "sequence": str(position // 2)})
+        else:
+            mixed_identities.append({"event_id": value_digest(["determa-event-identity-1", "1", "runtime-provider-root-1", mixed_runtime_id, mixed_runtime_id, "runtime-provider-event-1", "1", pointer, str(ordinal)]), "emission_index": str(ordinal), "acceptance_sequence": str(ordinal + 1), "queue_sequence": str(ordinal + 1)})
+    add("native_mixed_sends_have_separate_ordinals", "step", bundle_file="machine-mixed.yaml", expected=observation(
+        "handled_now", stages=["resolve_closure", "evaluate_cel", "evaluate_guard", "evaluate_actions", "validate_output", "commit"],
+        guard=1, actions=1, committed=True, guarantees=weak_profile,
+        value={"accepted": ["boolean", True], "emissions": 5, "emission_identities": mixed_identities}),
+        approved=False, native_selected=True, guard_override=True, mixed_send=True)
+    vectors[-1]["expected"]["state_after"].update(ready_mailbox_length=2, output_count=3)
     add("load_inert_provider_metadata", "load", bundle_file="machine-inert.yaml", expected=observation(
         "accepted", stages=["resolve_closure", "verify_capabilities", "load"],
         guarantees=dict.fromkeys(("deterministic", "pure", "portable", "semantically_introspectable", "process_contained"), True) | {"external_io_capable": False}),
@@ -346,8 +364,6 @@ def render(spec_root: Path) -> dict[str, bytes]:
         guard=1, actions=1, committed=True, guarantees=weak_profile,
         value={"accepted": ["boolean", True], "emissions": 2}),
         approved=False, native_selected=True, guard_override=True, capture_snapshot=True)
-    vectors[-1]["request"]["setup"]["envelope"]["cause_id"] = "runtime-provider-distinct-cause-1"
-    vectors[-1]["request"]["setup"]["provider_snapshot"]["event"]["cause_id"] = "runtime-provider-distinct-cause-1"
     for key in ("guard_snapshot", "action_snapshot"):
         vectors[-1]["expected"]["value"][key] = copy.deepcopy(vectors[-1]["request"]["setup"]["provider_snapshot"])
     add("native_initial_local_write_destroyed_by_final", "create", bundle_file="machine-initial-write.yaml", expected=observation(

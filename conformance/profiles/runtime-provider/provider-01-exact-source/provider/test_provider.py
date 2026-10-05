@@ -38,7 +38,7 @@ class Provider:
         reply = ExternalReply(approved)
         return bool(reply.approved if guard_override is None else guard_override)
 
-    def evaluate_actions(self, snapshot, *, invalid=False, fail=False, external_io=False, repeat_send=False):
+    def evaluate_actions(self, snapshot, *, invalid=False, fail=False, external_io=False, repeat_send=False, mixed_send=False):
         self.action_snapshot = portable_copy(snapshot)
         self.action_calls += 1
         if external_io:
@@ -59,7 +59,10 @@ class Provider:
                       "payload": ["map", []],
                       "correlation_id": ["string", "provider-correlation"]}},
         ]}
-        if repeat_send:
+        if mixed_send:
+            internal = {"send": {"event": "notice", "to": {"self": True}, "payload": ["map", []]}}
+            output["actions"].extend([internal, output["actions"][1].copy(), internal.copy()])
+        elif repeat_send:
             output["actions"].append(output["actions"][1].copy())
         return output
 

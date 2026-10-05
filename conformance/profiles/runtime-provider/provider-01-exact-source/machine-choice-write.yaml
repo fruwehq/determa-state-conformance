@@ -33,16 +33,16 @@ machines:
                       identifier: example.native-review
                       version: "1.0.0"
                       content_digest:
-                        sha256:9890b03090c13bd71b8e278e489c2f11d53043362d62b5b7e6877ce407194b5e
+                        sha256:e5bac599a387d00ae6b755a1de9f20b38a5a2f99877be51b66c0610d5922d2fe
                     source_media_type:
                       application/vnd.determa.runtime-fixture+json
                     source_digest:
-                      sha256:130e9418c47f84b29ce7c63f6cd719161147d516bf6bcb33e9ab07e196e040f8
+                      sha256:9105fdc87698beba2d47f59573619fe34c2b2bd44b34c17ae60f1f0f6c6156a2
                     dependencies:
                       - identifier: example.native-common
                         version: "1.0.0"
                         content_digest:
-                          sha256:9890b03090c13bd71b8e278e489c2f11d53043362d62b5b7e6877ce407194b5e
+                          sha256:e5bac599a387d00ae6b755a1de9f20b38a5a2f99877be51b66c0610d5922d2fe
                     capabilities:
                       deterministic: false
                       pure: false
@@ -60,16 +60,16 @@ machines:
                         identifier: example.native-actions
                         version: "1.0.0"
                         content_digest:
-                          sha256:9890b03090c13bd71b8e278e489c2f11d53043362d62b5b7e6877ce407194b5e
+                          sha256:e5bac599a387d00ae6b755a1de9f20b38a5a2f99877be51b66c0610d5922d2fe
                       source_media_type:
                         application/vnd.determa.runtime-fixture+json
                       source_digest:
-                        sha256:130e9418c47f84b29ce7c63f6cd719161147d516bf6bcb33e9ab07e196e040f8
+                        sha256:9105fdc87698beba2d47f59573619fe34c2b2bd44b34c17ae60f1f0f6c6156a2
                       dependencies:
                         - identifier: example.native-common
                           version: "1.0.0"
                           content_digest:
-                            sha256:9890b03090c13bd71b8e278e489c2f11d53043362d62b5b7e6877ce407194b5e
+                            sha256:e5bac599a387d00ae6b755a1de9f20b38a5a2f99877be51b66c0610d5922d2fe
                       capabilities:
                         deterministic: false
                         pure: false

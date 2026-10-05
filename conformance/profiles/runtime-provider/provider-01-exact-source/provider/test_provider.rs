@@ -35,6 +35,14 @@ impl Provider {
         let send = r#"{"send":{"event":"accepted","to":{"external":true},"payload":["map",[]],"correlation_id":["string","provider-correlation"]}}"#;
         Ok(format!(r#"{{"actions":[{{"assign":{{"variable":"accepted","value":["boolean",true]}}}},{send},{send}]}}"#))
     }
+    pub fn evaluate_actions_mixed(&mut self, invalid: bool, fail: bool, external_io: bool, mixed_send: bool)
+        -> Result<String, &'static str> {
+        let output = self.evaluate_actions(invalid, fail, external_io)?;
+        if !mixed_send || invalid { return Ok(output); }
+        let external = r#"{"send":{"event":"accepted","to":{"external":true},"payload":["map",[]],"correlation_id":["string","provider-correlation"]}}"#;
+        let internal = r#"{"send":{"event":"notice","to":{"self":true},"payload":["map",[]]}}"#;
+        Ok(format!(r#"{{"actions":[{{"assign":{{"variable":"accepted","value":["boolean",true]}}}},{external},{internal},{external},{internal}]}}"#))
+    }
     pub fn evaluate_guard_snapshot(&mut self, snapshot: &str, approved: bool, override_value: Option<bool>, external_io: bool, fail: bool)
         -> Result<bool, &'static str> {
         self.guard_snapshot = Some(snapshot.into());
