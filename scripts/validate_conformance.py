@@ -34,6 +34,7 @@ from ruamel.yaml.tokens import (
     ValueToken,
 )
 
+from adapter_evidence import AdapterEvidenceError, validate_policy_case, validate_policy_case_inventory
 from closed_code_registry import RegistryValidationError, validate_registry
 from validate_extension_negotiation import ExtensionValidationError, validate_profile
 from validate_host_authority import AuthorityValidationError, validate_profile as validate_authority_profile
@@ -7114,6 +7115,10 @@ def validate_durable_host_vectors(
     input_validator: Draft202012Validator,
 ) -> set[str]:
     """Validate the closed schema-v1 durable host profile table."""
+    try:
+        validate_policy_case(case, test["durable_host_vectors"])
+    except AdapterEvidenceError as error:
+        raise ValidationFailure(str(error)) from error
     manifests = {entry["file"]: entry for entry in test["artifacts"]["documents"]}
     artifacts = {path.name: analyze_artifact(path).document for path in artifact_paths}
     coverage: set[str] = set()
@@ -8292,6 +8297,10 @@ def validate_repository(repository_root: Path, spec_root: Path) -> str:
                 f"missing={sorted(missing_coverage)}, "
                 f"unexpected={sorted(unexpected_coverage)}"
             )
+    try:
+        validate_policy_case_inventory({case.name for case in cases})
+    except AdapterEvidenceError as error:
+        raise ValidationFailure(str(error)) from error
     if durable_host_vectors:
         missing_coverage = REQUIRED_DURABLE_HOST_COVERAGE - durable_host_coverage
         unexpected_coverage = durable_host_coverage - REQUIRED_DURABLE_HOST_COVERAGE

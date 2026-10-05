@@ -52,6 +52,9 @@ jobs:
       - name: Test durable-host relational validation
         run: python scripts/test_durable_host_validator.py
 
+      - name: Test adapter policy and native evidence routing
+        run: python scripts/test_adapter_evidence.py
+
       - name: Test application-projection relational validation
         run: python scripts/test_application_projection_validator.py
 

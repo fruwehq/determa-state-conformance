@@ -443,6 +443,7 @@ durable_host_vectors:
   - name: bundled_adapter_registration
     covers: [bundled_public_registration]
     operation: checkpoint_register_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/register_bundled }
@@ -452,6 +453,7 @@ durable_host_vectors:
   - name: third_party_adapter_registration
     covers: [third_party_public_registration]
     operation: checkpoint_register_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/register_third_party }
@@ -461,6 +463,7 @@ durable_host_vectors:
   - name: vendor_adapter_scheme_registration
     covers: [adapter_vendor_scheme_positive, adapter_identifier_underscore_rejected, adapter_scheme_underscore_rejected]
     operation: checkpoint_register_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/register_vendor_http }
@@ -470,6 +473,7 @@ durable_host_vectors:
   - name: vendor_adapter_scheme_resolution
     covers: [adapter_vendor_scheme_resolution]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_vendor_http }
@@ -479,6 +483,7 @@ durable_host_vectors:
   - name: duplicate_adapter_registration
     covers: [duplicate_adapter_registration]
     operation: checkpoint_register_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/register_duplicate }
@@ -488,6 +493,7 @@ durable_host_vectors:
   - name: unknown_adapter
     covers: [unknown_adapter]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_unknown }
@@ -497,6 +503,7 @@ durable_host_vectors:
   - name: invalid_adapter_configuration
     covers: [invalid_adapter_configuration]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_invalid_config }
@@ -506,6 +513,7 @@ durable_host_vectors:
   - name: adapter_capability_failure
     covers: [adapter_capability_failure]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_capability_mismatch }
@@ -515,6 +523,7 @@ durable_host_vectors:
   - name: memory_boundary
     covers: [memory_capability_boundary]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_memory }
@@ -524,6 +533,7 @@ durable_host_vectors:
   - name: file_boundary
     covers: [file_capability_boundary]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_file }
@@ -533,6 +543,7 @@ durable_host_vectors:
   - name: sqlite_boundary
     covers: [sqlite_capability_boundary]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_sqlite }
@@ -542,6 +553,7 @@ durable_host_vectors:
   - name: postgresql_boundary
     covers: [postgresql_capability_boundary]
     operation: checkpoint_resolve_adapter_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/resolve_postgresql }
@@ -605,6 +617,7 @@ durable_host_vectors:
   - name: durable_embedded_positive
     covers: [durable_embedded_profile_positive, capability_requirements_derived_from_profile]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_durable_embedded_positive }
@@ -614,6 +627,7 @@ durable_host_vectors:
   - name: durable_embedded_negative
     covers: [durable_embedded_profile_negative]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_durable_embedded_negative }
@@ -623,6 +637,7 @@ durable_host_vectors:
   - name: exactly_once_positive
     covers: [exactly_once_profile_positive]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_exactly_once_positive }
@@ -632,6 +647,7 @@ durable_host_vectors:
   - name: exactly_once_negative
     covers: [exactly_once_profile_negative, bounded_exactly_once_rejected]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_exactly_once_negative }
@@ -641,6 +657,7 @@ durable_host_vectors:
   - name: broker_positive
     covers: [broker_profile_positive]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_broker_positive }
@@ -650,6 +667,7 @@ durable_host_vectors:
   - name: broker_negative
     covers: [broker_profile_negative]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_broker_negative }
@@ -659,6 +677,7 @@ durable_host_vectors:
   - name: strict_outbox_positive
     covers: [strict_outbox_profile_positive]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_strict_outbox_positive }
@@ -668,6 +687,7 @@ durable_host_vectors:
   - name: strict_outbox_negative
     covers: [strict_outbox_profile_negative]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_strict_outbox_negative }
@@ -677,6 +697,7 @@ durable_host_vectors:
   - name: compact_outbox_positive
     covers: [compact_outbox_profile_positive]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_compact_outbox_positive }
@@ -686,6 +707,7 @@ durable_host_vectors:
   - name: compact_outbox_negative
     covers: [compact_outbox_profile_negative]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_compact_outbox_negative }
@@ -695,6 +717,7 @@ durable_host_vectors:
   - name: shared_transaction_positive
     covers: [shared_transaction_profile_positive]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_shared_transaction_positive }
@@ -704,6 +727,7 @@ durable_host_vectors:
   - name: shared_transaction_negative
     covers: [shared_transaction_profile_negative]
     operation: checkpoint_validate_capabilities_v1
+    evidence_layer: conditional_adapter_policy
     checkpoint_before: created-checkpoint-v1.json
     checkpoint_after: created-checkpoint-v1.json
     request: { file: inputs-v1.json, pointer: /requests/profile_shared_transaction_negative }
