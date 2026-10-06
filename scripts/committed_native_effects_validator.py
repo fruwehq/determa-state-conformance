@@ -32,8 +32,62 @@ SCHEMAS = {
     'retry-request.json': 'effect-result-request-v1.schema.json',
     'retryable-response.json': 'effect-result-response-v1.schema.json',
     'postcall-cancel-response.json': 'effect-cancellation-response-v1.schema.json',
+    'late-cancel-outcome_recorded-response.json': 'effect-cancellation-response-v1.schema.json',
+    'late-cancel-result_admitted-response.json': 'effect-cancellation-response-v1.schema.json',
+    'late-cancel-preclaim_recorded-response.json': 'effect-cancellation-response-v1.schema.json',
+    'late-cancel-preclaim_admitted-response.json': 'effect-cancellation-response-v1.schema.json',
+    'invalid-late-cancel-possible_call-response.json': 'effect-cancellation-response-v1.schema.json',
+    'invalid-late-cancel-outcome_recorded-response.json': 'effect-cancellation-response-v1.schema.json',
+    'invalid-late-cancel-result_admitted-response.json': 'effect-cancellation-response-v1.schema.json',
 }
 
+
+
+def validate_late_cancellation_vectors(manifest, artifacts):
+    vectors = {vector['name']: vector for vector in manifest['vectors']}
+    required_late = {'late-cancel-' + state for state in (
+        'outcome_recorded', 'result_admitted', 'preclaim_recorded', 'preclaim_admitted')}
+    required_invalid = {'invalid-late-cancel-' + state for state in (
+        'possible_call', 'outcome_recorded', 'result_admitted')}
+    if not (required_late | required_invalid).issubset(vectors):
+        raise ValueError('late cancellation coverage missing')
+    for name in sorted(required_late | required_invalid):
+        vector = vectors[name]
+        request, expected = vector['request'], vector['expected']
+        before = artifacts[request['journal_before']]
+        after = artifacts[expected['journal_after']]
+        response = artifacts[expected['response']]
+        arguments = request['arguments']
+        if request['operation'] != 'cancel_effect' or response['operation_id'] != arguments['operation_id'] or \
+                response['effect_id'] != arguments['effect_id'] or \
+                artifacts[request['checkpoint_before']] != artifacts[expected['checkpoint_after']] or \
+                expected['counts'] != {'provider_calls': 0, 'core_calls': 0, 'new_claims': 0}:
+            raise ValueError(f'{name}: cancellation boundary differs')
+        if name in required_invalid:
+            declaration = load_yaml(CASE / 'machine.yaml')['events']['native_cancelled']
+            if arguments['payload'] != typed_value({'undeclared': 'value'}) or \
+                    'undeclared' in declaration.get('payload', {}):
+                raise ValueError(f'{name}: payload is not the pinned undeclared field')
+            if response['status'] != 'rejected' or response['error_code'] != 'invalid_host_request' or \
+                    any(response[key] is not None for key in (
+                        'cancellation', 'outcome', 'result_event_id', 'journal_revision')) or after != before:
+                raise ValueError(f'{name}: invalid payload mutated or disclosed evidence')
+        else:
+            record = before['effect_records'][0]
+            cancellation = {'operation_id': arguments['operation_id'], 'reason': arguments['reason'], 'state': 'too_late'}
+            refs = before['operation_response_references'] + [{
+                'operation_id': arguments['operation_id'],
+                'response_digest': digest(['determa-host-operation-response-1', response])}]
+            refs.sort(key=lambda item: item['operation_id'].encode('utf-8'))
+            if response['status'] != 'committed' or response['error_code'] is not None or \
+                    response['cancellation'] != cancellation or response['outcome'] != record['outcome'] or \
+                    response['result_event_id'] != record['result_event_id'] or \
+                    after['effect_records'] != before['effect_records'] or \
+                    response['journal_revision'] != str(int(before['journal_revision']) + 1) or \
+                    after['journal_revision'] != response['journal_revision'] or \
+                    after['operation_response_references'] != refs:
+                raise ValueError(f'{name}: winning outcome or exact cancellation evidence changed')
+    return len(required_late | required_invalid)
 
 def unique_pairs(pairs):
     out = {}
@@ -315,6 +369,7 @@ def validate_profile(spec_root: Path):
     if type(vectors) is not list or len(vectors) < 20 or len({v['name'] for v in vectors}) != len(vectors):
         raise ValueError('missing effect vectors or duplicate names')
     named = {vector['name'] for vector in vectors}
+    validate_late_cancellation_vectors(manifest, artifacts)
     for file_name, coverage in manifest['normative_case_coverage'].items():
         source = strict_json((spec_root / SPEC_EXAMPLES / file_name).read_bytes())
         if {case['name'] for case in source['cases']} != set(coverage) or \

@@ -222,8 +222,40 @@ class CommittedEffectsValidatorTests(unittest.TestCase):
             verified_profile(broken, self.artifacts, SPEC,
                              expected_run_id=self.configured()['run_id'], expected_proofs={'native-proof-1'})
 
+    def test_late_cancellation_coverage_cannot_be_dropped(self):
+        self.assertEqual(effect_validator.validate_late_cancellation_vectors(self.manifest, self.artifacts), 7)
+        manifest = copy.deepcopy(self.manifest)
+        manifest['vectors'] = [item for item in manifest['vectors'] if item['name'] != 'late-cancel-outcome_recorded']
+        with self.assertRaises(ValueError):
+            effect_validator.validate_late_cancellation_vectors(manifest, self.artifacts)
+
+    def test_late_cancellation_cannot_replace_the_winning_record(self):
+        for field, replacement in [('cancellation', {'state': 'reconciliation_required'}),
+                                   ('outcome', None), ('invocation_state', 'ambiguous')]:
+            with self.subTest(field=field):
+                artifacts = copy.deepcopy(self.artifacts)
+                artifacts['data/late-cancel-outcome_recorded-journal.json']['effect_records'][0][field] = replacement
+                with self.assertRaises(ValueError):
+                    effect_validator.validate_late_cancellation_vectors(self.manifest, artifacts)
+
+    def test_invalid_late_payload_cannot_disclose_revision_or_outcome(self):
+        for field in ['journal_revision', 'outcome']:
+            with self.subTest(field=field):
+                artifacts = copy.deepcopy(self.artifacts)
+                artifacts['data/invalid-late-cancel-outcome_recorded-response.json'][field] = (
+                    '4' if field == 'journal_revision' else artifacts['data/outcome-recorded-journal.json']['effect_records'][0]['outcome'])
+                with self.assertRaises(ValueError):
+                    effect_validator.validate_late_cancellation_vectors(self.manifest, artifacts)
+
+    def test_invalid_late_vector_cannot_reject_a_valid_payload(self):
+        manifest = copy.deepcopy(self.manifest)
+        vector = next(item for item in manifest['vectors'] if item['name'] == 'invalid-late-cancel-outcome_recorded')
+        vector['request']['arguments']['payload'] = ['map', []]
+        with self.assertRaises(ValueError):
+            effect_validator.validate_late_cancellation_vectors(manifest, self.artifacts)
+
     def test_source_and_artifact_gate(self):
-        self.assertEqual(validate_profile(SPEC), 55)
+        self.assertEqual(validate_profile(SPEC), 62)
 
     def test_all_complete_oracles_accept_matching_observations(self):
         for vector in self.manifest['vectors']:

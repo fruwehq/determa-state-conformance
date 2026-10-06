@@ -2962,6 +2962,373 @@
           "new_claims": 0
         }
       }
+    },
+    {
+      "name": "late-cancel-outcome_recorded",
+      "covers": [
+        "19.3:terminal_outcome_wins"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/outcome-recorded-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-too-late-outcome_recorded",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/late-cancel-outcome_recorded-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/late-cancel-outcome_recorded-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "late-cancel-result_admitted",
+      "covers": [
+        "19.3:terminal_outcome_wins"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "admitted-checkpoint.json",
+        "journal_before": "data/result-admitted-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-too-late-result_admitted",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/late-cancel-result_admitted-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/late-cancel-result_admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "late-cancel-preclaim_recorded",
+      "covers": [
+        "19.3:terminal_outcome_wins"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/preclaim-cancelled-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-too-late-preclaim_recorded",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/late-cancel-preclaim_recorded-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/late-cancel-preclaim_recorded-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "late-cancel-preclaim_admitted",
+      "covers": [
+        "19.3:terminal_outcome_wins"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "cancelled-admitted-checkpoint.json",
+        "journal_before": "data/cancelled-admitted-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-too-late-preclaim_admitted",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            []
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/late-cancel-preclaim_admitted-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "cancelled-admitted-checkpoint.json",
+        "journal_after": "data/late-cancel-preclaim_admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "invalid-late-cancel-possible_call",
+      "covers": [
+        "19.3:declared_cancelled_payload"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/ambiguous-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-invalid-possible_call",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            [
+              [
+                "undeclared",
+                [
+                  "string",
+                  "value"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/invalid-late-cancel-possible_call-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/ambiguous-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "invalid-late-cancel-outcome_recorded",
+      "covers": [
+        "19.3:declared_cancelled_payload"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "pending-checkpoint.json",
+        "journal_before": "data/outcome-recorded-journal.json",
+        "claim": null,
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-invalid-outcome_recorded",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            [
+              [
+                "undeclared",
+                [
+                  "string",
+                  "value"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/invalid-late-cancel-outcome_recorded-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "pending-checkpoint.json",
+        "journal_after": "data/outcome-recorded-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
+    },
+    {
+      "name": "invalid-late-cancel-result_admitted",
+      "covers": [
+        "19.3:declared_cancelled_payload"
+      ],
+      "request": {
+        "operation": "cancel_effect",
+        "checkpoint_before": "admitted-checkpoint.json",
+        "journal_before": "data/result-admitted-journal.json",
+        "claim": "data/active-claim.json",
+        "host_configuration": {
+          "route_generation": "7",
+          "route_authorized": true,
+          "destination_deduplication_proven": true,
+          "handler_authorized": true,
+          "credential_available": true,
+          "credential_generation": "1"
+        },
+        "auth_context": {
+          "scope_identity": "effect-scope-1",
+          "principal": "worker-a",
+          "scope_authority_epoch": "3",
+          "trusted_host_now": "1893455999999999999"
+        },
+        "arguments": {
+          "operation_id": "cancel-invalid-result_admitted",
+          "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+          "reason": "operator_request",
+          "payload": [
+            "map",
+            [
+              [
+                "undeclared",
+                [
+                  "string",
+                  "value"
+                ]
+              ]
+            ]
+          ]
+        },
+        "fault": null,
+        "control_plan": []
+      },
+      "expected": {
+        "response": "data/invalid-late-cancel-result_admitted-response.json",
+        "caller_kind": "response",
+        "control_events": [],
+        "checkpoint_after": "admitted-checkpoint.json",
+        "journal_after": "data/result-admitted-journal.json",
+        "counts": {
+          "provider_calls": 0,
+          "core_calls": 0,
+          "new_claims": 0
+        }
+      }
     }
   ]
 }

@@ -1,0 +1,30 @@
+{
+  "status": "committed",
+  "operation_id": "cancel-too-late-outcome_recorded",
+  "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
+  "cancellation": {
+    "operation_id": "cancel-too-late-outcome_recorded",
+    "reason": "operator_request",
+    "state": "too_late"
+  },
+  "outcome": {
+    "kind": "succeeded",
+    "payload": [
+      "map",
+      [
+        [
+          "provider_reference",
+          [
+            "string",
+            "accepted-42"
+          ]
+        ]
+      ]
+    ],
+    "digest": "sha256:f23394ef9e1ec815ad47de540cfbb84bc0c481d8d55b3058aa2db977ba645923",
+    "attempt_fence": "1"
+  },
+  "result_event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+  "journal_revision": "4",
+  "error_code": null
+}

@@ -344,6 +344,52 @@ def generate(spec_root: Path):
         vector('ambiguous_retry_requires_proof', ['19.3:ambiguous_retry_proof'], 'claim', cp, 'ambiguous-journal.json', cp, 'ambiguous-journal.json', arguments={'effect_id': effect_id}, config={'route_generation': '7', 'route_authorized': True, 'destination_deduplication_proven': False, 'handler_authorized': True, 'credential_available': True, 'credential_generation': '1'}, caller_kind='aborted'),
         vector('missing_cancel_mapping_refusal', ['19.3:missing_cancelled_mapping'], 'cancel_effect', cp, 'no-cancel-mapping-journal.json', cp, 'no-cancel-mapping-journal.json', arguments=cancel_request, response_file='cancel-rejected-response.json'),
     ]
+    # §19.3 payload validation applies to late requests too. A terminal
+    # outcome wins without changing its complete effect record.
+    cancellation_files = {}
+    late_states = [
+        ('outcome_recorded', cp, 'outcome-recorded-journal.json', recorded, None),
+        ('result_admitted', 'admitted-checkpoint.json', 'result-admitted-journal.json', final, 'active-claim.json'),
+        ('preclaim_recorded', cp, 'preclaim-cancelled-journal.json', cancelled, None),
+        ('preclaim_admitted', 'cancelled-admitted-checkpoint.json', 'cancelled-admitted-journal.json', cancelled_admitted_journal, None),
+    ]
+    for label, checkpoint_name, before_name, before, claim_file in late_states:
+        operation_id = 'cancel-too-late-' + label
+        cancel_input = {**cancel_request, 'operation_id': operation_id}
+        winning = before['effect_records'][0]
+        response = dict(status='committed', operation_id=operation_id, effect_id=effect_id,
+                        cancellation=dict(operation_id=operation_id, reason=cancel_input['reason'], state='too_late'),
+                        outcome=copy.deepcopy(winning['outcome']), result_event_id=winning['result_event_id'],
+                        journal_revision=str(int(before['journal_revision']) + 1), error_code=None)
+        after = copy.deepcopy(before)
+        after['journal_revision'] = response['journal_revision']
+        after['operation_response_references'].append(response_reference(operation_id, response))
+        after['operation_response_references'].sort(key=lambda item: item['operation_id'].encode('utf-8'))
+        after['host_effect_journal_digest'] = digest(['determa-host-effect-journal-digest-1',
+            {key: value for key, value in after.items() if key != 'host_effect_journal_digest'}])
+        prefix = 'late-cancel-' + label
+        cancellation_files[prefix + '-response.json'] = response
+        cancellation_files[prefix + '-journal.json'] = after
+        vectors.append(vector(prefix, ['19.3:terminal_outcome_wins'], 'cancel_effect',
+            checkpoint_name, before_name, checkpoint_name, prefix + '-journal.json',
+            arguments=cancel_input, claim_file=claim_file, response_file=prefix + '-response.json'))
+    invalid_states = [
+        ('possible_call', cp, 'ambiguous-journal.json', None),
+        ('outcome_recorded', cp, 'outcome-recorded-journal.json', None),
+        ('result_admitted', 'admitted-checkpoint.json', 'result-admitted-journal.json', 'active-claim.json'),
+    ]
+    for label, checkpoint_name, before_name, claim_file in invalid_states:
+        operation_id = 'cancel-invalid-' + label
+        cancel_input = {**cancel_request, 'operation_id': operation_id,
+                   'payload': typed_value({'undeclared': 'value'})}
+        response = dict(status='rejected', operation_id=operation_id, effect_id=effect_id,
+                        cancellation=None, outcome=None, result_event_id=None,
+                        journal_revision=None, error_code='invalid_host_request')
+        name = 'invalid-late-cancel-' + label
+        cancellation_files[name + '-response.json'] = response
+        vectors.append(vector(name, ['19.3:declared_cancelled_payload'], 'cancel_effect',
+            checkpoint_name, before_name, checkpoint_name, before_name,
+            arguments=cancel_input, claim_file=claim_file, response_file=name + '-response.json'))
     pins = {str(path.relative_to(spec_root)): 'sha256:' + hashlib.sha256(path.read_bytes()).hexdigest()
             for path in sorted((spec_root / 'examples/effects').glob('*.json'))}
     case_mapping = {
@@ -393,6 +439,7 @@ def generate(spec_root: Path):
                 'spec_commit': SPEC_COMMIT, 'normative_examples': pins,
                 'normative_case_coverage': case_mapping, 'vectors': vectors}
     files = {
+        **cancellation_files,
         'handler-closure.json': closure,
         'destination-configuration.json': destination_configuration,
         'no-cancel-mapping-journal.json': no_cancel_journal,
