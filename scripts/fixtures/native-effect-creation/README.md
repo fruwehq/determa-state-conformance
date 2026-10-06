@@ -6,6 +6,10 @@ one declared business-token binding produces two distinct initial external inten
 The proposed journal is derived from those intents using approved §19 fields.
 The creation response follows the existing Rust owner-local creation return.
 This is a development fixture, not a new public transport or certified provider.
+Its supplied bindings are already normalized for this all-string input case;
+numeric/default cases require an explicit normalization boundary. Python's private
+host evidence indexes are removed from response emissions, as in Rust's separate
+emission-index evidence. The initial receipt retains the action-local indexes.
 
 `test_native_effect_creation_validator.py` checks specification schemas and
 independent joint relations, including valid-hash tampering. These checks cannot

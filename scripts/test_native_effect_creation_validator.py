@@ -18,7 +18,8 @@ class NativeCreationValidatorTests(unittest.TestCase):
         self.case = json.loads(FIXTURE.read_text())
 
     def check(self):
-        validate_creation(*(self.case[key] for key in ('request', 'checkpoint', 'journal', 'response')))
+        validate_creation(*(self.case[key] for key in ('request', 'checkpoint', 'journal', 'response')),
+                          machine=self.case['machine'])
 
     def reseal_journal(self):
         journal = self.case['journal']
@@ -85,6 +86,47 @@ class NativeCreationValidatorTests(unittest.TestCase):
     def test_changed_typed_binding_refuses(self):
         self.case['request']['bindings']['input']['operation_token'] = 'different-business-token'
         with self.assertRaisesRegex(ValueError, 'creation request digest'):
+            self.check()
+
+    def rebind_response(self):
+        self.case['journal']['operation_response_references'][0]['response_digest'] = digest([
+            'determa-host-operation-response-1', self.case['response']])
+        self.reseal_journal()
+
+    def test_rehashed_response_status_refuses(self):
+        self.case['response']['status'] = 'faulted'
+        self.rebind_response()
+        with self.assertRaisesRegex(ValueError, 'creation response status'):
+            self.check()
+
+    def test_rehashed_missing_response_emission_refuses(self):
+        self.case['response']['emissions'].pop()
+        self.rebind_response()
+        with self.assertRaisesRegex(ValueError, 'complete initial emission order'):
+            self.check()
+
+    def test_rehashed_reordered_response_emissions_refuses(self):
+        self.case['response']['emissions'].reverse()
+        self.rebind_response()
+        with self.assertRaisesRegex(ValueError, 'complete initial emission order'):
+            self.check()
+
+    def test_changed_source_refuses(self):
+        self.case['machine']['machines'][0]['root']['entry'].pop()
+        with self.assertRaisesRegex(ValueError, 'creation source fingerprint'):
+            self.check()
+
+    def test_rehashed_wrong_action_local_receipt_index_refuses(self):
+        checkpoint = self.case['checkpoint']
+        checkpoint['operation_receipts'][0]['emission_references'][0]['emission_index'] = '99'
+        checkpoint['execution_checkpoint_digest'] = digest([
+            'determa-execution-checkpoint-digest-1',
+            {key: value for key, value in checkpoint.items() if key != 'execution_checkpoint_digest'}])
+        self.case['response']['checkpoint'] = copy.deepcopy(checkpoint)
+        self.case['response']['creation_receipt'] = copy.deepcopy(checkpoint['operation_receipts'][0])
+        self.case['journal']['checkpoint_digest'] = checkpoint['execution_checkpoint_digest']
+        self.rebind_response()
+        with self.assertRaisesRegex(ValueError, 'initial receipt emission references'):
             self.check()
 
 

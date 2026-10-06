@@ -420,10 +420,10 @@
     "operation_response_references": [
       {
         "operation_id": "create-1",
-        "response_digest": "sha256:e7b57378d96190449772e7db4ddb5d5cb81aa8024211e98eaf05df6d549647fe"
+        "response_digest": "sha256:ad6ef9762933c97816fdee88abb1e4b3b8fe54d7e52e3bd41ae9c8bf66fe2f29"
       }
     ],
-    "host_effect_journal_digest": "sha256:0e0e2d9b5f0f6178347b05c41d69af92cb3f9d695ca74f500f18dcaf15d5b24a"
+    "host_effect_journal_digest": "sha256:eb17eb86740cf1ebf666887feda7b67e12b74cdcbdc6b86e9729a6dba5fb41d0"
   },
   "response": {
     "checkpoint": {
@@ -648,8 +648,7 @@
             ]
           ]
         ],
-        "correlation_id": "business-create-1",
-        "_determa_v1_emission_index": "0"
+        "correlation_id": "business-create-1"
       },
       {
         "effect_id": "sha256:23e155833480520dc3b3b300b9262addfd7f2532f74ae9bc973113466fcb6acd",
@@ -667,8 +666,7 @@
             ]
           ]
         ],
-        "correlation_id": "business-create-1",
-        "_determa_v1_emission_index": "0"
+        "correlation_id": "business-create-1"
       }
     ],
     "lifecycle_dispositions": [],

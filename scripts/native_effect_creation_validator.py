@@ -1,7 +1,7 @@
 """Draft initialization/journal relational checks; not a production certificate."""
 from __future__ import annotations
 
-from generate_version1_vectors import digest, typed_value
+from generate_version1_vectors import bundle_fingerprint_document, digest, typed_value
 
 
 def require(condition, message):
@@ -14,7 +14,7 @@ def sealed(value, member, domain):
                                            if key != member}]), member)
 
 
-def validate_creation(request, checkpoint, journal, response):
+def validate_creation(request, checkpoint, journal, response, *, machine):
     """Check observed joint facts independently of an engine's journal validator.
 
     These checks supplement schema validation and exact core-result goldens.
@@ -24,6 +24,8 @@ def validate_creation(request, checkpoint, journal, response):
     sealed(journal, 'host_effect_journal_digest', 'determa-host-effect-journal-digest-1')
     aggregate = checkpoint['root_record']['aggregate_state']
     sealed(aggregate, 'aggregate_state_digest', 'determa-aggregate-state-digest-1')
+    require(bundle_fingerprint_document(machine) == request['validated_bundle_fingerprint']
+            == aggregate['validated_bundle_fingerprint'], 'creation source fingerprint')
     require(checkpoint['revision'] == '0', 'fresh creation revision')
     require(checkpoint['root_instance_id'] == request['root_instance_id'], 'creation root')
     receipt = checkpoint['operation_receipts'][0]
@@ -37,6 +39,8 @@ def validate_creation(request, checkpoint, journal, response):
         'creation request digest')
     require(receipt['resulting_aggregate_state_digest'] == aggregate['aggregate_state_digest'],
             'creation aggregate binding')
+    require(response['status'] == receipt['status'] and response['fault'] == receipt['fault'],
+            'creation response status and fault')
     require(journal['scope_identity'] == request['scope_identity']
             and journal['root_instance_id'] == checkpoint['root_instance_id']
             and journal['checkpoint_revision'] == checkpoint['revision']
@@ -45,6 +49,13 @@ def validate_creation(request, checkpoint, journal, response):
     intents = {item['intent']['effect_id']: item['intent']
                for item in checkpoint['pending_outbox_intents']}
     require(len(intents) == len(checkpoint['pending_outbox_intents']), 'duplicate initial intent')
+    emitted = [item['intent'] for item in checkpoint['pending_outbox_intents']]
+    require(response['emissions'] == emitted, 'complete initial emission order')
+    # This bounded fixture has two distinct entry action slots, each with local
+    # emission index zero; internal/lifecycle cases need separate checks.
+    require(receipt['emission_references'] == [
+        {'kind': 'external_outbox', 'emission_index': '0', 'effect_id': intent['effect_id']}
+        for intent in emitted], 'initial receipt emission references')
     records = journal['effect_records']
     identifiers = [record['effect_id'] for record in records]
     require(identifiers == sorted(intents, key=lambda item: item.encode('utf-8')),
