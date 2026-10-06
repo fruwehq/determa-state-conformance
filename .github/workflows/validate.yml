@@ -168,6 +168,11 @@ jobs:
           python scripts/test_committed_native_effects_validator.py
           --spec-root .determa-state-spec
 
+      - name: Test draft native creation journal relations
+        run: >-
+          python scripts/test_native_effect_creation_validator.py
+          --spec-root .determa-state-spec
+
       - name: Test Rust native effect handler source
         run: >-
           rustc --test
