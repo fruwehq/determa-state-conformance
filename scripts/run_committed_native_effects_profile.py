@@ -169,13 +169,49 @@ def native_proof_id(payload, run_id):
                                        'arguments', 'fault')}]))
 
 
+def verify_retry_safety_evidence(vector, evidence, artifacts, configured):
+    """Require retained native receipt evidence, never a worker/configuration assertion."""
+    request, expected = vector['request'], vector['expected']
+    response = artifacts[expected['response']] if expected['response'] is not None else None
+    before = artifacts[request['journal_before']]['effect_records']
+    required = bool(response and response.get('status') == 'report_recorded'
+                    and response.get('attempt_report', {}).get('report_kind') == 'retryable_failure')
+    required = required or bool(request['operation'] == 'claim' and expected['counts']['new_claims']
+                               and before
+                               and before[0]['attempt_fence'] != '0')
+    if not required:
+        if evidence is not None:
+            raise ValueError('retry safety evidence credited without a safe retry decision')
+        return
+    fields = {'kind', 'scope_identity', 'root_instance_id', 'effect_id', 'operation_token',
+              'attempt_fence', 'handler_reference', 'destination_binding_digest',
+              'first_attempt_receipt_bytes_base64', 'repeat_attempt_receipt_bytes_base64'}
+    if type(evidence) is not dict or set(evidence) != fields:
+        raise ValueError('safe retry lacks independently verified native receipt evidence')
+    record = before[0]
+    pins = {key: record[key] for key in ('effect_id', 'operation_token', 'attempt_fence',
+                                      'handler_reference', 'destination_binding_digest')}
+    pins.update(kind='destination_deduplication', scope_identity=configured['scope_identity'],
+                root_instance_id=artifacts[request['checkpoint_before']]['root_instance_id'])
+    if any(not exact(evidence[key], value) for key, value in pins.items()):
+        raise ValueError('safe retry evidence differs from original scoped invocation')
+    try:
+        first = base64.b64decode(evidence['first_attempt_receipt_bytes_base64'], validate=True)
+        repeat = base64.b64decode(evidence['repeat_attempt_receipt_bytes_base64'], validate=True)
+    except (TypeError, binascii.Error, ValueError):
+        raise ValueError('safe retry native receipts are invalid') from None
+    if not first or first != repeat:
+        raise ValueError('safe retry destination receipts differ or are empty')
+
+
 def verify_native_evidence(vector, observation, artifacts, configured, payload):
     evidence = observation['native_evidence']
     if type(evidence) is not dict or set(evidence) != {
             'proof_id', 'run_id', 'report_digest', 'authority_report_digest',
             'topology_identifier', 'scope_identity', 'authority_epoch',
             'handler_reference', 'destination_binding_digest', 'guard_fate',
-            'claim_guard_observed', 'native_transaction_id', 'destination_call_evidence'}:
+            'claim_guard_observed', 'native_transaction_id', 'destination_call_evidence',
+            'retry_safety_evidence'}:
         raise ValueError('native evidence missing guard, topology, handler, or destination fields')
     expected = vector['expected']
     request = vector['request']
@@ -213,6 +249,7 @@ def verify_native_evidence(vector, observation, artifacts, configured, payload):
             raise ValueError('native destination call lacks scoped idempotency proof')
     elif call is not None:
         raise ValueError('destination call evidence without a provider call')
+    verify_retry_safety_evidence(vector, evidence['retry_safety_evidence'], artifacts, configured)
     return evidence['proof_id']
 
 
@@ -322,7 +359,17 @@ def adapter_run(command, payload, location):
     return strict_json(completed.stdout)
 
 
-def execute_vector(command, vector, artifacts, configured):
+def verify_retained_retry_evidence(proofs, destination):
+    """Bind every credited decision to the independently observed destination receipts."""
+    fields = ('scope_identity', 'effect_id', 'destination_binding_digest',
+              'first_attempt_receipt_bytes_base64', 'repeat_attempt_receipt_bytes_base64')
+    for proof in proofs:
+        if type(destination) is not dict or any(not exact(proof[key], destination.get(key))
+                                               for key in fields):
+            raise ValueError('credited retry proof differs from observed native destination receipts')
+
+
+def execute_vector(command, vector, artifacts, configured, retry_proofs=None):
     request = vector['request']
     payload = {'operation': request['operation'],
                'checkpoint_before': artifacts[request['checkpoint_before']],
@@ -365,7 +412,10 @@ def execute_vector(command, vector, artifacts, configured):
             if observation is None:
                 raise ValueError('route control did not produce final observation')
         check_observation(vector, observation, artifacts)
-        return verify_native_evidence(vector, observation, artifacts, configured, payload)
+        proof_id = verify_native_evidence(vector, observation, artifacts, configured, payload)
+        if retry_proofs is not None and observation['native_evidence']['retry_safety_evidence'] is not None:
+            retry_proofs.append(observation['native_evidence']['retry_safety_evidence'])
+        return proof_id
     except (ValueError, UnicodeDecodeError) as error:
         raise SystemExit(f"{vector['name']}: {error}") from error
 
@@ -424,8 +474,9 @@ def main():
                                   expected_run_id=run_id, expected_proofs=set())
     bind_to_proved_authority(configured, c_report)
     proof_ids = set()
+    retry_proofs = []
     for vector in manifest['vectors']:
-        proof_id = execute_vector(command, vector, artifacts, configured)
+        proof_id = execute_vector(command, vector, artifacts, configured, retry_proofs)
         if proof_id in proof_ids:
             raise SystemExit('duplicate native operation proof identity')
         proof_ids.add(proof_id)
@@ -434,6 +485,8 @@ def main():
     final_configured = verified_profile(final, artifacts, args.spec_root,
                                         expected_run_id=run_id, expected_proofs=proof_ids)
     bind_to_proved_authority(final_configured, c_report)
+    verify_retained_retry_evidence(retry_proofs,
+                                  final['installation_evidence']['destination_deduplication_proof'])
     if final_configured != configured or final['report_bytes'] != initial['report_bytes']:
         raise SystemExit('configured production profile changed during native probes')
     if args.proof_summary_output is not None:

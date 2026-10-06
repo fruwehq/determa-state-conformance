@@ -21,6 +21,7 @@ from committed_native_effects_validator import CASE, strict_json, validate_profi
 from generate_version1_vectors import digest
 from run_committed_native_effects_profile import (bind_to_proved_authority, check_observation, closure_bytes, execute_vector,
                                                    native_proof_id, verify_native_evidence,
+                                                   verify_retained_retry_evidence,
                                                    verified_profile)
 
 SPEC = Path(__file__).resolve().parents[2] / 'determa-state-spec'
@@ -93,6 +94,15 @@ class CommittedEffectsValidatorTests(unittest.TestCase):
                   request['journal_before'] != expected['journal_after']
         fate = 'rolled_back' if vector['name'] == 'route_generation_changed' else \
                'committed' if changed else 'no_mutation'
+        retry_evidence = None
+        if vector['name'] in ('safe_retry_report', 'duplicate_equal_retry_report', 'safe_retry_new_fence',
+                              'ambiguous_retry_with_proven_deduplication'):
+            retry_evidence = {key: before_record[key] for key in ('effect_id', 'operation_token',
+                              'attempt_fence', 'handler_reference', 'destination_binding_digest')}
+            receipt = base64.b64encode(b'actual scoped native destination receipt').decode()
+            retry_evidence.update(kind='destination_deduplication', scope_identity=configured['scope_identity'],
+                                  root_instance_id=self.artifacts[request['checkpoint_before']]['root_instance_id'],
+                                  first_attempt_receipt_bytes_base64=receipt, repeat_attempt_receipt_bytes_base64=receipt)
         evidence = {'proof_id': native_proof_id(self.operation_payload(vector), configured['run_id']),
                     'run_id': configured['run_id'],
                     'report_digest': configured['report_digest'],
@@ -104,6 +114,7 @@ class CommittedEffectsValidatorTests(unittest.TestCase):
                     'destination_binding_digest': configured['destination_binding_digest'],
                     'guard_fate': fate,
                     'claim_guard_observed': request['operation'] in ('claim', 'dispatch', 'submit_result'),
+                    'retry_safety_evidence': retry_evidence,
                     'native_transaction_id': 'native-txn-test',
                     'destination_call_evidence': ({'idempotency_key': [configured['scope_identity'], before_record['effect_id']],
                                                    'destination_binding_digest': before_record['destination_binding_digest'],
@@ -211,8 +222,40 @@ class CommittedEffectsValidatorTests(unittest.TestCase):
             verified_profile(broken, self.artifacts, SPEC,
                              expected_run_id=self.configured()['run_id'], expected_proofs={'native-proof-1'})
 
+    def test_late_cancellation_coverage_cannot_be_dropped(self):
+        self.assertEqual(effect_validator.validate_late_cancellation_vectors(self.manifest, self.artifacts), 7)
+        manifest = copy.deepcopy(self.manifest)
+        manifest['vectors'] = [item for item in manifest['vectors'] if item['name'] != 'late-cancel-outcome_recorded']
+        with self.assertRaises(ValueError):
+            effect_validator.validate_late_cancellation_vectors(manifest, self.artifacts)
+
+    def test_late_cancellation_cannot_replace_the_winning_record(self):
+        for field, replacement in [('cancellation', {'state': 'reconciliation_required'}),
+                                   ('outcome', None), ('invocation_state', 'ambiguous')]:
+            with self.subTest(field=field):
+                artifacts = copy.deepcopy(self.artifacts)
+                artifacts['data/late-cancel-outcome_recorded-journal.json']['effect_records'][0][field] = replacement
+                with self.assertRaises(ValueError):
+                    effect_validator.validate_late_cancellation_vectors(self.manifest, artifacts)
+
+    def test_invalid_late_payload_cannot_disclose_revision_or_outcome(self):
+        for field in ['journal_revision', 'outcome']:
+            with self.subTest(field=field):
+                artifacts = copy.deepcopy(self.artifacts)
+                artifacts['data/invalid-late-cancel-outcome_recorded-response.json'][field] = (
+                    '4' if field == 'journal_revision' else artifacts['data/outcome-recorded-journal.json']['effect_records'][0]['outcome'])
+                with self.assertRaises(ValueError):
+                    effect_validator.validate_late_cancellation_vectors(self.manifest, artifacts)
+
+    def test_invalid_late_vector_cannot_reject_a_valid_payload(self):
+        manifest = copy.deepcopy(self.manifest)
+        vector = next(item for item in manifest['vectors'] if item['name'] == 'invalid-late-cancel-outcome_recorded')
+        vector['request']['arguments']['payload'] = ['map', []]
+        with self.assertRaises(ValueError):
+            effect_validator.validate_late_cancellation_vectors(manifest, self.artifacts)
+
     def test_source_and_artifact_gate(self):
-        self.assertEqual(validate_profile(SPEC), 43)
+        self.assertEqual(validate_profile(SPEC), 62)
 
     def test_all_complete_oracles_accept_matching_observations(self):
         for vector in self.manifest['vectors']:
@@ -222,6 +265,60 @@ class CommittedEffectsValidatorTests(unittest.TestCase):
                 self.assertEqual(verify_native_evidence(vector, observation, self.artifacts,
                                                         self.configured(), self.operation_payload(vector)),
                                  observation['native_evidence']['proof_id'])
+
+    def test_retry_credit_refuses_assertions_wrong_bindings_and_unequal_receipts(self):
+        vector = self.vector('safe_retry_report')
+        for damage in ('missing', 'boolean', 'wrong_work', 'wrong_root', 'wrong_token',
+                       'wrong_fence', 'wrong_handler', 'wrong_destination', 'empty', 'unequal'):
+            with self.subTest(damage=damage):
+                observation = self.observation(vector)
+                proof = observation['native_evidence']['retry_safety_evidence']
+                if damage == 'missing':
+                    observation['native_evidence']['retry_safety_evidence'] = None
+                elif damage == 'boolean':
+                    observation['native_evidence']['retry_safety_evidence'] = True
+                elif damage in ('empty', 'unequal'):
+                    proof['repeat_attempt_receipt_bytes_base64'] = '' if damage == 'empty' else base64.b64encode(b'different').decode()
+                else:
+                    field = {'wrong_work': 'effect_id', 'wrong_root': 'root_instance_id',
+                             'wrong_token': 'operation_token', 'wrong_fence': 'attempt_fence',
+                             'wrong_handler': 'handler_reference', 'wrong_destination': 'destination_binding_digest'}[damage]
+                    proof[field] = 'different'
+                with self.assertRaises(ValueError):
+                    verify_native_evidence(vector, observation, self.artifacts,
+                                           self.configured(), self.operation_payload(vector))
+
+    def test_equal_fabricated_retry_receipts_do_not_match_the_observed_destination(self):
+        vector = self.vector('safe_retry_report')
+        observed = self.observation(vector)
+        proof = observed['native_evidence']['retry_safety_evidence']
+        destination = {key: proof[key] for key in ('scope_identity', 'effect_id', 'destination_binding_digest',
+                                                  'first_attempt_receipt_bytes_base64', 'repeat_attempt_receipt_bytes_base64')}
+        verify_retained_retry_evidence([proof], destination)
+        fabricated = copy.deepcopy(proof)
+        fabricated['first_attempt_receipt_bytes_base64'] = fabricated['repeat_attempt_receipt_bytes_base64'] = base64.b64encode(b'equal fabricated bytes').decode()
+        with self.assertRaises(ValueError):
+            verify_retained_retry_evidence([fabricated], destination)
+        with self.assertRaises(ValueError):
+            verify_retained_retry_evidence([proof], None)
+
+    def test_ambiguous_next_fence_requires_native_evidence(self):
+        vector = self.vector('ambiguous_retry_with_proven_deduplication')
+        for missing in (None, True, {}):
+            observation = self.observation(vector)
+            observation['native_evidence']['retry_safety_evidence'] = missing
+            with self.assertRaises(ValueError):
+                verify_native_evidence(vector, observation, self.artifacts,
+                                       self.configured(), self.operation_payload(vector))
+
+    def test_rejected_retry_cannot_credit_evidence(self):
+        vector = self.vector('retry_safety_missing')
+        observation = self.observation(vector)
+        observation['native_evidence']['retry_safety_evidence'] = self.observation(
+            self.vector('safe_retry_report'))['native_evidence']['retry_safety_evidence']
+        with self.assertRaises(ValueError):
+            verify_native_evidence(vector, observation, self.artifacts,
+                                   self.configured(), self.operation_payload(vector))
 
     def test_strict_json_decoder(self):
         for body in (b'{"a":1,"a":2}', b'{"a":NaN}', b'{"a":Infinity}', b'{"a":1e999}', b'{"a":"\\ud800"}', b'\xff'):

@@ -54,27 +54,40 @@
         }
       },
       "idempotency_policy": "destination_deduplicates",
-      "attempt_fence": "1",
-      "attempt_records": [
-        {
-          "attempt_fence": "1",
-          "report_kind": "retryable_failure",
-          "report_digest": "sha256:48a3f76364fd8b2c0bc03808a8707b66250f5532f3c6706179292bab3ce5b641",
-          "reason": "destination_deduplication_proven"
-        }
-      ],
-      "invocation_state": "unclaimed",
-      "outcome": null,
-      "result_event_id": null,
+      "attempt_fence": "0",
+      "attempt_records": [],
+      "invocation_state": "outcome_recorded",
+      "outcome": {
+        "kind": "cancelled",
+        "payload": [
+          "map",
+          []
+        ],
+        "digest": "sha256:0a6dbb14c62e2360dd459d47b446a11486f5e9d44cfd2c65d3e07abe83fc4afb",
+        "attempt_fence": "0"
+      },
+      "result_event_id": "sha256:2ce08b38cc758cee230e6bca9404de1306237539184b2ee539f653ef60620e7a",
       "admission_receipt": null,
-      "cancellation": null
+      "cancellation": {
+        "operation_id": "cancel-1",
+        "reason": "operator_request",
+        "state": "prevented_start"
+      }
     }
   ],
   "operation_response_references": [
+    {
+      "operation_id": "cancel-1",
+      "response_digest": "sha256:0cd134fb0efd283db37164624f412bfc85af6e84423926d889b799ea351409d5"
+    },
+    {
+      "operation_id": "cancel-too-late-preclaim_recorded",
+      "response_digest": "sha256:418d2842dc1b993676ae149ad75b8149fd6f6e9f6cff07b551df194d79c6c03a"
+    },
     {
       "operation_id": "produce-1",
       "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
     }
   ],
-  "host_effect_journal_digest": "sha256:8729ea22e3955c86c69e757d5570e52a3912879d1d446c3fe3ce7a365547fd96"
+  "host_effect_journal_digest": "sha256:00cddc5a3dc667c4d2bbac79d84f0af97a85747b1d47d49049cb848c6ddc2d81"
 }

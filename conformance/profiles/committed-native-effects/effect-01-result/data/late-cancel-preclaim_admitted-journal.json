@@ -3,9 +3,9 @@
   "host_effect_journal_schema_version": 1,
   "scope_identity": "effect-scope-1",
   "root_instance_id": "effect-root-1",
-  "checkpoint_revision": "2",
-  "checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
-  "journal_revision": "3",
+  "checkpoint_revision": "3",
+  "checkpoint_digest": "sha256:b6238a4922768c564e86dc41ec32fb0027ea4025c0b98e8d10cf96d1eb08dc72",
+  "journal_revision": "4",
   "effect_records": [
     {
       "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
@@ -54,27 +54,48 @@
         }
       },
       "idempotency_policy": "destination_deduplicates",
-      "attempt_fence": "1",
-      "attempt_records": [
-        {
-          "attempt_fence": "1",
-          "report_kind": "retryable_failure",
-          "report_digest": "sha256:48a3f76364fd8b2c0bc03808a8707b66250f5532f3c6706179292bab3ce5b641",
-          "reason": "destination_deduplication_proven"
-        }
-      ],
-      "invocation_state": "unclaimed",
-      "outcome": null,
-      "result_event_id": null,
-      "admission_receipt": null,
-      "cancellation": null
+      "attempt_fence": "0",
+      "attempt_records": [],
+      "invocation_state": "result_admitted",
+      "outcome": {
+        "kind": "cancelled",
+        "payload": [
+          "map",
+          []
+        ],
+        "digest": "sha256:0a6dbb14c62e2360dd459d47b446a11486f5e9d44cfd2c65d3e07abe83fc4afb",
+        "attempt_fence": "0"
+      },
+      "result_event_id": "sha256:2ce08b38cc758cee230e6bca9404de1306237539184b2ee539f653ef60620e7a",
+      "admission_receipt": {
+        "operation_kind": "acceptance",
+        "receipt_sequence": "3",
+        "event_id": "sha256:2ce08b38cc758cee230e6bca9404de1306237539184b2ee539f653ef60620e7a",
+        "request_digest": "sha256:4cf07d2e335c74b7f3e18d8efb8729af184f6b3eb8c8704d7cb64c3f5760ebb1",
+        "acceptance_sequence": "1",
+        "accepted_revision": "3",
+        "delivery_mode": "input"
+      },
+      "cancellation": {
+        "operation_id": "cancel-1",
+        "reason": "operator_request",
+        "state": "prevented_start"
+      }
     }
   ],
   "operation_response_references": [
+    {
+      "operation_id": "cancel-1",
+      "response_digest": "sha256:0cd134fb0efd283db37164624f412bfc85af6e84423926d889b799ea351409d5"
+    },
+    {
+      "operation_id": "cancel-too-late-preclaim_admitted",
+      "response_digest": "sha256:7c24e9d0fbd5f22afdcd1d35e0510d461ca7f216020bb759d2299bdf22e16e8c"
+    },
     {
       "operation_id": "produce-1",
       "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
     }
   ],
-  "host_effect_journal_digest": "sha256:8729ea22e3955c86c69e757d5570e52a3912879d1d446c3fe3ce7a365547fd96"
+  "host_effect_journal_digest": "sha256:506f498086b26a6b3164690300d7e3a70434aa0f93969b87c0bbc9e3e1b7aafe"
 }

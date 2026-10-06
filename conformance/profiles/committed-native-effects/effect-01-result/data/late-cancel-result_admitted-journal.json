@@ -3,9 +3,9 @@
   "host_effect_journal_schema_version": 1,
   "scope_identity": "effect-scope-1",
   "root_instance_id": "effect-root-1",
-  "checkpoint_revision": "2",
-  "checkpoint_digest": "sha256:b1b8af517d7dccbb0c11cdb0723943c33b3dd6201440d6c142d5f318a3c8a287",
-  "journal_revision": "3",
+  "checkpoint_revision": "3",
+  "checkpoint_digest": "sha256:6f689dca2071e059bcd6a9d17d14b18700f1ba09cec6a2b04c9ec0e4b9bb7dea",
+  "journal_revision": "5",
   "effect_records": [
     {
       "effect_id": "sha256:cbdcb5985c070d4562ee709f8c8a62d24c42cc61977cdc128154689e6c5e5fb6",
@@ -58,23 +58,51 @@
       "attempt_records": [
         {
           "attempt_fence": "1",
-          "report_kind": "retryable_failure",
-          "report_digest": "sha256:48a3f76364fd8b2c0bc03808a8707b66250f5532f3c6706179292bab3ce5b641",
-          "reason": "destination_deduplication_proven"
+          "report_kind": "succeeded",
+          "report_digest": "sha256:3046a3958f94a37558c9632998bcd5b0b11ded4ee0ce4ba055b5df804a5e1a65",
+          "reason": null
         }
       ],
-      "invocation_state": "unclaimed",
-      "outcome": null,
-      "result_event_id": null,
-      "admission_receipt": null,
+      "invocation_state": "result_admitted",
+      "outcome": {
+        "kind": "succeeded",
+        "payload": [
+          "map",
+          [
+            [
+              "provider_reference",
+              [
+                "string",
+                "accepted-42"
+              ]
+            ]
+          ]
+        ],
+        "digest": "sha256:f23394ef9e1ec815ad47de540cfbb84bc0c481d8d55b3058aa2db977ba645923",
+        "attempt_fence": "1"
+      },
+      "result_event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+      "admission_receipt": {
+        "operation_kind": "acceptance",
+        "receipt_sequence": "3",
+        "event_id": "sha256:bce33f25917342412893ecd8ef0326e87bfbaba297370d987ecc92fae17c7098",
+        "request_digest": "sha256:11de8cd6409e78d7a0bfc2e666fe1a89fb8056c586ce07a05b1fc57b39b09db0",
+        "acceptance_sequence": "1",
+        "accepted_revision": "3",
+        "delivery_mode": "input"
+      },
       "cancellation": null
     }
   ],
   "operation_response_references": [
     {
+      "operation_id": "cancel-too-late-result_admitted",
+      "response_digest": "sha256:f8dc4facaa1e7f191f231a2413f41beb18967f7e14700a7e353aebe4a216eaa8"
+    },
+    {
       "operation_id": "produce-1",
       "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
     }
   ],
-  "host_effect_journal_digest": "sha256:8729ea22e3955c86c69e757d5570e52a3912879d1d446c3fe3ce7a365547fd96"
+  "host_effect_journal_digest": "sha256:69e1ef895e45d1be6c9600349200004fca38e9cff0693122367bacbbfdfdc2e4"
 }

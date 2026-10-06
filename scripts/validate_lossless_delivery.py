@@ -576,7 +576,7 @@ def validate_profile(case: Path, test: dict, artifacts: set[Path], spec_root: Pa
     effect_manifest = json.loads((effects / 'data/vectors.json').read_text(encoding='utf-8'))
     effect_rows = {item['name']: item for item in effect_manifest['vectors']}
     authority = json.loads((profiles_root / 'host-authority/vectors.generated.json').read_text(encoding='utf-8'))
-    if (len(effect_rows) != 43 or integration['effect_profile_format'] != effect_manifest['format'] or
+    if (len(effect_rows) != 62 or integration['effect_profile_format'] != effect_manifest['format'] or
         integration['authority_scenario'] != 'worker_sqlite' or
         integration['required_authority_guarantees'] != ['guarded_local_writes', 'worker_fencing'] or
         not any(item['id'] == 'worker_sqlite' and item['native_traces']

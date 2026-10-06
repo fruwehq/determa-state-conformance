@@ -59,8 +59,8 @@
         {
           "attempt_fence": "1",
           "report_kind": "retryable_failure",
-          "report_digest": "sha256:08f790d48fe7ed10927d2d09293098aeeddc342bc2bf370e0566faae9618f81f",
-          "reason": "no_call_proven"
+          "report_digest": "sha256:48a3f76364fd8b2c0bc03808a8707b66250f5532f3c6706179292bab3ce5b641",
+          "reason": "destination_deduplication_proven"
         }
       ],
       "invocation_state": "leased",
@@ -76,5 +76,5 @@
       "response_digest": "sha256:63369b94eef986611d6a6a88d6dd0239969bacc0abf5ab8edef911cb03eda6ca"
     }
   ],
-  "host_effect_journal_digest": "sha256:965d9c12d26fb877ff95df98b9dc75c2be65be8bb1d65abd7ec2af88860b1453"
+  "host_effect_journal_digest": "sha256:c5097df3b233007e5327146d17584a81ecafaf941e5bf7aa9392f6df585103e6"
 }

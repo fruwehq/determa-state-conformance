@@ -1,6 +1,6 @@
 # Committed native effects and authenticated results (unreleased 0.3)
 
-This optional profile targets SPEC §19 at immutable specification commit `77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0`. Its 43 driver vectors use a real format-1 workflow. The generated checkpoint contains a selected and committed external intent; its effect ID, typed payload, correlation token, exact target incarnation, and complete intent digest are derived from the same core emission. `native_succeeded` and `native_cancelled` are declared input events. Result admission adds the complete pinned envelope and receipt to a new checkpoint. The separate host journal binds that checkpoint by revision and digest. Confirmed outbox acceptance leaves the business invocation outstanding.
+This optional profile targets SPEC §19 at immutable specification commit `77c0a2e60cd0771a6d44ae170a079ddd51d7d9f0`. Its 55 driver vectors use a real format-1 workflow. The generated checkpoint contains a selected and committed external intent; its effect ID, typed payload, correlation token, exact target incarnation, and complete intent digest are derived from the same core emission. `native_succeeded` and `native_cancelled` are declared input events. Result admission adds the complete pinned envelope and receipt to a new checkpoint. The separate host journal binds that checkpoint by revision and digest. Confirmed outbox acceptance leaves the business invocation outstanding.
 
 `data/vectors.json` pins every JSON source example under the specification's `examples/effects/` directory by raw SHA-256. It maps all 30 named cases in the three normative case lists to executable vectors. The validator checks their request differences, response status and error code, admission, claim, provider and mutation counts, expiry and auth premises, and linked follow-up obligations. The specification's example committed-effect checkpoint is explicitly synthetic; the production runner receives only this profile's valid generated machine and checkpoint.
 
@@ -25,3 +25,21 @@ python scripts/run_committed_native_effects_profile.py --spec-root <pinned-spec>
 ```
 
 The adapter receives prior checkpoint, journal, current claim, trusted harness controls and source files. It never receives a vector name, expected response or state, source coverage label, or oracle file. It returns canonical full checkpoint and journal bytes before and after, caller completion/abort/no-response evidence, applicable full public response bytes, concrete provider/core/claim calls, installed source identity, and native guard and destination proof. A passing source/schema gate does not certify a production host. No production adapter or runtime certificate is bundled here; Python and Rust must each pass their real configured instance before either claims this profile.
+
+Safe retry decisions require retained scoped evidence from the installed native provider.
+The destination-deduplication route records that reason, rather than claiming no call
+occurred. Every credited report and next fence binds the original root, effect, token,
+fence, handler and destination and equal nonempty native receipts, checked against the
+actual destination receipts after the run. Missing, boolean, fabricated, wrong-work,
+wrong-destination and unavailable verifier cases refuse without mutation or invocation.
+Configuration requests the probe; it cannot establish the result. Version-1 public
+contracts remain unchanged. Internal dispatch starts remain private native facts.
+
+Every accepted noninitial claim, including recovery from ambiguity, requires the same
+per-decision proof boundary. Six refusal controls also exercise the ambiguous next-fence
+path. Receipt bytes and installation hashes do not prove that production consumed the
+actual source-verified safety checker. Reviewed native engine tests must count fresh
+verification, refuse replaced/disabled checkers and changed configuration/instance,
+and prove rollback when verification becomes unavailable before commit. Equal replay
+may use validated retained native provenance. These checks cover destination
+deduplication; they do not certify a separate no-call evidence implementation.
